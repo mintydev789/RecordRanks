@@ -22,6 +22,7 @@ sudo docker compose -f docker-compose.supabase.yml down -v --remove-orphans
 echo "Cleaning up bind-mounted directories..."
 BIND_MOUNTS=(
   "./volumes/db/data"
+  "./volumes/storage"
 )
 
 for DIR in "${BIND_MOUNTS[@]}"; do

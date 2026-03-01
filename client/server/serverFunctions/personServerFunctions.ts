@@ -151,14 +151,6 @@ export const updatePersonSF = actionClient
       if (!canApprove && person.approved) throw new RrActionError("You may not edit a person who has been approved");
       if (person.wcaId && person.wcaId !== newPersonDto.wcaId)
         throw new RrActionError("Changing a person's WCA ID is not allowed");
-      // TO-DO: WE MAY HAVE TO DO SOMETHING ABOUT PAST RECORDS SET BY THE COMPETITOR WHO IS CHANGING THEIR COUNTRY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if (person.regionCode !== newPersonDto.regionCode) {
-        throw new RrActionError(
-          "Changing a person's country is not currently supported. Please contact the development team.",
-        );
-      }
-
-      await validatePerson(newPersonDto, { excludeId: id, ignoreDuplicate, isAdmin: canApprove });
 
       let personDto: PersonDto = newPersonDto;
 
@@ -167,6 +159,15 @@ export const updatePersonSF = actionClient
         if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${newPersonDto.wcaId} not found`);
         personDto = wcaPerson;
       }
+
+      // TO-DO: WE MAY HAVE TO DO SOMETHING ABOUT PAST RECORDS SET BY THE COMPETITOR WHO IS CHANGING THEIR COUNTRY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (person.regionCode !== personDto.regionCode) {
+        throw new RrActionError(
+          "Changing a person's country is not currently supported. Please contact the development team.",
+        );
+      }
+
+      await validatePerson(personDto, { excludeId: id, ignoreDuplicate, isAdmin: canApprove });
 
       const query = db.update(table).set(personDto).where(eq(table.id, id));
       const [updatedPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));

@@ -16,7 +16,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "222",
@@ -30,7 +29,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "444",
@@ -44,7 +42,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "555",
@@ -58,7 +55,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "666",
@@ -72,7 +68,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "777",
@@ -86,7 +81,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333bf",
@@ -100,7 +94,6 @@ export const eventsStub: InsertEvent[] = [
     removedWca: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333fm",
@@ -114,7 +107,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333oh",
@@ -128,7 +120,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "clock",
@@ -142,7 +133,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "minx",
@@ -156,7 +146,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "pyram",
@@ -170,7 +159,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "skewb",
@@ -184,7 +172,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "sq1",
@@ -198,7 +185,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "444bf",
@@ -212,7 +198,6 @@ export const eventsStub: InsertEvent[] = [
     participants: 1,
     removedWca: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "555bf",
@@ -225,7 +210,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: true,
     hidden: false,
     removedWca: false,
-    description: "",
     participants: 1,
   },
   {
@@ -239,7 +223,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: true,
     removedWca: false,
     hidden: false,
-    description: "",
     participants: 1,
   },
   ///////////////////////////////////////////////////////////////////
@@ -257,7 +240,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333_team_bld",
@@ -271,7 +253,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333_mirror_blocks",
@@ -285,7 +266,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "magic",
@@ -299,7 +279,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "mmagic",
@@ -313,7 +292,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333ft",
@@ -327,7 +305,6 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   ///////////////////////////////////////////////////////////////////
   // Extreme BLD
@@ -344,7 +321,6 @@ export const eventsStub: InsertEvent[] = [
     participants: 1,
     submissionsAllowed: true,
     hidden: false,
-    description: "",
   },
   {
     eventId: "666bf",
@@ -358,7 +334,6 @@ export const eventsStub: InsertEvent[] = [
     removedWca: false,
     submissionsAllowed: true,
     hidden: false,
-    description: "",
   },
   {
     eventId: "777bf",
@@ -372,7 +347,6 @@ export const eventsStub: InsertEvent[] = [
     removedWca: false,
     submissionsAllowed: true,
     hidden: false,
-    description: "",
   },
   ///////////////////////////////////////////////////////////////////
   // Miscellaneous
@@ -389,7 +363,6 @@ export const eventsStub: InsertEvent[] = [
     removedWca: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "gigaminx",
@@ -403,7 +376,6 @@ export const eventsStub: InsertEvent[] = [
     removedWca: false,
     submissionsAllowed: false,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333bf_2_person_relay",
@@ -417,7 +389,6 @@ export const eventsStub: InsertEvent[] = [
     removedWca: false,
     submissionsAllowed: true,
     hidden: false,
-    description: "",
   },
   {
     eventId: "333_oh_bld_team_relay",
@@ -431,6 +402,5 @@ export const eventsStub: InsertEvent[] = [
     hasMemo: false,
     submissionsAllowed: true,
     hidden: false,
-    description: "",
   },
 ];

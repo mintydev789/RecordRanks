@@ -1,6 +1,6 @@
 export const C = {
   cubingContestsHostname: "cubingcontests.com",
-  sourceCodeLink: "https://github.com/mintydev789/cubingcontests.com",
+  sourceCodeLink: "https://codeberg.org/mintydev/RecordRanks",
   discordServerLink: "https://discord.gg/7rRMQA8jnU", // this is hardcoded in .mdx
   fetchDebounceTimeout: 600, // the timeout in ms between doing repetitive fetch requests that need to be limited
   maxRounds: 4,
@@ -63,11 +63,26 @@ The results in these exports are available under the [CC Attribution-ShareAlike 
 
 ## Using the export files
 
-The CSV files can be used directly for putting together various statistics based on the data. They can also be imported using Supabase (e.g. for testing the website using real data in local development). The import process is as follows:
+The CSV files can be used directly for putting together various statistics based on the data. They can also be imported using Supabase (e.g. for testing the website using real data in local development). The import process for each table is as follows:
 
-1. Go to "Table Editor" and select schema \`${process.env.RR_DB_SCHEMA}\`.
-2. Click "Insert" -> "Import data from CSV".
-3. Deselect \`id\` column in "Configure import data" and click "Import data".
+1. Go to "SQL Editor" and run these queries to remove all entries from the table and temporarily remove the constraint on the \`id\` column:
+
+\`\`\`sql
+ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> DROP CONSTRAINT <table>_pkey;
+ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ALTER COLUMN id DROP IDENTITY IF EXISTS;
+\`\`\`
+
+2. Go to "Table Editor" and select schema \`${process.env.RR_DB_SCHEMA}\`.
+3. Click "Insert" -> "Import data from CSV" -> "Import data".
+4. Run these queries to add back the constraint for the \`id\` column:
+
+\`\`\`sql
+ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ADD CONSTRAINT <table>_pkey PRIMARY KEY (id);
+ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
+ALTER SEQUENCE ${process.env.RR_DB_SCHEMA}.<table>_id_seq RESTART WITH <ID of the last entry + 1>;
+\`\`\`
+
+Note that empty string values are represented as \`__EMPTY_STRING__\`, due to limitations with the CSV format. You can (and should) safely change those values to \`""\` (empty string).
 
 ## Attempt results
 

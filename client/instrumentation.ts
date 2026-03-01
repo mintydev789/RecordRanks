@@ -61,9 +61,10 @@ export const testUsers = [
   },
 ];
 
-// This is the scrypt password hash for the password "cc" (only used for testing in development)
+// This is the scrypt password hash for the password "cc" and BETTER_AUTH_SECRET = "secret_thats_long_enough_to_be_accepted_by_better_auth".
+// This is only used for testing locally during development.
 const hashForCc =
-  "a73adfb4df83466851a5c337a6bc738b:a580ce8e36188f210f2342998c46789d69ab69ebf35a6382d80ad11e8542ec62074b31789b09dc653daaf8e1ec69fb5c97c6f6244f7de80d03169e7572c0e514";
+  "d859ad30013cacccc94ce76301b6195a:9bf96ea34c749ec1d088f81b3827ed4027458fed99ee98949583e6ec0ad22e1743970f752638732cbb33addc3f0e887712304507e6caf040c57b7444d7cecd25";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {

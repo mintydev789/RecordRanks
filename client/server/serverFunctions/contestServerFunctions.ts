@@ -301,18 +301,15 @@ export const finishContestSF = actionClient
       if (!getUserHasAccessToContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (contest.state !== "ongoing") throw new RrActionError("Contest cannot be finished");
-      if (["meetup", "comp"].includes(contest.type) && contest.participants < C.minCompetitorsForNonWca)
+      if (["meetup", "comp"].includes(contest.type) && contest.participants < C.minCompetitorsForNonWca) {
         throw new RrActionError(
           `A meetup or unofficial competition may not have fewer than ${C.minCompetitorsForNonWca} competitors`,
         );
-
-      // Check there are no rounds with no results or subsequent rounds with fewer results than the minimum proceed number
-      const roundsPromise = db.query.rounds.findMany({ where: { competitionId } });
-      const resultsPromise = db.query.results.findMany({ where: { competitionId } });
+      }
 
       const [rounds, results, creatorUser, organizerUsers] = await Promise.all([
-        roundsPromise,
-        resultsPromise,
+        db.query.rounds.findMany({ where: { competitionId } }),
+        db.query.results.findMany({ where: { competitionId } }),
         contest.createdBy
           ? db.query.users.findFirst({ columns: { personId: true }, where: { id: contest.createdBy } })
           : undefined,

@@ -4,18 +4,18 @@ import { RecordCategoryValues } from "~/helpers/types";
 import { db } from "~/server/db/provider";
 import { getRankings } from "~/server/serverUtilityFunctions";
 
-const ParamsValidator = z.strictObject({
-  eventId: z.string().nonempty(),
-  singleOrAvg: z.enum(["single", "average"]),
-  category: z.enum([...RecordCategoryValues, "all"]),
-});
-
 export async function GET(
   req: NextRequest,
   { params }: RouteContext<"/api/results/rankings/[eventId]/[singleOrAvg]/[category]">,
 ) {
   const searchParams = req.nextUrl.searchParams;
-  const parsedParams = ParamsValidator.safeParse(await params);
+  const parsedParams = z
+    .strictObject({
+      eventId: z.string().nonempty(),
+      singleOrAvg: z.enum(["single", "average"]),
+      category: z.enum([...RecordCategoryValues, "all"]),
+    })
+    .safeParse(await params);
   if (!parsedParams.success) return new Response(`Validation error: ${parsedParams.error}`, { status: 400 });
   const { eventId, singleOrAvg, category: recordCategory } = parsedParams.data;
 

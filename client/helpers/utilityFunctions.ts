@@ -567,6 +567,8 @@ export function getRoundDate(round: RoundResponse, contest: Pick<SelectContest, 
 }
 
 export function generateCsv(data: any[]): string {
+  if (data.length === 0) return "";
+
   const headers = Object.keys(data[0]);
 
   const dataRows = data.map((item) =>
@@ -574,6 +576,7 @@ export function generateCsv(data: any[]): string {
       .map((key) => {
         let val: string;
         if (item[key] === null) val = "";
+        else if (item[key] === "") val = "__EMPTY_STRING__";
         else if (item[key] instanceof Date) val = item[key].toISOString();
         else if (typeof item[key] === "object") val = JSON.stringify(item[key]);
         else if (typeof item[key] === "boolean") val = String(item[key]).toUpperCase();
