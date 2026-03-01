@@ -415,14 +415,13 @@ export const createVideoBasedResultSF = actionClient
       const userCanApprove = await checkUserPermissions(user.id, { videoBasedResults: ["approve"] });
       await validateVideoBasedResult(newResultDto, { userCanApprove });
 
-      const eventPromise = db.query.events.findFirst({ where: { eventId: newResultDto.eventId } });
-      const personsPromise = db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } });
-      const recordConfigsPromise = getRecordConfigs("video-based-results");
-
-      const [event, participants, recordConfigs] = await Promise.all([
-        eventPromise,
-        personsPromise,
-        recordConfigsPromise,
+      const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
+        db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
+        db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
+        getRecordConfigs("video-based-results"),
+        user.personId
+          ? db.query.persons.findFirst({ columns: { name: true }, where: { id: user.personId } })
+          : undefined,
       ]);
 
       if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
@@ -461,7 +460,8 @@ export const createVideoBasedResultSF = actionClient
         return createdResult;
       });
 
-      if (!userCanApprove) sendVideoBasedResultSubmittedEmail(user.email, event, createdResult, user.username);
+      if (!userCanApprove)
+        sendVideoBasedResultSubmittedEmail(user.email, event, createdResult, user.username, creatorPerson?.name);
 
       return createdResult;
     },

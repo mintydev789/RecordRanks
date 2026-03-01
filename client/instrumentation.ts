@@ -29,7 +29,7 @@ export const testUsers = [
     email: "admin@example.com",
     username: "admin",
     name: "admin",
-    password: "Temporary_good_password123",
+    password: "Temporary_good_password123", // replaced with "rr" below
     personId: 1,
     role: "admin",
     emailVerified: true,
@@ -38,7 +38,7 @@ export const testUsers = [
     email: "mod@example.com",
     username: "mod",
     name: "mod",
-    password: "Temporary_good_password123",
+    password: "Temporary_good_password123", // replaced with "rr" below
     personId: 2,
     role: "mod",
     emailVerified: true,
@@ -47,7 +47,7 @@ export const testUsers = [
     email: "user@example.com",
     username: "user",
     name: "user",
-    password: "Temporary_good_password123",
+    password: "Temporary_good_password123", // replaced with "rr" below
     personId: 3,
     emailVerified: true,
   },
@@ -55,7 +55,7 @@ export const testUsers = [
     email: "new_user@example.com",
     username: "new_user",
     name: "new_user",
-    password: "Temporary_good_password123",
+    password: "Temporary_good_password123", // replaced with "rr" below
     personId: 4,
     emailVerified: false,
   },
@@ -63,12 +63,103 @@ export const testUsers = [
 
 // This is the scrypt password hash for the password "cc" and BETTER_AUTH_SECRET = "secret_thats_long_enough_to_be_accepted_by_better_auth".
 // This is only used for testing locally during development.
-const hashForCc =
+const hashForRr =
   "d859ad30013cacccc94ce76301b6195a:9bf96ea34c749ec1d088f81b3827ed4027458fed99ee98949583e6ec0ad22e1743970f752638732cbb33addc3f0e887712304507e6caf040c57b7444d7cecd25";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { db }: { db: typeof dbType } = await import("~/server/db/provider.ts");
+
+    // Seed record configs
+    if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
+      console.log("Seeding record configs...");
+
+      for (let i = 0; i < RecordTypeValues.length; i++) {
+        const recordTypeId = RecordTypeValues[i];
+
+        await db.insert(recordConfigsTable).values([
+          {
+            recordTypeId,
+            category: "competitions",
+            label: `X${recordTypeId}`,
+            rank: (i + 1) * 10,
+            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+          },
+          {
+            recordTypeId,
+            category: "meetups",
+            label: `M${recordTypeId}`,
+            rank: 100 + (i + 1) * 10,
+            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+          },
+          {
+            recordTypeId,
+            category: "video-based-results",
+            label: `${recordTypeId.slice(0, -1)}B`,
+            rank: 200 + (i + 1) * 10,
+            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+          },
+        ]);
+      }
+    }
+
+    // Seed test data
+    if (process.env.NODE_ENV !== "production") {
+      const { auth }: { auth: typeof authType } = await import("~/server/auth.ts");
+
+      if ((await db.select().from(personsTable)).length === 0) {
+        console.log("Seeding test persons...");
+
+        await db.insert(personsTable).values([
+          { name: "Test Admin", regionCode: "CH", approved: true },
+          { name: "Test Moderator", localizedName: "Localized Name", regionCode: "NR", approved: true },
+          { name: "Test User", regionCode: "SG", approved: true },
+          { name: "Test New User", regionCode: "UY", approved: true },
+          { name: "Test Person 5", regionCode: "SE" },
+          { name: "Test Person 6", regionCode: "GB" },
+          { name: "Test Person 7", regionCode: "US" },
+          { name: "Test Person 8", regionCode: "CA" },
+          { name: "Test Person 9", regionCode: "CN" },
+          { name: "Test Person 10", regionCode: "GB" },
+        ]);
+      }
+
+      for (const testUser of testUsers) {
+        const userExists =
+          (await db.select().from(usersTable).where(eq(usersTable.email, testUser.email)).limit(1)).length > 0;
+
+        if (!userExists) {
+          if (process.env.EMAIL_API_KEY) {
+            throw new Error(
+              "The EMAIL_API_KEY environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Remove it and comment out the sendVerificationEmail function in auth.ts, and then add them back after the DB has been seeded.",
+            );
+          }
+
+          const { role, emailVerified, ...body } = testUser;
+          await auth.api.signUpEmail({ body });
+
+          // Set emailVerified and personId
+          const [user] = await db
+            .update(usersTable)
+            .set({ emailVerified, personId: testUser.personId })
+            .where(eq(usersTable.email, testUser.email))
+            .returning();
+
+          await db.update(accountsTable).set({ password: hashForRr }).where(eq(accountsTable.userId, user.id));
+
+          // Set role
+          if (role) await db.update(usersTable).set({ role }).where(eq(usersTable.id, user.id));
+
+          console.log(`Seeded test user: ${testUser.username}`);
+        }
+      }
+
+      if ((await db.select().from(eventsTable)).length === 0) {
+        console.log("Seeding test events...");
+
+        await db.insert(eventsTable).values(eventsStub);
+      }
+    }
 
     if (process.env.DO_DB_CONSISTENCY_CHECKS === "true") {
       console.log("Checking for inconsistencies in the DB...");
@@ -140,297 +231,209 @@ export async function register() {
 
     const fs: typeof fsType = await import("node:fs");
     // const { writeFile }: { writeFile: typeof writeFileType } = await import("node:fs/promises");
-    const { auth }: { auth: typeof authType } = await import("~/server/auth.ts");
 
-    if (process.env.NODE_ENV !== "production") {
-      const _unoffEventIdConverter = {
-        "666": "666",
-        "777": "777",
-        rainb: "rainbow_cube",
-        skewb: "skewb",
-        "333si": "333_siamese",
-        snake: "snake",
-        mirbl: "333_mirror_blocks",
-        "360": "360_puzzle",
-        mstmo: "mmorphix",
-        illus: "777_illusion",
-        "333ni": "333_inspectionless",
-        "333r3": "333_x3_relay",
-        "333sbf": "333_speed_bld",
-        "3sc": "333mts_old",
-        "222oh": "222oh",
-        magico: "magic_oh",
-        "222bf": "222bf",
-        sq1bf: "sq1_bld",
-        mirbbf: "333_mirror_blocks_bld",
-        "234": "234relay",
-        magicc: "magic_chess",
-        magicb: "magic_balls",
-        magccc: "magic_create_cube",
-      };
+    const _unoffEventIdConverter = {
+      "666": "666",
+      "777": "777",
+      rainb: "rainbow_cube",
+      skewb: "skewb",
+      "333si": "333_siamese",
+      snake: "snake",
+      mirbl: "333_mirror_blocks",
+      "360": "360_puzzle",
+      mstmo: "mmorphix",
+      illus: "777_illusion",
+      "333ni": "333_inspectionless",
+      "333r3": "333_x3_relay",
+      "333sbf": "333_speed_bld",
+      "3sc": "333mts_old",
+      "222oh": "222oh",
+      magico: "magic_oh",
+      "222bf": "222bf",
+      sq1bf: "sq1_bld",
+      mirbbf: "333_mirror_blocks_bld",
+      "234": "234relay",
+      magicc: "magic_chess",
+      magicb: "magic_balls",
+      magccc: "magic_create_cube",
+    };
 
-      const _eeEventIdConverter = {
-        "113sia": "333_siamese",
-        "1mguild": "miniguild",
-        "222oh": "222oh",
-        "222pyra": "pyramorphix",
-        "223": "223_cuboid",
-        "2mguild": "miniguild_2_person",
-        "2to4relay": "234relay",
-        "2to7relay": "234567relay",
-        "332": "233_cuboid",
-        "333bets": "333_bets",
-        "333bfoh": "333bf_oh",
-        "333ft": "333ft",
-        "333omt": "333_oven_mitts",
-        "333rescr": "333mts",
-        "333scr": "333_scrambling",
-        "333ten": "333_x10_relay",
-        "3mguild": "miniguild_3_person",
-        "444ft": "444ft",
-        "444pyra": "mpyram",
-        "888": "888",
-        "999": "999",
-        clockscr: "clock_scrambling",
-        curvycopter: "curvycopter",
-        dino: "dino",
-        fifteen: "15puzzle",
-        fto: "fto",
-        ivy: "ivy_cube",
-        kilo: "kilominx",
-        mirror: "333_mirror_blocks",
-        mirrorbld: "333_mirror_blocks_bld",
-        redi: "redi",
-        teambld: "333_team_bld_old",
-      };
+    const _eeEventIdConverter = {
+      "113sia": "333_siamese",
+      "1mguild": "miniguild",
+      "222oh": "222oh",
+      "222pyra": "pyramorphix",
+      "223": "223_cuboid",
+      "2mguild": "miniguild_2_person",
+      "2to4relay": "234relay",
+      "2to7relay": "234567relay",
+      "332": "233_cuboid",
+      "333bets": "333_bets",
+      "333bfoh": "333bf_oh",
+      "333ft": "333ft",
+      "333omt": "333_oven_mitts",
+      "333rescr": "333mts",
+      "333scr": "333_scrambling",
+      "333ten": "333_x10_relay",
+      "3mguild": "miniguild_3_person",
+      "444ft": "444ft",
+      "444pyra": "mpyram",
+      "888": "888",
+      "999": "999",
+      clockscr: "clock_scrambling",
+      curvycopter: "curvycopter",
+      dino: "dino",
+      fifteen: "15puzzle",
+      fto: "fto",
+      ivy: "ivy_cube",
+      kilo: "kilominx",
+      mirror: "333_mirror_blocks",
+      mirrorbld: "333_mirror_blocks_bld",
+      redi: "redi",
+      teambld: "333_team_bld_old",
+    };
 
-      const doArchiveMigration = false;
-      if (doArchiveMigration) {
-        console.log("Doing archive migration...");
+    const doArchiveMigration = false;
+    if (doArchiveMigration) {
+      console.log("Doing archive migration...");
 
-        const eeCompetitionsDump = JSON.parse(fs.readFileSync("./dump/ee_competitions.json") as any) as any[];
-        const eeCountriesDump = JSON.parse(fs.readFileSync("./dump/ee_countries.json") as any) as any[];
-        const eeOrganizersDump = JSON.parse(fs.readFileSync("./dump/ee_organizers.json") as any) as any[];
+      const eeCompetitionsDump = JSON.parse(fs.readFileSync("./dump/ee_competitions.json") as any) as any[];
+      const eeCountriesDump = JSON.parse(fs.readFileSync("./dump/ee_countries.json") as any) as any[];
+      const eeOrganizersDump = JSON.parse(fs.readFileSync("./dump/ee_organizers.json") as any) as any[];
 
-        let reachedCheckpoint = false;
-        for (const eeComp of eeCompetitionsDump) {
-          if (!reachedCheckpoint) {
-            if (eeComp.id === "x") reachedCheckpoint = true;
-            else continue;
-          }
-          if (eeComp.status !== "completed") {
-            console.log(`EE competition ${eeComp.id} has status ${eeComp.status}, skipping...`);
-            continue;
-          }
-
-          const sameCompInCc = await db.query.contests.findFirst({ where: { competitionId: eeComp.id } });
-          if (sameCompInCc) console.log(`EE competition with ID ${eeComp.id} is already in the CC DB, checking...`);
-          else console.log(`New competition from EE DB: ${eeComp.id}`);
-          const eeCountry = eeCountriesDump.find((c) => c.id === eeComp.country_id);
-          if (!eeCountry || !Countries.some((c) => c.code === eeCountry.iso2))
-            throw new Error(`Unrecognized country code: ${eeComp.country_id}`);
-          const eeOrganizers = eeOrganizersDump.filter((o) => o.competition_id === eeComp.id);
-
-          await new Promise((res) => setTimeout(res, 1000));
-          const wcaCompData = await fetch(`${C.wcaApiBaseUrl}/competitions/${eeComp.id}`).then(async (res) => {
-            const notFoundMsg = `Competition with ID ${eeComp.id} not found`;
-            if (res.status === 404) throw new Error(notFoundMsg);
-            if (!res.ok) throw new Error(C.unknownErrorMsg);
-            const data = await res.json();
-            return WcaCompetitionValidator.parse(data);
-          });
-
-          const organizers: PersonResponse[] = [];
-          const organizersWcaInternalIds = new Set<number>();
-          const notFoundPersonNames = new Set();
-
-          // Set organizer objects
-          for (const org of [
-            ...wcaCompData.organizers,
-            ...wcaCompData.delegates,
-            ...eeOrganizers.map((o) => ({
-              id: o.person,
-              wca_id: o.person,
-              name: "EE person",
-              country_iso2: "EE person",
-            })),
-          ]) {
-            // It's possible that the same person is both a delegate and organizer
-            if (organizersWcaInternalIds.has(org.id)) continue;
-            organizersWcaInternalIds.add(org.id);
-            const { name } = getNameAndLocalizedName(org.name);
-
-            const person = org.wca_id
-              ? await db.query.persons.findFirst({ where: { wcaId: org.wca_id } })
-              : await db.query.persons.findFirst({ where: { name: { ilike: name }, regionCode: org.country_iso2 } });
-
-            if (!org.wca_id && person && person.name !== name)
-              console.log(`Assuming ${org.name} (no WCA ID) is ${name} from the CC DB`);
-
-            if (!person)
-              notFoundPersonNames.add(
-                `${org.name}${org.wca_id ? ` (WCA ID: ${org.wca_id})` : ` (country: ${org.country_iso2})`}`,
-              );
-            else if (!organizers.some((o) => o.id === person.id)) organizers.push(person);
-          }
-
-          if (notFoundPersonNames.size > 0) {
-            const notFoundNames = Array.from(notFoundPersonNames).join(", ");
-            console.error(`Organizers with these names were not found: ${notFoundNames}`);
-          }
-
-          const insertContestObject: InsertContest = {
-            competitionId: eeComp.id,
-            state: "published",
-            name: wcaCompData.name,
-            shortName: wcaCompData.short_name,
-            type: "wca-comp",
-            city: wcaCompData.city,
-            regionCode: wcaCompData.country_iso2,
-            venue: wcaCompData.venue.split("]")[0].replace("[", ""),
-            address: wcaCompData.venue_address,
-            latitudeMicrodegrees: wcaCompData.latitude_degrees,
-            longitudeMicrodegrees: wcaCompData.longitude_degrees,
-            startDate: new Date(wcaCompData.start_date),
-            endDate: new Date(wcaCompData.end_date),
-            organizerIds: organizers.map((o) => o.id),
-            contact: eeComp.contact,
-            description: "",
-            competitorLimit: wcaCompData.competitor_limit,
-            // schedule: ,
-            createdAt: new Date(eeComp.create_timestamp),
-            updatedAt: new Date(eeComp.update_timestamp),
-          };
-
-          if (eeCountry.iso2 !== insertContestObject.regionCode)
-            console.error(`Country field from ${eeComp.id} is wrong`);
-          if (eeComp.name !== insertContestObject.name) console.error(`Name field from ${eeComp.id} is wrong`);
-          if (eeComp.city !== insertContestObject.city) console.error(`City field from ${eeComp.id} is wrong`);
-          if (new Date(eeComp.start_date).getTime() !== insertContestObject.startDate.getTime())
-            console.error(`Start date field from ${eeComp.id} is wrong`);
-          if (new Date(eeComp.end_date).getTime() !== insertContestObject.endDate.getTime())
-            console.error(`End date field from ${eeComp.id} is wrong`);
-          const missingEeOrganizer = eeOrganizers.find((o) => !organizers.some((o2) => o2.wcaId === o.person));
-          if (missingEeOrganizer)
-            console.error(`EE organizer from ${eeComp.id} is missing: ${missingEeOrganizer.person}`);
-
-          if (sameCompInCc) {
-            if (sameCompInCc.state !== insertContestObject.state)
-              console.error(`State field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.name !== insertContestObject.name)
-              console.error(`Name field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.shortName !== insertContestObject.shortName)
-              console.error(`Short name field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.city !== insertContestObject.city)
-              console.error(`City field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.regionCode !== insertContestObject.regionCode)
-              console.error(`Country field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.venue !== insertContestObject.venue)
-              console.error(`Venue field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.address !== insertContestObject.address)
-              console.error(`Address field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.latitudeMicrodegrees !== insertContestObject.latitudeMicrodegrees)
-              console.error(`Latitude microdegrees field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.longitudeMicrodegrees !== insertContestObject.longitudeMicrodegrees)
-              console.error(`Longitude microdegrees field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.startDate.getTime() !== insertContestObject.startDate.getTime())
-              console.error(`Start date field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.endDate.getTime() !== insertContestObject.endDate.getTime())
-              console.error(`End date field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.organizerIds.join(",") !== insertContestObject.organizerIds.join(","))
-              console.error(`Organizer IDs field from ${eeComp.id} is wrong in CC DB`);
-            if (sameCompInCc.competitorLimit !== insertContestObject.competitorLimit)
-              console.error(`Competitor limit field from ${eeComp.id} is wrong in CC DB`);
-          }
+      let reachedCheckpoint = false;
+      for (const eeComp of eeCompetitionsDump) {
+        if (!reachedCheckpoint) {
+          if (eeComp.id === "x") reachedCheckpoint = true;
+          else continue;
+        }
+        if (eeComp.status !== "completed") {
+          console.log(`EE competition ${eeComp.id} has status ${eeComp.status}, skipping...`);
+          continue;
         }
 
-        console.log("Archive migration done");
-      }
+        const sameCompInCc = await db.query.contests.findFirst({ where: { competitionId: eeComp.id } });
+        if (sameCompInCc) console.log(`EE competition with ID ${eeComp.id} is already in the CC DB, checking...`);
+        else console.log(`New competition from EE DB: ${eeComp.id}`);
+        const eeCountry = eeCountriesDump.find((c) => c.id === eeComp.country_id);
+        if (!eeCountry || !Countries.some((c) => c.code === eeCountry.iso2))
+          throw new Error(`Unrecognized country code: ${eeComp.country_id}`);
+        const eeOrganizers = eeOrganizersDump.filter((o) => o.competition_id === eeComp.id);
 
-      if ((await db.select().from(personsTable)).length === 0) {
-        console.log("Seeding test persons...");
+        await new Promise((res) => setTimeout(res, 1000));
+        const wcaCompData = await fetch(`${C.wcaApiBaseUrl}/competitions/${eeComp.id}`).then(async (res) => {
+          const notFoundMsg = `Competition with ID ${eeComp.id} not found`;
+          if (res.status === 404) throw new Error(notFoundMsg);
+          if (!res.ok) throw new Error(C.unknownErrorMsg);
+          const data = await res.json();
+          return WcaCompetitionValidator.parse(data);
+        });
 
-        await db.insert(personsTable).values([
-          { name: "Test Admin", regionCode: "CH", approved: true },
-          { name: "Test Moderator", localizedName: "Localized Name", regionCode: "NR", approved: true },
-          { name: "Test User", regionCode: "SG", approved: true },
-          { name: "Test New User", regionCode: "UY", approved: true },
-          { name: "Test Person 5", regionCode: "SE" },
-          { name: "Test Person 6", regionCode: "GB" },
-          { name: "Test Person 7", regionCode: "US" },
-          { name: "Test Person 8", regionCode: "CA" },
-          { name: "Test Person 9", regionCode: "CN" },
-          { name: "Test Person 10", regionCode: "GB" },
-        ]);
-      }
+        const organizers: PersonResponse[] = [];
+        const organizersWcaInternalIds = new Set<number>();
+        const notFoundPersonNames = new Set();
 
-      for (const testUser of testUsers) {
-        const userExists =
-          (await db.select().from(usersTable).where(eq(usersTable.email, testUser.email)).limit(1)).length > 0;
+        // Set organizer objects
+        for (const org of [
+          ...wcaCompData.organizers,
+          ...wcaCompData.delegates,
+          ...eeOrganizers.map((o) => ({
+            id: o.person,
+            wca_id: o.person,
+            name: "EE person",
+            country_iso2: "EE person",
+          })),
+        ]) {
+          // It's possible that the same person is both a delegate and organizer
+          if (organizersWcaInternalIds.has(org.id)) continue;
+          organizersWcaInternalIds.add(org.id);
+          const { name } = getNameAndLocalizedName(org.name);
 
-        if (!userExists) {
-          if (process.env.EMAIL_API_KEY) {
-            throw new Error(
-              "The EMAIL_API_KEY environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Remove it and comment out the sendVerificationEmail function in auth.ts, and then add them back after the DB has been seeded.",
+          const person = org.wca_id
+            ? await db.query.persons.findFirst({ where: { wcaId: org.wca_id } })
+            : await db.query.persons.findFirst({ where: { name: { ilike: name }, regionCode: org.country_iso2 } });
+
+          if (!org.wca_id && person && person.name !== name)
+            console.log(`Assuming ${org.name} (no WCA ID) is ${name} from the CC DB`);
+
+          if (!person)
+            notFoundPersonNames.add(
+              `${org.name}${org.wca_id ? ` (WCA ID: ${org.wca_id})` : ` (country: ${org.country_iso2})`}`,
             );
-          }
+          else if (!organizers.some((o) => o.id === person.id)) organizers.push(person);
+        }
 
-          const { role, emailVerified, ...body } = testUser;
-          await auth.api.signUpEmail({ body });
+        if (notFoundPersonNames.size > 0) {
+          const notFoundNames = Array.from(notFoundPersonNames).join(", ");
+          console.error(`Organizers with these names were not found: ${notFoundNames}`);
+        }
 
-          // Set emailVerified and personId
-          const [user] = await db
-            .update(usersTable)
-            .set({ emailVerified, personId: testUser.personId })
-            .where(eq(usersTable.email, testUser.email))
-            .returning();
+        const insertContestObject: InsertContest = {
+          competitionId: eeComp.id,
+          state: "published",
+          name: wcaCompData.name,
+          shortName: wcaCompData.short_name,
+          type: "wca-comp",
+          city: wcaCompData.city,
+          regionCode: wcaCompData.country_iso2,
+          venue: wcaCompData.venue.split("]")[0].replace("[", ""),
+          address: wcaCompData.venue_address,
+          latitudeMicrodegrees: wcaCompData.latitude_degrees,
+          longitudeMicrodegrees: wcaCompData.longitude_degrees,
+          startDate: new Date(wcaCompData.start_date),
+          endDate: new Date(wcaCompData.end_date),
+          organizerIds: organizers.map((o) => o.id),
+          contact: eeComp.contact,
+          description: "",
+          competitorLimit: wcaCompData.competitor_limit,
+          // schedule: ,
+          createdAt: new Date(eeComp.create_timestamp),
+          updatedAt: new Date(eeComp.update_timestamp),
+        };
 
-          await db.update(accountsTable).set({ password: hashForCc }).where(eq(accountsTable.userId, user.id));
+        if (eeCountry.iso2 !== insertContestObject.regionCode)
+          console.error(`Country field from ${eeComp.id} is wrong`);
+        if (eeComp.name !== insertContestObject.name) console.error(`Name field from ${eeComp.id} is wrong`);
+        if (eeComp.city !== insertContestObject.city) console.error(`City field from ${eeComp.id} is wrong`);
+        if (new Date(eeComp.start_date).getTime() !== insertContestObject.startDate.getTime())
+          console.error(`Start date field from ${eeComp.id} is wrong`);
+        if (new Date(eeComp.end_date).getTime() !== insertContestObject.endDate.getTime())
+          console.error(`End date field from ${eeComp.id} is wrong`);
+        const missingEeOrganizer = eeOrganizers.find((o) => !organizers.some((o2) => o2.wcaId === o.person));
+        if (missingEeOrganizer)
+          console.error(`EE organizer from ${eeComp.id} is missing: ${missingEeOrganizer.person}`);
 
-          // Set role
-          if (role) await db.update(usersTable).set({ role }).where(eq(usersTable.id, user.id));
-
-          console.log(`Seeded test user: ${testUser.username}`);
+        if (sameCompInCc) {
+          if (sameCompInCc.state !== insertContestObject.state)
+            console.error(`State field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.name !== insertContestObject.name)
+            console.error(`Name field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.shortName !== insertContestObject.shortName)
+            console.error(`Short name field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.city !== insertContestObject.city)
+            console.error(`City field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.regionCode !== insertContestObject.regionCode)
+            console.error(`Country field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.venue !== insertContestObject.venue)
+            console.error(`Venue field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.address !== insertContestObject.address)
+            console.error(`Address field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.latitudeMicrodegrees !== insertContestObject.latitudeMicrodegrees)
+            console.error(`Latitude microdegrees field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.longitudeMicrodegrees !== insertContestObject.longitudeMicrodegrees)
+            console.error(`Longitude microdegrees field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.startDate.getTime() !== insertContestObject.startDate.getTime())
+            console.error(`Start date field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.endDate.getTime() !== insertContestObject.endDate.getTime())
+            console.error(`End date field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.organizerIds.join(",") !== insertContestObject.organizerIds.join(","))
+            console.error(`Organizer IDs field from ${eeComp.id} is wrong in CC DB`);
+          if (sameCompInCc.competitorLimit !== insertContestObject.competitorLimit)
+            console.error(`Competitor limit field from ${eeComp.id} is wrong in CC DB`);
         }
       }
 
-      if ((await db.select().from(eventsTable)).length === 0) {
-        console.log("Seeding test events...");
-
-        await db.insert(eventsTable).values(eventsStub);
-      }
-    } // END OF if (process.env.NODE_ENV !== "production")
-
-    if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
-      console.log("Seeding record configs...");
-
-      for (let i = 0; i < RecordTypeValues.length; i++) {
-        const recordTypeId = RecordTypeValues[i];
-
-        await db.insert(recordConfigsTable).values([
-          {
-            recordTypeId,
-            category: "competitions",
-            label: `X${recordTypeId}`,
-            rank: (i + 1) * 10,
-            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-          },
-          {
-            recordTypeId,
-            category: "meetups",
-            label: `M${recordTypeId}`,
-            rank: 100 + (i + 1) * 10,
-            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-          },
-          {
-            recordTypeId,
-            category: "video-based-results",
-            label: `${recordTypeId.slice(0, -1)}B`,
-            rank: 200 + (i + 1) * 10,
-            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-          },
-        ]);
-      }
+      console.log("Archive migration done");
     }
 
     // const doSetResultRecords = false
@@ -603,7 +606,5 @@ export async function register() {
     //     }
     //   });
     // }
-
-    console.log("DB seeded successfully");
   }
 }

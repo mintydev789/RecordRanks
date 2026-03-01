@@ -125,70 +125,32 @@ There are several custom scripts located in the `bin` directory. These should be
 
 ## Development
 
-**WIP**
+This project uses Next JS as a full-stack web application and self-hosted Supabase for various backend tools: DB, storage, logging, cron, etc. To set up the development environment, install Node, PNPM and Docker, and then follow these steps:
 
-<!--
-This project uses Next JS for the frontend, Hono for the backend, and Mongo DB as the database. To set up the development environment, install Deno, Node & NPM (won't be required once the legacy Nest JS backend is fully migrated to Hono) and Docker, clone this repository, and then run this command from the root of the project:
+1. Create a `.env` file: `cp .env.example .env` (skip this step if you already have a `.env` file; **DO NOT** use the example `.env` in production!)
+2. Start Supabase: `docker compose -f docker-compose.supabase.yml up -d`
+3. `cd client`
+4. Install dependencies: `pnpm install` (skip this step if `package.json5` hasn't changed since last time)
+5. Run DB migrations: `pnpm db:migrate` (skip this step if there are no new migrations since last time)
+6. Start Next JS: `pnpm dev` (automatically copies the `.env` file to `client/.env.local`)
 
-```sh
-./bin/start-dev.sh
-```
+This repo uses Biome for formatting and linting. If you intend to contribute code to this repo, please install the Biome extension for your IDE and set it up as your default formatter.
 
-That is the script you can always run when developing Cubing Contests. It starts the Next JS frontend [c], Hono backend [s], legacy Nest JS backend [l], and database [d] in parallel using concurrently (the [c/s/l/d] prefix indicates where the logs are coming from). This script also checks that you have the Nest JS CLI installed globally (with NPM), sets up the .env files, and installs the NPM packages in both the `client` and the `server` directories.
+Go to `localhost:3000` to see the website. Go to `localhost:8000` to open Supabase Studio. The default username is `supabase` and the password is `rr` (you can see this in the `.env` file). The default ports can be overridden in the `.env` file.
 
-The code in this repo has been formatted with `deno format`. It would be best for you to use this too while developing for this repo. You can install the Deno VS Code extension, set up Deno as your default formatter, and set it up to format on save (or whatever behavior you prefer).
-
-Keep in mind that when Handlebars files (the `.hbs` files used for the email templates) are edited, the dev environment has to be restarted for those changes to take effect.
-
-Go to `localhost:4000` to see the website. Go to `localhost:8081` to open Mongo Express (makes it much easier to work with the database). The username is `admin` and the password is `cc`. `localhost:5000` is used by the legacy Nest JS backend, and `localhost:8000` is used by the Hono backend. The default ports can be overridden in the environment variables (see below).
+To stop Supabase, run `docker compose -f docker-compose.supabase.yml down`.
 
 ### Mock data
 
-If your DB is empty, the backend will fill the events collection with official WCA events, some unofficial events, including the removed WCA events, some Extreme BLD events, and some miscellaneous events.
+If your DB is empty, the backend will fill the events table with the data from `eventsStub.ts`. It will also seed some test users (you can see the details in `instrumentation.ts` -> `testUsers`) and some test persons.
 
-It will also create an admin user with the username `admin`, a moderator with the username `mod`, and a regular user with no additional privileges with the username `user`. The password for all of these is `rr`. Several mock competitors will also be created, and each
+### Accessing DB container directly
 
-### Environment variables
-
-Environment variables are specified in `.env` in the root of the project, and are automatically sourced by Docker. Simply copy the `.env.example` file, rename it to `.env` (which is not tracked by git in this repo), and change the values of the variables. This works the same way in production and in development.
-
-TO-DO
-
-[link description](https://nextjs.org/docs/app/building-your-application/configuring/environment-variables)
-MOVE THE EXPLANATIONS FROM .env.production HERE
-
-**Keep in mind that the `TZ` environment variable is crucial for date processing (i.e. validating dates, schedules, etc.). The time zone being set to UTC on the backend simplifies some of the date-related code (Note: all dates are stored in UTC in the DB). Code running in the browser does not have this benefit and must account for the user's local time zone, since the Javascript Date object does not.**
-
-In development the `server/.env.dev` file is used for environment variables; it is automatically read by Nest JS. The `start-dev.sh` script copies `.env` to `server/.env.dev` automatically. In production this file is ignored, and the container's environment variables (coming from the `.env` file) are used instead.
-
-Frontend environment variables are specified in the `client/.env.[environment]` file. This file is automatically read by Next JS. See that file for more details. Some of the environment variables must be set during the container's build process as build arguments.
-
-### Starting all containers
-
-To start all containers locally, including the frontend, the backend and the database, run this command:
+To access the DB container with admin privileges directly, use this command (make sure to use the values from `.env`):
 
 ```sh
-./script/start-prod.sh --dev # -d also works
-```
-
-To clean up everything, run this command:
-
-```sh
-./script/start-prod.sh --dev --cleanup
-```
-
-# NOTES (TODO: CLEAN THIS UP!!!!!!!!!!!)
-
-Logging into DB with admin privileges locally:
-
 docker exec -it supabase-db psql postgresql://supabase_admin:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}
--->
-
-<!--
-## User roles
-
-## Record configuration
--->
+```
 
 ## API endpoints
 

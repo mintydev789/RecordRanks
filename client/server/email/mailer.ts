@@ -30,6 +30,7 @@ const from = {
   name: "No Reply",
   email: `no-reply@${process.env.PROD_HOSTNAME}`,
 };
+const adminEmail = { email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! };
 const contestsEmail = {
   name: "Contests",
   email: `contests@${process.env.PROD_HOSTNAME}`,
@@ -179,15 +180,27 @@ export function sendContestSubmittedEmail(recipients: string[], contest: SelectC
       urgent,
     },
     callback: async (html) => {
-      await client.send({
-        from,
-        reply_to: { email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! },
-        to: recipients.map((r) => ({ email: r })),
-        bcc: [{ email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! }],
-        subject: `${urgent ? "Urgent: " : ""}Contest submitted: ${contest.shortName}`,
-        html,
-        // priority: urgent ? "high" : "normal",
-      });
+      const subject = `${urgent ? "Urgent: " : ""}Contest submitted: ${contest.shortName}`;
+
+      if (recipients.length > 0) {
+        await client.send({
+          from,
+          reply_to: adminEmail,
+          to: recipients.map((r) => ({ email: r })),
+          bcc: [adminEmail],
+          subject,
+          html,
+          // priority: urgent ? "high" : "normal",
+        });
+      } else {
+        await client.send({
+          from,
+          to: [adminEmail],
+          subject,
+          html,
+          // priority: urgent ? "high" : "normal",
+        });
+      }
     },
   });
 }
@@ -231,14 +244,25 @@ export function sendContestFinishedEmail(
       isUnofficialCompetition: contest.type === "comp",
     },
     callback: async (html) => {
-      await client.send({
-        from: contestsEmail,
-        reply_to: { email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! },
-        to: recipients.map((r) => ({ email: r })),
-        bcc: [{ email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! }],
-        subject: `Contest finished: ${contest.shortName}`,
-        html,
-      });
+      const subject = `Contest finished: ${contest.shortName}`;
+
+      if (recipients.length > 0) {
+        await client.send({
+          from: contestsEmail,
+          reply_to: adminEmail,
+          to: recipients.map((r) => ({ email: r })),
+          bcc: [adminEmail],
+          subject,
+          html,
+        });
+      } else {
+        await client.send({
+          from: contestsEmail,
+          to: [adminEmail],
+          subject,
+          html,
+        });
+      }
     },
   });
 }
@@ -269,6 +293,7 @@ export function sendVideoBasedResultSubmittedEmail(
   event: SelectEvent,
   result: ResultResponse,
   creatorUsername: string,
+  creatorName: string | undefined,
 ) {
   send({
     templateFileName: "video-based-result-submitted.hbs",
@@ -287,13 +312,14 @@ export function sendVideoBasedResultSubmittedEmail(
       videoLink: result.videoLink!,
       discussionLink: result.discussionLink ?? "",
       creatorUsername,
+      creatorName: creatorName ?? "",
     },
     callback: async (html) => {
       await client.send({
         from: resultsEmail,
-        reply_to: { email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! },
+        reply_to: adminEmail,
         to: [{ email: to }],
-        bcc: [{ email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! }],
+        bcc: [adminEmail],
         subject: `Result submitted: ${event.name}`,
         html,
       });
@@ -310,7 +336,12 @@ export function sendVideoBasedResultApprovedEmail(to: string, event: SelectEvent
       eventName: event.name,
     },
     callback: async (html) => {
-      await client.send({ from: resultsEmail, to: [{ email: to }], subject: `Result approved`, html });
+      await client.send({
+        from: resultsEmail,
+        to: [{ email: to }],
+        subject: `Result approved`,
+        html,
+      });
     },
   });
 }

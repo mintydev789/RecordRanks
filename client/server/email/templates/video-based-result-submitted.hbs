@@ -8,7 +8,12 @@
   <body>
     <p>A new video-based {{eventName}} result has been submitted and is pending approval by the admin team.</p>
 
-    <p>Created by: {{creatorUsername}}</p>
+    <p>
+      Created by: {{creatorUsername}}
+      {{#if creatorName}}
+        ({{creatorName}})
+      {{/if}}
+    </p>
     <p>Format: {{roundFormat}}</p>
     <p>Best: {{best}}</p>
     {{#if average}}
