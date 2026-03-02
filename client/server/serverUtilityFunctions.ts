@@ -495,15 +495,20 @@ export async function approvePersons(
   tx: DbTransactionType,
   personsToBeApproved: Pick<SelectPerson, "id" | "name" | "regionCode" | "wcaId">[],
 ) {
+  const matchedPersonWcaIds: { name: string; wcaId: string }[] = [];
+
   for (const person of personsToBeApproved) {
     if (!person.wcaId) {
       const matchedPersonWcaId = await getPersonExactMatchWcaId(person);
-      if (matchedPersonWcaId) {
-        throw new RrActionError(
-          `${person.name} has an exact name and country match with the WCA competitor with WCA ID ${matchedPersonWcaId}. Resolve this manually on the manage competitors page and try again.`,
-        );
-      }
+      if (matchedPersonWcaId) matchedPersonWcaIds.push({ name: person.name, wcaId: matchedPersonWcaId });
     }
+  }
+
+  if (matchedPersonWcaIds.length > 0) {
+    const matchesSummary = matchedPersonWcaIds
+      .map((p) => `${p.name} has an exact name and country match with the WCA competitor with WCA ID ${p.wcaId}.`)
+      .join("\n");
+    throw new RrActionError(`${matchesSummary}\nResolve this manually on the manage competitors page and try again.`);
   }
 
   await tx
@@ -522,6 +527,7 @@ export async function getPersonExactMatchWcaId(
   ignoredWcaMatches: string[] = [],
 ): Promise<string | null> {
   const res = await fetch(`${C.wcaV0ApiBaseUrl}/search/users?persons_table=true&q=${person.name}`);
+
   if (res.ok) {
     const { result: wcaPersons } = await res.json();
 
