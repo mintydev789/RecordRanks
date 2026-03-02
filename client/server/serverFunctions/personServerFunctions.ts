@@ -80,7 +80,7 @@ export const getOrCreatePersonSF = actionClient
   });
 
 export const getOrCreatePersonByWcaIdSF = actionClient
-  .metadata({ permissions: { persons: ["create"] } })
+  .metadata({ permissions: null })
   .inputSchema(
     z.strictObject({
       wcaId: WcaIdValidator,
