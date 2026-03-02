@@ -501,7 +501,7 @@ function ContestForm({
         isLoading={isCreating || isUpdating}
         disableControls={isPending || disabled || disabledIfContestPublished || disabledIfNotUnderstood}
       >
-        {mode === "edit" && <CreatorDetails creator={creator} person={creatorPerson} />}
+        {mode === "edit" && isAdmin && <CreatorDetails creator={creator} person={creatorPerson} />}
 
         <Tabs
           tabs={tabs}

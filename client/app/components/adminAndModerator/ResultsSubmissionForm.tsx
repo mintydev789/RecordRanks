@@ -38,7 +38,7 @@ const allowedRoundFormats: RoundFormatObject[] = roundFormats.filter((rf) => rf.
 type Props = {
   events: EventResponse[];
   recordConfigs: RecordConfigResponse[];
-  result?: SelectResult; // only defined when editing an existing result
+  result?: SelectResult; // only defined when editing an existing result (assumes elevated privileges)
   participants?: PersonResponse[];
   creator?: Creator | undefined;
   creatorPerson?: PersonResponse;
