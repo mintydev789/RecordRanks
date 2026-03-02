@@ -19,6 +19,7 @@ import {
   getBestAndAverage,
   getDefaultAverageAttempts,
   getFormattedTime,
+  getIsAdmin,
   getMakesCutoff,
   getRoundDate,
 } from "~/helpers/utilityFunctions.ts";
@@ -180,6 +181,7 @@ export const createContestResultSF = actionClient
 
       if (
         !process.env.VITEST &&
+        !getIsAdmin(user.role) &&
         (newResult.regionalSingleRecord || newResult.regionalAverageRecord) &&
         differenceInDays(new Date(), newResult.date) > 30
       ) {
@@ -267,6 +269,7 @@ export const updateContestResultSF = actionClient
 
       if (
         !process.env.VITEST &&
+        !getIsAdmin(user.role) &&
         (result.regionalSingleRecord ||
           result.regionalAverageRecord ||
           newResult.regionalSingleRecord ||
@@ -335,6 +338,7 @@ export const deleteContestResultSF = actionClient
 
       if (
         !process.env.VITEST &&
+        !getIsAdmin(user.role) &&
         (result.regionalSingleRecord || result.regionalAverageRecord) &&
         differenceInDays(new Date(), result.date) > 30
       ) {

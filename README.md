@@ -22,7 +22,7 @@ Below are some screenshots from one of the RecordRanks instances: [Cubing Contes
 
 <img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_7.jpg" width="500"/>
 
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_8.jpg"/>
+<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_8.jpg" width="500"/>
 
 ## Deployment
 

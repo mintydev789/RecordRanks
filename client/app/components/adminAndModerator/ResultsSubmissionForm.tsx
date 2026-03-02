@@ -230,6 +230,9 @@ function ResultsSubmissionForm({
           </p>
         ) : (
           <>
+            <div className="alert alert-warning mb-4" role="alert">
+              The error with users being restricted from submitting results has been fixed!
+            </div>
             <p>
               Here you can submit results for events that allow submissions. You may submit other people's results too.
               New results will be included in the rankings after an admin approves them. A result can only be accepted
