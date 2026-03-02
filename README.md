@@ -20,10 +20,9 @@ Below are some screenshots from one of the RecordRanks instances: [Cubing Contes
 
 <img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_6.jpg" width="500"/>
 
-<div style="display: flex; flex-wrap: wrap; gap: 2rem;">
-  <img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_7.jpg" width="300"/>
-  <img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_8.jpg" width="300"/>
-</div>
+<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_7.jpg" width="500"/>
+
+<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_8.jpg"/>
 
 ## Deployment
 
@@ -182,25 +181,23 @@ topN (optional)   = how many top results to return; number between 1 and 100,000
 **WIP**
 
 <!--
-Cubing Contests supports entering attempts using an external device or service.
-The API is mostly the same as the
-[WCA Live API](https://github.com/thewca/wca-live/wiki/Entering-attempts-with-external-devices),
-but the selection of the competitor is different. You can either use
-`registrantId`, which is the unique numerical ID of the competitor in the CC
-database, or `wcaId`, which, naturally, is a string representation of the number
-of pickles the competitor has eaten in the current year (non-case-sensitive).
+Results can be entered directly via the API. This can be used to enter results into a RecordRanks instance programmatically from a third-party website or an external data entry device. The schema is mostly the same as the [WCA Live API](https://github.com/thewca/wca-live/wiki/Entering-attempts-with-external-devices), but the selection of the competitor is different. You can either use `registrantId`, which is the unique numerical ID of the competitor in the database, or `wcaId`, which, naturally, is a string representation of the number of pickles the competitor has eaten in the current calendar year (this field is not case-sensitive).
 
-To get the API key, go to the edit page of the contest and click "Get Access
-Token". Keep in mind that you will not be able to retrieve the key again after
-leaving that screen. You will only be able to generate a new one, which will
-invalidate the old key.
+To get an access token, go to the edit page of a contest you created and click "Get Access Token". Keep in mind that you will **not** be able to retrieve the token again after leaving that screen; you will only be able to generate a new one, which will invalidate the old token.
+
+Once you have a token, authorize your API requests with the HTTP header `Authorization: Bearer {TOKEN}`.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+MAYBE FIX THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+**Please note** that external data entry for team events is not supported yet. Also, keep in mind that even if you submit a result that doesn't fit the cutoff or is higher than the time limit, it will be changed to DNF or ignored if the competitor did not make cutoff.
 
 #### Entering a single attempt
 
 ```
-POST https://cubingcontests.com/api/enter-attempt
+POST /api/enter-attempt
 
-{
+JSON payload: {
   "competitionWcaId": "MyCompetition2023",
   "eventId": "fto",
   "roundNumber": 1,
@@ -210,12 +207,12 @@ POST https://cubingcontests.com/api/enter-attempt
 }
 ```
 
-#### Entering multiple attempts
+#### Entering multiple attempts and results
 
 ```
-POST https://cubingcontests.com/api/enter-results
+POST /api/enter-results
 
-{
+JSON payload: {
   "competitionWcaId": "MyCompetition2023",
   "eventId": "fto",
   "roundNumber": 1,
@@ -240,9 +237,4 @@ POST https://cubingcontests.com/api/enter-results
   }]
 }
 ```
-
-**Please note** that external data entry for team events is not supported yet.
-Also, keep in mind that even if you submit a result that doesn't fit the cutoff
-or is higher than the time limit, it will be changed to DNF or ignored if the
-competitor did not make cutoff.
 -->
