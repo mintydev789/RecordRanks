@@ -113,6 +113,7 @@ export const updateEventSF = actionClient
           hidden: newEventDto.hidden,
           description: newEventDto.description,
           rule: newEventDto.rule,
+          importantInfo: newEventDto.importantInfo,
         })
         .where(eq(table.eventId, originalEventId))
         .returning();

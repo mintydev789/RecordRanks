@@ -82,7 +82,6 @@ function DataEntryScreen({
   const [personNames, setPersonNames] = useState(new Array(currEvent.participants).fill(""));
   const [attempts, setAttempts] = useState<Attempt[]>(new Array(roundFormat.attempts).fill({ result: 0 }));
   const [persons, setPersons] = useState<PersonResponse[]>(initPersons);
-  // const [queuePosition, setQueuePosition] = useState(contest.queuePosition);
   const [loadingId, setLoadingId] = useState("");
 
   const roundOptions = useMemo<MultiChoiceOption[]>(
@@ -362,35 +361,6 @@ function DataEntryScreen({
                 Submit Mock Result
               </Button>
             )}
-            {/* {contest.queuePosition !== null && false && (
-              <>
-                <p className="mt-4 mb-2">Current position in queue:</p>
-                <div className="d-flex gap-3 align-items-center">
-                  <Button
-                    onClick={() => updateQueuePosition("decrement")}
-                    disabled={isPending}
-                    className="btn-success btn-xs"
-                    title="Decrement"
-                    ariaLabel="Decrement queue position"
-                  >
-                    <FontAwesomeIcon icon={faMinus} />
-                  </Button>
-                  <p className="fs-5 fw-bold mb-0">{queuePosition}</p>
-                  <Button
-                    onClick={() => updateQueuePosition("increment")}
-                    disabled={isPending}
-                    className="btn-success btn-xs"
-                    title="Increment"
-                    ariaLabel="Increment queue position"
-                  >
-                    <FontAwesomeIcon icon={faPlus} />
-                  </Button>
-                  <Button onClick={() => updateQueuePosition("reset")} disabled={isPending} className="btn-xs">
-                    Reset
-                  </Button>
-                </div>
-              </>
-            )} */}
           </div>
         </div>
 

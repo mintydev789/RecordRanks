@@ -63,3 +63,8 @@ export type EventWrPair = {
   best?: number;
   average?: number;
 };
+
+export type GetOrCreatePersonObject = {
+  person: PersonResponse;
+  isNew: boolean;
+};

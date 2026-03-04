@@ -14,7 +14,7 @@ export const collectiveSolutionsTable = rrSchema.table("collective_solutions", {
   state: collectiveSolutionStateEnum().default("ongoing").notNull(),
   scramble: text().notNull(),
   solution: text().default("").notNull(),
-  lastUserWhoInteracted: text().references(() => usersTable.id, { onDelete: "set null" }), // this can be null if the user has been deleted
+  lastUserWhoInteractedId: text().references(() => usersTable.id, { onDelete: "set null" }), // this can be null if the user has been deleted
   usersWhoMadeMoves: text().array().notNull(),
   ...tableTimestamps,
 });
@@ -22,7 +22,7 @@ export const collectiveSolutionsTable = rrSchema.table("collective_solutions", {
 export type SelectCollectiveSolution = typeof collectiveSolutionsTable.$inferSelect;
 
 const {
-  lastUserWhoInteracted: _,
+  lastUserWhoInteractedId: _,
   usersWhoMadeMoves: _1,
   createdAt: _2,
   updatedAt: _3,

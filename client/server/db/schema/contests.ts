@@ -36,7 +36,6 @@ export const contestsTable = rrSchema.table(
     description: text().notNull(),
     competitorLimit: integer(),
     participants: integer().default(0).notNull(),
-    queuePosition: integer(),
     schedule: jsonb().$type<Schedule>(), // not used for meetups
     createdBy: text().references(() => usersTable.id, { onDelete: "set null" }), // this can be null if the user has been deleted
     ...tableTimestamps,
@@ -61,11 +60,10 @@ export type InsertContest = typeof contestsTable.$inferInsert;
 export type SelectContest = typeof contestsTable.$inferSelect;
 
 const {
-  queuePosition: _,
-  schedule: _1, // technically not a private column, but it's not needed most of the time
-  createdBy: _2,
-  createdAt: _3,
-  updatedAt: _4,
+  schedule: _, // technically not a private column, but it's not needed most of the time
+  createdBy: _1,
+  createdAt: _2,
+  updatedAt: _3,
   ...contestsPublicCols
 } = getColumns(contestsTable);
 export { contestsPublicCols };

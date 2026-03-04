@@ -8,12 +8,25 @@ import { Continents, Countries } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Ranking, RecordsData } from "~/helpers/types/Rankings.ts";
-import { type RecordCategory, RecordCategoryValues, type RecordType, RecordTypeValues } from "~/helpers/types.ts";
-import { compareAvgs, compareSingles, getIsAdmin, getResultProceeds } from "~/helpers/utilityFunctions.ts";
+import {
+  type GetOrCreatePersonObject,
+  type RecordCategory,
+  RecordCategoryValues,
+  type RecordType,
+  RecordTypeValues,
+} from "~/helpers/types.ts";
+import {
+  compareAvgs,
+  compareSingles,
+  fetchWcaPerson,
+  getIsAdmin,
+  getResultProceeds,
+} from "~/helpers/utilityFunctions.ts";
+import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { type ContestResponse, contestsTable } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable, type SelectEvent } from "~/server/db/schema/events.ts";
-import { type PersonResponse, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
+import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { type ResultResponse, resultsTable, type SelectResult } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
@@ -546,5 +559,58 @@ export async function getPersonExactMatchWcaId(
     return null;
   } else {
     throw new RrActionError("Error while fetching person matches from the WCA");
+  }
+}
+
+export async function getOrCreatePersonByWcaId(
+  wcaId: string,
+  { creatorUserId, createdExternally = false }: { creatorUserId: string; createdExternally?: boolean },
+): Promise<GetOrCreatePersonObject> {
+  const [person] = await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.wcaId, wcaId)).limit(1);
+  if (person) return { person, isNew: false };
+
+  const wcaPerson = await fetchWcaPerson(wcaId);
+  if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found in the WCA API`);
+
+  logMessage("RR0019", `Creating person with name ${wcaPerson.name} and WCA ID ${wcaId} (directly via WCA ID)`);
+
+  const [createdPerson] = await db
+    .insert(personsTable)
+    .values({ ...wcaPerson, createdBy: creatorUserId, createdExternally })
+    .returning(personsPublicCols);
+
+  return { person: createdPerson, isNew: true };
+}
+
+export async function getPersonsForExternalDeviceDataEntry(
+  { registrantId, wcaId }: Pick<EnterAttemptPayloadDto, "registrantId" | "wcaId">,
+  creatorUserId: string,
+): Promise<PersonResponse[]> {
+  if (wcaId) {
+    const wcaIds = wcaId.split(",");
+    const persons: PersonResponse[] = [];
+
+    for (const wid of wcaIds) {
+      const { person } = await getOrCreatePersonByWcaId(wid.toUpperCase(), { creatorUserId, createdExternally: true });
+      persons.push(person);
+    }
+
+    return persons;
+  } else if (typeof registrantId === "number") {
+    const person = await db.query.persons.findFirst({ where: { id: registrantId } });
+    if (!person) throw new Error(`Person with ID ${registrantId} not found`);
+    return [person];
+  } else {
+    const personIds = registrantId!.split(",").map((part) => parseInt(part, 10));
+    const persons = await db.query.persons.findMany({ where: { id: { in: personIds } } });
+
+    const personsInPreservedOrder: PersonResponse[] = [];
+    for (const pid of personIds) {
+      const person = persons.find((p) => p.id === pid);
+      if (!person) throw new Error(`Person with ID ${pid} not found`);
+      personsInPreservedOrder.push(person);
+    }
+
+    return personsInPreservedOrder;
   }
 }

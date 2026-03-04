@@ -24,6 +24,7 @@ export const eventsTable = rrSchema.table("events", {
   hidden: boolean().notNull(),
   description: text(),
   rule: text(),
+  importantInfo: text(),
   ...tableTimestamps,
 });
 

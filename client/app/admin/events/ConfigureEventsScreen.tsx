@@ -51,6 +51,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
   const [hidden, setHidden] = useState(false);
   const [description, setDescription] = useState("");
   const [rule, setRule] = useState("");
+  const [importantInfo, setImportantInfo] = useState("");
 
   const isPending = isCreating || isUpdating;
 
@@ -74,6 +75,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
         hidden,
         description: description || null,
         rule: rule || null,
+        importantInfo: importantInfo || null,
       } satisfies EventDto;
 
       const res =
@@ -115,6 +117,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
     setHidden(false);
     setDescription("");
     setRule("");
+    setImportantInfo("");
   };
 
   const onEditEvent = (event: SelectEvent, clone = false) => {
@@ -137,6 +140,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
     setHidden(event.hidden);
     setDescription(event.description ?? "");
     setRule(event.rule ?? "");
+    setImportantInfo(event.importantInfo ?? "");
   };
 
   const cancel = () => {
@@ -263,6 +267,17 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
             rows={5}
             disabled={isPending}
           />
+          <FormTextArea
+            title="Important information (optional)"
+            value={importantInfo}
+            setValue={setImportantInfo}
+            rows={4}
+            disabled={isPending}
+          />
+          <p className="fs-6">
+            This will be displayed whenever a user selects this event for a contest to make sure they're familiar with
+            this information.
+          </p>
         </Form>
       )}
 

@@ -181,16 +181,11 @@ topN (optional)   = how many top results to return; number between 1 and 100,000
 **WIP**
 
 <!--
-Results can be entered directly via the API. This can be used to enter results into a RecordRanks instance programmatically from a third-party website or an external data entry device. The schema is mostly the same as the [WCA Live API](https://github.com/thewca/wca-live/wiki/Entering-attempts-with-external-devices), but the selection of the competitor is different. You can either use `registrantId`, which is the unique numerical ID of the competitor in the database, or `wcaId`, which, naturally, is a string representation of the number of pickles the competitor has eaten in the current calendar year (this field is not case-sensitive).
+Results can be entered directly via the API. This can be used to enter results into a RecordRanks instance programmatically from a third-party website or an external data entry device. The schema is mostly the same as the [WCA Live API](https://github.com/thewca/wca-live/wiki/Entering-attempts-with-external-devices), but the selection of the competitor is different. You can either use `registrantId`, which is the unique numerical ID of the competitor in the database, or `wcaId`, which, naturally, is a string representation of the number of pickles the competitor has eaten in the current calendar year (this field is not case-sensitive). For team events `registrantId` should be provided as a string containing comma-separated integers; `wcaId` should be provided as a string containing comma-separated WCA IDs. The order of the competitors for both options is significant.
 
-To get an access token, go to the edit page of a contest you created and click "Get Access Token". Keep in mind that you will **not** be able to retrieve the token again after leaving that screen; you will only be able to generate a new one, which will invalidate the old token.
+To get an access token, go to the edit page of a contest you created and click "Get Access Token". Keep in mind that you will **not** be able to retrieve the token again after leaving that screen; you will only be able to generate a new one. All access tokens remain valid until the contest is finished or deleted.
 
 Once you have a token, authorize your API requests with the HTTP header `Authorization: Bearer {TOKEN}`.
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-MAYBE FIX THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-**Please note** that external data entry for team events is not supported yet. Also, keep in mind that even if you submit a result that doesn't fit the cutoff or is higher than the time limit, it will be changed to DNF or ignored if the competitor did not make cutoff.
 
 #### Entering a single attempt
 
@@ -198,10 +193,12 @@ MAYBE FIX THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 POST /api/enter-attempt
 
 JSON payload: {
-  "competitionWcaId": "MyCompetition2023",
+  "competitionId": "MyCompetition2023",
   "eventId": "fto",
   "roundNumber": 1,
-  "registrantId": 5, // or "wcaId": "2005DEMO01"
+  // Use one of these two options
+  "registrantId": 5, // or "registrantId": "5,24,19" for a team event
+  // "wcaId": "2005DEMO01", // or "wcaId": "2005DEMO01,2005DEMO02" for a team event
   "attemptNumber": 1,
   "attemptResult": 1025
 }
@@ -213,11 +210,11 @@ JSON payload: {
 POST /api/enter-results
 
 JSON payload: {
-  "competitionWcaId": "MyCompetition2023",
+  "competitionId": "MyCompetition2023",
   "eventId": "fto",
   "roundNumber": 1,
   "results": [{
-    "registrantId": 5,
+    "registrantId": 5, // multiple IDs may be provided for team events, like in /enter-attempt
     "attempts": [
       { "result": 1025 },
       { "result": 1100 },
@@ -226,7 +223,7 @@ JSON payload: {
       { "result": 905 }
     ]
   }, {
-    "wcaId": "2005DEMO01",
+    "wcaId": "2005DEMO01", // multiple WCA IDs may be provided for team events, like in /enter-attempt
     "attempts": [
       { "result": 1305 },
       { "result": 1170 },

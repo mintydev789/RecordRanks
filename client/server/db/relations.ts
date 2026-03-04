@@ -1,5 +1,6 @@
 import "server-only";
 import { defineRelations } from "drizzle-orm";
+import { accessTokensTable as accessTokens } from "~/server/db/schema/access-tokens.ts";
 import {
   accountsTable as accounts,
   sessionsTable as sessions,
@@ -22,6 +23,7 @@ export const relations = defineRelations(
     verifications,
     events,
     contests,
+    accessTokens,
     rounds,
     results,
     persons,
@@ -29,7 +31,7 @@ export const relations = defineRelations(
     collectiveSolutions,
   },
   (r) => ({
-    // Auth relations
+    // Better Auth relations
     users: {
       sessions: r.many.sessions(),
       accounts: r.many.accounts(),
@@ -52,14 +54,33 @@ export const relations = defineRelations(
         optional: false,
       }),
     },
+    verifications: {},
 
-    // CC relations
+    // RecordRanks relations
+    events: {},
     contests: {
       rounds: r.many.rounds(),
+      // Relevant issue: https://github.com/drizzle-team/drizzle-orm/issues/4988
       // organizers: r.many.persons({
       //   from: r.contests.organizerIds,
       //   to: r.persons.id,
       // }),
+      accessToken: r.one.accessTokens(),
+      creator: r.one.users({
+        from: r.contests.createdBy,
+        to: r.users.id,
+      }),
+    },
+    accessTokens: {
+      contest: r.one.contests({
+        from: r.accessTokens.competitionId,
+        to: r.contests.competitionId,
+        optional: false,
+      }),
+      creator: r.one.users({
+        from: r.accessTokens.createdBy,
+        to: r.users.id,
+      }),
     },
     rounds: {
       contest: r.one.contests({
@@ -95,6 +116,19 @@ export const relations = defineRelations(
       }),
       creator: r.one.users({
         from: r.results.createdBy,
+        to: r.users.id,
+      }),
+    },
+    persons: {
+      creator: r.one.users({
+        from: r.persons.createdBy,
+        to: r.users.id,
+      }),
+    },
+    recordConfigs: {},
+    collectiveSolutions: {
+      lastUserWhoInteracted: r.one.users({
+        from: r.collectiveSolutions.lastUserWhoInteractedId,
         to: r.users.id,
       }),
     },

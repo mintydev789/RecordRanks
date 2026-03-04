@@ -3,7 +3,7 @@
 import { useContext, useEffect } from "react";
 import { MainContext } from "~/helpers/contexts.ts";
 
-const ToastMessages = () => {
+function ToastMessages() {
   const { errorMessages, successMessage } = useContext(MainContext);
 
   useEffect(() => {
@@ -30,11 +30,16 @@ const ToastMessages = () => {
 
   if (successMessage) {
     return (
-      <div id="success_message" className="alert alert-success fs-5 mb-3" role="alert">
+      <div
+        id="success_message"
+        className="alert alert-success fs-5 mb-3"
+        style={{ whiteSpace: "pre-wrap" }}
+        role="alert"
+      >
         {successMessage}
       </div>
     );
   }
-};
+}
 
 export default ToastMessages;

@@ -6,7 +6,7 @@
 // import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 // import { MainContext } from "~/helpers/contexts.ts";
 
-const DebugPage = () => {
+function DebugPage() {
   //   const { resetMessages } = useContext(MainContext);
 
   //   const [debugInputValue, setDebugInputValue] = useState("");
@@ -71,6 +71,6 @@ const DebugPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default DebugPage;

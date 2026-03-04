@@ -9,7 +9,12 @@ const horizontalPadding = 10;
 const tipOffset = 20;
 const tooltipOffset = tipOffset + 12;
 
-const Tooltip = ({ id, text }: { id: string; text: string }) => {
+type Props = {
+  id: string;
+  text: string;
+};
+
+function Tooltip({ id, text }: Props) {
   const [isBelowTarget, setIsBelowTarget] = useState(true);
 
   useEffect(() => {
@@ -98,6 +103,6 @@ const Tooltip = ({ id, text }: { id: string; text: string }) => {
       <FontAwesomeIcon icon={faQuestionCircle} className="fs-6 m-1 text-secondary-emphasis" />
     </div>
   );
-};
+}
 
 export default Tooltip;

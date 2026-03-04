@@ -82,6 +82,10 @@ export type LogCode =
   | "RR0032" // send password changed email
   | "RR0033" // update user
   | "RR0034" // delete user
+  | "RR0035" // send user deletion verification email
+  | "RR0036" // send user deleted email
+  // Access Tokens
+  | "RR0037" // create access token
 
   // Error codes
   | "RR5000" // error

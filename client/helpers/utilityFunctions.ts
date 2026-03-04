@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { differenceInDays, isSameDay, isSameMonth, isSameYear, startOfDay } from "date-fns";
 import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 import snakeCase from "lodash/snakeCase";
@@ -7,6 +8,7 @@ import z from "zod";
 import { C } from "~/helpers/constants.ts";
 import type { InputPerson } from "~/helpers/types.ts";
 import { WcaPersonValidator } from "~/helpers/validators/wca/WcaPerson.ts";
+import type { SelectAccessToken } from "~/server/db/schema/access-tokens.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
@@ -589,4 +591,21 @@ export function generateCsv(data: any[]): string {
   );
 
   return [headers.map((key) => snakeCase(key)).join(","), ...dataRows].join("\n");
+}
+
+export function hashAccessToken(token: string, salt: string): string {
+  const keyLength = 64;
+  return crypto.scryptSync(token, salt, keyLength).toString("hex");
+}
+
+export function verifyAccessToken(token: string, contestAccessTokens: SelectAccessToken[]): boolean {
+  for (const accessToken of contestAccessTokens) {
+    const [salt, expectedHash] = accessToken.tokenHash.split(":");
+    const receivedHash = hashAccessToken(token, salt);
+    if (receivedHash === expectedHash) {
+      return true;
+    }
+  }
+
+  return false;
 }

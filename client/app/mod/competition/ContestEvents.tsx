@@ -9,6 +9,7 @@ import FormNumberInput from "~/app/components/form/FormNumberInput.tsx";
 import FormRadio from "~/app/components/form/FormRadio.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
 import Button from "~/app/components/UI/Button.tsx";
+import EventImportantInfo from "~/app/mod/competition/EventImportantInfo";
 import { C } from "~/helpers/constants.ts";
 import { cutoffAttemptsOptions, roundProceedOptions } from "~/helpers/multipleChoiceOptions.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
@@ -73,6 +74,8 @@ function ContestEvents({
 
   const [newEventId, setNewEventId] = useState(remainingEvents[0].eventId);
 
+  const newEvent = events.find((e) => e.eventId === newEventId)!;
+
   const getNewRound = (event: EventResponse, roundNumber: number): RoundDto => ({
     competitionId,
     eventId: event.eventId,
@@ -88,9 +91,7 @@ function ContestEvents({
   });
 
   const addContestEvent = () => {
-    const event = events.find((e) => e.eventId === newEventId)!;
-
-    setRounds([...rounds, getNewRound(event, 1)].sort((a, b) => a.roundNumber - b.roundNumber));
+    setRounds([...rounds, getNewRound(newEvent, 1)].sort((a, b) => a.roundNumber - b.roundNumber));
 
     if (remainingEvents.length > 1) {
       const newId = remainingEvents.find((e) => e.eventId !== newEventId)!.eventId;
@@ -216,15 +217,6 @@ function ContestEvents({
 
   return (
     <section>
-      <p className="fs-6 fw-bold fst-italic mb-3 text-danger">
-        Make sure{" "}
-        <a href="https://www.worldcubeassociation.org/regulations/full/#9m" target="_blank" rel="noopener">
-          Regulation 9m
-        </a>{" "}
-        is followed, when opening subsequent rounds. Not having enough competitors will make you unable to open up the
-        next round. In such cases all subsequent rounds must be cancelled and removed.
-      </p>
-
       <p className="mb-4">
         Total events: {contestEvents.length} | Total rounds: {rounds.length}
       </p>
@@ -244,6 +236,8 @@ function ContestEvents({
           />
         </div>
       </div>
+      <EventImportantInfo importantInfo={newEvent.importantInfo} className="mb-4" />
+
       {contestEvents.map((ce) => (
         <div key={ce.event.eventId} className="mb-3 rounded border bg-body-tertiary px-4 py-3">
           <div className="d-flex justify-content-between mb-3 flex-wrap gap-3 align-items-center">
@@ -257,6 +251,9 @@ function ContestEvents({
               </Button>
             )}
           </div>
+
+          <EventImportantInfo importantInfo={ce.event.importantInfo} className="mb-3" />
+
           {ce.rounds.map((round) => {
             const totalRoundResults = totalResultsByRound?.find((el) => el.roundId === round.id)?.totalResults ?? 0;
 
@@ -375,6 +372,7 @@ function ContestEvents({
               </div>
             );
           })}
+
           <div className="d-flex gap-3">
             {ce.rounds.length < C.maxRounds && (
               <Button
@@ -396,6 +394,21 @@ function ContestEvents({
               </Button>
             )}
           </div>
+
+          {ce.rounds.length > 1 && (
+            <p className="fs-6 fw-bold fst-italic mt-4 text-danger">
+              Make sure{" "}
+              <a
+                href="https://www.worldcubeassociation.org/regulations/full/#9m"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Regulation 9m
+              </a>{" "}
+              is followed when opening subsequent rounds. Not having enough competitors will result in the subsequent
+              round being cancelled.
+            </p>
+          )}
         </div>
       ))}
     </section>

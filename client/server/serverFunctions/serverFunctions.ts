@@ -136,7 +136,7 @@ export const startNewCollectiveCubingSolutionSF = actionClient
         .values({
           eventId,
           scramble: scramble.toString(),
-          lastUserWhoInteracted: session.user.id,
+          lastUserWhoInteractedId: session.user.id,
           usersWhoMadeMoves: [],
         })
         .returning(collectiveSolutionsPublicCols);
@@ -176,7 +176,7 @@ export const makeCollectiveCubingMoveSF = actionClient
         throw new RrActionError("The puzzle is already solved", { data: { isSolved: true } });
       }
 
-      if (user.id === ongoingSolution.lastUserWhoInteracted) {
+      if (user.id === ongoingSolution.lastUserWhoInteractedId) {
         throw new RrActionError(
           ongoingSolution.solution
             ? "You may not make two moves in a row"
@@ -196,7 +196,7 @@ export const makeCollectiveCubingMoveSF = actionClient
         .set({
           state,
           solution: solution.toString(),
-          lastUserWhoInteracted: user.id,
+          lastUserWhoInteractedId: user.id,
           usersWhoMadeMoves: !ongoingSolution.usersWhoMadeMoves.includes(user.id)
             ? [...ongoingSolution.usersWhoMadeMoves, user.id]
             : ongoingSolution.usersWhoMadeMoves,

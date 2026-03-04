@@ -28,7 +28,7 @@ import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import type { Room, Schedule } from "~/helpers/types/Schedule.ts";
-import type { ContestType, Creator, InputPerson, PageSize } from "~/helpers/types.ts";
+import type { ContestType, Creator, InputPerson } from "~/helpers/types.ts";
 import {
   getActionError,
   getContestIdFromName,
@@ -46,6 +46,7 @@ import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import {
+  createAccessTokenSF,
   createContestSF,
   deleteContestSF,
   getTimeZoneFromCoordsSF,
@@ -84,7 +85,7 @@ function ContestForm({
   session,
 }: Props) {
   const router = useRouter();
-  const { changeErrorMessages, resetMessages } = useContext(MainContext);
+  const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
   const { executeAsync: getPersonById, isPending: isGettingPerson } = useAction(getPersonByIdSF);
   const { executeAsync: getOrCreatePersonByWcaId, isPending: isGettingOrCreatingWcaPerson } =
@@ -95,9 +96,9 @@ function ContestForm({
   const { executeAsync: updateContest, isPending: isUpdating } = useAction(updateContestSF);
   const { executeAsync: unfinishContest, isPending: isUnfinishing } = useAction(unfinishContestSF);
   const { executeAsync: deleteContest, isPending: isDeleting } = useAction(deleteContestSF);
+  const { executeAsync: createAccessToken, isPending: isCreatingAccessToken } = useAction(createAccessTokenSF);
   const [activeTab, setActiveTab] = useState("details");
   const [detailsImported, setDetailsImported] = useState(mode === "edit" && contest?.type === "wca-comp");
-  // const [queueEnabled, setQueueEnabled] = useState(contest?.queuePosition !== undefined);
 
   const [competitionId, setCompetitionId] = useState(contest?.competitionId ?? "");
   const [isPendingWcaCompDetails, startWcaCompDetailsTransition] = useTransition();
@@ -177,7 +178,8 @@ function ContestForm({
     isPendingTimeZone ||
     isPendingWcaCompDetails ||
     isGettingOrCreatingWcaPerson ||
-    isGettingOrCreatingPerson;
+    isGettingOrCreatingPerson ||
+    isCreatingAccessToken;
   const disabled = !type || (type === "wca-comp" && !detailsImported);
   const disabledIfContestApproved: boolean = mode === "edit" && !!contest && contest.state !== "created";
   const disabledIfContestPublished: boolean = mode === "edit" && !!contest && contest.state === "published";
@@ -461,36 +463,11 @@ function ContestForm({
     }
   };
 
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: this is temporary
-  const downloadScorecards = (pageSize: PageSize) => {
-    throw new Error("NOT IMPLEMENTED");
-    // myFetch.get(`/scorecards/${contest?.competitionId}?pageSize=${pageSize}`, {
-    //   authorize: true,
-    //   fileName: `${contest?.competitionId}_Scorecards.pdf`,
-    //   loadingId: `download_scorecards_${pageSize.toLowerCase()}_button`,
-    // });
-  };
+  const getAccessToken = async () => {
+    const res = await createAccessToken({ competitionId: contest!.competitionId });
 
-  // const enableQueue = async () => {
-  //   const res = await myFetch.patch(
-  //     `/competitions/queue-reset/${contest!.competitionId}`,
-  //     {},
-  //     { loadingId: "enable_queue_button" },
-  //   );
-
-  //   if (res.success) setQueueEnabled(true);
-  // };
-
-  const createAuthToken = async () => {
-    throw new Error("NOT IMPLEMENTED");
-    // const res = await myFetch.get(`/create-auth-token/${contest?.competitionId}`, {
-    //   authorize: true,
-    //   loadingId: "get_access_token_button",
-    // });
-
-    // if (res.success) {
-    //   changeSuccessMessage(`Your new access token is ${res.data}`);
-    // }
+    if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+    else changeSuccessMessage(`Your new access token is ${res.data}. Make sure to save it before leaving this page.`);
   };
 
   return (
@@ -577,34 +554,14 @@ function ContestForm({
                   )}
                   <Button
                     id="download_scorecards_a4_button"
-                    onClick={() => downloadScorecards("A4")}
-                    // loadingId={loadingId}
-                    // disabled={isPending || contest.state === "created"}
+                    onClick={() => alert("This feature is not currently supported")}
                     disabled
                     className="btn-success"
                   >
-                    Scorecards (A4)
-                  </Button>
-                  <Button
-                    id="download_scorecards_a6_button"
-                    onClick={() => downloadScorecards("A6")}
-                    // loadingId={loadingId}
-                    // disabled={isPending || contest.state === "created"}
-                    disabled
-                    className="btn-success"
-                  >
-                    Scorecards (A6)
+                    Scorecards
                   </Button>
                   <div className="d-flex gap-1 align-items-center">
-                    <Button
-                      id="enable_queue_button"
-                      // onClick={enableQueue}
-                      // loadingId={loadingId}
-                      // disabled={isPending || !["approved", "ongoing"].includes(contest.state) || queueEnabled}
-                      disabled
-                      className="btn-secondary"
-                    >
-                      {/* {queueEnabled ? "Queue Enabled" : "Enable Queue"} */}
+                    <Button id="enable_queue_button" disabled className="btn-secondary">
                       Enable Queue
                     </Button>
                     <Tooltip
@@ -614,18 +571,16 @@ function ContestForm({
                   </div>
                   <div className="d-flex gap-1 align-items-center">
                     <Button
-                      id="get_access_token_button"
-                      onClick={createAuthToken}
-                      // loadingId={loadingId}
-                      // disabled={isPending || !["approved", "ongoing"].includes(contest.state)}
-                      disabled
+                      onClick={getAccessToken}
+                      isLoading={isCreatingAccessToken}
+                      disabled={isPending || !["approved", "ongoing"].includes(contest.state)}
                       className="btn-secondary"
                     >
                       Get Access Token
                     </Button>
                     <Tooltip
                       id="access_token_tooltip"
-                      text="(TEMPORARILY DISABLED) Used for external data entry (e.g. using a paperless scoretaking system or a third-party tool)"
+                      text="Used for external data entry (e.g. using a digital scoretaking system or a third-party tool)"
                     />
                   </div>
                 </div>

@@ -137,12 +137,6 @@ async function ContestDetailsPage({ params }: Props) {
                 <div style={{ overflowX: "auto" }}>
                   <Markdown>{contest.description}</Markdown>
                 </div>
-                {/* TO-DO!!!!!!!!!!!!!!!!!!! */}
-                {/* {contest.queuePosition && (
-                  <p className="mt-5">
-                    Current position in queue: <b>{contest.queuePosition}</b>
-                  </p>
-                )} */}
               </>
             )}
           </div>

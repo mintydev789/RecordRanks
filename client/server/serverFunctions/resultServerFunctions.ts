@@ -105,18 +105,12 @@ export const createContestResultSF = actionClient
         `Creating contest result for contest ${competitionId}, event ${eventId}, round ${roundId} and persons ${personIds.join(", ")}: ${JSON.stringify(newResultDto.attempts)}`,
       );
 
-      const contestPromise = db.query.contests.findFirst({ where: { competitionId } });
-      const eventPromise = db.query.events.findFirst({ where: { eventId } });
-      const roundsPromise = db.query.rounds.findMany({ where: { competitionId, eventId } });
-      const roundResultsPromise = db.query.results.findMany({ where: { roundId }, orderBy: { ranking: "asc" } });
-      const personsPromise = db.query.persons.findMany({ where: { id: { in: personIds } } });
-
       const [contest, event, rounds, roundResults, participants] = await Promise.all([
-        contestPromise,
-        eventPromise,
-        roundsPromise,
-        roundResultsPromise,
-        personsPromise,
+        db.query.contests.findFirst({ where: { competitionId } }),
+        db.query.events.findFirst({ where: { eventId } }),
+        db.query.rounds.findMany({ where: { competitionId, eventId } }),
+        db.query.results.findMany({ where: { roundId }, orderBy: { ranking: "asc" } }),
+        db.query.persons.findMany({ where: { id: { in: personIds } } }),
       ]);
       const round = rounds.find((r) => r.id === roundId);
 
@@ -229,19 +223,11 @@ export const updateContestResultSF = actionClient
 
       logMessage("RR0014", `Updating result with ID ${id} (new attempts: ${JSON.stringify(newAttempts)})`);
 
-      const contestPromise = db.query.contests.findFirst({ where: { competitionId: result.competitionId! } });
-      const eventPromise = db.query.events.findFirst({ where: { eventId: result.eventId } });
-      const roundPromise = db.query.rounds.findFirst({ where: { id: result.roundId! } });
-      const roundResultsPromise = db.query.results.findMany({
-        where: { roundId: result.roundId! },
-        orderBy: { ranking: "asc" },
-      });
-
       const [contest, event, round, roundResults] = await Promise.all([
-        contestPromise,
-        eventPromise,
-        roundPromise,
-        roundResultsPromise,
+        db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
+        db.query.events.findFirst({ where: { eventId: result.eventId } }),
+        db.query.rounds.findFirst({ where: { id: result.roundId! } }),
+        db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
       ]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);

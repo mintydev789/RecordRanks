@@ -15,17 +15,20 @@ source .env
 sudo docker pull "$DOCKER_IMAGE_NAME"
 
 if [ "$1" != "--restart" ] && [ "$1" != "-r" ]; then
+  # First start
+
   cd client &&
   pnpm run db:migrate &&
   cd .. &&
 
   sudo docker compose -f docker-compose.rr.yml up -d
 else
+  # Restart
+  
   sudo apt update &&
   sudo apt dist-upgrade &&
 
-  # TO-DO: MAKE DUMPS WORK AGAIN (use Supabase cron)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  # ./bin/dump-db.sh /dump
+  ./bin/create-full-backup.sh
 
   sudo docker stop rr-nextjs &&
   sudo docker exec -w /etc/caddy rr-caddy caddy reload &&

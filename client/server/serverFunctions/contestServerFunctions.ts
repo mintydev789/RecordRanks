@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "node:crypto";
 import { endOfDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { and, arrayContains, desc, eq, inArray } from "drizzle-orm";
@@ -13,11 +14,13 @@ import {
   getMaxAllowedRounds,
   getNameAndLocalizedName,
   getResultProceeds,
+  hashAccessToken,
 } from "~/helpers/utilityFunctions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";
 import type { auth } from "~/server/auth.ts";
+import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
@@ -349,12 +352,11 @@ export const finishContestSF = actionClient
 
       // If there are no issues, finish the contest and close all rounds
       await db.transaction(async (tx) => {
-        await tx
-          .update(table)
-          .set({ state: "finished", queuePosition: null })
-          .where(eq(table.competitionId, competitionId));
+        await tx.update(table).set({ state: "finished" }).where(eq(table.competitionId, competitionId));
 
         await tx.update(roundsTable).set({ open: false }).where(eq(roundsTable.competitionId, competitionId));
+
+        await tx.delete(accessTokensTable).where(eq(accessTokensTable.competitionId, competitionId));
       });
 
       const creatorPerson = creatorUser
@@ -598,7 +600,6 @@ export const deleteContestSF = actionClient
         state: true,
         type: true,
         participants: true,
-        queuePosition: true,
         schedule: true,
         createdBy: true,
       },
@@ -608,20 +609,19 @@ export const deleteContestSF = actionClient
     if (contest.participants > 0) throw new RrActionError("You may not remove a contest that has results");
 
     await db.transaction(async (tx) => {
+      await tx.delete(accessTokensTable).where(eq(accessTokensTable.competitionId, competitionId));
+
       const newCompetitionId = `${competitionId}_REMOVED`;
 
       await tx
         .update(table)
-        .set({ state: "removed", competitionId: newCompetitionId, queuePosition: null })
+        .set({ state: "removed", competitionId: newCompetitionId })
         .where(eq(table.competitionId, competitionId));
 
       await tx
         .update(roundsTable)
         .set({ competitionId: newCompetitionId, open: false })
         .where(eq(roundsTable.competitionId, competitionId));
-
-      // This was part of the old Nest JS API
-      // await this.authService.deleteAuthTokens(competitionId);
     });
 
     const creatorUser = await db.query.users.findFirst({ columns: { email: true }, where: { id: contest.createdBy! } });
@@ -645,17 +645,17 @@ export const openRoundSF = actionClient
     }) => {
       logMessage("RR0012", `Opening next round for event ${eventId} (contest ${competitionId})`);
 
-      const contestPromise = db.query.contests.findFirst({
-        columns: { state: true, organizerIds: true },
-        where: { competitionId },
-      });
-      const roundsPromise = db.query.rounds.findMany({
-        where: { competitionId, eventId },
-        orderBy: { roundNumber: "asc" },
-      });
-      const resultsPromise = db.query.results.findMany({ where: { competitionId, eventId } });
-
-      const [contest, rounds, results] = await Promise.all([contestPromise, roundsPromise, resultsPromise]);
+      const [contest, rounds, results] = await Promise.all([
+        db.query.contests.findFirst({
+          columns: { state: true, organizerIds: true },
+          where: { competitionId },
+        }),
+        db.query.rounds.findMany({
+          where: { competitionId, eventId },
+          orderBy: { roundNumber: "asc" },
+        }),
+        db.query.results.findMany({ where: { competitionId, eventId } }),
+      ]);
       const prevOpenRound = rounds.find((r) => r.open === true);
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
@@ -678,6 +678,45 @@ export const openRoundSF = actionClient
       });
 
       return openedRound;
+    },
+  );
+
+export const createAccessTokenSF = actionClient
+  .metadata({ permissions: { competitions: ["update"], meetups: ["update"] } })
+  .inputSchema(
+    z.strictObject({
+      competitionId: z.string().nonempty(),
+    }),
+  )
+  .action<string>(
+    async ({
+      parsedInput: { competitionId },
+      ctx: {
+        session: { user },
+      },
+    }) => {
+      logMessage("RR0037", `Creating access token for contest with ID ${competitionId}`);
+
+      const contest = await db.query.contests.findFirst({
+        columns: { competitionId: true, state: true, organizerIds: true, createdBy: true },
+        where: { competitionId },
+      });
+
+      if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
+      if (!getUserHasAccessToContest(user, contest))
+        throw new RrActionError("You do not have access rights for this contest");
+      if (user.id !== contest.createdBy && !getIsAdmin(user.role))
+        throw new RrActionError("Only the creator of the contest can generate access tokens");
+      if (contest.state === "created")
+        throw new RrActionError("You may not create an access token for a contest that hasn't been approved yet");
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const salt = crypto.randomBytes(16).toString("hex");
+      const hash = hashAccessToken(token, salt);
+
+      await db.insert(accessTokensTable).values({ tokenHash: `${salt}:${hash}`, competitionId, createdBy: user.id });
+
+      return token;
     },
   );
 

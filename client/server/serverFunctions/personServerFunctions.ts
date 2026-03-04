@@ -4,6 +4,7 @@ import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { CountryCodes } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
+import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
 import { fetchWcaPerson, getIsAdmin, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
@@ -15,12 +16,12 @@ import {
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { checkUserPermissions, getPersonExactMatchWcaId, logMessage } from "../serverUtilityFunctions.ts";
-
-type GetOrCreatePersonObject = {
-  person: PersonResponse;
-  isNew: boolean;
-};
+import {
+  checkUserPermissions,
+  getOrCreatePersonByWcaId,
+  getPersonExactMatchWcaId,
+  logMessage,
+} from "../serverUtilityFunctions.ts";
 
 export const getPersonByIdSF = actionClient
   .metadata({ permissions: null })
@@ -86,17 +87,8 @@ export const getOrCreatePersonByWcaIdSF = actionClient
       wcaId: WcaIdValidator,
     }),
   )
-  .action<GetOrCreatePersonObject>(async ({ parsedInput: { wcaId } }) => {
-    const [person] = await db.select(personsPublicCols).from(table).where(eq(table.wcaId, wcaId)).limit(1);
-    if (person) return { person, isNew: false };
-
-    const wcaPerson = await fetchWcaPerson(wcaId);
-    if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found`);
-
-    const res = await createPersonSF({ newPersonDto: wcaPerson });
-    if (!res.data) throw new Error(res.serverError?.message || C.unknownErrorMsg);
-
-    return { person: res.data, isNew: true };
+  .action<GetOrCreatePersonObject>(async ({ parsedInput: { wcaId }, ctx: { session } }) => {
+    return await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id });
   });
 
 export const createPersonSF = actionClient
@@ -123,7 +115,6 @@ export const createPersonSF = actionClient
 
       await validatePerson(newPersonDto, { ignoreDuplicate, isAdmin: getIsAdmin(user.role) });
 
-      // TO-DO: ADD SUPPORT FOR EXTERNAL DATA ENTRY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       const query = db.insert(table).values({ ...newPersonDto, createdBy: user.id });
       const [createdPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
       return createdPerson;

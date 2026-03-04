@@ -1,6 +1,3 @@
 {
-  "recommendations": [
-    "biomejs.biome",
-    "denoland.vscode-deno" // used for Supabase/Deno edge functions
-  ]
+  "recommendations": ["biomejs.biome"]
 }

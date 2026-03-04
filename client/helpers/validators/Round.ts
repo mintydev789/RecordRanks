@@ -1,5 +1,6 @@
 import z from "zod";
 import { RoundFormatValues, RoundProceedValues, RoundTypeValues } from "~/helpers/types.ts";
+import { RoundNumberValidator } from "~/helpers/validators/Validators.ts";
 import { C } from "../constants.ts";
 
 export const RoundValidator = z
@@ -7,7 +8,7 @@ export const RoundValidator = z
     id: z.int().optional(), // not needed when creating new round
     competitionId: z.string().nonempty(),
     eventId: z.string().nonempty(),
-    roundNumber: z.int().min(1).max(C.maxRounds),
+    roundNumber: RoundNumberValidator,
     roundTypeId: z.enum(RoundTypeValues),
     format: z.enum(RoundFormatValues),
     timeLimitCentiseconds: z.int().min(1).nullable(),

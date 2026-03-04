@@ -4,3 +4,5 @@ import { C } from "../constants.ts";
 export const WcaIdValidator = z.string().uppercase().length(10).regex(C.wcaIdRegex);
 
 export const ColorValidator = z.string().regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/);
+
+export const RoundNumberValidator = z.int().min(1).max(C.maxRounds);

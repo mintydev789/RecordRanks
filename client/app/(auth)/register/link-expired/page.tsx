@@ -8,7 +8,7 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 
-const VerificationLinkExpiredPage = () => {
+function VerificationLinkExpiredPage() {
   const searchParams = useSearchParams();
   const { changeSuccessMessage, changeErrorMessages } = useContext(MainContext);
   const { data: session } = authClient.useSession();
@@ -71,6 +71,6 @@ const VerificationLinkExpiredPage = () => {
       </Button>
     </section>
   );
-};
+}
 
 export default VerificationLinkExpiredPage;

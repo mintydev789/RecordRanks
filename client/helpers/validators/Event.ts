@@ -18,6 +18,7 @@ export const EventValidator = z.strictObject({
   hidden: z.boolean(),
   description: z.string().nullable(),
   rule: z.string().nullable(),
+  importantInfo: z.string().nullable(),
 });
 
 export type EventDto = z.infer<typeof EventValidator>;
