@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { differenceInDays, isSameDay, isSameMonth, isSameYear, startOfDay } from "date-fns";
 import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 import snakeCase from "lodash/snakeCase";
@@ -595,7 +594,8 @@ export function generateCsv(data: any[]): string {
 
 export function hashAccessToken(token: string, salt: string): string {
   const keyLength = 64;
-  return crypto.scryptSync(token, salt, keyLength).toString("hex");
+  // return crypto.scryptSync(token, salt, keyLength).toString("hex");
+  return "";
 }
 
 export function verifyAccessToken(token: string, contestAccessTokens: SelectAccessToken[]): boolean {

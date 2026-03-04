@@ -1,6 +1,5 @@
 "use server";
 
-import crypto from "node:crypto";
 import { endOfDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 import { and, arrayContains, desc, eq, inArray } from "drizzle-orm";
@@ -710,13 +709,13 @@ export const createAccessTokenSF = actionClient
       if (contest.state === "created")
         throw new RrActionError("You may not create an access token for a contest that hasn't been approved yet");
 
-      const token = crypto.randomBytes(32).toString("hex");
-      const salt = crypto.randomBytes(16).toString("hex");
-      const hash = hashAccessToken(token, salt);
+      // const token = crypto.randomBytes(32).toString("hex");
+      // const salt = crypto.randomBytes(16).toString("hex");
+      // const hash = hashAccessToken(token, salt);
 
-      await db.insert(accessTokensTable).values({ tokenHash: `${salt}:${hash}`, competitionId, createdBy: user.id });
+      // await db.insert(accessTokensTable).values({ tokenHash: `${salt}:${hash}`, competitionId, createdBy: user.id });
 
-      return token;
+      return "ERROR!";
     },
   );
 

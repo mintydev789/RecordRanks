@@ -573,7 +573,8 @@ function ContestForm({
                     <Button
                       onClick={getAccessToken}
                       isLoading={isCreatingAccessToken}
-                      disabled={isPending || !["approved", "ongoing"].includes(contest.state)}
+                      // disabled={isPending || !["approved", "ongoing"].includes(contest.state)}
+                      disabled
                       className="btn-secondary"
                     >
                       Get Access Token
