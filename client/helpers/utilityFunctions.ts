@@ -592,20 +592,55 @@ export function generateCsv(data: any[]): string {
   return [headers.map((key) => snakeCase(key)).join(","), ...dataRows].join("\n");
 }
 
-export function hashAccessToken(token: string, salt: string): string {
-  const keyLength = 64;
-  // return crypto.scryptSync(token, salt, keyLength).toString("hex");
-  return "";
+async function hashAndSaltValue(
+  value: Uint8Array<ArrayBuffer>,
+  salt: Uint8Array<ArrayBuffer>,
+): Promise<Buffer<ArrayBuffer>> {
+  const saltedValue = new Uint8Array(value.length + salt.length);
+  saltedValue.set(value, 0);
+  saltedValue.set(salt, value.length);
+
+  const hash = await crypto.subtle.digest("SHA-256", saltedValue);
+  return Buffer.from(hash);
 }
 
-export function verifyAccessToken(token: string, contestAccessTokens: SelectAccessToken[]): boolean {
+export async function generateAccessToken(): Promise<{ token: string; salt: string; hash: string }> {
+  const tokenBuffer = crypto.getRandomValues(new Uint8Array(32));
+  const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
+
+  const hashBuffer = await hashAndSaltValue(tokenBuffer, saltBuffer);
+
+  const token = Buffer.from(tokenBuffer).toString("hex");
+  const salt = Buffer.from(saltBuffer).toString("hex");
+  const hash = Buffer.from(hashBuffer).toString("hex");
+
+  return { token, salt, hash };
+}
+
+export async function verifyAccessToken(
+  token: string,
+  contestAccessTokens: SelectAccessToken[],
+): Promise<SelectAccessToken | null> {
+  const tokenBuffer = Buffer.from(token, "hex");
+
+  const secureCompare = (a: Buffer<ArrayBuffer>, b: Buffer<ArrayBuffer>) => {
+    if (a.length !== b.length) return false;
+
+    let result = 0;
+    for (let i = 0; i < a.length; i++) result |= a[i] ^ b[i];
+
+    return result === 0;
+  };
+
   for (const accessToken of contestAccessTokens) {
     const [salt, expectedHash] = accessToken.tokenHash.split(":");
-    const receivedHash = hashAccessToken(token, salt);
-    if (receivedHash === expectedHash) {
-      return true;
-    }
+    const saltBuffer = Buffer.from(salt, "hex");
+    const expectedHashBuffer = Buffer.from(expectedHash, "hex");
+
+    const receivedHashBuffer = await hashAndSaltValue(tokenBuffer, saltBuffer);
+
+    if (secureCompare(receivedHashBuffer, expectedHashBuffer)) return accessToken;
   }
 
-  return false;
+  return null;
 }

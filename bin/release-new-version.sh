@@ -29,11 +29,11 @@ read new_version
 echo -e "\n${cyan}Pushing version $new_version to origin...${nc}"
 git tag --force --annotate "$new_version" -m "Version $new_version" &&
 git push --force origin --tags &&
-git push
+git push &&
 
-echo -e "\n${cyan}Release new Docker image? (y/N)${nc}"
-read answer
+echo -e "\n${cyan}Release new Docker image? (y/N)${nc}" &&
+read answer &&
 
-if [ "$answer" == "y" ] || [ "$answer" == "Y" ]; then
+if [ $? -gt 0 ] && ( [ "$answer" == "y" ] || [ "$answer" == "Y" ] ); then
   ./bin/release-new-image.sh
 fi

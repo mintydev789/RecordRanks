@@ -28,7 +28,7 @@ else
   sudo apt update &&
   sudo apt dist-upgrade &&
 
-  ./bin/create-full-backup.sh
+  ./bin/create-full-backup.sh &&
 
   sudo docker stop rr-nextjs &&
   sudo docker exec -w /etc/caddy rr-caddy caddy reload &&

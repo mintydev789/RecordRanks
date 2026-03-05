@@ -569,21 +569,22 @@ function ContestForm({
                       text="(DISABLED) This can be used for contests where there are not enough solving stations. In such cases random scrambles must be used for every competitor."
                     />
                   </div>
-                  <div className="d-flex gap-1 align-items-center">
-                    <Button
-                      onClick={getAccessToken}
-                      isLoading={isCreatingAccessToken}
-                      // disabled={isPending || !["approved", "ongoing"].includes(contest.state)}
-                      disabled
-                      className="btn-secondary"
-                    >
-                      Get Access Token
-                    </Button>
-                    <Tooltip
-                      id="access_token_tooltip"
-                      text="Used for external data entry (e.g. using a digital scoretaking system or a third-party tool)"
-                    />
-                  </div>
+                  {type !== "meetup" && (
+                    <div className="d-flex gap-1 align-items-center">
+                      <Button
+                        onClick={getAccessToken}
+                        isLoading={isCreatingAccessToken}
+                        disabled={isPending || !["approved", "ongoing"].includes(contest.state)}
+                        className="btn-secondary"
+                      >
+                        Get Access Token
+                      </Button>
+                      <Tooltip
+                        id="access_token_tooltip"
+                        text="Used for external data entry (e.g. using a digital scoretaking system or a third-party tool)"
+                      />
+                    </div>
+                  )}
                 </div>
                 <p className="fs-6 fst-italic mb-3">
                   If the scorecards aren't generating correctly, please report this to the admins!

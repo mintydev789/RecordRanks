@@ -9,11 +9,11 @@ import { C } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
+  generateAccessToken,
   getIsAdmin,
   getMaxAllowedRounds,
   getNameAndLocalizedName,
   getResultProceeds,
-  hashAccessToken,
 } from "~/helpers/utilityFunctions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
@@ -705,17 +705,15 @@ export const createAccessTokenSF = actionClient
       if (!getUserHasAccessToContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (user.id !== contest.createdBy && !getIsAdmin(user.role))
-        throw new RrActionError("Only the creator of the contest can generate access tokens");
+        throw new RrActionError("Only the creator of the contest or an admin can generate access tokens");
       if (contest.state === "created")
         throw new RrActionError("You may not create an access token for a contest that hasn't been approved yet");
 
-      // const token = crypto.randomBytes(32).toString("hex");
-      // const salt = crypto.randomBytes(16).toString("hex");
-      // const hash = hashAccessToken(token, salt);
+      const { token, salt, hash } = await generateAccessToken();
 
-      // await db.insert(accessTokensTable).values({ tokenHash: `${salt}:${hash}`, competitionId, createdBy: user.id });
+      await db.insert(accessTokensTable).values({ tokenHash: `${salt}:${hash}`, competitionId, createdBy: user.id });
 
-      return "ERROR!";
+      return token;
     },
   );
 
