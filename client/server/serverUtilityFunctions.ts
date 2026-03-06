@@ -37,10 +37,10 @@ import { auth } from "./auth.ts";
 import type { RrPermissions } from "./permissions.ts";
 
 export function logMessage(code: LogCode, message: string, { metadata }: { metadata?: object } = {}) {
-  const messageWithCode = `[${code}] ${message}`;
+  const messageWithCodeAndTimestamp = `${new Date().toISOString()} [${code}] ${message}`;
 
   // Log to terminal/Docker container (except page visit logs)
-  if (code !== "RR0001") console.log(messageWithCode);
+  if (code !== "RR0001") console.log(messageWithCodeAndTimestamp);
 
   if (!process.env.VITEST) {
     try {
@@ -48,7 +48,7 @@ export function logMessage(code: LogCode, message: string, { metadata }: { metad
       const childObject: any = { rrCode: code };
       if (metadata) childObject.rrMetadata = metadata;
 
-      logger.child(childObject).info(messageWithCode);
+      logger.child(childObject).info(messageWithCodeAndTimestamp);
     } catch (err) {
       console.error("Error while sending log to Supabase Analytics:", err);
     }
@@ -56,6 +56,7 @@ export function logMessage(code: LogCode, message: string, { metadata }: { metad
 }
 
 export async function checkUserPermissions(userId: string, permissions: RrPermissions): Promise<boolean> {
+  // @ts-expect-error
   const { success } = await auth.api.userHasPermission({ body: { userId, permissions } });
   return success;
 }

@@ -34,6 +34,6 @@ git push &&
 echo -e "\n${cyan}Release new Docker image? (y/N)${nc}" &&
 read answer &&
 
-if [ $? -gt 0 ] && ( [ "$answer" == "y" ] || [ "$answer" == "Y" ] ); then
+if [ $? == 0 ] && ( [ "$answer" == "y" ] || [ "$answer" == "Y" ] ); then
   ./bin/release-new-image.sh
 fi
