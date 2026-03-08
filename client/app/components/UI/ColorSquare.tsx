@@ -6,7 +6,7 @@ type Props = {
 function ColorSquare({ color, small, style }: Props) {
   return (
     <div
-      className="cc-color-square"
+      className="rr-color-square"
       style={{
         margin: small ? "0" : "3px",
         width: "2.1rem",

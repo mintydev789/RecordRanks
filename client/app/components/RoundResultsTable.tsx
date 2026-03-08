@@ -4,6 +4,7 @@ import Competitor from "~/app/components/Competitor.tsx";
 import Solves from "~/app/components/Solves.tsx";
 import Time from "~/app/components/Time.tsx";
 import Button from "~/app/components/UI/Button.tsx";
+import { C } from "~/helpers/constants";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { getIsProceedableResult } from "~/helpers/utilityFunctions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
@@ -46,7 +47,7 @@ function RoundResultsTable({
       result.proceeds ||
       (round.roundTypeId === "f" && result.ranking! <= 3 && getIsProceedableResult(result, roundFormat))
     ) {
-      return { color: "black", background: "#10c010" };
+      return { color: "black", background: C.color.rankingHighlight };
     }
 
     return {};

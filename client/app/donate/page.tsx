@@ -10,7 +10,7 @@ function DonatePage() {
         Contests.
       </p>
 
-      <h3 className="cc-basic-heading">PayPal Donations</h3>
+      <h3 className="rr-basic-heading">PayPal Donations</h3>
       <p>You can make a single donation or make donations monthly or annually on PayPal.</p>
       <a
         href="https://www.paypal.com/donate/?hosted_button_id=L5CZ35VXKU7VA"
@@ -21,7 +21,7 @@ function DonatePage() {
         Donate
       </a>
 
-      <h3 className="cc-basic-heading">GitHub Sponsorship</h3>
+      <h3 className="rr-basic-heading">GitHub Sponsorship</h3>
       <p>You can become a one-time or recurring sponsor of Deni Mintsaev on GitHub.</p>
       <a
         href="https://github.com/sponsors/mintydev789"
@@ -32,7 +32,7 @@ function DonatePage() {
         Support
       </a>
 
-      <h3 className="cc-basic-heading">Monero</h3>
+      <h3 className="rr-basic-heading">Monero</h3>
       <p>You can send a Monero (cryptocurrency) donation to the following XMR wallet:</p>
       <p className="fw-bold mt-4 rounded-3 border p-3">{C.moneroDonationAddress}</p>
     </section>

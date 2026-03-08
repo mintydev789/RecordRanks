@@ -1,4 +1,4 @@
-import ResultsSubmissionForm from "~/app/components/adminAndModerator/ResultsSubmissionForm.tsx";
+import ResultsSubmissionForm from "~/app/components/video-based-results/ResultsSubmissionForm";
 import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverUtilityFunctions.ts";
 
 async function SubmitResultsPage() {

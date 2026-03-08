@@ -1,13 +1,13 @@
 import type { NextRequest } from "next/server";
-import { roundFormats } from "~/helpers/roundFormats";
-import { verifyAccessToken } from "~/helpers/utilityFunctions";
-import { type EnterAttemptPayloadDto, EnterAttemptPayloadValidator } from "~/helpers/validators/EnterAttemptPayload";
-import { db } from "~/server/db/provider";
-import type { Attempt } from "~/server/db/schema/results";
+// import { roundFormats } from "~/helpers/roundFormats";
+// import { getActionError, verifyAccessToken } from "~/helpers/utilityFunctions";
+// import { type EnterAttemptPayloadDto, EnterAttemptPayloadValidator } from "~/helpers/validators/EnterAttemptPayload";
+// import { db } from "~/server/db/provider";
+// import type { Attempt } from "~/server/db/schema/results";
 // import { createContestResultSF, updateContestResultSF } from "~/server/serverFunctions/resultServerFunctions";
-import { getPersonsForExternalDeviceDataEntry } from "~/server/serverUtilityFunctions";
+// import { getPersonsForExternalDeviceDataEntry } from "~/server/serverUtilityFunctions";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   return new Response("NOT IMPLEMENTED", { status: 501 });
   // const token = req.headers.get("Authorization")?.replace("Bearer ", "");
   // if (!token) return new Response("Unauthorized", { status: 401 });
@@ -53,19 +53,19 @@ export async function POST(req: NextRequest) {
   //   else attempts.push({ result: 0 });
   // }
 
-  // // if (result) {
-  // //   const res = await updateContestResultSF({ id: result.id, newAttempts: attempts });
-  // // } else {
-  // //   const res = await createContestResultSF({
-  // //     newResultDto: {
-  // //       eventId,
-  // //       personIds: persons.map((p) => p.id),
-  // //       attempts,
-  // //       competitionId,
-  // //       roundId: round.id,
-  // //     },
-  // //   });
-  // // }
+  // const res = result
+  //   ? await updateContestResultSF({ id: result.id, newAttempts: attempts })
+  //   : await createContestResultSF({
+  //       newResultDto: {
+  //         eventId,
+  //         personIds: persons.map((p) => p.id),
+  //         attempts,
+  //         competitionId,
+  //         roundId: round.id,
+  //       },
+  //     });
+
+  // if (res.serverError || res.validationErrors) return new Response(getActionError(res), { status: 500 });
 
   // return new Response("Successfully entered attempt", { status: 200 });
 }

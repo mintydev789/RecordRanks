@@ -33,7 +33,7 @@ function EventIcon({ event, onClick, isActive }: Props) {
   if (!onClick) return iconElement;
 
   return (
-    <button type="button" onClick={onClick} className={`cc-icon-button ${isActive ? "cc-icon-button--active" : ""}`}>
+    <button type="button" onClick={onClick} className={`rr-icon-button ${isActive ? "rr-icon-button--active" : ""}`}>
       {iconElement}
     </button>
   );

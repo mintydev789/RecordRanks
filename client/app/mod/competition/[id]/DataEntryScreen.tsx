@@ -5,7 +5,7 @@ import { useAction } from "next-safe-action/hooks";
 import { useContext, useEffect, useMemo, useState } from "react";
 import z from "zod";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
-import BestAndAverage from "~/app/components/adminAndModerator/BestAndAverage.tsx";
+import BestAndAverage from "~/app/components/BestAndAverage";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";

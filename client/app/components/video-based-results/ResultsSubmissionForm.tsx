@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useContext, useEffect, useState } from "react";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
-import BestAndAverage from "~/app/components/adminAndModerator/BestAndAverage.tsx";
+import BestAndAverage from "~/app/components/BestAndAverage";
 import CreatorDetails from "~/app/components/CreatorDetails.tsx";
 import Form from "~/app/components/form/Form.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";

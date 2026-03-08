@@ -54,23 +54,23 @@ async function HomePage() {
       </p>
 
       <div className="d-flex justify-content-center fs-5 my-4 flex-column flex-md-row gap-3 gap-lg-4 align-items-center">
-        <Link href="/about" prefetch={false} className="cc-homepage-link btn btn-primary">
+        <Link href="/about" prefetch={false} className="rr-homepage-link btn btn-primary">
           About Us
         </Link>
-        <Link href="/competitions" prefetch={false} className="cc-homepage-link btn btn-primary">
+        <Link href="/competitions" prefetch={false} className="rr-homepage-link btn btn-primary">
           See All Contests
         </Link>
-        <Link href="/records" prefetch={false} className="cc-homepage-link btn btn-primary">
+        <Link href="/records" prefetch={false} className="rr-homepage-link btn btn-primary">
           See Current Records
         </Link>
-        <Link href="/rankings" prefetch={false} className="cc-homepage-link btn btn-primary">
+        <Link href="/rankings" prefetch={false} className="rr-homepage-link btn btn-primary">
           See Rankings
         </Link>
       </div>
 
       {IS_CUBING_CONTESTS_INSTANCE && (
         <>
-          <h3 className="cc-basic-heading">Holding a contest</h3>
+          <h3 className="rr-basic-heading">Holding a contest</h3>
           <p>
             Cubing Contests is an open platform where anyone can hold their competitions and meetups. However, you must
             first be granted moderator access to be able to create new contests. If you would like to hold unofficial
@@ -94,7 +94,7 @@ async function HomePage() {
 
       <PartialHomePageDetails />
 
-      <h3 className="cc-basic-heading">Collective Cubing</h3>
+      <h3 className="rr-basic-heading">Collective Cubing</h3>
 
       <CollectiveCubing initCollectiveSolution={collectiveSolution ?? null} />
     </section>

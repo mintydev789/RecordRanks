@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import ResultsSubmissionForm from "~/app/components/adminAndModerator/ResultsSubmissionForm.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
+import ResultsSubmissionForm from "~/app/components/video-based-results/ResultsSubmissionForm";
 import { creatorCols } from "~/server/db/dbUtils";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema";

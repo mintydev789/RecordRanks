@@ -57,7 +57,7 @@ function NavbarItems() {
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="cc-icon-button d-lg-none"
+          className="rr-icon-button d-lg-none"
           title="Menu"
           aria-label="Menu"
         >

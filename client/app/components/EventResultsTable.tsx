@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { roundTypes } from "~/helpers/roundTypes.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
@@ -23,6 +23,11 @@ type Props = {
 function EventResultsTable({ event, rounds, results, persons, recordConfigs, onDeleteResult }: Props) {
   // Display finals by default
   const [currRound, setCurrRound] = useState(rounds.at(-1)!);
+
+  const roundResults = useMemo(
+    () => results.filter((r) => r.roundId === currRound.id).sort((a, b) => a.ranking! - b.ranking!),
+    [results, currRound],
+  );
 
   const roundOptions = rounds.map((r) => ({ label: roundTypes[r.roundTypeId].label, value: r.roundTypeId }));
 
@@ -49,7 +54,7 @@ function EventResultsTable({ event, rounds, results, persons, recordConfigs, onD
       <RoundResultsTable
         event={event}
         round={currRound}
-        results={results.filter((r) => r.roundId === currRound.id).sort((a, b) => a.ranking! - b.ranking!)}
+        results={roundResults}
         persons={persons}
         recordConfigs={recordConfigs}
         onDeleteResult={onDeleteResult}

@@ -56,7 +56,7 @@ export function logMessage(code: LogCode, message: string, { metadata }: { metad
 }
 
 export async function checkUserPermissions(userId: string, permissions: RrPermissions): Promise<boolean> {
-  // @ts-expect-error
+  // @ts-expect-error TEMPORARY! GET RID OF THIS TS IGNORE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   const { success } = await auth.api.userHasPermission({ body: { userId, permissions } });
   return success;
 }

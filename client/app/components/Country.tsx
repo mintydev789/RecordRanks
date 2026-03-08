@@ -29,7 +29,7 @@ function Country({ countryIso2, swapPositions, noText, shorten }: Props) {
     <span className="d-inline-flex gap-2 align-items-center">
       {!noText && swapPositions && getCountry(countryIso2)}
       {FlagComponent
-        ? FlagComponent({ title: getCountry(countryIso2), className: "cc-flag-icon", style: { height: "1.16rem" } })
+        ? FlagComponent({ title: getCountry(countryIso2), className: "rr-flag-icon", style: { height: "1.16rem" } })
         : undefined}
       {!noText && !swapPositions && getCountry(countryIso2)}
     </span>

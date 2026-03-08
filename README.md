@@ -45,11 +45,7 @@ RecordRanks does not have a default icon available, so you'll have to create you
 
 ### Creating the Docker image
 
-Once you have a [Dockerhub](https://hub.docker.com/) account, you can publish your Docker image.
-
-```sh
-./bin/release-new-image.sh
-```
+Once you have a [Dockerhub](https://hub.docker.com/) account, you can publish your Docker image using the script (see the Scripts section).
 
 ### DNS records
 

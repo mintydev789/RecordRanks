@@ -1,6 +1,6 @@
 * {
   /* 768px corresponds to Bootstrap's md size */
-  --cc-md-width: 768px;
+  --rr-md-width: 768px;
 
   word-break: break-word;
   word-wrap: break-word;
@@ -9,7 +9,7 @@
 body[data-bs-theme="dark"] {
   /* Copied from Bootstrap 5.3's btn-light */
   .btn-lightdark,
-  .cc-icon-button {
+  .rr-icon-button {
     --bs-btn-color: #000;
     --bs-btn-bg: #f8f9fa;
     --bs-btn-border-color: #f8f9fa;
@@ -26,7 +26,7 @@ body[data-bs-theme="dark"] {
     --bs-btn-disabled-border-color: #f8f9fa;
   }
 
-  .cc-color-square {
+  .rr-color-square {
     border-color: white;
   }
 }
@@ -34,7 +34,7 @@ body[data-bs-theme="dark"] {
 body[data-bs-theme="light"] {
   /* Copied from Bootstrap 5.3's btn-dark */
   .btn-lightdark,
-  .cc-icon-button {
+  .rr-icon-button {
     --bs-btn-color: #fff;
     --bs-btn-bg: #212529;
     --bs-btn-border-color: #212529;
@@ -51,11 +51,11 @@ body[data-bs-theme="light"] {
     --bs-btn-disabled-border-color: #212529;
   }
 
-  .cc-color-square {
+  .rr-color-square {
     border-color: black;
   }
 
-  .cc-flag-icon {
+  .rr-flag-icon {
     border: 1px solid black;
   }
 }
@@ -70,12 +70,12 @@ body[data-bs-theme="light"] {
   --bs-btn-font-size: 0.75rem !important;
 }
 
-.cc-basic-heading {
+.rr-basic-heading {
   margin-top: 1.5rem;
   margin-bottom: 1rem;
 }
 
-.cc-icon-button {
+.rr-icon-button {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -87,20 +87,20 @@ body[data-bs-theme="light"] {
   border: 0;
 }
 
-.cc-icon-button:hover {
+.rr-icon-button:hover {
   color: var(--bs-btn-hover-bg);
 }
 
-.cc-icon-button:active,
-.cc-icon-button.cc-icon-button--active {
+.rr-icon-button:active,
+.rr-icon-button.rr-icon-button--active {
   color: var(--bs-btn-active-bg);
 }
 
-.cc-tooltip .cc-tooltip-text {
+.rr-tooltip .rr-tooltip-text {
   visibility: hidden;
 }
 
-.cc-tooltip:hover .cc-tooltip-text {
+.rr-tooltip:hover .rr-tooltip-text {
   visibility: visible;
 }
 
@@ -116,9 +116,9 @@ body[data-bs-theme="light"] {
   width: 100%;
 }
 
-/* 768px is the value of --cc-md-width */
+/* 768px is the value of --rr-md-width */
 @media (max-width: 768px) {
-  .cc-homepage-link {
+  .rr-homepage-link {
     width: 100%;
     max-width: 12rem;
     white-space: nowrap;

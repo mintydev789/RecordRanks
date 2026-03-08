@@ -55,3 +55,28 @@ const { createdAt: _, updatedAt: _1, ...roundsPublicCols } = getColumns(roundsTa
 export { roundsPublicCols };
 
 export type RoundResponse = Pick<SelectRound, keyof typeof roundsPublicCols>;
+
+// Below is a draft of how tournaments could be implemented with two new tables
+
+// matches: {
+//   id
+//   roundId
+//   bracket: main, losers, etc. (enum)
+//   stage: 1, 2, 3
+//   open: boolean
+//   matchFormat: 1, 2, 3 (first to N sets)
+//   sets: setReference[]
+//   team1: []
+//   team2: []
+//   winner: 1/2
+// }
+
+// sets: {
+//   setFormat: 1, 2, 3 (first to N wins)
+//   subsets: {
+//     result1: resultReference
+//     result2: resultReference
+//     winner: 1/2
+//   }[]
+//   winner: 1/2
+// }

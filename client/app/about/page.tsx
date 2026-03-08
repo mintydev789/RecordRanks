@@ -25,7 +25,7 @@ async function AboutPage() {
         with video evidence. Some other events also allow submitted results.
       </p>
 
-      <h3 className="cc-basic-heading">Mission Statement</h3>
+      <h3 className="rr-basic-heading">Mission Statement</h3>
       <p>
         Our mission is to provide the go-to place for unofficial speedcubing results and to give the community the tools
         it needs to host speedcubing events. We aim to serve the interests of the community alongside the World Cube
@@ -36,7 +36,7 @@ async function AboutPage() {
         .
       </p>
 
-      <h3 className="cc-basic-heading">The Team</h3>
+      <h3 className="rr-basic-heading">The Team</h3>
       <p>
         We are a team of volunteers who work as admins on this website. Our activities include approving contests,
         publishing results, resolving critical incidents, and moderating the Cubing Contests Discord server. The admin

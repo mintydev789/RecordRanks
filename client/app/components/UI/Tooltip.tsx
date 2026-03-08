@@ -68,9 +68,9 @@ function Tooltip({ id, text }: Props) {
   };
 
   return (
-    <div className="cc-tooltip position-relative d-flex align-items-center" style={{ cursor: "default" }}>
+    <div className="rr-tooltip position-relative d-flex align-items-center" style={{ cursor: "default" }}>
       <div
-        className="cc-tooltip-text position-absolute d-flex flex-column align-items-center"
+        className="rr-tooltip-text position-absolute d-flex flex-column align-items-center"
         style={{ height: 0, width: "100%" }}
       >
         {/* Tip of the tooltip pointing to the target */}

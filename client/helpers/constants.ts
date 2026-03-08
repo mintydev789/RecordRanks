@@ -36,6 +36,7 @@ export const C = {
   unknownErrorMsg: "Unknown error",
   videoNoLongerAvailableMsg: "Video no longer available",
   color: {
+    rankingHighlight: "#10c010",
     // These are the same as the Bootstrap colors
     primary: "#0d6efd",
     success: "#198754",

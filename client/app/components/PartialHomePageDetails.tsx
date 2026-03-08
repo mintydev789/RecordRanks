@@ -4,7 +4,7 @@ import { C } from "~/helpers/constants.ts";
 function PartialHomePageDetails() {
   return (
     <>
-      <h3 className="cc-basic-heading">Supporting the project</h3>
+      <h3 className="rr-basic-heading">Supporting the project</h3>
       <p>
         Cubing Contests is an{" "}
         <a href={C.sourceCodeLink} target="_blank" rel="noopener noreferrer">
@@ -17,7 +17,7 @@ function PartialHomePageDetails() {
         Donate
       </Link>
 
-      <h3 className="cc-basic-heading">Contact</h3>
+      <h3 className="rr-basic-heading">Contact</h3>
       <p>For general inquiries, send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.</p>
     </>
   );

@@ -32,7 +32,7 @@ function Form({
   return (
     <form
       className="fs-5 container mx-auto my-4 px-3"
-      style={{ maxWidth: "var(--cc-md-width)" }}
+      style={{ maxWidth: "var(--rr-md-width)" }}
       onSubmit={(e) => e.preventDefault()}
     >
       {!hideToasts && <ToastMessages />}

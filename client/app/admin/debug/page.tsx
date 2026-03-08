@@ -41,7 +41,7 @@ function DebugPage() {
 
   return (
     <div>
-      <div className="mx-auto px-3" style={{ maxWidth: "var(--cc-md-width)" }}>
+      <div className="mx-auto px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
         <h2 className="mb-5 text-center">Page for debugging</h2>
         <p>THIS PAGE HAS BEEN DISABLED</p>
         {/* <ToastMessages />

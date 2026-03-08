@@ -80,7 +80,7 @@ function LoginPage() {
         </Link>
       </Form>
 
-      <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--cc-md-width)" }}>
+      <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
         <Link href="/register" prefetch={false}>
           Create account
         </Link>
