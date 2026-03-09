@@ -28,7 +28,7 @@ function ModFilters({ onSelectPerson, onResetFilters, disabled }: Props) {
 
   useEffect(() => {
     const organizerPersonId = searchParams.get("organizerPersonId");
-    if (organizerPersonId) {
+    if (organizerPersonId && persons[0] === null) {
       (async () => {
         const res = await getPersonById({ id: Number(organizerPersonId) });
 

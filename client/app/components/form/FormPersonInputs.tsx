@@ -30,6 +30,7 @@ type Props = {
   addNewPersonMode: "default" | "from-new-tab" | "disabled"; // must be disabled for unauthorized users
   redirectToOnAddPerson?: string;
   display?: "basic" | "grid" | "one-line";
+  showWcaId?: boolean;
 };
 
 function FormPersonInputs({
@@ -45,6 +46,7 @@ function FormPersonInputs({
   addNewPersonMode,
   redirectToOnAddPerson = "",
   display = "grid",
+  showWcaId = false
 }: Props) {
   const router = useRouter();
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
@@ -210,7 +212,7 @@ function FormPersonInputs({
     <div className={display === "grid" ? "row" : ""}>
       {personNames.map((personName: string, inputIndex: number) => (
         <div key={inputIndex} className={personNames.length > 1 && display === "grid" ? "col-md-6" : ""}>
-          <div className={`position-relative ${display === "one-line" ? "" : "mb-3"}`}>
+          <div className={`position-relative ${display === "one-line" ? "" : "mb-2"}`}>
             <FormTextInput
               id={`${title}_${inputIndex + 1}`}
               title={personNames.length > 1 ? `${title} ${inputIndex + 1}` : title}
@@ -223,6 +225,7 @@ function FormPersonInputs({
               oneLine={display === "one-line"}
               disabled={disabled}
             />
+
             {inputIndex === focusedInput && personName && (
               <ul
                 className={`position-absolute mt-3 list-group ${display === "one-line" ? "end-0" : ""}`}
@@ -244,7 +247,7 @@ function FormPersonInputs({
                       onMouseEnter={() => setPersonSelection(matchIndex)}
                       onMouseDown={() => selectPerson(inputIndex, matchIndex)}
                     >
-                      {person !== null ? <Competitor person={person} showLocalizedName noLink /> : "(add new person)"}
+                      {person !== null ? <Competitor person={person} showWcaId showLocalizedName noLink /> : "(add new person)"}
                     </li>
                   ))
                 ) : (
@@ -252,6 +255,8 @@ function FormPersonInputs({
                 )}
               </ul>
             )}
+
+            {showWcaId && persons[inputIndex]?.wcaId && <div className="pt-1 px-2 font-monospace text-secondary">{persons[inputIndex].wcaId}</div>}
           </div>
         </div>
       ))}

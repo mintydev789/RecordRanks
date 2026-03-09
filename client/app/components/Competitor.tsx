@@ -3,16 +3,18 @@ import Country from "./Country.tsx";
 
 type Props = {
   person: Pick<PersonResponse, "name" | "localizedName" | "regionCode" | "wcaId"> | undefined;
-  showLocalizedName?: boolean;
+  showWcaId?: boolean;
+  showLocalizedName?: boolean; // showWcaId overrides this
   noFlag?: boolean;
   noLink?: boolean;
 };
 
-function Competitor({ person, showLocalizedName, noFlag, noLink }: Props) {
+function Competitor({ person, showWcaId = false, showLocalizedName = false, noFlag = false, noLink = false }: Props) {
   if (!person) return <span className="text-danger">Not found</span>;
 
   let displayText = person.name;
-  if (showLocalizedName && person.localizedName) displayText += ` (${person.localizedName})`;
+  if (showWcaId && person.wcaId) displayText += ` [${person.wcaId}]`;
+  else if (showLocalizedName && person.localizedName) displayText += ` (${person.localizedName})`;
 
   return (
     <span className={noFlag ? "" : "d-flex gap-2 align-items-center"}>

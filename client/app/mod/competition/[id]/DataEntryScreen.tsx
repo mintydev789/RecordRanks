@@ -316,6 +316,7 @@ function DataEntryScreen({
               redirectToOnAddPerson={`${pathname}?eventId=${eventId}`}
               disabled={!round.open || resultUnderEdit !== null || isPending}
               display="basic"
+              showWcaId
             />
             {attempts.map((attempt: Attempt, i: number) => (
               <AttemptInput

@@ -8,7 +8,7 @@ type Props = {
   searchParams: Promise<{ eventId?: string }>;
 };
 
-async function PostResultsPage({ params, searchParams }: Props) {
+async function DataEntryPage({ params, searchParams }: Props) {
   const { user } = await authorizeUser({
     permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
@@ -39,4 +39,4 @@ async function PostResultsPage({ params, searchParams }: Props) {
   );
 }
 
-export default PostResultsPage;
+export default DataEntryPage;

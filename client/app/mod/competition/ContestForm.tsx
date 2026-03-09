@@ -747,7 +747,7 @@ function ContestForm({
                   )}
                 </div>
                 <h5>Organizers</h5>
-                <div className="my-3 rounded border bg-body-tertiary px-4 pt-3">
+                <div className="my-3 rounded border bg-body-tertiary px-4 pt-3 pb-2">
                   <FormPersonInputs
                     title="Organizer"
                     personNames={organizerNames}
