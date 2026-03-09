@@ -20,10 +20,10 @@ export const RoundValidator = z
     open: z.boolean().optional(), // not needed when creating new round
   })
   .superRefine((val, ctx) => {
-    if (val.timeLimitCentiseconds && val.cutoffAttemptResult && val.cutoffAttemptResult >= val.timeLimitCentiseconds) {
+    if (val.timeLimitCentiseconds && val.cutoffAttemptResult && val.cutoffAttemptResult > val.timeLimitCentiseconds) {
       ctx.addIssue({
         code: "custom",
-        message: "The cutoff cannot be higher than or equal to the time limit",
+        message: "The cutoff cannot be higher than the time limit",
         input: val.cutoffAttemptResult,
       });
     }
