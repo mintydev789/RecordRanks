@@ -297,9 +297,9 @@ export async function register() {
     if (doArchiveMigration) {
       console.log("Doing archive migration...");
 
-      const eeCompetitionsDump = JSON.parse(fs.readFileSync("./dump/ee_competitions.json") as any) as any[];
-      const eeCountriesDump = JSON.parse(fs.readFileSync("./dump/ee_countries.json") as any) as any[];
-      const eeOrganizersDump = JSON.parse(fs.readFileSync("./dump/ee_organizers.json") as any) as any[];
+      const eeCompetitionsDump = JSON.parse(fs.readFileSync("./dump/other/ee_competitions.json") as any) as any[];
+      const eeCountriesDump = JSON.parse(fs.readFileSync("./dump/other/ee_countries.json") as any) as any[];
+      const eeOrganizersDump = JSON.parse(fs.readFileSync("./dump/other/ee_organizers.json") as any) as any[];
 
       let reachedCheckpoint = false;
       for (const eeComp of eeCompetitionsDump) {
@@ -317,8 +317,8 @@ export async function register() {
         else console.log(`New competition from EE DB: ${eeComp.id}`);
         const eeCountry = eeCountriesDump.find((c) => c.id === eeComp.country_id);
         if (!eeCountry || !Countries.some((c) => c.code === eeCountry.iso2))
-          throw new Error(`Unrecognized country code: ${eeComp.country_id}`);
-        const eeOrganizers = eeOrganizersDump.filter((o) => o.competition_id === eeComp.id);
+          throw new Error(`Country not found: ${eeComp.country_id}`);
+        const eeDumpOrganizers = eeOrganizersDump.filter((o) => o.competition_id === eeComp.id);
 
         await new Promise((res) => setTimeout(res, 1000));
         const wcaCompData = await fetch(`${C.wcaApiBaseUrl}/competitions/${eeComp.id}`).then(async (res) => {
@@ -326,18 +326,19 @@ export async function register() {
           if (res.status === 404) throw new Error(notFoundMsg);
           if (!res.ok) throw new Error(C.unknownErrorMsg);
           const data = await res.json();
+          if (!data.competitor_limit) data.competitor_limit = 10;
           return WcaCompetitionValidator.parse(data);
         });
 
         const organizers: PersonResponse[] = [];
         const organizersWcaInternalIds = new Set<number>();
-        const notFoundPersonNames = new Set();
+        const notFoundPersonNames = new Set<string>();
 
         // Set organizer objects
         for (const org of [
           ...wcaCompData.organizers,
           ...wcaCompData.delegates,
-          ...eeOrganizers.map((o) => ({
+          ...eeDumpOrganizers.map((o) => ({
             id: o.person,
             wca_id: o.person,
             name: "EE person",
@@ -354,7 +355,7 @@ export async function register() {
             : await db.query.persons.findFirst({ where: { name: { ilike: name }, regionCode: org.country_iso2 } });
 
           if (!org.wca_id && person && person.name !== name)
-            console.log(`Assuming ${org.name} (no WCA ID) is ${name} from the CC DB`);
+            console.log(`Assuming ${org.name} (no WCA ID) is ${person.name} from the CC DB`);
 
           if (!person)
             notFoundPersonNames.add(
@@ -367,10 +368,23 @@ export async function register() {
           const notFoundNames = Array.from(notFoundPersonNames).join(", ");
           console.error(`Organizers with these names were not found: ${notFoundNames}`);
         }
+        if (eeCountry.iso2 !== wcaCompData.country_iso2)
+          console.error(`Country field from ${eeComp.id} is wrong in EE DB (${eeCountry.iso2})`);
+        if (eeComp.name !== wcaCompData.name)
+          console.error(`Name field from ${eeComp.id} is wrong in EE DB (${eeComp.name})`);
+        if (eeComp.city !== wcaCompData.city)
+          console.error(`City field from ${eeComp.id} is wrong in EE DB (${eeComp.city})`);
+        if (new Date(eeComp.start_date).getTime() !== new Date(wcaCompData.start_date).getTime())
+          console.error(`Start date field from ${eeComp.id} is wrong in EE DB (${eeComp.start_date})`);
+        if (new Date(eeComp.end_date).getTime() !== new Date(wcaCompData.end_date).getTime())
+          console.error(`End date field from ${eeComp.id} is wrong in EE DB (${eeComp.end_date})`);
+        const missingEeOrganizer = eeDumpOrganizers.find((o) => !organizers.some((o2) => o2.wcaId === o.person));
+        if (missingEeOrganizer)
+          console.error(`EE organizer from organizers dump for ${eeComp.id} is missing: ${missingEeOrganizer.person}`);
 
         const insertContestObject: InsertContest = {
           competitionId: eeComp.id,
-          state: "published",
+          state: "approved",
           name: wcaCompData.name,
           shortName: wcaCompData.short_name,
           type: "wca-comp",
@@ -378,8 +392,8 @@ export async function register() {
           regionCode: wcaCompData.country_iso2,
           venue: wcaCompData.venue.split("]")[0].replace("[", ""),
           address: wcaCompData.venue_address,
-          latitudeMicrodegrees: wcaCompData.latitude_degrees,
-          longitudeMicrodegrees: wcaCompData.longitude_degrees,
+          latitudeMicrodegrees: parseInt(String(wcaCompData.latitude_degrees).replace(".", ""), 10),
+          longitudeMicrodegrees: parseInt(String(wcaCompData.longitude_degrees).replace(".", ""), 10),
           startDate: new Date(wcaCompData.start_date),
           endDate: new Date(wcaCompData.end_date),
           organizerIds: organizers.map((o) => o.id),
@@ -391,21 +405,7 @@ export async function register() {
           updatedAt: new Date(eeComp.update_timestamp),
         };
 
-        if (eeCountry.iso2 !== insertContestObject.regionCode)
-          console.error(`Country field from ${eeComp.id} is wrong`);
-        if (eeComp.name !== insertContestObject.name) console.error(`Name field from ${eeComp.id} is wrong`);
-        if (eeComp.city !== insertContestObject.city) console.error(`City field from ${eeComp.id} is wrong`);
-        if (new Date(eeComp.start_date).getTime() !== insertContestObject.startDate.getTime())
-          console.error(`Start date field from ${eeComp.id} is wrong`);
-        if (new Date(eeComp.end_date).getTime() !== insertContestObject.endDate.getTime())
-          console.error(`End date field from ${eeComp.id} is wrong`);
-        const missingEeOrganizer = eeOrganizers.find((o) => !organizers.some((o2) => o2.wcaId === o.person));
-        if (missingEeOrganizer)
-          console.error(`EE organizer from ${eeComp.id} is missing: ${missingEeOrganizer.person}`);
-
         if (sameCompInCc) {
-          if (sameCompInCc.state !== insertContestObject.state)
-            console.error(`State field from ${eeComp.id} is wrong in CC DB`);
           if (sameCompInCc.name !== insertContestObject.name)
             console.error(`Name field from ${eeComp.id} is wrong in CC DB`);
           if (sameCompInCc.shortName !== insertContestObject.shortName)
@@ -426,8 +426,9 @@ export async function register() {
             console.error(`Start date field from ${eeComp.id} is wrong in CC DB`);
           if (sameCompInCc.endDate.getTime() !== insertContestObject.endDate.getTime())
             console.error(`End date field from ${eeComp.id} is wrong in CC DB`);
-          if (sameCompInCc.organizerIds.join(",") !== insertContestObject.organizerIds.join(","))
-            console.error(`Organizer IDs field from ${eeComp.id} is wrong in CC DB`);
+          const orgNotInCc = insertContestObject.organizerIds.find((oid) => !sameCompInCc.organizerIds.includes(oid));
+          if (orgNotInCc)
+            console.error(`EE DB has organizer with ID ${orgNotInCc} for ${eeComp.id} that's missing in CC DB`);
           if (sameCompInCc.competitorLimit !== insertContestObject.competitorLimit)
             console.error(`Competitor limit field from ${eeComp.id} is wrong in CC DB`);
         }

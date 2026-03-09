@@ -41,7 +41,34 @@ CONSIDER THE VARIABLES UNIQUE TO DEV/PROD!!!
 
 ### Icon
 
-RecordRanks does not have a default icon available, so you'll have to create your own at `client/app/favicon.ico`. This file is gitignored in this repo.
+RecordRanks does not have a default icon available, so you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the RecordRanks navbar). These files are gitignored in this repo. They get included in the Docker image when you build it.
+
+To create a `favicon.ico` file from an `icon.svg` file, use the following commands from the root directory of the repo (`inkscape` and `imagemagick` required):
+
+```sh
+inkscape -w 16 -h 16 -o 16.png icon.svg
+inkscape -w 32 -h 32 -o 32.png icon.svg
+inkscape -w 48 -h 48 -o 48.png icon.svg
+
+magick 16.png 32.png 48.png client/app/favicon.ico
+rm 16.png 32.png 48.png
+
+identify client/app/favicon.ico
+```
+
+You should see an output like this after the last command:
+
+```sh
+favicon.ico[0] ICO 16x16 16x16+0+0 8-bit sRGB 0.000u 0:00.000
+favicon.ico[1] ICO 32x32 32x32+0+0 8-bit sRGB 0.000u 0:00.005
+favicon.ico[2] ICO 48x48 48x48+0+0 8-bit sRGB 15086B 0.000u 0:00.005
+```
+
+To create a `favicon.png` file from an `icon.svg` file, use the following command:
+
+```sh
+inkscape -w 256 -h 256 -o client/public/favicon.png icon.svg
+```
 
 ### Creating the Docker image
 

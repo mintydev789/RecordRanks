@@ -1,0 +1,1 @@
+ALTER TABLE "cubing_contests"."contests" ALTER COLUMN "short_name" SET DATA TYPE varchar(32) USING "short_name"::varchar(32);

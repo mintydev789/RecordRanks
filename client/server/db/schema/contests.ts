@@ -1,6 +1,7 @@
 import "server-only";
 import { getColumns, sql } from "drizzle-orm";
 import { check, integer, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { C } from "~/helpers/constants.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import { ContestStateValues, ContestTypeValues } from "~/helpers/types.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
@@ -17,9 +18,7 @@ export const contestsTable = rrSchema.table(
     competitionId: text().notNull().unique(),
     state: contestStateEnum().default("created").notNull(),
     name: text().notNull(),
-    // FIX THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // shortName: varchar({ length: 32 }).notNull(),
-    shortName: varchar({ length: 60 }).notNull(),
+    shortName: varchar({ length: C.maxContestShortName }).notNull(),
     type: contestTypeEnum().notNull(),
     city: text().notNull(),
     regionCode: text().notNull(),

@@ -12,6 +12,7 @@ export const C = {
   maxResult: 999_999_999_999_999, // accounts for max possible Multi-Blind result
   maxFmMoves: 999,
   maxTimeLimit: 60 * 60 * 100, // 1 hour
+  maxContestShortName: 32,
   defaultTimeLimit: 10 * 60 * 100, // 10 minutes
   minCompetitorLimit: 5,
   minCompetitorsForNonWca: 3,
@@ -74,7 +75,7 @@ ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ALTER COLUMN id DROP IDENTITY IF
 \`\`\`
 
 2. Go to "Table Editor" and select schema \`${process.env.RR_DB_SCHEMA}\`.
-3. Click "Insert" -> "Import data from CSV" -> "Import data".
+3. Click "Insert" -> "Import data from CSV" -> select the CSV file -> "Import data".
 4. Run these queries to add back the constraint for the \`id\` column:
 
 \`\`\`sql
@@ -83,7 +84,7 @@ ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ALTER COLUMN id ADD GENERATED AL
 ALTER SEQUENCE ${process.env.RR_DB_SCHEMA}.<table>_id_seq RESTART WITH <ID of the last entry + 1>;
 \`\`\`
 
-Note that empty string values are represented as \`__EMPTY_STRING__\`, due to limitations with the CSV format. You can (and should) safely change those values to \`""\` (empty string).
+Note that, due to limitations with the CSV format, empty string values are represented as \`__EMPTY_STRING__\` (e.g. in the \`contests.description\` column). You can (and should) safely change those values to \`""\` (empty string) using an UPDATE query.
 
 ## Attempt results
 

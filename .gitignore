@@ -43,6 +43,7 @@ volumes/storage
 
 # Other
 client/app/favicon.ico
+client/public/favicon.png
 
 # (TEMPORARY!!!!!!!!!!!!!!! ALSO REMOVE THE SAME DIRECTORY FROM .dockerignore!!!!)
 client/dump

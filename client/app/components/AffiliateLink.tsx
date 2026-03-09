@@ -24,7 +24,7 @@ function AffiliateLink({ type }: Props) {
     case "3x3":
       return (
         <a
-          href="https://cuboss.com/product-category/3x3-speedcubes/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=3x31125"
+          href="https://cuboss.com/product-category/3x3-speedcubes/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=3x31125&gc=76164"
           target="_blank"
           rel="noopener"
           onClick={() => logAffiliateLinkClick("3x31125")}
@@ -37,7 +37,7 @@ function AffiliateLink({ type }: Props) {
     case "2x2":
       return (
         <a
-          href="https://cuboss.com/product-category/2x2-speedcubes/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=2x21125"
+          href="https://cuboss.com/product-category/2x2-speedcubes/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=2x21125&gc=76164"
           target="_blank"
           rel="noopener"
           onClick={() => logAffiliateLinkClick("2x21125")}
@@ -50,7 +50,7 @@ function AffiliateLink({ type }: Props) {
     case "wca":
       return (
         <a
-          href="https://cuboss.com/product-category/wca-puzzles/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=WCA1125"
+          href="https://cuboss.com/product-category/wca-puzzles/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=WCA1125&gc=76164"
           target="_blank"
           rel="noopener"
           onClick={() => logAffiliateLinkClick("WCA1125")}
@@ -63,7 +63,7 @@ function AffiliateLink({ type }: Props) {
     case "fto":
       return (
         <a
-          href="https://cuboss.com/?s=fto&post_type=product&r=cubingcontests&utm_source=cubingcontests&utm_campaign=FTO1125"
+          href="https://cuboss.com/?s=fto&post_type=product&r=cubingcontests&utm_source=cubingcontests&utm_campaign=FTO1125&gc=76164"
           target="_blank"
           rel="noopener"
           onClick={() => logAffiliateLinkClick("FTO1125")}
@@ -76,7 +76,7 @@ function AffiliateLink({ type }: Props) {
     case "mirror":
       return (
         <a
-          href="https://cuboss.com/?s=mirror&post_type=product&r=cubingcontests&utm_source=cubingcontests&utm_campaign=MR1125"
+          href="https://cuboss.com/?s=mirror&post_type=product&r=cubingcontests&utm_source=cubingcontests&utm_campaign=MR1125&gc=76164"
           target="_blank"
           rel="noopener"
           onClick={() => logAffiliateLinkClick("MR1125")}
@@ -94,7 +94,7 @@ function AffiliateLink({ type }: Props) {
     case "kilominx":
       return (
         <a
-          href="https://cuboss.com/?s=kilominx&post_type=product&r=cubingcontests&utm_source=cubingcontests&utm_campaign=KILO1125"
+          href="https://cuboss.com/?s=kilominx&post_type=product&r=cubingcontests&utm_source=cubingcontests&utm_campaign=KILO1125&gc=76164"
           target="_blank"
           rel="noopener"
           onClick={() => logAffiliateLinkClick("KILO1125")}
@@ -112,7 +112,7 @@ function AffiliateLink({ type }: Props) {
     case "other":
       return (
         <a
-          href="https://cuboss.com/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=SC1125"
+          href="https://cuboss.com/?r=cubingcontests&utm_source=cubingcontests&utm_campaign=SC1125&gc=76164"
           target="_blank"
           rel="noopener"
           onClick={() => logAffiliateLinkClick("SC1125")}
