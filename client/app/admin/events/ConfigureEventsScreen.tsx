@@ -150,7 +150,9 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
 
   return (
     <>
-      <ToastMessages />
+      <div className="px-2">
+        <ToastMessages />
+      </div>
 
       {mode === "view" ? (
         <Button onClick={onAddEvent} className="btn-success btn-sm ms-3">

@@ -58,34 +58,39 @@ export type RoundResponse = Pick<SelectRound, keyof typeof roundsPublicCols>;
 
 // Below is a draft of how tournaments could be implemented with two new tables
 
-// round.format = "t" (tournament) | "s" (Swiss)
+// round.format = "h2h" (head-to-head)
+// round.brackets: {
+//   bracketNumber: 1, 2, 3, etc. (for Swiss and Round Robin there's always just one bracket)
+//   bracketType: "main" | "losers" | "double-elim-finals" | "double-elim-reset" | "swiss" | "round-robin"
+//   stages: 1, 2, 3, etc.
+//   seedingStrategy: "best-vs-worst" | "best-vs-2nd" | "random"
+// }[]
 
+// These get populated when the tournament round is first created
 // matches: {
 //   id
 //   competitionId
 //   roundId
-//   bracket: 1, 2, 3, etc. (for Swiss format there's always just one bracket)
-//   stage: 1, 2, 3, etc. (cannot be lower than the bracket number; the number of matches in a stage must be the same across all brackets)
+//   bracket
+//   stage: 1, 2, 3, etc.
 //   position: 1, 2, 3, etc. (just the vertical position within a given stage)
 //   open: boolean
 //   matchFormat: 1/2/3 (first to N sets)
-//   sets: setReference[]
-//   team1: []
-//   team2: []
-//   winner: 1/2
+//   team1: personReference[]
+//   team2: personReference[]
+//   winner: 1/2/null (null while one of the sets has setWinner = null)
 // }
 
+// These are created whenever a new set starts
 // sets: {
 //   id
 //   competitionId
 //   roundId
 //   matchId
-//   setFormat: 1/2/3 (first to N subset wins)
-//   subsets: {
-//     winner: 1/2
-//     These are optional, because it could be an event where there's no actual result to record
-//     result1?: resultReference (add a matchId field to the results table)
-//     result2?: resultReference
-//   }[]
-//   winner: 1/2
+//   setFormat: 1/2/3 (first to N wins)
+//   winners: 0/1/2[] (0 means draw)
+//   // result.attempts[] corresponds to winners[]. These are optional, because it could be an event that has no actual results to record.
+//   result1?: resultReference (add a matchId field to the results table)
+//   result2?: resultReference
+//   setWinner: 1/2/null
 // }

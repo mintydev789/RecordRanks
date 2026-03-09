@@ -101,7 +101,9 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
 
   return (
     <>
-      <ToastMessages />
+      <div className="px-2">
+        <ToastMessages />
+      </div>
 
       {username && (
         <Form

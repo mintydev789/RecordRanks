@@ -113,33 +113,14 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
   };
 
   const onConfirmKeybind = (e: any) => {
-    if (e.key === "Enter" && e.ctrlKey) {
-      submitMove();
-    }
+    if (e.key === "Enter" && e.ctrlKey) submitMove();
   };
-
-  // const coloredTextStyles = "px-1 bg-dark rounded";
 
   return (
     <>
       <p>
-        Let's solve Rubik's Cubes together! Simply log in and make a turn.{" "}
-        {/* <b className={coloredTextStyles} style={{ color: "#ff0" }}>
-          U
-        </b>{" "}
-        is the{" "}
-        <b className={coloredTextStyles} style={{ color: "#ff0" }}>
-          yellow
-        </b>{" "}
-        face and{" "}
-        <b className={coloredTextStyles} style={{ color: "#0f0" }}>
-          F
-        </b>{" "}
-        is{" "}
-        <b className={coloredTextStyles} style={{ color: "#0f0" }}>
-          green
-        </b>. */}
-        You may not make two turns in a row. Submit with Ctrl + Enter after selecting a move as a shortcut.
+        Let's solve Rubik's Cubes together! Simply log in and make a turn. You may not make two turns in a row. Submit
+        with Ctrl + Enter after selecting a move as a shortcut.
       </p>
 
       <ToastMessages />

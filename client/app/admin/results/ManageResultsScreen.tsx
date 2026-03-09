@@ -52,7 +52,9 @@ function ManageResultsScreen({ results, recordConfigs }: Props) {
 
   return (
     <>
-      <ToastMessages />
+      <div className="px-2">
+        <ToastMessages />
+      </div>
 
       <FiltersContainer>
         <FormPersonInputs
