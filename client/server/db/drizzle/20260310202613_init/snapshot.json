@@ -1,13 +1,13 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "d9b4276d-dece-47f3-8f70-664a02e0d342",
+  "id": "fd9579f5-0469-4563-a66b-06db5c210b0f",
   "prevIds": [
-    "2a43841e-39d6-47a3-be8d-10a691f9b490"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
-      "name": "cubing_contests",
+      "name": "record_ranks",
       "entityType": "schemas"
     },
     {
@@ -18,7 +18,7 @@
       ],
       "name": "state",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -31,7 +31,7 @@
       ],
       "name": "contest_state",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -41,7 +41,7 @@
       ],
       "name": "contest_type",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -53,7 +53,7 @@
       ],
       "name": "event_category",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -63,7 +63,7 @@
       ],
       "name": "event_format",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -75,7 +75,7 @@
       ],
       "name": "round_format",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -85,7 +85,7 @@
       ],
       "name": "record_category",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -100,7 +100,7 @@
       ],
       "name": "record_type",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -109,7 +109,7 @@
       ],
       "name": "round_proceed",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "values": [
@@ -126,79 +126,79 @@
       ],
       "name": "round_type",
       "entityType": "enums",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "access_tokens",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "accounts",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "sessions",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "users",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "verifications",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "collective_solutions",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "contests",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "events",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "persons",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "record_configs",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "results",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "isRlsEnabled": false,
       "name": "rounds",
       "entityType": "tables",
-      "schema": "cubing_contests"
+      "schema": "record_ranks"
     },
     {
       "type": "integer",
@@ -219,7 +219,7 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens"
     },
     {
@@ -232,7 +232,7 @@
       "identity": null,
       "name": "token_hash",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens"
     },
     {
@@ -245,7 +245,7 @@
       "identity": null,
       "name": "competition_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens"
     },
     {
@@ -258,7 +258,7 @@
       "identity": null,
       "name": "created_by",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens"
     },
     {
@@ -271,7 +271,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens"
     },
     {
@@ -284,7 +284,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens"
     },
     {
@@ -297,7 +297,7 @@
       "identity": null,
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -310,7 +310,7 @@
       "identity": null,
       "name": "account_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -323,7 +323,7 @@
       "identity": null,
       "name": "provider_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -336,7 +336,7 @@
       "identity": null,
       "name": "user_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -349,7 +349,7 @@
       "identity": null,
       "name": "access_token",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -362,7 +362,7 @@
       "identity": null,
       "name": "refresh_token",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -375,7 +375,7 @@
       "identity": null,
       "name": "id_token",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -388,7 +388,7 @@
       "identity": null,
       "name": "access_token_expires_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -401,7 +401,7 @@
       "identity": null,
       "name": "refresh_token_expires_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -414,7 +414,7 @@
       "identity": null,
       "name": "scope",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -427,7 +427,7 @@
       "identity": null,
       "name": "password",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -440,7 +440,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -453,7 +453,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -466,7 +466,7 @@
       "identity": null,
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -479,7 +479,7 @@
       "identity": null,
       "name": "expires_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -492,7 +492,7 @@
       "identity": null,
       "name": "token",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -505,7 +505,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -518,7 +518,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -531,7 +531,7 @@
       "identity": null,
       "name": "ip_address",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -544,7 +544,7 @@
       "identity": null,
       "name": "user_agent",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -557,7 +557,7 @@
       "identity": null,
       "name": "user_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -570,7 +570,7 @@
       "identity": null,
       "name": "impersonated_by",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -583,7 +583,7 @@
       "identity": null,
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -596,7 +596,7 @@
       "identity": null,
       "name": "name",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -609,7 +609,7 @@
       "identity": null,
       "name": "email",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -622,7 +622,7 @@
       "identity": null,
       "name": "email_verified",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -635,7 +635,7 @@
       "identity": null,
       "name": "image",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -648,7 +648,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -661,7 +661,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -674,7 +674,7 @@
       "identity": null,
       "name": "username",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -687,7 +687,7 @@
       "identity": null,
       "name": "display_username",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -700,7 +700,7 @@
       "identity": null,
       "name": "role",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -713,7 +713,7 @@
       "identity": null,
       "name": "banned",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -726,7 +726,7 @@
       "identity": null,
       "name": "ban_reason",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -739,7 +739,7 @@
       "identity": null,
       "name": "ban_expires",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -752,7 +752,7 @@
       "identity": null,
       "name": "person_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users"
     },
     {
@@ -765,7 +765,7 @@
       "identity": null,
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications"
     },
     {
@@ -778,7 +778,7 @@
       "identity": null,
       "name": "identifier",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications"
     },
     {
@@ -791,7 +791,7 @@
       "identity": null,
       "name": "value",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications"
     },
     {
@@ -804,7 +804,7 @@
       "identity": null,
       "name": "expires_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications"
     },
     {
@@ -817,7 +817,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications"
     },
     {
@@ -830,7 +830,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications"
     },
     {
@@ -852,7 +852,7 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -865,7 +865,7 @@
       "identity": null,
       "name": "event_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -878,12 +878,12 @@
       "identity": null,
       "name": "attempt_number",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
       "type": "state",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": "'ongoing'",
@@ -891,7 +891,7 @@
       "identity": null,
       "name": "state",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -904,7 +904,7 @@
       "identity": null,
       "name": "scramble",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -917,7 +917,7 @@
       "identity": null,
       "name": "solution",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -930,7 +930,7 @@
       "identity": null,
       "name": "last_user_who_interacted_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -943,7 +943,7 @@
       "identity": null,
       "name": "users_who_made_moves",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -956,7 +956,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -969,7 +969,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -991,7 +991,7 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1004,12 +1004,12 @@
       "identity": null,
       "name": "competition_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
       "type": "contest_state",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": "'created'",
@@ -1017,7 +1017,7 @@
       "identity": null,
       "name": "state",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1030,7 +1030,7 @@
       "identity": null,
       "name": "name",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1043,12 +1043,12 @@
       "identity": null,
       "name": "short_name",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
       "type": "contest_type",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1056,7 +1056,7 @@
       "identity": null,
       "name": "type",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1069,7 +1069,7 @@
       "identity": null,
       "name": "city",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1082,7 +1082,7 @@
       "identity": null,
       "name": "region_code",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1095,7 +1095,7 @@
       "identity": null,
       "name": "venue",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1108,7 +1108,7 @@
       "identity": null,
       "name": "address",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1121,7 +1121,7 @@
       "identity": null,
       "name": "latitude_microdegrees",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1134,7 +1134,7 @@
       "identity": null,
       "name": "longitude_microdegrees",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1147,7 +1147,7 @@
       "identity": null,
       "name": "start_date",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1160,7 +1160,7 @@
       "identity": null,
       "name": "end_date",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1173,7 +1173,7 @@
       "identity": null,
       "name": "start_time",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1186,7 +1186,7 @@
       "identity": null,
       "name": "timezone",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1199,7 +1199,7 @@
       "identity": null,
       "name": "organizer_ids",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1212,7 +1212,7 @@
       "identity": null,
       "name": "contact",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1225,7 +1225,7 @@
       "identity": null,
       "name": "description",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1238,7 +1238,7 @@
       "identity": null,
       "name": "competitor_limit",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1251,7 +1251,7 @@
       "identity": null,
       "name": "participants",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1264,7 +1264,7 @@
       "identity": null,
       "name": "schedule",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1277,7 +1277,7 @@
       "identity": null,
       "name": "created_by",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1290,7 +1290,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1303,7 +1303,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -1325,7 +1325,7 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1338,7 +1338,7 @@
       "identity": null,
       "name": "event_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1351,7 +1351,7 @@
       "identity": null,
       "name": "name",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1364,7 +1364,7 @@
       "identity": null,
       "name": "category",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1377,12 +1377,12 @@
       "identity": null,
       "name": "rank",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
       "type": "event_format",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1390,12 +1390,12 @@
       "identity": null,
       "name": "format",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
       "type": "round_format",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1403,7 +1403,7 @@
       "identity": null,
       "name": "default_round_format",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1416,7 +1416,7 @@
       "identity": null,
       "name": "participants",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1429,7 +1429,7 @@
       "identity": null,
       "name": "submissions_allowed",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1442,7 +1442,7 @@
       "identity": null,
       "name": "removed_wca",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1455,7 +1455,7 @@
       "identity": null,
       "name": "has_memo",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1468,7 +1468,7 @@
       "identity": null,
       "name": "hidden",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1481,7 +1481,7 @@
       "identity": null,
       "name": "description",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1494,7 +1494,7 @@
       "identity": null,
       "name": "rule",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1507,7 +1507,7 @@
       "identity": null,
       "name": "important_info",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1520,7 +1520,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1533,7 +1533,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events"
     },
     {
@@ -1555,7 +1555,7 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1568,7 +1568,7 @@
       "identity": null,
       "name": "name",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1581,7 +1581,7 @@
       "identity": null,
       "name": "localized_name",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1594,7 +1594,7 @@
       "identity": null,
       "name": "region_code",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1607,7 +1607,7 @@
       "identity": null,
       "name": "wca_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1620,7 +1620,7 @@
       "identity": null,
       "name": "approved",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1633,7 +1633,7 @@
       "identity": null,
       "name": "created_by",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1646,7 +1646,7 @@
       "identity": null,
       "name": "created_externally",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1659,7 +1659,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1672,7 +1672,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -1694,12 +1694,12 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
       "type": "record_type",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1707,12 +1707,12 @@
       "identity": null,
       "name": "record_type_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
       "type": "record_category",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1720,7 +1720,7 @@
       "identity": null,
       "name": "category",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
@@ -1733,7 +1733,7 @@
       "identity": null,
       "name": "label",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
@@ -1746,7 +1746,7 @@
       "identity": null,
       "name": "active",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
@@ -1759,7 +1759,7 @@
       "identity": null,
       "name": "rank",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
@@ -1772,7 +1772,7 @@
       "identity": null,
       "name": "color",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
@@ -1785,7 +1785,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
@@ -1798,7 +1798,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs"
     },
     {
@@ -1820,7 +1820,7 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1833,7 +1833,7 @@
       "identity": null,
       "name": "event_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1846,7 +1846,7 @@
       "identity": null,
       "name": "date",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1859,7 +1859,7 @@
       "identity": null,
       "name": "approved",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1872,7 +1872,7 @@
       "identity": null,
       "name": "person_ids",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1885,7 +1885,7 @@
       "identity": null,
       "name": "region_code",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1898,7 +1898,7 @@
       "identity": null,
       "name": "super_region_code",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1911,7 +1911,7 @@
       "identity": null,
       "name": "attempts",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1924,7 +1924,7 @@
       "identity": null,
       "name": "best",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1937,12 +1937,12 @@
       "identity": null,
       "name": "average",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
       "type": "record_category",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1950,12 +1950,12 @@
       "identity": null,
       "name": "record_category",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
       "type": "record_type",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": false,
       "dimensions": 0,
       "default": null,
@@ -1963,12 +1963,12 @@
       "identity": null,
       "name": "regional_single_record",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
       "type": "record_type",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": false,
       "dimensions": 0,
       "default": null,
@@ -1976,7 +1976,7 @@
       "identity": null,
       "name": "regional_average_record",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -1989,7 +1989,7 @@
       "identity": null,
       "name": "competition_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2002,7 +2002,7 @@
       "identity": null,
       "name": "round_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2015,7 +2015,7 @@
       "identity": null,
       "name": "ranking",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2028,7 +2028,7 @@
       "identity": null,
       "name": "proceeds",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2041,7 +2041,7 @@
       "identity": null,
       "name": "video_link",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2054,7 +2054,7 @@
       "identity": null,
       "name": "discussion_link",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2067,7 +2067,7 @@
       "identity": null,
       "name": "created_by",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2080,7 +2080,7 @@
       "identity": null,
       "name": "created_externally",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2093,7 +2093,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2106,7 +2106,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2128,7 +2128,7 @@
       },
       "name": "id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2141,7 +2141,7 @@
       "identity": null,
       "name": "competition_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2154,7 +2154,7 @@
       "identity": null,
       "name": "event_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2167,12 +2167,12 @@
       "identity": null,
       "name": "round_number",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
       "type": "round_type",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -2180,12 +2180,12 @@
       "identity": null,
       "name": "round_type_id",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
       "type": "round_format",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -2193,7 +2193,7 @@
       "identity": null,
       "name": "format",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2206,7 +2206,7 @@
       "identity": null,
       "name": "time_limit_centiseconds",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2219,7 +2219,7 @@
       "identity": null,
       "name": "time_limit_cumulative_round_ids",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2232,7 +2232,7 @@
       "identity": null,
       "name": "cutoff_attempt_result",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2245,12 +2245,12 @@
       "identity": null,
       "name": "cutoff_number_of_attempts",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
       "type": "round_proceed",
-      "typeSchema": "cubing_contests",
+      "typeSchema": "record_ranks",
       "notNull": false,
       "dimensions": 0,
       "default": null,
@@ -2258,7 +2258,7 @@
       "identity": null,
       "name": "proceed_type",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2271,7 +2271,7 @@
       "identity": null,
       "name": "proceed_value",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2284,7 +2284,7 @@
       "identity": null,
       "name": "open",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2297,7 +2297,7 @@
       "identity": null,
       "name": "created_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2310,7 +2310,7 @@
       "identity": null,
       "name": "updated_at",
       "entityType": "columns",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
@@ -2331,7 +2331,7 @@
       "concurrently": false,
       "name": "accounts_userId_idx",
       "entityType": "indexes",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -2352,7 +2352,7 @@
       "concurrently": false,
       "name": "sessions_userId_idx",
       "entityType": "indexes",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -2373,7 +2373,7 @@
       "concurrently": false,
       "name": "verifications_identifier_idx",
       "entityType": "indexes",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications"
     },
     {
@@ -2381,7 +2381,7 @@
       "columns": [
         "created_by"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "users",
       "columnsTo": [
         "id"
@@ -2390,7 +2390,7 @@
       "onDelete": "SET NULL",
       "name": "access_tokens_created_by_users_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens"
     },
     {
@@ -2398,7 +2398,7 @@
       "columns": [
         "user_id"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "users",
       "columnsTo": [
         "id"
@@ -2407,7 +2407,7 @@
       "onDelete": "CASCADE",
       "name": "accounts_user_id_users_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts"
     },
     {
@@ -2415,7 +2415,7 @@
       "columns": [
         "user_id"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "users",
       "columnsTo": [
         "id"
@@ -2424,7 +2424,7 @@
       "onDelete": "CASCADE",
       "name": "sessions_user_id_users_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions"
     },
     {
@@ -2432,16 +2432,16 @@
       "columns": [
         "last_user_who_interacted_id"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "users",
       "columnsTo": [
         "id"
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
-      "name": "collective_solutions_last_user_who_interacted_users_id_fkey",
+      "name": "collective_solutions_last_user_who_interacted_id_users_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions"
     },
     {
@@ -2449,7 +2449,7 @@
       "columns": [
         "created_by"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "users",
       "columnsTo": [
         "id"
@@ -2458,7 +2458,7 @@
       "onDelete": "SET NULL",
       "name": "contests_created_by_users_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
@@ -2466,7 +2466,7 @@
       "columns": [
         "created_by"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "users",
       "columnsTo": [
         "id"
@@ -2475,7 +2475,7 @@
       "onDelete": "SET NULL",
       "name": "persons_created_by_users_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons"
     },
     {
@@ -2483,7 +2483,7 @@
       "columns": [
         "round_id"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "rounds",
       "columnsTo": [
         "id"
@@ -2492,7 +2492,7 @@
       "onDelete": "NO ACTION",
       "name": "results_round_id_rounds_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2500,7 +2500,7 @@
       "columns": [
         "created_by"
       ],
-      "schemaTo": "cubing_contests",
+      "schemaTo": "record_ranks",
       "tableTo": "users",
       "columnsTo": [
         "id"
@@ -2509,7 +2509,7 @@
       "onDelete": "SET NULL",
       "name": "results_created_by_users_id_fkey",
       "entityType": "fks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
@@ -2518,7 +2518,7 @@
       ],
       "nameExplicit": false,
       "name": "access_tokens_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "access_tokens",
       "entityType": "pks"
     },
@@ -2528,7 +2528,7 @@
       ],
       "nameExplicit": false,
       "name": "accounts_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "accounts",
       "entityType": "pks"
     },
@@ -2538,7 +2538,7 @@
       ],
       "nameExplicit": false,
       "name": "sessions_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions",
       "entityType": "pks"
     },
@@ -2548,7 +2548,7 @@
       ],
       "nameExplicit": false,
       "name": "users_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users",
       "entityType": "pks"
     },
@@ -2558,7 +2558,7 @@
       ],
       "nameExplicit": false,
       "name": "verifications_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "verifications",
       "entityType": "pks"
     },
@@ -2568,7 +2568,7 @@
       ],
       "nameExplicit": false,
       "name": "collective_solutions_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions",
       "entityType": "pks"
     },
@@ -2578,7 +2578,7 @@
       ],
       "nameExplicit": false,
       "name": "contests_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests",
       "entityType": "pks"
     },
@@ -2588,7 +2588,7 @@
       ],
       "nameExplicit": false,
       "name": "events_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events",
       "entityType": "pks"
     },
@@ -2598,7 +2598,7 @@
       ],
       "nameExplicit": false,
       "name": "persons_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "persons",
       "entityType": "pks"
     },
@@ -2608,7 +2608,7 @@
       ],
       "nameExplicit": false,
       "name": "record_configs_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs",
       "entityType": "pks"
     },
@@ -2618,7 +2618,7 @@
       ],
       "nameExplicit": false,
       "name": "results_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results",
       "entityType": "pks"
     },
@@ -2628,7 +2628,7 @@
       ],
       "nameExplicit": false,
       "name": "rounds_pkey",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds",
       "entityType": "pks"
     },
@@ -2639,7 +2639,7 @@
       ],
       "nullsNotDistinct": false,
       "name": "sessions_token_key",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "sessions",
       "entityType": "uniques"
     },
@@ -2650,7 +2650,7 @@
       ],
       "nullsNotDistinct": false,
       "name": "users_email_key",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "users",
       "entityType": "uniques"
     },
@@ -2661,7 +2661,7 @@
       ],
       "nullsNotDistinct": false,
       "name": "collective_solutions_attempt_number_key",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "collective_solutions",
       "entityType": "uniques"
     },
@@ -2672,7 +2672,7 @@
       ],
       "nullsNotDistinct": false,
       "name": "contests_competition_id_key",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests",
       "entityType": "uniques"
     },
@@ -2683,7 +2683,7 @@
       ],
       "nullsNotDistinct": false,
       "name": "events_event_id_key",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "events",
       "entityType": "uniques"
     },
@@ -2694,7 +2694,7 @@
       ],
       "nullsNotDistinct": false,
       "name": "record_configs_label_key",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "record_configs",
       "entityType": "uniques"
     },
@@ -2702,42 +2702,42 @@
       "value": "(\"type\" <> 'meetup'\n          AND \"start_time\" IS NULL\n          AND \"timezone\" IS NULL\n          AND \"competitor_limit\" IS NOT NULL\n          AND \"schedule\" IS NOT NULL)\n        OR (\"type\" = 'meetup'\n          AND \"start_time\" IS NOT NULL\n          AND \"timezone\" IS NOT NULL\n          AND \"schedule\" IS NULL)",
       "name": "contests_meetup_check",
       "entityType": "checks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "contests"
     },
     {
       "value": "(\"competition_id\" IS NOT NULL\n          AND \"record_category\" <> 'video-based-results'\n          AND \"round_id\" IS NOT NULL\n          AND \"ranking\" IS NOT NULL)\n        OR (\"competition_id\" IS NULL\n          AND \"record_category\" = 'video-based-results'\n          AND \"round_id\" IS NULL\n          AND \"ranking\" IS NULL\n          AND \"proceeds\" IS NULL)",
       "name": "results_check",
       "entityType": "checks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "results"
     },
     {
       "value": "\"time_limit_cumulative_round_ids\" IS NULL OR \"time_limit_centiseconds\" IS NOT NULL",
       "name": "rounds_timelimit_check",
       "entityType": "checks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
       "value": "(\"cutoff_attempt_result\" IS NOT NULL AND \"cutoff_number_of_attempts\" IS NOT NULL)\n        OR (\"cutoff_attempt_result\" IS NULL AND \"cutoff_number_of_attempts\" IS NULL)",
       "name": "rounds_cutoff_check",
       "entityType": "checks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
       "value": "(\"proceed_type\" IS NOT NULL AND \"proceed_value\" IS NOT NULL)\n        OR (\"proceed_type\" IS NULL AND \"proceed_value\" IS NULL)",
       "name": "rounds_proceed_check",
       "entityType": "checks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     },
     {
       "value": "\"round_type_id\" <> 'f' OR \"proceed_type\" IS NULL",
       "name": "rounds_finals_check",
       "entityType": "checks",
-      "schema": "cubing_contests",
+      "schema": "record_ranks",
       "table": "rounds"
     }
   ],

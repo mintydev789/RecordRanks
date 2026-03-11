@@ -35,7 +35,7 @@
     cubing: '0.63.3',
     'date-fns': '4.1.0',
     'date-fns-tz': '3.2.0',
-    'drizzle-orm': '1.0.0-beta.16-ea816b6',
+    'drizzle-orm': '1.0.0-beta.12-5845444',
     'geo-tz': '8.1.6',
     handlebars: '4.7.8',
     jszip: '3.10.1',
@@ -65,7 +65,7 @@
     '@types/pg': '8.18.0',
     '@types/react': '19.2.14',
     '@types/react-dom': '19.2.3',
-    'drizzle-kit': '1.0.0-beta.16-ea816b6',
+    'drizzle-kit': '1.0.0-beta.12-5845444',
     vitest: '4.0.18',
   },
 }
