@@ -55,11 +55,7 @@ function MainLayout({ children }: Props) {
   };
 
   return (
-    <body
-      data-bs-theme={theme}
-      className={`cc-${theme}-layout min-vh-100 d-flex flex-column`}
-      style={{ overflowX: "hidden" }}
-    >
+    <body data-bs-theme={theme} className="min-vh-100 d-flex flex-column" style={{ overflowX: "hidden" }}>
       <MainContext.Provider
         value={{
           theme,

@@ -25,8 +25,10 @@ if [ "$1" != "--restart" ] && [ "$1" != "-r" ]; then
 else
   # Restart
   
-  sudo apt update &&
-  sudo apt dist-upgrade &&
+  if [ "$(command -v apt)" != "" ]; then
+    sudo apt update &&
+    sudo apt dist-upgrade
+  fi
 
   ./bin/create-full-backup.sh &&
 

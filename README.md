@@ -26,18 +26,19 @@ Below are some screenshots from one of the RecordRanks instances: [Cubing Contes
 
 ## Deployment
 
-**WIP**
-
-<!--
 To deploy an instance of RecordRanks, you have to first set up a Linux server and obtain a custom domain name. You'll also need a [Dockerhub](https://hub.docker.com/) account to host your custom Docker images. Then, you can follow this guide to publish your custom RecordRanks image and deploy it on your server.
 
 ### Environment variables
 
-There are several environment variables you'll have to set up. First, copy the `.env.example` file and name it `.env`. Then follow the steps below to set all of the required variables. **THIS IS REQUIRED**, because using the default values will leave your instance completely exposed, and it most likely won't work anyways.
+**WIP**
 
-1.
+<!--
+There are several environment variables you'll have to set up. First, copy the `.env.example` file and name it `.env`. Then follow the steps below to set all of the required variables. **THIS IS REQUIRED**, because using the default values will leave your instance **completely exposed** (and it most likely won't work anyways).
+
+1. Run `./bin/supabase-generate-keys.sh`.
 
 CONSIDER THE VARIABLES UNIQUE TO DEV/PROD!!!
+-->
 
 ### Icon
 
@@ -72,34 +73,60 @@ inkscape -w 256 -h 256 -o client/public/favicon.png icon.svg
 
 ### Creating the Docker image
 
-Once you have a [Dockerhub](https://hub.docker.com/) account, you can publish your Docker image using the script (see the Scripts section).
+Once you have a [Dockerhub](https://hub.docker.com/) account, you can publish your Docker image using the script (see the Scripts section). Make sure to set `DOCKER_IMAGE_NAME` in your `.env` file first, specifying your image name, which should also include your username (e.g. `dockerhubuser/myproject-nextjs`).
 
 ### DNS records
 
+Before you deploy the instance, you will have to set up your DNS records:
+
+1. Set up `A`, `AAAA` and `NS` records to point from your domain name to your server.
+2. Set up `A`, `AAAA` and `NS` records to point from `supabase.yourdomainname.com` to your server.
+3. Set up records to enable email sending using your domain name (follow the instructions from your transactional email provider\*).
+4. If you would like to use a custom email address using your domain name, set up the records for that (follow the instructions from your email service provider\*).
+
+\* Note: a transactional email provider is not the same as an email service provider; the former enables you to send automated emails from your domain name (e.g. no-reply@yourdomainname.com), while the latter enables you to create an email inbox, often with the ability to set up a custom domain name (e.g. inquiries@yourdomainname.com).
+
+The `docker-compose.rr.yml` file includes a Caddy reverse proxy, which handles proxying for both Next JS and Supabase.
+
+### Starting production server
+
+To deploy your RecordRanks instance, you will have to install the following dependencies on your Linux server: `git`, `docker`, `node`, `pnpm` and `rsync` (for backups). You will also need to set up a `.env` file, which will be different from the `.env` file you used locally to publish your Docker image (see the Environment variables section).
+
+There are two Docker Compose files used for deploying an instance: one for starting Supabase and one for starting RecordRanks. Run the following command to start Supabase:
+
+```sh
+docker compose -f docker-compose.supabase.yml up -d
+```
+
+The Scripts section shows how to start RecordRanks.
+
 ### Supabase
 
-#### Database
-
-
+RecordRanks instances run alongside self-hosted Supabase, which provides the database, blob storage, a sysadmin dashboard, and more.
 
 #### Storage
 
-CREATE PUBLIC BUCKET CALLED public_bucket
-CREATE POLICY WITH TEMPLATE "Give access to a nested folder called admin/assets only to a specific user"
-Policy name: Give access to assets folder
-Allowed operation: (select all)
-Target roles: authenticated
-Policy definition: bucket_id = 'public_bucket' AND (storage.foldername(name))[1] = 'assets' AND (select auth.uid()::text) = '<LEAVE PRE-FILLED USER ID>'
+Blob storade is used for hosting public image files (although you can also use it for other files). Follow these instructions to set up a storage bucket for your public assets:
 
-Then create "assets" folder at the root of the bucket.
+1. Create a public bucket with the name `public_bucket`.
+2. Create a policy using the template "Give access to a nested folder called admin/assets only to a specific user" and set it up like this:
+
+- **Policy name**: Give access to assets folder
+- **Allowed operation**: (select all)
+- **Target roles**: authenticated
+- **Policy definition**: `bucket_id = 'public_bucket' AND (storage.foldername(name))[1] = 'assets' AND (select auth.uid()::text) = '<LEAVE PRE-FILLED USER ID>'`
+
+3. Create an `assets` folder at the root of the bucket.
+
+You can then place any assets you want to be publicly accessible via the URL in that folder. If you would like to have link image previews for certain pages, you can create an `assets/screenshots` folder and place the screenshots there. Search for `screenshots/` in the codebase to see which pages have link image previews.
 
 #### Public exports
 
 To enable automatic public exports that run at regular intervals, you have to set up a cron job with Supabase:
 
 1. Open Supabase Studio and go to Integrations -> Vault.
-2. Add secret "service_role_key" with the value being the same as SERVICE_ROLE_KEY in your .env file.
-3. Add secret "base_url" with the value being the same as NEXT_PUBLIC_BASE_URL in your .env file.
+2. Add secret "service_role_key" with the value being the same as `SERVICE_ROLE_KEY` in your .env file.
+3. Add secret "base_url" with the value being the same as `NEXT_PUBLIC_BASE_URL` in your .env file.
 4. Go to SQL Editor and run the following query:
 
 ```sql
@@ -123,14 +150,13 @@ select
 
 **NOTE**: while this cron job will be visible in Integrations -> Cron, it cannot be edited directly, due to the complex value of the authorization header; only activated and deactivated. To change the cron job, delete it and create it again following step 4.
 
-To test this with test-prod.sh, use http://rr-nextjs:3000 as the base URL value in Supabase Vault, temporarily add "shared" network to the supabase-db container in the Supabase Docker Compose file, change the value of SUPABASE_PUBLIC_URL to http://supabase-kong:8000 in the .env file and restart the supabase-db container. You can also test it with the normal local dev environment using this command (make sure to replace <SERVICE_ROLE_KEY> with the value in your .env file):
+To test this locally with `test-prod.sh`, use `http://rr-nextjs:3000` as the base URL value in Supabase Vault, temporarily add `shared` network to the `supabase-db` container in `docker-compose.supabase.yml`, change the value of `SUPABASE_PUBLIC_URL` to `http://supabase-kong:8000` in the `.env` file and restart the `supabase-db` container. You can also test it with the normal local dev environment using this command (make sure to replace `<SERVICE_ROLE_KEY>` with the value in your `.env` file):
 
 ```sh
 curl -X POST -H "Authorization: Bearer <SERVICE_ROLE_KEY>" http://localhost:3000/api/export/create-public-export
 ```
 
-For debugging you can look at the history of cron job runs in Integrations -> Cron and at the contents of the net schema in Table Editor.
--->
+For debugging you can look at the history of cron job runs in Integrations -> Cron and at the contents of the `net` schema in Table Editor.
 
 ## Scripts
 
@@ -138,7 +164,7 @@ There are several custom scripts located in the `bin` directory. These should be
 
 | Script                   | Description                                                                                                      |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `start-prod.sh`          | Start project in production (excluding Supabase). To restart a project that's already running, add `-r`.         |
+| `start-prod.sh`          | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                        |
 | `test-prod.sh`           | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
 | `supabase-reset.sh`      | Reset Supabase (remove containers and delete DB data and storage).                                               |
 | `release-new-version.sh` | Release new version of RecordRanks (pushes to Codeberg).                                                         |
@@ -147,7 +173,7 @@ There are several custom scripts located in the `bin` directory. These should be
 
 ## Development
 
-This project uses Next JS as a full-stack web application and self-hosted Supabase for various backend tools: DB, storage, logging, cron, etc. To set up the development environment, install Node, PNPM and Docker, and then follow these steps:
+This project uses Next JS as a full-stack web application and self-hosted Supabase for various backend utilities. These instructions assume you're using Linux (or WSL). To set up the development environment, install Node, PNPM and Docker, and then follow these steps:
 
 1. Create a `.env` file: `cp .env.example .env` (skip this step if you already have a `.env` file; **DO NOT** use the example `.env` in production!)
 2. Start Supabase: `docker compose -f docker-compose.supabase.yml up -d`
@@ -164,7 +190,7 @@ To stop Supabase, run `docker compose -f docker-compose.supabase.yml down`.
 
 ### Mock data
 
-If your DB is empty, the backend will fill the events table with the data from `eventsStub.ts`. It will also seed some test users (you can see the details in `instrumentation.ts` -> `testUsers`) and some test persons.
+If your DB is empty, the backend will fill the events table with the data from `eventsStub.ts`. It will also seed some test users (you can see the details in `client/instrumentation.ts` -> `testUsers`) and some test persons.
 
 ### Accessing DB container directly
 
