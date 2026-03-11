@@ -32,8 +32,11 @@ export async function GET(req: NextRequest, { params }: RouteContext<"/api/expor
   const { data, error } = await storageClient.from(process.env.PUBLIC_EXPORTS_BUCKET_NAME).list(exportFormatVersion);
   if (error) return new Response(`Error while fetching list of export files: ${error.message}`, { status: 500 });
   if (data.length === 0) return new Response("No public exports have been generated yet", { status: 500 });
+
   const latestExport = data.at(-1)!;
   const filePath = `${exportFormatVersion}/${latestExport.name}`;
+  if (!latestExport.created_at)
+    return new Response("Date of creation not found. Please contact the development team.", { status: 500 });
 
   if (searchParams.get("metadataOnly") === "true") {
     // Respond with the metadata of the latest export

@@ -46,7 +46,7 @@ function FormPersonInputs({
   addNewPersonMode,
   redirectToOnAddPerson = "",
   display = "grid",
-  showWcaId = false
+  showWcaId = false,
 }: Props) {
   const router = useRouter();
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
@@ -247,7 +247,11 @@ function FormPersonInputs({
                       onMouseEnter={() => setPersonSelection(matchIndex)}
                       onMouseDown={() => selectPerson(inputIndex, matchIndex)}
                     >
-                      {person !== null ? <Competitor person={person} showWcaId showLocalizedName noLink /> : "(add new person)"}
+                      {person !== null ? (
+                        <Competitor person={person} showWcaId showLocalizedName noLink />
+                      ) : (
+                        "(add new person)"
+                      )}
                     </li>
                   ))
                 ) : (
@@ -256,7 +260,9 @@ function FormPersonInputs({
               </ul>
             )}
 
-            {showWcaId && persons[inputIndex]?.wcaId && <div className="pt-1 px-2 font-monospace text-secondary">{persons[inputIndex].wcaId}</div>}
+            {showWcaId && persons[inputIndex]?.wcaId && (
+              <div className="px-2 pt-1 font-monospace text-secondary">{persons[inputIndex].wcaId}</div>
+            )}
           </div>
         </div>
       ))}
