@@ -16,7 +16,7 @@ import {
   collectiveSolutionsPublicCols,
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
-import { sendEmail, sendRoleChangedEmail } from "~/server/email/mailer.ts";
+import { sendEmail, sendErrorEmail, sendRoleChangedEmail } from "~/server/email/mailer.ts";
 import { type Role, Roles } from "~/server/permissions.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
@@ -37,11 +37,13 @@ export const logErrorSF = actionClient
   .metadata({})
   .inputSchema(
     z.strictObject({
-      message: z.string().nonempty(),
+      errorMessage: z.string().nonempty(),
     }),
   )
-  .action(async ({ parsedInput: { message } }) => {
-    logMessage("RR5000", message);
+  .action(async ({ parsedInput: { errorMessage } }) => {
+    if (process.env.NEXT_PUBLIC_CONTACT_EMAIL) sendErrorEmail(process.env.NEXT_PUBLIC_CONTACT_EMAIL, errorMessage);
+
+    logMessage("RR5000", errorMessage);
   });
 
 export const logUserDeletedSF = actionClient
@@ -53,6 +55,19 @@ export const logUserDeletedSF = actionClient
   )
   .action(async ({ parsedInput: { id } }) => {
     logMessage("RR0034", `Deleting user with ID ${id}`);
+  });
+
+export const sendDebugEmailSF = actionClient
+  .metadata({ permissions: null })
+  .inputSchema(z.strictObject({ emailAddress: z.email() }))
+  .action(async ({ parsedInput: { emailAddress }, ctx: { session } }) => {
+    if (!getIsAdmin(session.user.role)) throw new RrActionError("Unauthorized");
+
+    sendEmail(
+      emailAddress,
+      "Debug email",
+      "This is a debug email sent by an admin for testing. You can safely ignore this.",
+    );
   });
 
 export const updateUserSF = actionClient

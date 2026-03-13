@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { loadEnvConfig } from "@next/env";
 import Handlebars from "handlebars";
-import { MailtrapClient } from "mailtrap";
+import nodemailer from "nodemailer";
+import type Mail from "nodemailer/lib/mailer/index";
 import { Countries } from "~/helpers/Countries.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
@@ -18,28 +19,39 @@ if (process.env.NODE_ENV !== "production") loadEnvConfig(process.cwd(), true);
 
 if (!process.env.PROD_HOSTNAME) console.error("PROD_HOSTNAME environment variable not set!");
 if (!process.env.NEXT_PUBLIC_BASE_URL) console.error("NEXT_PUBLIC_BASE_URL environment variable not set!");
+if (!process.env.NEXT_PUBLIC_CONTACT_EMAIL) console.error("NEXT_PUBLIC_CONTACT_EMAIL environment variable not set!");
+if (!process.env.EMAIL_HOST) console.error("EMAIL_HOST environment variable not set!");
+if (!process.env.EMAIL_USERNAME) console.error("EMAIL_USERNAME environment variable not set!");
+if (!process.env.EMAIL_PASSWORD) console.error("EMAIL_PASSWORD environment variable not set!");
 
-// Mailtrap documentation: https://github.com/mailtrap/mailtrap-nodejs
-const client = new MailtrapClient({
-  token: process.env.EMAIL_API_KEY ?? "",
-  sandbox: process.env.NODE_ENV !== "production",
-  testInboxId: process.env.NODE_ENV === "production" ? undefined : Number(process.env.EMAIL_TEST_INBOX_ID),
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: process.env.NODE_ENV === "production" ? 465 : 587,
+  secure: process.env.NODE_ENV === "production", // Use true for port 465, false for port 587
+  auth: {
+    user: process.env.EMAIL_USERNAME,
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
-const from = {
+const noReplyEmail: Mail.Address = {
   name: "No Reply",
-  email: `no-reply@${process.env.PROD_HOSTNAME}`,
+  address: `no-reply@${process.env.PROD_HOSTNAME}`,
 };
-const adminEmail = { email: process.env.NEXT_PUBLIC_CONTACT_EMAIL! };
-const contestsEmail = {
+const adminEmail: Mail.Address = {
+  name: "Admin",
+  address: process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
+};
+const contestsEmail: Mail.Address = {
   name: "Contests",
-  email: `contests@${process.env.PROD_HOSTNAME}`,
+  address: `contests@${process.env.PROD_HOSTNAME}`,
 };
-const resultsEmail = {
+const resultsEmail: Mail.Address = {
   name: "Results",
-  email: `results@${process.env.PROD_HOSTNAME}`,
+  address: `results@${process.env.PROD_HOSTNAME}`,
 };
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
+const projectName = process.env.NEXT_PUBLIC_PROJECT_NAME!;
 
 async function send({
   templateFileName = "default.hbs",
@@ -51,9 +63,9 @@ async function send({
   callback: (html: string) => Promise<void>;
 }) {
   if (process.env.VITEST) return;
-  if (!process.env.EMAIL_API_KEY) {
+  if (!process.env.EMAIL_HOST) {
     if (process.env.NODE_ENV === "production")
-      console.warn("Warning: Not sending email, because EMAIL_API_KEY environment variable isn't set!");
+      console.warn("Warning: Not sending email, because EMAIL_HOST environment variable isn't set!");
     return;
   }
 
@@ -69,16 +81,39 @@ async function send({
   }
 }
 
-// Email functions
+/////////////////////
+// Email functions //
+/////////////////////
 
 export function sendEmail(to: string, subject: string, content: string) {
   send({
-    context: { content },
+    context: {
+      projectName,
+      content,
+    },
     callback: async (html) => {
-      await client.send({
-        from,
-        to: [{ email: to }],
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
         subject,
+        html,
+      });
+    },
+  });
+}
+
+export function sendErrorEmail(to: string, errorMessage: string) {
+  send({
+    templateFileName: "error.hbs",
+    context: {
+      projectName,
+      errorMessage,
+    },
+    callback: async (html) => {
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
+        subject: "Website error",
         html,
       });
     },
@@ -90,12 +125,13 @@ export function sendVerificationEmail(to: string, url: string) {
     templateFileName: "email-verification.hbs",
     context: {
       baseUrl,
+      projectName,
       verificationLink: url,
     },
     callback: async (html) => {
-      await client.send({
-        from,
-        to: [{ email: to }],
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
         subject: "Email verification",
         html,
       });
@@ -108,12 +144,13 @@ export function sendResetPasswordEmail(to: string, url: string) {
     templateFileName: "password-reset-request.hbs",
     context: {
       baseUrl,
+      projectName,
       passwordResetLink: url,
     },
     callback: async (html) => {
-      await client.send({
-        from,
-        to: [{ email: to }],
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
         subject: "Password reset",
         html,
       });
@@ -126,11 +163,12 @@ export function sendPasswordChangedEmail(to: string) {
     templateFileName: "password-changed.hbs",
     context: {
       baseUrl,
+      projectName,
     },
     callback: async (html) => {
-      await client.send({
-        from,
-        to: [{ email: to }],
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
         subject: "Password change successful",
         html,
       });
@@ -147,15 +185,16 @@ export function sendRoleChangedEmail(
     templateFileName: "role-changed.hbs",
     context: {
       baseUrl,
+      projectName,
       role,
       extra: canAccessModDashboard
         ? ` You can now access the <a href="${baseUrl}/mod">Moderator Dashboard</a> from the navigation bar.`
         : "",
     },
     callback: async (html) => {
-      await client.send({
-        from,
-        to: [{ email: to }],
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
         subject: "Role changed",
         html,
       });
@@ -169,11 +208,12 @@ export function sendContestSubmittedEmail(recipients: string[], contest: SelectC
   send({
     templateFileName: "contest-submitted.hbs",
     context: {
+      baseUrl,
+      projectName,
       competitionId: contest.competitionId,
       wcaCompetition: contest.type === "wca-comp",
       contestName: contest.name,
       contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
-      baseUrl,
       creator,
       startDate: contest.startDate.toDateString(),
       location: `${contest.city}, ${Countries.find((c) => c.code === contest.regionCode)?.name ?? "NOT FOUND"}`,
@@ -183,22 +223,22 @@ export function sendContestSubmittedEmail(recipients: string[], contest: SelectC
       const subject = `${urgent ? "Urgent: " : ""}Contest submitted: ${contest.shortName}`;
 
       if (recipients.length > 0) {
-        await client.send({
-          from,
-          reply_to: adminEmail,
-          to: recipients.map((r) => ({ email: r })),
-          bcc: [adminEmail],
+        await transporter.sendMail({
+          from: noReplyEmail,
+          replyTo: adminEmail,
+          to: recipients,
+          bcc: adminEmail,
           subject,
           html,
-          // priority: urgent ? "high" : "normal",
+          priority: urgent ? "high" : "normal",
         });
       } else {
-        await client.send({
-          from,
-          to: [adminEmail],
+        await transporter.sendMail({
+          from: noReplyEmail,
+          to: adminEmail,
           subject,
           html,
-          // priority: urgent ? "high" : "normal",
+          priority: urgent ? "high" : "normal",
         });
       }
     },
@@ -212,13 +252,14 @@ export function sendContestApprovedEmail(
   send({
     templateFileName: "contest-approved.hbs",
     context: {
+      projectName,
       contestName: contest.name,
       contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
     },
     callback: async (html) => {
-      await client.send({
+      await transporter.sendMail({
         from: contestsEmail,
-        to: [{ email: to }],
+        to,
         subject: `Contest approved: ${contest.shortName}`,
         html,
       });
@@ -236,9 +277,10 @@ export function sendContestFinishedEmail(
   send({
     templateFileName: "contest-finished.hbs",
     context: {
+      baseUrl,
+      projectName,
       contestName: contest.name,
       contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
-      baseUrl,
       creator,
       duesAmount: getIsCompType(contest.type) && duesAmount >= 1 ? duesAmount.toFixed(2) : "",
       isUnofficialCompetition: contest.type === "comp",
@@ -247,18 +289,18 @@ export function sendContestFinishedEmail(
       const subject = `Contest finished: ${contest.shortName}`;
 
       if (recipients.length > 0) {
-        await client.send({
+        await transporter.sendMail({
           from: contestsEmail,
-          reply_to: adminEmail,
-          to: recipients.map((r) => ({ email: r })),
-          bcc: [adminEmail],
+          replyTo: adminEmail,
+          to: recipients,
+          bcc: adminEmail,
           subject,
           html,
         });
       } else {
-        await client.send({
+        await transporter.sendMail({
           from: contestsEmail,
-          to: [adminEmail],
+          to: adminEmail,
           subject,
           html,
         });
@@ -274,13 +316,14 @@ export function sendContestPublishedEmail(
   send({
     templateFileName: "contest-published.hbs",
     context: {
+      projectName,
       contestName: contest.name,
       contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
     },
     callback: async (html) => {
-      await client.send({
+      await transporter.sendMail({
         from: contestsEmail,
-        to: [{ email: to }],
+        to,
         subject: `Contest published: ${contest.shortName}`,
         html,
       });
@@ -299,6 +342,7 @@ export function sendVideoBasedResultSubmittedEmail(
     templateFileName: "video-based-result-submitted.hbs",
     context: {
       baseUrl,
+      projectName,
       eventName: event.name,
       roundFormat: roundFormats.find((rf) => rf.value !== "3" && rf.attempts === result.attempts.length)!.label,
       best:
@@ -315,11 +359,11 @@ export function sendVideoBasedResultSubmittedEmail(
       creatorName: creatorName ?? "",
     },
     callback: async (html) => {
-      await client.send({
+      await transporter.sendMail({
         from: resultsEmail,
-        reply_to: adminEmail,
-        to: [{ email: to }],
-        bcc: [adminEmail],
+        replyTo: adminEmail,
+        to,
+        bcc: adminEmail,
         subject: `Result submitted: ${event.name}`,
         html,
       });
@@ -332,13 +376,14 @@ export function sendVideoBasedResultApprovedEmail(to: string, event: SelectEvent
     templateFileName: "video-based-result-approved.hbs",
     context: {
       baseUrl,
+      projectName,
       eventId: event.eventId,
       eventName: event.name,
     },
     callback: async (html) => {
-      await client.send({
+      await transporter.sendMail({
         from: resultsEmail,
-        to: [{ email: to }],
+        to,
         subject: `Result approved`,
         html,
       });

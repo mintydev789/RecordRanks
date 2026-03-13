@@ -1,6 +1,5 @@
 "use client";
 
-import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
 import { logErrorSF } from "~/server/serverFunctions/serverFunctions";
 
@@ -9,10 +8,8 @@ type Props = {
 };
 
 function ErrorPage({ error }: Props) {
-  const { execute: logError } = useAction(logErrorSF);
-
   useEffect(() => {
-    logError({ message: error.message });
+    logErrorSF({ errorMessage: error.message });
   }, [error]);
 
   return (

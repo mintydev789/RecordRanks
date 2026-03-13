@@ -47,7 +47,7 @@ To set up a production `.env` file, follow these steps:
 5. Set `RR_DB_PASSWORD` to a secure password
 6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`)
 7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`)
-8. Set `EMAIL_API_KEY` to your Mailtrap API key
+8. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials
 9. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
 
 ### Icon
@@ -97,6 +97,10 @@ Before you deploy the instance, you will have to set up your DNS records:
 \* Note: a transactional email provider is not the same as an email service provider; the former enables you to send automated emails from your domain name (e.g. no-reply@yourdomainname.com), while the latter enables you to create an email inbox, often with the ability to set up a custom domain name (e.g. inquiries@yourdomainname.com).
 
 The `docker-compose.rr.yml` file includes a Caddy reverse proxy, which handles proxying for both Next JS and Supabase.
+
+### Firewall
+
+If you're using a firewall on your server, make sure the following ports are not being blocked: `80`, `443`, `443/udp`, `465`.
 
 ### Starting production server
 

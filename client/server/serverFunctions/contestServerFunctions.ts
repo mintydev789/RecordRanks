@@ -365,7 +365,7 @@ export const finishContestSF = actionClient
       sendContestFinishedEmail(
         organizerUsers.map((u) => u.email),
         contest,
-        creatorPerson?.name ?? "DELETED",
+        creatorPerson?.name ?? "DELETED USER",
       );
     },
   );

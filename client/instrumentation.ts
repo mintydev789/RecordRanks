@@ -129,9 +129,9 @@ export async function register() {
           (await db.select().from(usersTable).where(eq(usersTable.email, testUser.email)).limit(1)).length > 0;
 
         if (!userExists) {
-          if (process.env.EMAIL_API_KEY) {
+          if (process.env.EMAIL_HOST) {
             throw new Error(
-              "The EMAIL_API_KEY environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Comment it out and then uncomment it again after the DB has been seeded.",
+              "The EMAIL_HOST environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Comment it out and then uncomment it again after the DB has been seeded.",
             );
           }
 
