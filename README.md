@@ -30,19 +30,29 @@ To deploy an instance of RecordRanks, you have to first set up a Linux server an
 
 ### Environment variables
 
-**WIP**
+You will have to set up a local `.env` file for releasing your Docker image and another one on your server, which will contain all of your secrets. Note that you **MUST NOT** use your local `.env` file or the `.env.example` file in production, because using the default values will leave your instance **completely exposed**. To set up a local `.env` file, follow these steps:
 
-<!--
-There are several environment variables you'll have to set up. First, copy the `.env.example` file and name it `.env`. Then follow the steps below to set all of the required variables. **THIS IS REQUIRED**, because using the default values will leave your instance **completely exposed** (and it most likely won't work anyways).
+1. Create `.env` file: `cp .env.example .env`
+2. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`)
+3. Set `NEXT_PUBLIC_PROJECT_NAME` to your project name (e.g. `My Sports Project`)
+4. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`)
+5. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
 
-1. Run `./bin/supabase-generate-keys.sh`.
+To set up a production `.env` file, follow these steps:
 
-CONSIDER THE VARIABLES UNIQUE TO DEV/PROD!!!
--->
+1. Create `.env` file: `cp .env.example .env`
+2. Generate secure secret keys for Supabase: `./bin/supabase-generate-keys.sh`
+3. Comment out all variables marked with `for local development` and uncomment variables marked with `for production`
+4. Set `RR_DB_USERNAME` to a custom username for the DB user
+5. Set `RR_DB_PASSWORD` to a secure password
+6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`)
+7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`)
+8. Set `EMAIL_API_KEY` to your Mailtrap API key
+9. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
 
 ### Icon
 
-RecordRanks does not have a default icon available, so you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the RecordRanks navbar). These files are gitignored in this repo. They get included in the Docker image when you build it.
+RecordRanks does not have a default icon available, so before you publish your Docker image, you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the navbar). These files are gitignored in this repo, but they get included in the Docker image when you build it.
 
 To create a `favicon.ico` file from an `icon.svg` file, use the following commands from the root directory of the repo (`inkscape` and `imagemagick` required):
 
@@ -73,7 +83,7 @@ inkscape -w 256 -h 256 -o client/public/favicon.png icon.svg
 
 ### Creating the Docker image
 
-Once you have a [Dockerhub](https://hub.docker.com/) account, you can publish your Docker image using the script (see the Scripts section). Make sure to set `DOCKER_IMAGE_NAME` in your `.env` file first, specifying your image name, which should also include your username (e.g. `dockerhubuser/myproject-nextjs`).
+Once you have a [Dockerhub](https://hub.docker.com/) account, you can publish your Docker image using the script (see the Scripts section).
 
 ### DNS records
 
@@ -90,7 +100,16 @@ The `docker-compose.rr.yml` file includes a Caddy reverse proxy, which handles p
 
 ### Starting production server
 
-To deploy your RecordRanks instance, you will have to install the following dependencies on your Linux server: `git`, `docker`, `node`, `pnpm` and `rsync` (for backups). You will also need to set up a `.env` file, which will be different from the `.env` file you used locally to publish your Docker image (see the Environment variables section).
+To deploy your RecordRanks instance, you will have to install the following dependencies on your Linux server: `git`, `docker`, `node`, `pnpm` and `rsync` (for backups). It is also recommended that you [set up a better logging driver](https://docs.docker.com/engine/logging/configure/) for Docker. Here's an example `/etc/docker/daemon.json` file you could use for your server (don't forget to restart Docker and any running containers after setting it up):
+
+```json
+{
+  "log-driver": "local",
+  "log-opts": {
+    "mode": "non-blocking"
+  }
+}
+```
 
 There are two Docker Compose files used for deploying an instance: one for starting Supabase and one for starting RecordRanks. Run the following command to start Supabase:
 
@@ -102,7 +121,7 @@ The Scripts section shows how to start RecordRanks.
 
 ### Supabase
 
-RecordRanks instances run alongside self-hosted Supabase, which provides the database, blob storage, a sysadmin dashboard, and more.
+RecordRanks instances run alongside self-hosted Supabase, which provides the database, blob storage, a sysadmin dashboard (Supabase Studio), and more. The credentials for accessing Supabase Studio are in the `.env` file.
 
 #### Storage
 
@@ -124,39 +143,43 @@ You can then place any assets you want to be publicly accessible via the URL in 
 
 To enable automatic public exports that run at regular intervals, you have to set up a cron job with Supabase:
 
-1. Open Supabase Studio and go to Integrations -> Vault.
-2. Add secret "service_role_key" with the value being the same as `SERVICE_ROLE_KEY` in your .env file.
-3. Add secret "base_url" with the value being the same as `NEXT_PUBLIC_BASE_URL` in your .env file.
-4. Go to SQL Editor and run the following query:
-
-```sql
-select
-  cron.schedule(
-    'Create public export',
-    '0 0 * * *', -- at 00:00 every night; you can set a different schedule, using the cron syntax
-    $$
-    select
-      net.http_post(
-        url:=(select decrypted_secret from vault.decrypted_secrets where name = 'base_url') || '/api/export/create-public-export',
-        headers:=jsonb_build_object(
-          'Content-type', 'application/json',
-          'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'service_role_key')
-        ),
-        timeout_milliseconds:=5000
-      ) as request_id;
-    $$
-  );
-```
+1. Open Supabase Studio and go to Integrations -> Vault -> Secrets.
+2. Add secret "service_role_key" with the value being the same as `SERVICE_ROLE_KEY` in your `.env` file.
+3. Add secret "base_url" with the value being the same as `NEXT_PUBLIC_BASE_URL` in your `.env` file.
+4. Go to SQL Editor and run the query "Schedule public export cron job".
 
 **NOTE**: while this cron job will be visible in Integrations -> Cron, it cannot be edited directly, due to the complex value of the authorization header; only activated and deactivated. To change the cron job, delete it and create it again following step 4.
 
-To test this locally with `test-prod.sh`, use `http://rr-nextjs:3000` as the base URL value in Supabase Vault, temporarily add `shared` network to the `supabase-db` container in `docker-compose.supabase.yml`, change the value of `SUPABASE_PUBLIC_URL` to `http://supabase-kong:8000` in the `.env` file and restart the `supabase-db` container. You can also test it with the normal local dev environment using this command (make sure to replace `<SERVICE_ROLE_KEY>` with the value in your `.env` file):
+To test this locally with `test-prod.sh`, use `http://rr-nextjs:<NEXTJS_PORT>` as the base URL value in Supabase Vault, temporarily add `shared` network to the `supabase-db` container in `docker-compose.supabase.yml`, change the value of `SUPABASE_PUBLIC_URL` to `http://supabase-kong:<KONG_HTTP_PORT>` in the `.env` file and restart the `supabase-db` container. You can also test it with the normal local dev environment using this command:
 
 ```sh
-curl -X POST -H "Authorization: Bearer <SERVICE_ROLE_KEY>" http://localhost:3000/api/export/create-public-export
+curl -X POST -H "Authorization: Bearer <SERVICE_ROLE_KEY>" http://localhost:<NEXTJS_PORT>/api/export/create-public-export
 ```
 
 For debugging you can look at the history of cron job runs in Integrations -> Cron and at the contents of the `net` schema in Table Editor.
+
+The export files can be imported with Supabase, but keep in mind that they don't include the data for some internal columns. The import process for each table is as follows:
+
+1. Go to "SQL Editor" and run these queries to remove all entries from the table and temporarily remove the constraint on the `id` column:
+
+```sql
+DELETE FROM record_ranks.<table>;
+-- Note that this query also affects tables that have references to this table because of CASCADE
+ALTER TABLE record_ranks.<table> DROP CONSTRAINT <table>_pkey CASCADE;
+ALTER TABLE record_ranks.<table> ALTER COLUMN id DROP IDENTITY IF EXISTS;
+```
+
+2. Go to "Table Editor" and select schema `record_ranks`.
+3. Click "Insert" -> "Import data from CSV" -> select the CSV file -> "Import data".
+4. Run these queries to add back the constraint for the `id` column:
+
+```sql
+ALTER TABLE record_ranks.<table> ADD CONSTRAINT <table>_pkey PRIMARY KEY (id);
+ALTER TABLE record_ranks.<table> ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
+ALTER SEQUENCE record_ranks.<table>_id_seq RESTART WITH <ID of the last entry + 1>;
+```
+
+Note that, due to limitations with the CSV format, empty string values are represented as `__EMPTY_STRING__` (e.g. in the `contests.description` column). You can (and should) safely change those values to `""` (empty string) using an UPDATE query (e.g. `UPDATE record_ranks.contests SET description = '' WHERE description = '__EMPTY_STRING__';`).
 
 ## Scripts
 
@@ -185,6 +208,8 @@ This project uses Next JS as a full-stack web application and self-hosted Supaba
 This repo uses Biome for formatting and linting. If you intend to contribute code to this repo, please install the Biome extension for your IDE and set it up as your default formatter.
 
 Go to `localhost:3000` to see the website. Go to `localhost:8000` to open Supabase Studio. The default username is `supabase` and the password is `rr` (you can see this in the `.env` file). The default ports can be overridden in the `.env` file.
+
+Please note that some Supabase features, like analytics and cron only work in a production environment. You can test the production environment using the `test-prod.sh` script (see the Supabase section for more information).
 
 To stop Supabase, run `docker compose -f docker-compose.supabase.yml down`.
 

@@ -3,7 +3,7 @@ name: recordranks
 services:
   caddy:
     container_name: rr-caddy
-    image: caddy:2.11-alpine
+    image: caddy:2.11.2-alpine
     networks:
       - shared
     ports:

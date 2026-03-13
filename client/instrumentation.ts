@@ -131,7 +131,7 @@ export async function register() {
         if (!userExists) {
           if (process.env.EMAIL_API_KEY) {
             throw new Error(
-              "The EMAIL_API_KEY environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Remove it and comment out the sendVerificationEmail function in auth.ts, and then add them back after the DB has been seeded.",
+              "The EMAIL_API_KEY environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Comment it out and then uncomment it again after the DB has been seeded.",
             );
           }
 

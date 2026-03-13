@@ -1,7 +1,7 @@
 export const C = {
   cubingContestsHostname: "cubingcontests.com",
   sourceCodeLink: "https://codeberg.org/mintydev/RecordRanks",
-  discordServerLink: "https://discord.gg/7rRMQA8jnU", // this is hardcoded in .mdx
+  discordServerLink: "https://discord.gg/7rRMQA8jnU",
   fetchDebounceTimeout: 600, // the timeout in ms between doing repetitive fetch requests that need to be limited
   maxRounds: 4,
   minResultsForThreeMoreRounds: 100,
@@ -46,9 +46,7 @@ export const C = {
   },
 };
 
-export const IS_CUBING_CONTESTS_INSTANCE = new RegExp(`https://${C.cubingContestsHostname}`).test(
-  process.env.NEXT_PUBLIC_BASE_URL ?? "",
-);
+export const IS_CUBING_CONTESTS_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === `https://${C.cubingContestsHostname}`;
 
 export const PUBLIC_EXPORTS_FORMAT_VERSIONS = ["v1"];
 
@@ -65,26 +63,9 @@ The results in these exports are available under the [CC Attribution-ShareAlike 
 
 ## Using the export files
 
-The CSV files can be used directly for putting together various statistics based on the data. They can also be imported using Supabase (e.g. for testing the website using real data in local development). The import process for each table is as follows:
+The CSV files can be used directly for putting together various statistics based on the data. They can also be imported using Supabase (e.g. for testing the website using real data in local development). The process for that is outlined in the [RecordRanks repository](${C.sourceCodeLink}) README.
 
-1. Go to "SQL Editor" and run these queries to remove all entries from the table and temporarily remove the constraint on the \`id\` column:
-
-\`\`\`sql
-ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> DROP CONSTRAINT <table>_pkey;
-ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ALTER COLUMN id DROP IDENTITY IF EXISTS;
-\`\`\`
-
-2. Go to "Table Editor" and select schema \`${process.env.RR_DB_SCHEMA}\`.
-3. Click "Insert" -> "Import data from CSV" -> select the CSV file -> "Import data".
-4. Run these queries to add back the constraint for the \`id\` column:
-
-\`\`\`sql
-ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ADD CONSTRAINT <table>_pkey PRIMARY KEY (id);
-ALTER TABLE ${process.env.RR_DB_SCHEMA}.<table> ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
-ALTER SEQUENCE ${process.env.RR_DB_SCHEMA}.<table>_id_seq RESTART WITH <ID of the last entry + 1>;
-\`\`\`
-
-Note that, due to limitations with the CSV format, empty string values are represented as \`__EMPTY_STRING__\` (e.g. in the \`contests.description\` column). You can (and should) safely change those values to \`""\` (empty string) using an UPDATE query.
+Note that, due to limitations with the CSV format, empty string values are represented as \`__EMPTY_STRING__\` (e.g. in the \`contests.description\` column). You can (and should) safely change those values to empty strings.
 
 ## Attempt results
 
