@@ -24,7 +24,7 @@ import Tabs from "~/app/components/UI/Tabs.tsx";
 import Tooltip from "~/app/components/UI/Tooltip.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
-import { C } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import type { Room, Schedule } from "~/helpers/types/Schedule.ts";
@@ -128,7 +128,9 @@ function ContestForm({
   // Schedule stuff
   const [rooms, setRooms] = useState<Room[]>(contest?.schedule?.venues[0].rooms ?? []);
   const [timezone, setTimezone] = useState(contest?.schedule?.venues[0].timezone ?? contest?.timezone ?? "Etc/GMT");
-  const [isUnderstood, setIsUnderstood] = useState(mode === "edit");
+  const [isHonoraryDuesUnderstood, setIsHonoraryDuesUnderstood] = useState(
+    !IS_CUBING_CONTESTS_INSTANCE || mode === "edit",
+  );
   const [isTimelinessUnderstood, setIsTimelinessUnderstood] = useState(mode === "edit");
   const [isCompPhotosUnderstood, setIsCompPhotosUnderstood] = useState(mode === "edit");
 
@@ -186,7 +188,7 @@ function ContestForm({
   const disabledIfDetailsImported = !isAdmin && detailsImported;
   const urgent = isValid(startDate) && getIsUrgent(startDate!);
   const disabledIfNotUnderstood =
-    (!isUnderstood && (!type || getIsCompType(type))) || (!isTimelinessUnderstood && urgent);
+    (!isHonoraryDuesUnderstood && (!type || getIsCompType(type))) || (!isTimelinessUnderstood && urgent);
 
   const handleSubmit = async () => {
     const selectedOrganizers = organizers.filter((o: InputPerson) => o !== null);
@@ -830,7 +832,7 @@ function ContestForm({
           />
         )}
 
-        {!disabled && getIsCompType(type) && (
+        {IS_CUBING_CONTESTS_INSTANCE && !disabled && getIsCompType(type) && (
           <>
             <p className="fs-6 mt-4">
               As part of the Cubing Contests honorary dues system, you will be asked to{" "}
@@ -857,8 +859,8 @@ function ContestForm({
               <FormCheckbox
                 id="understood"
                 title="I understand"
-                selected={isUnderstood}
-                setSelected={setIsUnderstood}
+                selected={isHonoraryDuesUnderstood}
+                setSelected={setIsHonoraryDuesUnderstood}
               />
             )}
           </>

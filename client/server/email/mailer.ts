@@ -5,7 +5,7 @@ import { loadEnvConfig } from "@next/env";
 import Handlebars from "handlebars";
 import { MailtrapClient } from "mailtrap";
 import { Countries } from "~/helpers/Countries.ts";
-import { C } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { getFormattedTime, getIsCompType, getIsUrgent } from "~/helpers/utilityFunctions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
@@ -231,7 +231,7 @@ export function sendContestFinishedEmail(
   contest: Pick<SelectContest, "competitionId" | "name" | "shortName" | "type" | "participants">,
   creator: string,
 ) {
-  const duesAmount = C.duePerCompetitor * contest.participants;
+  const duesAmount = IS_CUBING_CONTESTS_INSTANCE ? C.duePerCompetitor * contest.participants : 0;
 
   send({
     templateFileName: "contest-finished.hbs",
