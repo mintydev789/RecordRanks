@@ -6,7 +6,7 @@ import { EventValidator } from "~/helpers/validators/Event.ts";
 import { db } from "~/server/db/provider.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 import { eventsTable as table } from "~/server/db/schema/events.ts";
-import { logMessage } from "~/server/serverUtilityFunctions.ts";
+import { logMessage } from "~/server/serverOnlyFunctions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
 
 export const createEventSF = actionClient

@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import z from "zod";
 import { RecordConfigValidator } from "~/helpers/validators/RecordConfig.ts";
-import { logMessage } from "~/server/serverUtilityFunctions.ts";
+import { logMessage } from "~/server/serverOnlyFunctions.ts";
 import { db } from "../db/provider.ts";
 import {
   type RecordConfigResponse,

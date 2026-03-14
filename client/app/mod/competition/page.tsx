@@ -9,7 +9,7 @@ import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { resultsTable } from "~/server/db/schema/results.ts";
 import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
-import { authorizeUser, getUserHasAccessToContest } from "~/server/serverUtilityFunctions.ts";
+import { authorizeUser, getUserHasAccessToContest } from "~/server/serverOnlyFunctions.ts";
 import ContestForm from "./ContestForm.tsx";
 
 type Props = {

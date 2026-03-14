@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { getModContestsSF } from "~/server/serverFunctions/contestServerFunctions.ts";
-import { authorizeUser } from "~/server/serverUtilityFunctions.ts";
+import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
 import ModDashboardScreen from "./ModDashboardScreen.tsx";
 
 type Props = {

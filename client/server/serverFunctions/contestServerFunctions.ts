@@ -38,7 +38,7 @@ import {
   getRecordConfigs,
   getUserHasAccessToContest,
   logMessage,
-} from "~/server/serverUtilityFunctions.ts";
+} from "~/server/serverOnlyFunctions.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
 import {
   type ContestResponse,

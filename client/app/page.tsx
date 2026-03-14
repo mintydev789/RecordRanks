@@ -1,10 +1,13 @@
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ne } from "drizzle-orm";
+import { desc, ne } from "drizzle-orm";
 import Link from "next/link";
 import CollectiveCubing from "~/app/components/CollectiveCubing.tsx";
+import BlogPostCard from "~/app/posts/BlogPostCard.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { db } from "~/server/db/provider.ts";
+import { postsTable } from "~/server/db/schema/posts.ts";
+import { blogPostsQuery } from "~/server/serverOnlyFunctions.ts";
 import {
   collectiveSolutionsPublicCols,
   collectiveSolutionsTable as csTable,
@@ -14,11 +17,10 @@ import PartialHomePageDetails from "./components/PartialHomePageDetails.tsx";
 export const dynamic = "force-dynamic";
 
 async function HomePage() {
-  const [collectiveSolution] = await db
-    .select(collectiveSolutionsPublicCols)
-    .from(csTable)
-    .where(ne(csTable.state, "archived"))
-    .limit(1);
+  const [[collectiveSolution], [latestBlogPost]] = await Promise.all([
+    db.select(collectiveSolutionsPublicCols).from(csTable).where(ne(csTable.state, "archived")).limit(1),
+    blogPostsQuery.orderBy(desc(postsTable.date)).limit(1),
+  ]);
 
   return (
     <section className="px-3">
@@ -61,6 +63,14 @@ async function HomePage() {
           See Rankings
         </Link>
       </div>
+
+      {latestBlogPost && (
+        <>
+          <h3 className="rr-basic-heading">Latest blog post</h3>
+
+          <BlogPostCard post={latestBlogPost} />
+        </>
+      )}
 
       {IS_CUBING_CONTESTS_INSTANCE && (
         <>

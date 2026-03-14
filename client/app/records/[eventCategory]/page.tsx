@@ -9,7 +9,7 @@ import RecordsTable from "~/app/records/[eventCategory]/RecordsTable";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import type { RecordCategory } from "~/helpers/types.ts";
-import { getRecords } from "~/server/serverUtilityFunctions";
+import { getRecords } from "~/server/serverOnlyFunctions";
 
 export const metadata = {
   title: "Records | Cubing Contests",

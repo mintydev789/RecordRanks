@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
-import { authorizeUser } from "~/server/serverUtilityFunctions.ts";
+import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {

@@ -13,7 +13,7 @@ import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import ModFilters from "~/app/mod/ModFilters.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
-import { C } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { ContestState } from "~/helpers/types.ts";
 import { getActionError, getFormattedDate, getIsAdmin } from "~/helpers/utilityFunctions.ts";
@@ -66,14 +66,16 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
       <div className="px-2">
         <ToastMessages />
 
-        <div className="alert alert-light mb-4" role="alert">
-          We have a Cubing Contests Discord server!{" "}
-          <a href={C.discordServerLink} target="_blank" rel="noopener noreferrer">
-            Click here to join
-          </a>
-          , then send your CC username and your Discord username in an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}{" "}
-          so you can be given the moderator role on the server.
-        </div>
+        {IS_CUBING_CONTESTS_INSTANCE && (
+          <div className="alert alert-light mb-4" role="alert">
+            We have a Cubing Contests Discord server!{" "}
+            <a href={C.discordServerLink} target="_blank" rel="noopener noreferrer">
+              Click here to join
+            </a>
+            , then send your CC username and your Discord username in an email to{" "}
+            {process.env.NEXT_PUBLIC_CONTACT_EMAIL} so you can be given the moderator role on the server.
+          </div>
+        )}
 
         <div className="d-flex fs-5 my-4 flex-wrap gap-3">
           <Link href="/mod/competition" prefetch={false} className="btn btn-success btn-sm btn-lg-md">

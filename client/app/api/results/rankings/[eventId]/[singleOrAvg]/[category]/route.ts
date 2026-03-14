@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import z from "zod";
 import { RecordCategoryValues } from "~/helpers/types";
 import { db } from "~/server/db/provider";
-import { getRankings } from "~/server/serverUtilityFunctions";
+import { getRankings } from "~/server/serverOnlyFunctions";
 
 export async function GET(
   req: NextRequest,

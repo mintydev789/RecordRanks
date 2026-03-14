@@ -24,9 +24,11 @@ import {
 } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
+import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { type ContestResponse, contestsTable } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable, type SelectEvent } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
+import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
 import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { type ResultResponse, resultsTable, type SelectResult } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
@@ -615,3 +617,9 @@ export async function getPersonsForExternalDeviceDataEntry(
     return personsInPreservedOrder;
   }
 }
+
+export const blogPostsQuery = db
+  .select({ ...postsPublicCols, authorName: personsTable.name })
+  .from(postsTable)
+  .leftJoin(usersTable, eq(postsTable.createdBy, usersTable.id))
+  .leftJoin(personsTable, eq(usersTable.personId, personsTable.id));

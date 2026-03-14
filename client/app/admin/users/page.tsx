@@ -5,7 +5,7 @@ import { C } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
-import { authorizeUser } from "~/server/serverUtilityFunctions.ts";
+import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
 import ManageUsersScreen from "./ManageUsersScreen.tsx";
 
 async function ManageUsersPage() {

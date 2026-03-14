@@ -2,7 +2,7 @@ import { inArray } from "drizzle-orm";
 import { db } from "~/server/db/provider.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
 import type { FullResult } from "~/server/db/schema/results.ts";
-import { authorizeUser, getRecordConfigs } from "~/server/serverUtilityFunctions.ts";
+import { authorizeUser, getRecordConfigs } from "~/server/serverOnlyFunctions.ts";
 import ManageResultsScreen from "./ManageResultsScreen.tsx";
 
 async function ManageResultsPage() {

@@ -12,7 +12,7 @@ import {
 } from "~/server/db/schema/auth-schema.ts";
 import { sendPasswordChangedEmail, sendResetPasswordEmail, sendVerificationEmail } from "~/server/email/mailer.ts";
 import { ac, admin, mod, user } from "~/server/permissions.ts";
-import { logMessage } from "~/server/serverUtilityFunctions";
+import { logMessage } from "~/server/serverOnlyFunctions";
 
 if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
 if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");

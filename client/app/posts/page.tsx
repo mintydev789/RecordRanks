@@ -23,8 +23,10 @@ async function PostsPage() {
         <p className="fs-5 mx-3 mt-4 text-center">No posts have been published yet</p>
       ) : (
         <div className="row mx-0 mt-4 mb-2">
-          {posts.map(({ authorName, ...post }) => (
-            <BlogPostCard key={post.id} post={post} authorName={authorName} />
+          {posts.map((post) => (
+            <div key={post.id} className="col-md-6 mb-3">
+              <BlogPostCard post={post} />
+            </div>
           ))}
         </div>
       )}

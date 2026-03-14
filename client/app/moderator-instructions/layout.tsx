@@ -1,12 +1,14 @@
 import Link from "next/link";
 import "./moderator-instructions.css";
-import { C } from "~/helpers/constants";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants";
 
 type Props = {
   children: React.ReactNode;
 };
 
 function ModeratorInstructions({ children }: Props) {
+  if (!IS_CUBING_CONTESTS_INSTANCE) return <span>THIS PAGE IS ONLY SUPPORTED FOR CUBINGCONTESTS.COM</span>;
+
   return (
     <div className="px-3 pb-4">
       <h2 className="mb-4 text-center">Moderator Instructions</h2>

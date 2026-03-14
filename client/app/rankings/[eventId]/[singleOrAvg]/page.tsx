@@ -11,7 +11,7 @@ import RegionSelect from "~/app/rankings/[eventId]/[singleOrAvg]/RegionSelect.ts
 import type { RecordCategory } from "~/helpers/types";
 import { db } from "~/server/db/provider";
 import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events";
-import { getRankings } from "~/server/serverUtilityFunctions";
+import { getRankings } from "~/server/serverOnlyFunctions";
 
 const eventsWith3x3 = [
   "333",

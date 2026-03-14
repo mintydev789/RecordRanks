@@ -4,7 +4,7 @@ import ResultsSubmissionForm from "~/app/components/video-based-results/ResultsS
 import { creatorCols } from "~/server/db/dbUtils";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema";
-import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverUtilityFunctions.ts";
+import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverOnlyFunctions";
 
 type Props = {
   params: Promise<{ resultId: string }>;

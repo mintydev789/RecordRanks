@@ -21,7 +21,7 @@ import {
   getOrCreatePersonByWcaId,
   getPersonExactMatchWcaId,
   logMessage,
-} from "../serverUtilityFunctions.ts";
+} from "../serverOnlyFunctions.ts";
 
 export const getPersonByIdSF = actionClient
   .metadata({ permissions: null })

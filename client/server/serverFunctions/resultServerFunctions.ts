@@ -54,7 +54,7 @@ import {
   getUserHasAccessToContest,
   logMessage,
   setRankingAndProceedsValues,
-} from "../serverUtilityFunctions.ts";
+} from "../serverOnlyFunctions.ts";
 
 const OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG =
   "The result is more than 30 days old and contains a record, which could affect other records. Please contact the development team.";

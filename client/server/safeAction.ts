@@ -3,7 +3,7 @@ import { createSafeActionClient, DEFAULT_SERVER_ERROR_MESSAGE } from "next-safe-
 import z from "zod";
 import type { authClient } from "~/helpers/authClient.ts";
 import { db } from "~/server/db/provider.ts";
-import { authorizeUser } from "./serverUtilityFunctions.ts";
+import { authorizeUser } from "./serverOnlyFunctions.ts";
 
 export const actionClient = createSafeActionClient({
   defineMetadataSchema() {

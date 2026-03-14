@@ -10,7 +10,7 @@ import {
   type SelectPerson,
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
-import { authorizeUser, checkUserPermissions } from "~/server/serverUtilityFunctions.ts";
+import { authorizeUser, checkUserPermissions } from "~/server/serverOnlyFunctions";
 
 async function CompetitorsPage() {
   const { user } = await authorizeUser({ permissions: { persons: ["create", "update", "delete"] } });

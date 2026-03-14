@@ -20,7 +20,7 @@ import { sendEmail, sendErrorEmail, sendRoleChangedEmail } from "~/server/email/
 import { type Role, Roles } from "~/server/permissions.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { checkUserPermissions, logMessage } from "../serverUtilityFunctions.ts";
+import { checkUserPermissions, logMessage } from "../serverOnlyFunctions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})
