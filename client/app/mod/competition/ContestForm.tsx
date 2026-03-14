@@ -195,7 +195,7 @@ function ContestForm({
     // If one of these is 0, the validator will catch it
     const latitudeMicrodegrees = latitude ? Math.round(latitude * 1000000) : 0;
     const longitudeMicrodegrees = longitude ? Math.round(longitude * 1000000) : 0;
-    let schedule: Schedule | undefined;
+    let schedule: Schedule | null = null;
 
     if (getIsCompType(type)) {
       schedule = {
@@ -227,12 +227,12 @@ function ContestForm({
       longitudeMicrodegrees,
       startDate: startDate!,
       endDate: endDate!,
-      startTime: type === "meetup" ? startTime : undefined,
-      timezone: type === "meetup" ? timezone : undefined,
+      startTime: type === "meetup" ? startTime : null,
+      timezone: type === "meetup" ? timezone : null,
       organizerIds: selectedOrganizers.map((o) => o.id),
-      contact: contact.trim() || undefined,
-      description: description.trim(),
-      competitorLimit: competitorLimit || undefined,
+      contact: contact.trim() || null,
+      description: description.trim() || null,
+      competitorLimit: competitorLimit || null,
       schedule,
     });
 
@@ -583,7 +583,7 @@ function ContestForm({
                       </Button>
                       <Tooltip
                         id="access_token_tooltip"
-                        text="Used for external data entry (e.g. using a digital scoretaking system or a third-party tool)"
+                        text="Used for external data entry. See the RecordRanks README for more information."
                       />
                     </div>
                   )}

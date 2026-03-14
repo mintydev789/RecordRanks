@@ -1,6 +1,8 @@
 import "server-only";
 import { defineRelations } from "drizzle-orm";
 import { accessTokensTable as accessTokens } from "~/server/db/schema/access-tokens.ts";
+import { postsTable as posts } from "~/server/db/schema/posts.ts";
+import { settingsTable as settings } from "~/server/db/schema/settings.ts";
 import {
   accountsTable as accounts,
   sessionsTable as sessions,
@@ -29,6 +31,8 @@ export const relations = defineRelations(
     persons,
     recordConfigs,
     collectiveSolutions,
+    posts,
+    settings,
   },
   (r) => ({
     // Better Auth relations
@@ -127,10 +131,22 @@ export const relations = defineRelations(
     },
     recordConfigs: {},
     collectiveSolutions: {
+      event: r.one.events({
+        from: r.collectiveSolutions.eventId,
+        to: r.events.eventId,
+        optional: false,
+      }),
       lastUserWhoInteracted: r.one.users({
         from: r.collectiveSolutions.lastUserWhoInteractedId,
         to: r.users.id,
       }),
     },
+    posts: {
+      author: r.one.users({
+        from: r.posts.createdBy,
+        to: r.users.id,
+      }),
+    },
+    settings: {},
   }),
 );

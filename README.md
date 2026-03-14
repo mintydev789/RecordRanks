@@ -183,7 +183,7 @@ ALTER TABLE record_ranks.<table> ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTIT
 ALTER SEQUENCE record_ranks.<table>_id_seq RESTART WITH <ID of the last entry + 1>;
 ```
 
-Note that, due to limitations with the CSV format, empty string values are represented as `__EMPTY_STRING__` (e.g. in the `contests.description` column). You can (and should) safely change those values to `""` (empty string) using an UPDATE query (e.g. `UPDATE record_ranks.contests SET description = '' WHERE description = '__EMPTY_STRING__';`).
+Note that, due to limitations with the CSV format, empty string values are represented as `__EMPTY_STRING__`. You can (and should) safely change those values to `""` (empty string).
 
 ## Scripts
 

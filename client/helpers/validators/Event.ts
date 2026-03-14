@@ -5,6 +5,7 @@ export const EventValidator = z.strictObject({
   eventId: z
     .string()
     .min(3)
+    .max(32)
     .regex(/^[a-z0-9_]*$/),
   name: z.string().min(3),
   category: z.string().nonempty(),

@@ -9,7 +9,7 @@ type Props = {
 function ModeratorInstructions({ children }: Props) {
   return (
     <div className="px-3 pb-4">
-      <h3 className="mb-4 text-center">How to hold a contest</h3>
+      <h2 className="mb-4 text-center">Moderator Instructions</h2>
 
       <div className="mb-4">
         <p>

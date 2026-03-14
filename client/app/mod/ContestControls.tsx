@@ -136,12 +136,9 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
             Publish
           </Button>
         ) : (
-          <FontAwesomeIcon
-            icon={faClock}
-            title="Contest pending review"
-            aria-label="Contest pending review"
-            className="fs-5 my-1"
-          />
+          <span title="Contest pending review">
+            <FontAwesomeIcon icon={faClock} aria-label="Contest pending review" className="fs-5 my-1" />
+          </span>
         ))}
     </div>
   );

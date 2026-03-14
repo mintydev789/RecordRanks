@@ -1,6 +1,6 @@
 "use client";
 
-import { faBars } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faBook, faCalendarDays, faRankingStar, faStar, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,6 +15,7 @@ function NavbarItems() {
 
   const [expanded, setExpanded] = useState(false);
   const [resultsExpanded, setResultsExpanded] = useState(false);
+  const [moreExpanded, setMoreExpanded] = useState(false);
   const [userExpanded, setUserExpanded] = useState(false);
   const [canAccessModDashboard, setCanAccessModDashboard] = useState(false);
 
@@ -32,13 +33,19 @@ function NavbarItems() {
     router.push("/");
   };
 
-  const toggleDropdown = (dropdown: "results" | "user", newValue = !resultsExpanded) => {
+  const toggleDropdown = (dropdown: "results" | "more" | "user", newValue: boolean) => {
     if (dropdown === "results") {
       setResultsExpanded(newValue);
+      setMoreExpanded(false);
+      setUserExpanded(false);
+    } else if (dropdown === "more") {
+      setResultsExpanded(false);
+      setMoreExpanded(newValue);
       setUserExpanded(false);
     } else {
-      setUserExpanded(newValue);
       setResultsExpanded(false);
+      setMoreExpanded(false);
+      setUserExpanded(newValue);
     }
   };
 
@@ -64,7 +71,7 @@ function NavbarItems() {
           <FontAwesomeIcon icon={faBars} />
         </button>
         <div className={`navbar-collapse justify-content-end ${expanded ? "" : "collapse"}`}>
-          <ul className="navbar-nav fs-5 mx-2 mt-3 mt-lg-0 gap-lg-4 align-items-lg-end align-items-start">
+          <ul className="navbar-nav fs-5 mx-2 mt-3 mt-lg-0 gap-lg-2 align-items-lg-end align-items-start">
             <li className="nav-item">
               <Link
                 className={`nav-link ${pathname === "/competitions" ? "active" : ""}`}
@@ -72,6 +79,7 @@ function NavbarItems() {
                 href="/competitions"
                 onClick={collapseAll}
               >
+                <FontAwesomeIcon icon={faCalendarDays} size="xs" className="me-2" />
                 Contests
               </Link>
             </li>
@@ -82,9 +90,10 @@ function NavbarItems() {
             >
               <button
                 type="button"
-                className={`nav-link dropdown-toggle ${/^\/(rankings|records)\//.test(pathname) ? "active" : ""}`}
-                onClick={() => toggleDropdown("results")}
+                className={`nav-link dropdown-toggle ${/^\/(rankings|records|export)/.test(pathname) ? "active" : ""}`}
+                onClick={() => toggleDropdown("results", !resultsExpanded)}
               >
+                <FontAwesomeIcon icon={faRankingStar} size="xs" className="me-2" />
                 Results
               </button>
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${resultsExpanded ? "show" : ""}`}>
@@ -129,22 +138,70 @@ function NavbarItems() {
                 prefetch={false}
                 onClick={collapseAll}
               >
+                <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
                 Rules
               </Link>
             </li>
-            <li className="nav-item">
-              <Link
-                className={`nav-link ${pathname === "/about" ? "active" : ""}`}
-                prefetch={false}
-                href="/about"
-                onClick={collapseAll}
+            <li
+              className="nav-item dropdown"
+              onMouseEnter={() => toggleDropdown("more", true)}
+              onMouseLeave={() => toggleDropdown("more", false)}
+            >
+              <button
+                type="button"
+                className="nav-link dropdown-toggle"
+                onClick={() => toggleDropdown("more", !moreExpanded)}
               >
-                About
-              </Link>
+                <FontAwesomeIcon icon={faStar} size="xs" className="me-2" />
+                More
+              </button>
+              <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${moreExpanded ? "show" : ""}`}>
+                <li>
+                  <Link
+                    className={`nav-link ${pathname === "/about" ? "active" : ""}`}
+                    prefetch={false}
+                    href="/about"
+                    onClick={collapseAll}
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className={`nav-link ${/^\/posts/.test(pathname) ? "active" : ""}`}
+                    href="/posts"
+                    prefetch={false}
+                    onClick={collapseAll}
+                  >
+                    Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className={`nav-link ${/^\/moderator-instructions/.test(pathname) ? "active" : ""}`}
+                    prefetch={false}
+                    href="/moderator-instructions"
+                    onClick={collapseAll}
+                  >
+                    Moderator instructions
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className={`nav-link ${pathname === "/donate" ? "active" : ""}`}
+                    prefetch={false}
+                    href="/donate"
+                    onClick={collapseAll}
+                  >
+                    Donate
+                  </Link>
+                </li>
+              </ul>
             </li>
             {!session ? (
               <li className="nav-item">
                 <Link className="nav-link" href="/login" prefetch={false} onClick={collapseAll}>
+                  <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
                   Log In
                 </Link>
               </li>
@@ -154,7 +211,13 @@ function NavbarItems() {
                 onMouseEnter={() => toggleDropdown("user", true)}
                 onMouseLeave={() => toggleDropdown("user", false)}
               >
-                <button type="button" onClick={() => toggleDropdown("user")} className="nav-link dropdown-toggle">
+                <button
+                  type="button"
+                  onClick={() => toggleDropdown("user", !userExpanded)}
+                  className="nav-link dropdown-toggle text-truncate"
+                  style={{ maxWidth: "15rem" }}
+                >
+                  <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
                   {session.user.username}
                 </button>
                 <ul className={`dropdown-menu end-0 px-3 px-lg-2 py-0 ${userExpanded ? "show" : ""}`}>

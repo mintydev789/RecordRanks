@@ -1,6 +1,6 @@
 "use client";
 
-import { faCircle, faDiamond, faSquare, faUserGroup } from "@fortawesome/free-solid-svg-icons";
+import { faCircle, faDiamond, faSquare, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { use } from "react";
@@ -88,11 +88,9 @@ function ContestsTable({ contestsPromise }: Props) {
               <th scope="col">Place</th>
               <th scope="col">Type</th>
               <th scope="col">
-                <FontAwesomeIcon
-                  icon={faUserGroup}
-                  title="Number of participants"
-                  aria-label="Number of participants"
-                />
+                <span title="Number of participants">
+                  <FontAwesomeIcon icon={faUsers} aria-label="Number of participants" />
+                </span>
               </th>
             </tr>
           </thead>

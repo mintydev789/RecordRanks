@@ -116,14 +116,6 @@ async function RankingsPage({ params, searchParams }: Props) {
       <AffiliateLink type={affiliateLinkType} />
 
       <div className="mb-3 px-2">
-        <div className="alert alert-warning mb-4" role="alert">
-          The website just received a major update! Read our{" "}
-          <Link href="/posts/the-big-update" prefetch={false}>
-            blog post
-          </Link>{" "}
-          to learn more.
-        </div>
-
         <h4>Event</h4>
         <EventButtons eventId={eventId} events={visibleEvents} forPage="rankings" />
 

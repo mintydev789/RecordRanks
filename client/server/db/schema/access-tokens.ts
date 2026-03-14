@@ -2,13 +2,16 @@ import "server-only";
 import { getColumns } from "drizzle-orm";
 import { integer, text } from "drizzle-orm/pg-core";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 import { tableTimestamps } from "../dbUtils.ts";
 
 export const accessTokensTable = rrSchema.table("access_tokens", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   tokenHash: text().notNull(),
-  competitionId: text().notNull(),
+  competitionId: text()
+    .references(() => contestsTable.competitionId)
+    .notNull(),
   createdBy: text().references(() => usersTable.id, { onDelete: "set null" }), // this can be null if the user has been deleted
   ...tableTimestamps,
 });

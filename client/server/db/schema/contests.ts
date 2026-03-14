@@ -32,7 +32,7 @@ export const contestsTable = rrSchema.table(
     timezone: text(), // only used for meetups
     organizerIds: integer().array().notNull(),
     contact: text(),
-    description: text().notNull(),
+    description: text(),
     competitorLimit: integer(),
     participants: integer().default(0).notNull(),
     schedule: jsonb().$type<Schedule>(), // not used for meetups

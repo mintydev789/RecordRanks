@@ -1,5 +1,4 @@
 import { and, eq, ne } from "drizzle-orm";
-import Link from "next/link";
 import { Suspense } from "react";
 import ContestsTable from "~/app/components/ContestsTable.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
@@ -61,8 +60,8 @@ async function ContestsPage({ searchParams }: Props) {
   });
 
   return (
-    <div>
-      <h2 className="mb-4 text-center">All contests</h2>
+    <section>
+      <h2 className="mb-4 text-center">All Contests</h2>
 
       <AffiliateLink type="other" />
 
@@ -71,14 +70,6 @@ async function ContestsPage({ searchParams }: Props) {
       ) : (
         <>
           <div className="mb-3 px-2">
-            <div className="alert alert-warning mb-4" role="alert">
-              The website just received a major update! Read our{" "}
-              <Link href="/posts/the-big-update" prefetch={false}>
-                blog post
-              </Link>{" "}
-              to learn more.
-            </div>
-
             <EventButtons key={eventId} eventId={eventId} events={events} forPage="competitions" />
             <div style={{ maxWidth: "24rem" }}>
               <RegionSelect />
@@ -90,7 +81,7 @@ async function ContestsPage({ searchParams }: Props) {
           </Suspense>
         </>
       )}
-    </div>
+    </section>
   );
 }
 

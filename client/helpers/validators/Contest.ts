@@ -135,18 +135,18 @@ export const ContestValidator = z
     longitudeMicrodegrees,
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
-    startTime: z.coerce.date().optional(),
-    timezone: z.string().nonempty().optional(),
+    startTime: z.coerce.date().nullable(),
+    timezone: z.string().nonempty().nullable(),
     organizerIds: z
       .array(z.int())
       .nonempty()
       .refine((val) => val.length === new Set(val).size, { error: "List of organizers must not have duplicates" }),
-    contact: z.email().optional(),
-    description: z.string(),
-    competitorLimit: z.int().min(C.minCompetitorLimit).optional(),
-    // participants: z.int().default(0),
-    schedule: ScheduleValidator.optional(),
-    // createdBy: z.string().optional(),
+    contact: z.email().nullable(),
+    description: z.string().nullable(),
+    competitorLimit: z.int().min(C.minCompetitorLimit).nullable(),
+    // participants: z.int().default(0), // not needed when creating new contest
+    schedule: ScheduleValidator.nullable(),
+    // createdBy: z.string().optional(), // not needed when creating new contest
   })
   .superRefine((val, ctx) => {
     for (const key of ["competitionId", "name", "shortName"]) {

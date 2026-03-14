@@ -56,14 +56,6 @@ async function RecordsPage({ params, searchParams }: Props) {
 
       <AffiliateLink type={eventCategory === "unofficial" ? "fto" : eventCategory === "wca" ? "wca" : "other"} />
 
-      <div className="alert alert-warning mx-2 mb-4" role="alert">
-        The website just received a major update! Read our{" "}
-        <Link href="/posts/the-big-update" prefetch={false}>
-          blog post
-        </Link>{" "}
-        to learn more.
-      </div>
-
       <Tabs tabs={tabs} activeTab={eventCategory} forServerSidePage />
 
       {selectedCat.description && <p className="mx-2">{selectedCat.description}</p>}

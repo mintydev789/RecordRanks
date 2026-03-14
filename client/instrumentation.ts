@@ -56,7 +56,6 @@ export const testUsers = [
     username: "new_user",
     name: "new_user",
     password: "Temporary_good_password123", // replaced with "rr" below
-    personId: 4,
     emailVerified: false,
   },
 ];

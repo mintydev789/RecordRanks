@@ -221,21 +221,23 @@ export const createContestSF = actionClient
         where: { personId: { in: newContestDto.organizerIds } },
       });
 
-      await db.transaction(async (tx) => {
-        await createRounds(tx, rounds);
-
+      const createdContest = await db.transaction(async (tx) => {
         const [createdContest] = await tx
           .insert(table)
           .values({ ...newContestDto, createdBy: user.id })
           .returning();
 
-        // Notify the organizers and admins
-        sendContestSubmittedEmail(
-          organizerUsers.map((u) => u.email),
-          createdContest,
-          creatorPerson.name,
-        );
+        await createRounds(tx, rounds);
+
+        return createdContest;
       });
+
+      // Notify the organizers and admins
+      sendContestSubmittedEmail(
+        organizerUsers.map((u) => u.email),
+        createdContest,
+        creatorPerson.name,
+      );
     },
   );
 

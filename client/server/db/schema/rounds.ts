@@ -2,9 +2,10 @@ import "server-only";
 import { getColumns, sql } from "drizzle-orm";
 import { boolean, check, integer, smallint, text } from "drizzle-orm/pg-core";
 import { RoundProceedValues, RoundTypeValues } from "~/helpers/types.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 import { tableTimestamps } from "../dbUtils.ts";
-import { roundFormatEnum } from "./events.ts";
+import { eventsTable, roundFormatEnum } from "./events.ts";
 
 export const roundTypeEnum = rrSchema.enum("round_type", RoundTypeValues);
 export const roundProceedEnum = rrSchema.enum("round_proceed", RoundProceedValues);
@@ -13,8 +14,12 @@ export const roundsTable = rrSchema.table(
   "rounds",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    competitionId: text().notNull(),
-    eventId: text().notNull(),
+    competitionId: text()
+      .references(() => contestsTable.competitionId)
+      .notNull(),
+    eventId: text()
+      .references(() => eventsTable.eventId)
+      .notNull(),
     roundNumber: smallint().notNull(),
     roundTypeId: roundTypeEnum().notNull(),
     format: roundFormatEnum().notNull(),

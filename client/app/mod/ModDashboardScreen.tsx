@@ -1,6 +1,6 @@
 "use client";
 
-import { faUserGroup } from "@fortawesome/free-solid-svg-icons";
+import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -65,14 +65,6 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
     <>
       <div className="px-2">
         <ToastMessages />
-
-        <div className="alert alert-warning mb-4" role="alert">
-          The website just received a major update! Read our{" "}
-          <Link href="/posts/the-big-update" prefetch={false}>
-            blog post
-          </Link>{" "}
-          to learn more.
-        </div>
 
         <div className="alert alert-light mb-4" role="alert">
           We have a Cubing Contests Discord server!{" "}
@@ -152,11 +144,9 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
                 <th scope="col">Place</th>
                 <th scope="col">Type</th>
                 <th scope="col">
-                  <FontAwesomeIcon
-                    icon={faUserGroup}
-                    title="Number of participants"
-                    aria-label="Number of participants"
-                  />
+                  <span title="Number of participants">
+                    <FontAwesomeIcon icon={faUsers} aria-label="Number of participants" />
+                  </span>
                 </th>
                 <th scope="col">Actions</th>
               </tr>

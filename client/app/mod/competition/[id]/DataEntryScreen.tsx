@@ -233,16 +233,6 @@ function DataEntryScreen({
     setLoadingId("");
   };
 
-  // const updateQueuePosition = async (mode: "decrement" | "increment" | "reset") => {
-  //   const res = await myFetch.patch(
-  //     `/competitions/queue-${mode}/${contest.competitionId}`,
-  //     {},
-  //     { loadingId: `queue_${mode}_button` },
-  //   );
-
-  //   if (res.success) setQueuePosition(res.data);
-  // };
-
   const openNextRound = async () => {
     const res = await openRound({ competitionId: contest.competitionId, eventId });
 
@@ -265,7 +255,7 @@ function DataEntryScreen({
     }
     const attempts: Attempt[] = [];
     for (let i = 0; i < (round.cutoffNumberOfAttempts ?? roundFormat.attempts); i++)
-      attempts.push({ result: Math.round(Math.random() * 30_00) + 60_00 });
+      attempts.push({ result: Math.round(Math.random() * 30_00) + 30_00 });
 
     const newResultDto: ResultDto = {
       eventId,

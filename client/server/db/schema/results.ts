@@ -6,8 +6,8 @@ import { recordCategoryEnum, recordTypeEnum } from "~/server/db/schema/record-co
 import { rrSchema } from "~/server/db/schema/schema.ts";
 import { tableTimestamps } from "../dbUtils.ts";
 import { usersTable } from "./auth-schema.ts";
-import type { SelectContest } from "./contests.ts";
-import type { SelectEvent } from "./events.ts";
+import { contestsTable, type SelectContest } from "./contests.ts";
+import { eventsTable, type SelectEvent } from "./events.ts";
 import type { SelectPerson } from "./persons.ts";
 import { roundsTable } from "./rounds.ts";
 
@@ -21,7 +21,9 @@ export const resultsTable = rrSchema.table(
   "results",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    eventId: text().notNull(),
+    eventId: text()
+      .references(() => eventsTable.eventId)
+      .notNull(),
     date: timestamp().notNull(),
     approved: boolean().default(false).notNull(),
     personIds: integer().array().notNull(),
@@ -33,7 +35,7 @@ export const resultsTable = rrSchema.table(
     recordCategory: recordCategoryEnum().notNull(),
     regionalSingleRecord: recordTypeEnum(),
     regionalAverageRecord: recordTypeEnum(),
-    competitionId: text(), // only used for contest results
+    competitionId: text().references(() => contestsTable.competitionId), // only used for contest results
     roundId: integer().references(() => roundsTable.id), // only used for contest results
     ranking: integer(), // only used for contest results
     proceeds: boolean(), // only used for contest results from non-final rounds

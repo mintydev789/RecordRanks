@@ -24,21 +24,15 @@ async function HomePage() {
     <section className="px-3">
       <h1 className="mb-4 text-center">{process.env.NEXT_PUBLIC_PROJECT_NAME}</h1>
 
-      <div className="alert alert-warning mb-4" role="alert">
-        The website just received a major update! Read our{" "}
-        <Link href="/posts/the-big-update" prefetch={false}>
-          blog post
-        </Link>{" "}
-        to learn more.
-      </div>
-
-      <div className="alert alert-light mb-4" role="alert">
-        Join the Cubing Contests{" "}
-        <a href={C.discordServerLink} target="_blank" rel="noopener noreferrer">
-          Discord server
-        </a>
-        !
-      </div>
+      {IS_CUBING_CONTESTS_INSTANCE && (
+        <div className="alert alert-light mb-4" role="alert">
+          Join the Cubing Contests{" "}
+          <a href={C.discordServerLink} target="_blank" rel="noopener noreferrer">
+            Discord server
+          </a>
+          !
+        </div>
+      )}
 
       <p>
         This is a place for hosting unofficial Rubik's Cube competitions, unofficial events held at{" "}
