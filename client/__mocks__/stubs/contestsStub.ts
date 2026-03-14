@@ -108,6 +108,13 @@ export const contestsStub: InsertContest[] = [
     startDate: new Date(2026, 2, 1),
     endDate: new Date(2026, 2, 1),
   },
+  {
+    competitionId: "Munich30062026",
+    name: "Meetup in Munich 30 June 2026",
+    type: "meetup" as ContestType,
+    startDate: new Date(2026, 5, 30),
+    endDate: new Date(2026, 5, 30),
+  },
   // 2028
   {
     competitionId: "TestMeetupJan2028",

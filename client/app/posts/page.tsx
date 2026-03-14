@@ -6,6 +6,8 @@ import { usersTable } from "~/server/db/schema/auth-schema";
 import { personsTable } from "~/server/db/schema/persons.ts";
 import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
 
+export const dynamic = "force-dynamic";
+
 async function PostsPage() {
   const posts = await db
     .select({ ...postsPublicCols, authorName: personsTable.name })
