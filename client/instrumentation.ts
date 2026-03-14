@@ -14,6 +14,7 @@ import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition
 import type { auth as authType } from "~/server/auth.ts";
 import type { db as dbType } from "~/server/db/provider.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
+import { type InsertSetting, settingsTable } from "~/server/db/schema/settings.ts";
 import { Continents, Countries } from "./helpers/Countries.ts";
 import { C } from "./helpers/constants.ts";
 import { RecordTypeValues } from "./helpers/types.ts";
@@ -65,13 +66,22 @@ export const testUsers = [
 const hashForRr =
   "d859ad30013cacccc94ce76301b6195a:9bf96ea34c749ec1d088f81b3827ed4027458fed99ee98949583e6ec0ad22e1743970f752638732cbb33addc3f0e887712304507e6caf040c57b7444d7cecd25";
 
+const initSettings: InsertSetting[] = [
+  {
+    key: "error-logs-contact-email",
+    group: "default",
+    value: "",
+    description: "Contact email address to send error logs to",
+  },
+];
+
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { db }: { db: typeof dbType } = await import("~/server/db/provider.ts");
 
-    // Seed record configs
+    // Seed init record configs
     if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
-      console.log("Seeding record configs...");
+      console.log("Seeding init record configs...");
 
       for (let i = 0; i < RecordTypeValues.length; i++) {
         const recordTypeId = RecordTypeValues[i];
@@ -102,6 +112,21 @@ export async function register() {
       }
     }
 
+    // Seed init settings
+    for (const initSetting of initSettings) {
+      const [existingSetting] = await db
+        .select({ id: settingsTable.id })
+        .from(settingsTable)
+        .where(eq(settingsTable.key, initSetting.key))
+        .limit(1);
+
+      if (!existingSetting) {
+        const [createdSetting] = await db.insert(settingsTable).values(initSetting).returning();
+
+        console.log(`Seeded setting: ${createdSetting.group}.${createdSetting.key}`);
+      }
+    }
+
     // Seed test data
     if (process.env.NODE_ENV !== "production") {
       const { auth }: { auth: typeof authType } = await import("~/server/auth.ts");
@@ -124,10 +149,9 @@ export async function register() {
       }
 
       for (const testUser of testUsers) {
-        const userExists =
-          (await db.select().from(usersTable).where(eq(usersTable.email, testUser.email)).limit(1)).length > 0;
+        const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.email, testUser.email)).limit(1);
 
-        if (!userExists) {
+        if (!existingUser) {
           if (process.env.EMAIL_HOST) {
             throw new Error(
               "The EMAIL_HOST environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Comment it out and then uncomment it again after the DB has been seeded.",

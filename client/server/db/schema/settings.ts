@@ -4,10 +4,14 @@ import { integer, text } from "drizzle-orm/pg-core";
 import { tableTimestamps } from "~/server/db/dbUtils";
 import { rrSchema } from "~/server/db/schema/schema";
 
+// More groups and keys can be added here
+export type SettingKey = "error-logs-contact-email";
+export type SettingGroup = "default";
+
 export const settingsTable = rrSchema.table("settings", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  key: text().notNull().unique(),
-  group: text(),
+  key: text().$type<SettingKey>().notNull().unique(),
+  group: text().$type<SettingGroup>(),
   value: text().notNull(),
   description: text(),
   ...tableTimestamps,

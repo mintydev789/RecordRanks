@@ -32,6 +32,7 @@ import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
 import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { type ResultResponse, resultsTable, type SelectResult } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
+import type { SettingKey } from "~/server/db/schema/settings.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
 import { RrActionError } from "~/server/safeAction.ts";
 import { getDateOnly, getDefaultAverageAttempts, getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
@@ -623,3 +624,20 @@ export const blogPostsQuery = db
   .from(postsTable)
   .leftJoin(usersTable, eq(postsTable.createdBy, usersTable.id))
   .leftJoin(personsTable, eq(usersTable.personId, personsTable.id));
+
+export async function getSettingFromDb({
+  key,
+  optional = false,
+}: {
+  key: SettingKey;
+  optional?: boolean;
+}): Promise<string | null> {
+  const setting = await db.query.settings.findFirst({ columns: { value: true }, where: { key } });
+
+  if (!setting || !setting.value) {
+    if (optional) return null;
+    throw new Error("Setting not found");
+  }
+
+  return setting.value;
+}

@@ -20,7 +20,7 @@ import { sendEmail, sendErrorEmail, sendRoleChangedEmail } from "~/server/email/
 import { type Role, Roles } from "~/server/permissions.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { checkUserPermissions, logMessage } from "../serverOnlyFunctions.ts";
+import { checkUserPermissions, getSettingFromDb, logMessage } from "../serverOnlyFunctions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})
@@ -41,7 +41,9 @@ export const logErrorSF = actionClient
     }),
   )
   .action(async ({ parsedInput: { errorMessage } }) => {
-    if (process.env.NEXT_PUBLIC_CONTACT_EMAIL) sendErrorEmail(process.env.NEXT_PUBLIC_CONTACT_EMAIL, errorMessage);
+    const contactEmail = await getSettingFromDb({ key: "error-logs-contact-email", optional: true });
+
+    if (contactEmail) sendErrorEmail(contactEmail, errorMessage);
 
     logMessage("RR5000", errorMessage);
   });
@@ -63,11 +65,8 @@ export const sendDebugEmailSF = actionClient
   .action(async ({ parsedInput: { emailAddress }, ctx: { session } }) => {
     if (!getIsAdmin(session.user.role)) throw new RrActionError("Unauthorized");
 
-    sendEmail(
-      emailAddress,
-      "Debug email",
-      "This is a debug email sent by an admin for testing. You can safely ignore this.",
-    );
+    const content = "This is a debug email sent by an admin for testing. You can safely ignore this.";
+    sendEmail(emailAddress, "Debug email", content);
   });
 
 export const updateUserSF = actionClient
