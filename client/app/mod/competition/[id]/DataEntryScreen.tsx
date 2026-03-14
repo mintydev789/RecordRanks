@@ -13,6 +13,7 @@ import RoundResultsTable from "~/app/components/RoundResultsTable.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
+import EventImportantInfo from "~/app/mod/competition/EventImportantInfo";
 import { MainContext } from "~/helpers/contexts.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
@@ -333,25 +334,27 @@ function DataEntryScreen({
                 cutoffNumberOfAttempts={round.cutoffNumberOfAttempts}
               />
             )}
-            <Button
-              id="submit_attempt_button"
-              onClick={submitResult}
-              disabled={!round.open || isPending}
-              isLoading={isCreating || isUpdating}
-              className="d-block mt-3"
-            >
-              Submit
-            </Button>
-            {process.env.NODE_ENV !== "production" && (
+            <div className="d-flex mt-3 gap-3">
               <Button
-                onClick={submitMockResult}
+                id="submit_attempt_button"
+                onClick={submitResult}
                 disabled={!round.open || isPending}
-                isLoading={isCreating}
-                className="btn-secondary mt-4"
+                isLoading={isCreating || isUpdating}
               >
-                Submit Mock Result
+                Submit
               </Button>
-            )}
+              {process.env.NODE_ENV !== "production" && (
+                <Button
+                  onClick={submitMockResult}
+                  disabled={!round.open || isPending}
+                  isLoading={isCreating}
+                  className="btn-secondary"
+                >
+                  Submit Mock Result
+                </Button>
+              )}
+            </div>
+            <EventImportantInfo importantInfo={currEvent.importantInfo} className="mt-4" />
           </div>
         </div>
 

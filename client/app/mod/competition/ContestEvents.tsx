@@ -221,22 +221,25 @@ function ContestEvents({
         Total events: {contestEvents.length} | Total rounds: {rounds.length}
       </p>
 
-      <div className="d-flex mb-4 gap-3 align-items-center">
-        <Button onClick={() => addContestEvent()} disabled={newEventsDisabled} className="btn-success">
-          Add Event
-        </Button>
-        <div className="flex-grow-1">
-          <FormEventSelect
-            title=""
-            noMargin
-            events={remainingEvents}
-            eventId={newEventId}
-            setEventId={setNewEventId}
-            disabled={newEventsDisabled}
-          />
+      <div className="d-flex mb-4 flex-column gap-3">
+        <div className="d-flex gap-3 align-items-center">
+          <Button onClick={() => addContestEvent()} disabled={newEventsDisabled} className="btn-success">
+            Add Event
+          </Button>
+          <div className="flex-grow-1">
+            <FormEventSelect
+              title=""
+              noMargin
+              events={remainingEvents}
+              eventId={newEventId}
+              setEventId={setNewEventId}
+              disabled={newEventsDisabled}
+            />
+          </div>
         </div>
+        {newEvent.description && <p className="fs-6 fst-italic mb-0">{newEvent.description}</p>}
+        <EventImportantInfo importantInfo={newEvent.importantInfo} className="mb-0" />
       </div>
-      <EventImportantInfo importantInfo={newEvent.importantInfo} className="mb-4" />
 
       {contestEvents.map((ce) => (
         <div key={ce.event.eventId} className="mb-3 rounded border bg-body-tertiary px-4 py-3">
