@@ -20,6 +20,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY .env .env.development
 
 ARG NEXT_PUBLIC_BASE_URL
 ARG NEXT_PUBLIC_PROJECT_NAME

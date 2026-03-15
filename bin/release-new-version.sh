@@ -7,6 +7,7 @@ fi
 
 if [ -z "$1" ] || [ "$1" != "--no-checks" ]; then
   cd client
+  rm .env # if a .env file is somehow present in the client directory from previous failed releases, it would make tests fail
   pnpm run check && pnpm run test --bail=1
 
   if [ $? -gt 0 ]; then
