@@ -7,15 +7,24 @@ fi
 
 if [ -z "$1" ] || [ "$1" != "--no-checks" ]; then
   cd client
-  pnpm run check &&
-  pnpm run test --bail=1 &&
-  pnpm run build &&
-  cd ..
-fi
+  pnpm run check && pnpm run test --bail=1
 
-if [ $? -gt 0 ]; then
-  echo -e "\n\nPlease make sure all checks pass before publishing a new version"
-  exit
+  if [ $? -gt 0 ]; then
+    echo -e "\nPlease make sure all checks and tests pass before publishing a new version"
+    exit 2
+  fi
+
+  cp ../.env ./
+  pnpm run build
+
+  if [ $? -gt 0 ]; then
+    rm .env
+    echo -e "\nPlease make sure the application can build successfully before publishing a new version"
+    exit 3
+  fi
+
+  rm .env
+  cd ..
 fi
 
 cyan='\033[0;36m'
