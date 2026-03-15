@@ -1,4 +1,5 @@
 import { addYears } from "date-fns";
+import pick from "lodash/pick";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   caPersonJoshCalhoun,
@@ -30,6 +31,7 @@ import {
   deleteContestResultSF,
   getWrPairUpToDateSF,
   updateContestResultSF,
+  updateVideoBasedResultSF,
 } from "~/server/serverFunctions/resultServerFunctions.ts";
 import { reseedTestData } from "~/vitest-setup";
 
@@ -1079,23 +1081,31 @@ describe("createVideoBasedResultSF", () => {
   });
 
   describe("Record result creation", async () => {
+    const updateVbrDtoProperties = ["date", "attempts", "videoLink", "discussionLink"] as const;
+
     describe("4x4x4 Blindfolded results", async () => {
       const eventId = "444bf";
       const partialResult = { eventId, date, videoLink: "https://example.com", discussionLink: null };
 
       it("creates NR result (beating FWR) and cancels future NR", async () => {
-        const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [usPersonJohnDoe.id],
-            attempts: [{ result: 8800 }, { result: 8900 }, { result: 9000 }],
-          },
-        });
-
+        const newResultDto = {
+          ...partialResult,
+          personIds: [usPersonJohnDoe.id],
+          attempts: [{ result: 8800 }, { result: 8900 }, { result: 9000 }],
+        };
+        const res = await createVideoBasedResultSF({ newResultDto });
         expect(res.data).toBeDefined();
-        expect(res.data!.regionCode).toBe("US");
-        expect(res.data!.regionalSingleRecord).toBe("NR");
-        expect(res.data!.regionalAverageRecord).toBe("NR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.regionCode).toBe("US");
+        expect(res2.data!.regionalSingleRecord).toBe("NR");
+        expect(res2.data!.regionalAverageRecord).toBe("NR");
 
         const cancelledNr = await db.query.results.findFirst({
           where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1105,18 +1115,24 @@ describe("createVideoBasedResultSF", () => {
       });
 
       it("creates CR result (beating FWR), cancels future NR and changes future CR to NR", async () => {
-        const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [usPersonJohnDoe.id],
-            attempts: [{ result: 8300 }, { result: 8400 }, { result: 8500 }],
-          },
-        });
-
+        const newResultDto = {
+          ...partialResult,
+          personIds: [usPersonJohnDoe.id],
+          attempts: [{ result: 8300 }, { result: 8400 }, { result: 8500 }],
+        };
+        const res = await createVideoBasedResultSF({ newResultDto });
         expect(res.data).toBeDefined();
-        expect(res.data!.superRegionCode).toBe("NORTH_AMERICA");
-        expect(res.data!.regionalSingleRecord).toBe("NAR");
-        expect(res.data!.regionalAverageRecord).toBe("NAR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.superRegionCode).toBe("NORTH_AMERICA");
+        expect(res2.data!.regionalSingleRecord).toBe("NAR");
+        expect(res2.data!.regionalAverageRecord).toBe("NAR");
 
         const cancelledNr = await db.query.results.findFirst({
           where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1131,48 +1147,72 @@ describe("createVideoBasedResultSF", () => {
       });
 
       it("creates NR result (beating FCR)", async () => {
+        const newResultDto = {
+          ...partialResult,
+          personIds: [krPersonDongJunHyon.id],
+          attempts: [{ result: 7800 }, { result: 7900 }, { result: 8000 }],
+        };
         const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [krPersonDongJunHyon.id],
-            attempts: [{ result: 7800 }, { result: 7900 }, { result: 8000 }],
-          },
+          newResultDto,
         });
-
         expect(res.data).toBeDefined();
-        expect(res.data!.regionCode).toBe("KR");
-        expect(res.data!.regionalSingleRecord).toBe("NR");
-        expect(res.data!.regionalAverageRecord).toBe("NR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.regionCode).toBe("KR");
+        expect(res2.data!.regionalSingleRecord).toBe("NR");
+        expect(res2.data!.regionalAverageRecord).toBe("NR");
       });
 
       it("creates NR result", async () => {
+        const newResultDto = {
+          ...partialResult,
+          personIds: [dePersonHansBauer.id],
+          attempts: [{ result: 7300 }, { result: 7400 }, { result: 7500 }],
+        };
         const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [dePersonHansBauer.id],
-            attempts: [{ result: 7300 }, { result: 7400 }, { result: 7500 }],
-          },
+          newResultDto,
         });
-
         expect(res.data).toBeDefined();
-        expect(res.data!.regionCode).toBe("DE");
-        expect(res.data!.regionalSingleRecord).toBe("NR");
-        expect(res.data!.regionalAverageRecord).toBe("NR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.regionCode).toBe("DE");
+        expect(res2.data!.regionalSingleRecord).toBe("NR");
+        expect(res2.data!.regionalAverageRecord).toBe("NR");
       });
 
       it("creates CR result and cancels future CR", async () => {
+        const newResultDto = {
+          ...partialResult,
+          personIds: [krPersonSooMinNam.id],
+          attempts: [{ result: 6800 }, { result: 6900 }, { result: 7000 }],
+        };
         const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [krPersonSooMinNam.id],
-            attempts: [{ result: 6800 }, { result: 6900 }, { result: 7000 }],
-          },
+          newResultDto,
         });
-
         expect(res.data).toBeDefined();
-        expect(res.data!.superRegionCode).toBe("ASIA");
-        expect(res.data!.regionalSingleRecord).toBe("AsR");
-        expect(res.data!.regionalAverageRecord).toBe("AsR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.superRegionCode).toBe("ASIA");
+        expect(res2.data!.regionalSingleRecord).toBe("AsR");
+        expect(res2.data!.regionalAverageRecord).toBe("AsR");
 
         const cancelledCr = await db.query.results.findFirst({
           where: { eventId, date: { eq: new Date(2028, 2, 1) } },
@@ -1182,17 +1222,25 @@ describe("createVideoBasedResultSF", () => {
       });
 
       it("creates WR result, cancels future WR, changes future WR to CR and changes future WR to NR", async () => {
+        const newResultDto = {
+          ...partialResult,
+          personIds: [dePersonJakobBach.id],
+          attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
+        };
         const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [dePersonJakobBach.id],
-            attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
-          },
+          newResultDto,
         });
-
         expect(res.data).toBeDefined();
-        expect(res.data!.regionalSingleRecord).toBe("WR");
-        expect(res.data!.regionalAverageRecord).toBe("WR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.regionalSingleRecord).toBe("WR");
+        expect(res2.data!.regionalAverageRecord).toBe("WR");
 
         const cancelledWr = await db.query.results.findFirst({
           where: { eventId, date: { eq: new Date(2028, 3, 1) } },
@@ -1212,17 +1260,25 @@ describe("createVideoBasedResultSF", () => {
       });
 
       it("creates WR result, cancels future WR, changes future WR to CR and changes future CR to NR", async () => {
+        const newResultDto = {
+          ...partialResult,
+          personIds: [krPersonSooMinNam.id],
+          attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
+        };
         const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [krPersonSooMinNam.id],
-            attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
-          },
+          newResultDto,
         });
-
         expect(res.data).toBeDefined();
-        expect(res.data!.regionalSingleRecord).toBe("WR");
-        expect(res.data!.regionalAverageRecord).toBe("WR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.regionalSingleRecord).toBe("WR");
+        expect(res2.data!.regionalAverageRecord).toBe("WR");
 
         const cancelledCr = await db.query.results.findFirst({
           where: { eventId, date: { eq: new Date(2028, 2, 1) } },
@@ -1247,17 +1303,25 @@ describe("createVideoBasedResultSF", () => {
       });
 
       it("creates WR result, changes future WR to CR, cancels future CR and cancels future NR", async () => {
+        const newResultDto = {
+          ...partialResult,
+          personIds: [usPersonJohnDoe.id],
+          attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
+        };
         const res = await createVideoBasedResultSF({
-          newResultDto: {
-            ...partialResult,
-            personIds: [usPersonJohnDoe.id],
-            attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
-          },
+          newResultDto,
         });
-
         expect(res.data).toBeDefined();
-        expect(res.data!.regionalSingleRecord).toBe("WR");
-        expect(res.data!.regionalAverageRecord).toBe("WR");
+
+        const res2 = await updateVideoBasedResultSF({
+          id: res.data!.id,
+          newResultDto: pick(newResultDto, updateVbrDtoProperties),
+          approve: true,
+        });
+        expect(res2.data).toBeDefined();
+
+        expect(res2.data!.regionalSingleRecord).toBe("WR");
+        expect(res2.data!.regionalAverageRecord).toBe("WR");
 
         const cancelledNr = await db.query.results.findFirst({
           where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1288,33 +1352,49 @@ describe("createVideoBasedResultSF", () => {
 
       describe("edge cases", async () => {
         it("creates tied NR result (tying FWR)", async () => {
+          const newResultDto = {
+            ...partialResult,
+            personIds: [usPersonJohnDoe.id],
+            attempts: [{ result: 9000 }, { result: 9100 }, { result: 9200 }],
+          };
           const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [usPersonJohnDoe.id],
-              attempts: [{ result: 9000 }, { result: 9100 }, { result: 9200 }],
-            },
+            newResultDto,
           });
-
           expect(res.data).toBeDefined();
-          expect(res.data!.regionCode).toBe("US");
-          expect(res.data!.regionalSingleRecord).toBe("NR");
-          expect(res.data!.regionalAverageRecord).toBe("NR");
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.regionCode).toBe("US");
+          expect(res2.data!.regionalSingleRecord).toBe("NR");
+          expect(res2.data!.regionalAverageRecord).toBe("NR");
         });
 
         it("creates tied NR result (tying future NR)", async () => {
+          const newResultDto = {
+            ...partialResult,
+            personIds: [usPersonJohnDoe.id],
+            attempts: [{ result: 8900 }, { result: 9000 }, { result: 9100 }],
+          };
           const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [usPersonJohnDoe.id],
-              attempts: [{ result: 8900 }, { result: 9000 }, { result: 9100 }],
-            },
+            newResultDto,
           });
-
           expect(res.data).toBeDefined();
-          expect(res.data!.regionCode).toBe("US");
-          expect(res.data!.regionalSingleRecord).toBe("NR");
-          expect(res.data!.regionalAverageRecord).toBe("NR");
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.regionCode).toBe("US");
+          expect(res2.data!.regionalSingleRecord).toBe("NR");
+          expect(res2.data!.regionalAverageRecord).toBe("NR");
 
           const notCancelledTiedNr = await db.query.results.findFirst({
             where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1324,18 +1404,26 @@ describe("createVideoBasedResultSF", () => {
         });
 
         it("creates tied CR result (tying FWR) and cancels future NR", async () => {
+          const newResultDto = {
+            ...partialResult,
+            personIds: [usPersonJohnDoe.id],
+            attempts: [{ result: 8500 }, { result: 8600 }, { result: 8700 }],
+          };
           const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [usPersonJohnDoe.id],
-              attempts: [{ result: 8500 }, { result: 8600 }, { result: 8700 }],
-            },
+            newResultDto,
           });
-
           expect(res.data).toBeDefined();
-          expect(res.data!.superRegionCode).toBe("NORTH_AMERICA");
-          expect(res.data!.regionalSingleRecord).toBe("NAR");
-          expect(res.data!.regionalAverageRecord).toBe("NAR");
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.superRegionCode).toBe("NORTH_AMERICA");
+          expect(res2.data!.regionalSingleRecord).toBe("NAR");
+          expect(res2.data!.regionalAverageRecord).toBe("NAR");
 
           const cancelledNr = await db.query.results.findFirst({
             where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1345,18 +1433,26 @@ describe("createVideoBasedResultSF", () => {
         });
 
         it("creates tied CR result (tying future CR) and cancels future NR", async () => {
+          const newResultDto = {
+            ...partialResult,
+            personIds: [usPersonJohnDoe.id],
+            attempts: [{ result: 8400 }, { result: 8500 }, { result: 8600 }],
+          };
           const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [usPersonJohnDoe.id],
-              attempts: [{ result: 8400 }, { result: 8500 }, { result: 8600 }],
-            },
+            newResultDto,
           });
-
           expect(res.data).toBeDefined();
-          expect(res.data!.superRegionCode).toBe("NORTH_AMERICA");
-          expect(res.data!.regionalSingleRecord).toBe("NAR");
-          expect(res.data!.regionalAverageRecord).toBe("NAR");
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.superRegionCode).toBe("NORTH_AMERICA");
+          expect(res2.data!.regionalSingleRecord).toBe("NAR");
+          expect(res2.data!.regionalAverageRecord).toBe("NAR");
 
           const cancelledNr = await db.query.results.findFirst({
             where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1371,17 +1467,25 @@ describe("createVideoBasedResultSF", () => {
         });
 
         it("creates tied WR result, changes future CR to NR and cancels future NR", async () => {
+          const newResultDto = {
+            ...partialResult,
+            personIds: [usPersonJohnDoe.id],
+            attempts: [{ result: 6500 }, { result: 6600 }, { result: 6700 }],
+          };
           const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [usPersonJohnDoe.id],
-              attempts: [{ result: 6500 }, { result: 6600 }, { result: 6700 }],
-            },
+            newResultDto,
           });
-
           expect(res.data).toBeDefined();
-          expect(res.data!.regionalSingleRecord).toBe("WR");
-          expect(res.data!.regionalAverageRecord).toBe("WR");
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.regionalSingleRecord).toBe("WR");
+          expect(res2.data!.regionalAverageRecord).toBe("WR");
 
           const cancelledNr = await db.query.results.findFirst({
             where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1396,17 +1500,25 @@ describe("createVideoBasedResultSF", () => {
         });
 
         it("creates tied WR result (tying future WR), changes future CR to NR and cancels future NR", async () => {
+          const newResultDto = {
+            ...partialResult,
+            personIds: [usPersonJohnDoe.id],
+            attempts: [{ result: 6400 }, { result: 6500 }, { result: 6600 }],
+          };
           const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [usPersonJohnDoe.id],
-              attempts: [{ result: 6400 }, { result: 6500 }, { result: 6600 }],
-            },
+            newResultDto,
           });
-
           expect(res.data).toBeDefined();
-          expect(res.data!.regionalSingleRecord).toBe("WR");
-          expect(res.data!.regionalAverageRecord).toBe("WR");
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.regionalSingleRecord).toBe("WR");
+          expect(res2.data!.regionalAverageRecord).toBe("WR");
 
           const cancelledNr = await db.query.results.findFirst({
             where: { eventId, date: { eq: new Date(2028, 0, 1) } },
@@ -1426,35 +1538,47 @@ describe("createVideoBasedResultSF", () => {
         });
 
         it("doesn't set record, when there was a better record on the same day", async () => {
-          const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [dePersonJakobBach.id],
-              date: new Date(2023, 5, 1), // same date as German NR by Hans Bauer
-              attempts: [{ result: 7600 }, { result: 7700 }, { result: 7800 }],
-            },
-          });
-
+          const newResultDto = {
+            ...partialResult,
+            personIds: [dePersonJakobBach.id],
+            date: new Date(2023, 5, 1), // same date as German NR by Hans Bauer
+            attempts: [{ result: 7600 }, { result: 7700 }, { result: 7800 }],
+          };
+          const res = await createVideoBasedResultSF({ newResultDto });
           expect(res.data).toBeDefined();
-          expect(res.data!.regionCode).toBe("DE");
-          expect(res.data!.regionalSingleRecord).toBeNull();
-          expect(res.data!.regionalAverageRecord).toBeNull();
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.regionCode).toBe("DE");
+          expect(res2.data!.regionalSingleRecord).toBeNull();
+          expect(res2.data!.regionalAverageRecord).toBeNull();
         });
 
-        it("cancels record set on the same day with an even better record", async () => {
-          const res = await createVideoBasedResultSF({
-            newResultDto: {
-              ...partialResult,
-              personIds: [dePersonJakobBach.id],
-              date: new Date(2023, 5, 1), // same date as German NR by Hans Bauer
-              attempts: [{ result: 7200 }, { result: 7300 }, { result: 7400 }],
-            },
-          });
-
+        it("cancels record set on the same day as an even better record", async () => {
+          const newResultDto = {
+            ...partialResult,
+            personIds: [dePersonJakobBach.id],
+            date: new Date(2023, 5, 1), // same date as German NR by Hans Bauer
+            attempts: [{ result: 7200 }, { result: 7300 }, { result: 7400 }],
+          };
+          const res = await createVideoBasedResultSF({ newResultDto });
           expect(res.data).toBeDefined();
-          expect(res.data!.regionCode).toBe("DE");
-          expect(res.data!.regionalSingleRecord).toBe("NR");
-          expect(res.data!.regionalAverageRecord).toBe("NR");
+
+          const res2 = await updateVideoBasedResultSF({
+            id: res.data!.id,
+            newResultDto: pick(newResultDto, updateVbrDtoProperties),
+            approve: true,
+          });
+          expect(res2.data).toBeDefined();
+
+          expect(res2.data!.regionCode).toBe("DE");
+          expect(res2.data!.regionalSingleRecord).toBe("NR");
+          expect(res2.data!.regionalAverageRecord).toBe("NR");
 
           const cancelledNr = await db.query.results.findFirst({
             where: { id: { ne: res.data!.id }, eventId, date: { eq: new Date(2023, 5, 1) } },
