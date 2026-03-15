@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ResultsSubmissionForm from "~/app/video-based-results/ResultsSubmissionForm.tsx";
 import { creatorCols } from "~/server/db/dbUtils.ts";
@@ -10,14 +11,14 @@ type Props = {
   params: Promise<{ resultId: string }>;
 };
 
-async function EditResultPage({ params }: Props) {
-  await authorizeUser({ permissions: { videoBasedResults: ["update", "approve"] } });
-  const { resultId } = await params;
+async function UpdateVideoBasedResultPage({ params }: Props) {
+  const { resultId } = z.strictObject({ resultId: z.string().transform((val) => Number(val)) }).parse(await params);
+  await authorizeUser({ permissions: { videoBasedResults: ["update", "approve", "delete"] } });
 
   const [events, recordConfigs, result] = await Promise.all([
     getVideoBasedEvents(),
     getRecordConfigs("video-based-results"),
-    db.query.results.findFirst({ where: { id: Number(resultId) } }),
+    db.query.results.findFirst({ where: { id: resultId } }),
   ]);
 
   if (!result) return <LoadingError />;
@@ -41,9 +42,10 @@ async function EditResultPage({ params }: Props) {
         participants={participants}
         creator={creator}
         creatorPerson={creatorPerson}
+        isVideoBasedResultReviewer // already checked on page load above
       />
     </section>
   );
 }
 
-export default EditResultPage;
+export default UpdateVideoBasedResultPage;

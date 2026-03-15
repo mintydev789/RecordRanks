@@ -20,7 +20,8 @@ if (
   );
 }
 
-// This has to be different from DATABASE_URL, because it needs a direct DB connection (i.e. not through the connection pooler)
+// This has to be different from the DB URL in the DB provider file, because
+// it needs a direct DB connection (i.e. not through the connection pooler).
 const url = `postgresql://${process.env.RR_DB_USERNAME}.${process.env.POOLER_TENANT_ID}:${process.env.RR_DB_PASSWORD}@localhost:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`;
 
 export default defineConfig({

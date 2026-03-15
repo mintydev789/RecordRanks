@@ -12,14 +12,15 @@ import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";
+import type { Role } from "~/server/permissions.ts";
 import type { RrServerErrorObject } from "~/server/safeAction.ts";
 import { type RoundFormatObject, roundFormats } from "./roundFormats.ts";
 import type { MultiChoiceOption } from "./types/MultiChoiceOption.ts";
 import type { ContestType, EventFormat, EventWrPair, RoundFormat } from "./types.ts";
 import type { PersonDto } from "./validators/Person.ts";
 
-export function getIsAdmin(rolesString: string | null | undefined): boolean {
-  return !!rolesString?.split(",").some((role) => role === "admin");
+export function getHasRole(role: Role, rolesString: string | null | undefined): boolean {
+  return !!rolesString?.split(",").some((r) => r === role);
 }
 
 export function getFormattedDate(startDate: Date, endDate?: Date | null): string {

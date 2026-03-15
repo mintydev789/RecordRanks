@@ -127,6 +127,20 @@ The Scripts section shows how to start RecordRanks.
 
 RecordRanks instances run alongside self-hosted Supabase, which provides the database, blob storage, a sysadmin dashboard (Supabase Studio), and more. The credentials for accessing Supabase Studio are in the `.env` file.
 
+#### RecordRanks settings
+
+RecordRanks is designed to be customizable, allowing certain features to be enabled or disabled. The values in the `settings` table can be edited directly to customize some of the functionality of the instance. Only edit the `value` column (keep in mind the values cannot be `null`). The `description` column includes descriptions for each setting.
+
+#### Blog
+
+There is a simple blog feature, but it currently has no UI for creating posts within RecordRanks itself. For now, blog posts can be published directly using the `posts` table. A post has the following schema:
+
+- `postId`: a unique text ID for the post; this is used in the URL for the post (e.g. `our-first-announcement`)
+- `title`: the title of the post, shown at the top of the page
+- `content`: the content of the post (supports Markdown)
+- `date`: the date of the post (this doesn't have to be the same as the creation date; `createdAt` is a separate auto-generated column)
+- `createdBy`: the user ID of the author; it's expected that there is a person tied to the user (get this value from the `users` table)
+
 #### Storage
 
 Blob storade is used for hosting public image files (although you can also use it for other files). Follow these instructions to set up a storage bucket for your public assets:
@@ -207,7 +221,9 @@ This project uses Next JS as a full-stack web application and self-hosted Supaba
 3. `cd client`
 4. Install dependencies: `pnpm install` (skip this step if `package.json5` hasn't changed since last time)
 5. Run DB migrations: `pnpm db:migrate` (skip this step if there are no new migrations since last time)
-6. Start Next JS: `pnpm dev` (automatically copies the `.env` file to `client/.env.local`)
+6. Start Next JS: `pnpm dev`
+
+Note that Next JS accesses the variables in `.env` through the `.env.development` symlink, which means that it won't be able to detect changes made to the source file. If you change any values in `.env`, simply restart `pnpm dev`.
 
 This repo uses Biome for formatting and linting. If you intend to contribute code to this repo, please install the Biome extension for your IDE and set it up as your default formatter.
 

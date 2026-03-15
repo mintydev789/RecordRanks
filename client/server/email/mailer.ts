@@ -10,6 +10,7 @@ import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { getFormattedTime, getIsCompType, getIsUrgent } from "~/helpers/utilityFunctions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
+import { rolesObject } from "~/server/permissions.ts";
 import { logMessage } from "~/server/serverOnlyFunctions.ts";
 import type { SelectEvent } from "../db/schema/events.ts";
 import type { ResultResponse } from "../db/schema/results.ts";
@@ -175,26 +176,24 @@ export function sendPasswordChangedEmail(to: string) {
   });
 }
 
-export function sendRoleChangedEmail(
+export function sendRolesChangedEmail(
   to: string,
-  role: string,
+  roles: string[],
   { canAccessModDashboard }: { canAccessModDashboard: boolean },
 ) {
   send({
-    templateFileName: "role-changed.hbs",
+    templateFileName: "roles-changed.hbs",
     context: {
       baseUrl,
       projectName,
-      role,
-      extra: canAccessModDashboard
-        ? ` You can now access the <a href="${baseUrl}/mod">Moderator Dashboard</a> from the navigation bar.`
-        : "",
+      roles: roles.map((r) => (rolesObject as any)[r]).join(", "),
+      canAccessModDashboard,
     },
     callback: async (html) => {
       await transporter.sendMail({
         from: noReplyEmail,
         to,
-        subject: "Role changed",
+        subject: "Roles changed",
         html,
       });
     },

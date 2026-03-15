@@ -12,11 +12,10 @@ import Loading from "~/app/components/UI/Loading.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import ModFilters from "~/app/mod/ModFilters.tsx";
-import type { authClient } from "~/helpers/authClient.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { ContestState } from "~/helpers/types.ts";
-import { getActionError, getFormattedDate, getIsAdmin } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import { getModContestsSF } from "~/server/serverFunctions/contestServerFunctions.ts";
@@ -24,10 +23,10 @@ import ContestControls from "./ContestControls.tsx";
 
 type Props = {
   modContestsPromise: ReturnType<typeof getModContestsSF>;
-  session: typeof authClient.$Infer.Session;
+  isAdminView: boolean;
 };
 
-function ModDashboardScreen({ modContestsPromise, session }: Props) {
+function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
   const res = use(modContestsPromise);
   if (!res.data) return <LoadingError loadingEntity="contests" />;
 
@@ -37,7 +36,6 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
   const { executeAsync: getModContests, isPending: isPendingContests } = useAction(getModContestsSF);
   const [contests, setContests] = useState<ContestResponse[]>(res.data);
 
-  const isAdmin = getIsAdmin(session.user.role);
   const pendingContests = contests.filter((c) => ["created", "ongoing", "finished"].includes(c.state)).length;
 
   const fetchContests = async (newOrganizerPersonId?: number) => {
@@ -84,7 +82,7 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
           <Link href="/mod/competitors" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
             Manage competitors
           </Link>
-          {isAdmin && (
+          {isAdminView ? (
             <>
               <Link href="/admin/users" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
                 Manage users
@@ -96,22 +94,23 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
                 Configure records
               </Link>
             </>
-          )}
-          {IS_CUBING_CONTESTS_INSTANCE && (
-            <a
-              href="https://docs.google.com/forms/d/12AuZdtH4qHwTxd4Kxd2Y_TwZHlBuBu8XuKX3VdKrE60"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-light btn-sm btn-lg-md"
-            >
-              Request new event
-            </a>
+          ) : (
+            IS_CUBING_CONTESTS_INSTANCE && (
+              <a
+                href="https://docs.google.com/forms/d/12AuZdtH4qHwTxd4Kxd2Y_TwZHlBuBu8XuKX3VdKrE60"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-light btn-sm btn-lg-md"
+              >
+                Request new event
+              </a>
+            )
           )}
         </div>
         <p>
           Total contests:&nbsp;<b>{contests.length ?? 0}</b>&#8194;|&#8194;Pending:&nbsp;<b>{pendingContests}</b>
         </p>
-        {!isAdmin && contests && (
+        {!isAdminView && contests && (
           <>
             {!contests.some((c) => c.state !== "created") && (
               <p className="fw-bold my-3 text-danger">
@@ -132,7 +131,7 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
         <Loading />
       ) : contests.length === 0 ? (
         <p className="fs-5 px-2">
-          {isAdmin ? "No contests have been held yet" : "You haven't created any contests yet"}
+          {isAdminView ? "No contests have been held yet" : "You haven't created any contests yet"}
         </p>
       ) : (
         <div className="table-responsive mb-5">
@@ -179,7 +178,7 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
                     ) : (
                       <ContestControls
                         contest={contest}
-                        isAdmin={isAdmin}
+                        isAdmin={isAdminView}
                         forPage="mod-dashboard"
                         onUpdateContestState={updateContestState}
                       />

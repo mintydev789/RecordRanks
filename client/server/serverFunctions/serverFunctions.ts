@@ -7,7 +7,6 @@ import { and, eq, ne } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { nxnMoves } from "~/helpers/types/NxNMove.ts";
-import { getIsAdmin } from "~/helpers/utilityFunctions.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
@@ -16,11 +15,11 @@ import {
   collectiveSolutionsPublicCols,
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
-import { sendEmail, sendErrorEmail, sendRoleChangedEmail } from "~/server/email/mailer.ts";
-import { type Role, Roles } from "~/server/permissions.ts";
+import { sendEmail, sendErrorEmail, sendRolesChangedEmail } from "~/server/email/mailer.ts";
+import { Roles } from "~/server/permissions.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { checkUserPermissions, getSettingFromDb, logMessage } from "../serverOnlyFunctions.ts";
+import { getSettingFromDb, logMessage } from "../serverOnlyFunctions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})
@@ -60,13 +59,10 @@ export const logUserDeletedSF = actionClient
   });
 
 export const sendDebugEmailSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ permissions: { adminDashboard: ["view"] } })
   .inputSchema(z.strictObject({ emailAddress: z.email() }))
-  .action(async ({ parsedInput: { emailAddress }, ctx: { session } }) => {
-    if (!getIsAdmin(session.user.role)) throw new RrActionError("Unauthorized");
-
-    const content = "This is a debug email sent by an admin for testing. You can safely ignore this.";
-    sendEmail(emailAddress, "Debug email", content);
+  .action(async ({ parsedInput: { emailAddress } }) => {
+    sendEmail(emailAddress, "Debug email", "This is a debug email for testing. You can safely ignore this.");
   });
 
 export const updateUserSF = actionClient
@@ -75,12 +71,12 @@ export const updateUserSF = actionClient
     z.strictObject({
       id: z.string(),
       personId: z.int().min(1).nullable().default(null),
-      role: z.enum(Roles),
+      roles: z.enum(Roles).array(),
     }),
   )
   .action<{ user: typeof auth.$Infer.Session.user; person?: PersonResponse }>(
-    async ({ parsedInput: { id, personId, role } }) => {
-      logMessage("RR0033", `Updating user with ID ${id} (new person ID: ${personId}; new role: ${role})`);
+    async ({ parsedInput: { id, personId, roles } }) => {
+      logMessage("RR0033", `Updating user with ID ${id} (new person ID: ${personId}; new roles: ${roles.join(", ")})`);
 
       const hdrs = await headers();
 
@@ -94,7 +90,7 @@ export const updateUserSF = actionClient
           const [samePersonUser] = await db
             .select({ id: usersTable.id })
             .from(usersTable)
-            .where(and(ne(usersTable.id, id), eq(usersTable.personId, personId)))
+            .where(and(ne(usersTable.id, user.id), eq(usersTable.personId, personId)))
             .limit(1);
           if (samePersonUser) throw new RrActionError("The selected person is already tied to another user");
         }
@@ -103,17 +99,21 @@ export const updateUserSF = actionClient
           await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, personId)).limit(1)
         ).at(0);
         if (!person) throw new RrActionError(`Person with ID ${personId} not found`);
-      } else if (role !== "user") {
+      } else if (roles.some((role) => role !== "user")) {
         throw new RrActionError("Privileged users must have a person tied to their account");
       }
 
-      if (user.role !== role) {
-        await auth.api.setRole({ body: { userId: id, role: role as Role }, headers: hdrs });
-        const canAccessModDashboard = await checkUserPermissions(user.id, { modDashboard: ["view"] });
+      const rolesAreDifferent = user.role!.split(",").sort().join(",") !== roles.sort().join(",");
+      if (rolesAreDifferent) {
+        await auth.api.setRole({ body: { userId: user.id, role: roles }, headers: hdrs });
 
-        sendRoleChangedEmail(user.email, role, { canAccessModDashboard });
+        const { success: canAccessModDashboard } = await auth.api.userHasPermission({
+          body: { userId: user.id, permissions: { modDashboard: ["view"] } },
+        });
 
-        if (getIsAdmin(role)) {
+        sendRolesChangedEmail(user.email, roles, { canAccessModDashboard });
+
+        if (roles.includes("admin")) {
           sendEmail(
             process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
             "Important: New admin user",
@@ -122,10 +122,10 @@ export const updateUserSF = actionClient
         }
       }
 
-      const [updatedUser] = await db.update(usersTable).set({ personId }).where(eq(usersTable.id, id)).returning();
+      const [updatedUser] = await db.update(usersTable).set({ personId }).where(eq(usersTable.id, user.id)).returning();
 
       // Log out user to avoid stale session data
-      await auth.api.revokeUserSessions({ body: { userId: id }, headers: hdrs });
+      await auth.api.revokeUserSessions({ body: { userId: user.id }, headers: hdrs });
 
       return { user: updatedUser, person };
     },

@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <title>{{projectName}}</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <h3>Roles Changed</h3>
+
+    <p>
+      Your roles on <a href="{{baseUrl}}">{{projectName}}</a> have been changed.
+    </p>
+
+    <p>Your new roles: {{roles}}.</p>
+
+    {{#if canAccessModDashboard}}
+      <p>You can now access the <a href="{{baseUrl}}/mod">Moderator Dashboard</a> from the navigation bar.</p>
+    {{/if}}
+  </body>
+</html>

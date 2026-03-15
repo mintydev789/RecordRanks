@@ -1,17 +1,10 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import DebugScreen from "~/app/admin/debug/DebugScreen";
-import { getIsAdmin } from "~/helpers/utilityFunctions";
-import { auth } from "~/server/auth";
+import DebugScreen from "~/app/admin/debug/DebugScreen.tsx";
+import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
 
 async function DebugPage() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  await authorizeUser({ permissions: { adminDashboard: ["view"] } });
 
-  if (!session || !getIsAdmin(session.user.role)) {
-    redirect("/login");
-  } else {
-    return <DebugScreen />;
-  }
+  return <DebugScreen />;
 }
 
 export default DebugPage;

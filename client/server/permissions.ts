@@ -1,44 +1,36 @@
 import { createAccessControl } from "better-auth/plugins/access";
 import { adminAc, defaultStatements } from "better-auth/plugins/admin/access";
 
-const modDashboard = ["view", "view-analytics"];
-const recordConfigs = ["create-and-update"];
-const competitions = ["create", "update", "approve", "publish", "delete"];
-const meetups = ["create", "update", "approve", "publish", "delete"];
-const persons = ["create", "update", "approve", "delete"];
-const events = ["create", "update", "delete"];
-const videoBasedResults = ["create", "update", "approve", "delete"];
-
-const statement = {
-  ...defaultStatements, // includes "user" and "session" permissions
-  modDashboard,
-  recordConfigs,
-  competitions,
-  meetups,
-  persons,
-  events,
-  videoBasedResults,
+const permissions = {
+  adminDashboard: ["view"],
+  modDashboard: ["view"],
+  recordConfigs: ["create-and-update"],
+  competitions: ["create", "update", "approve", "publish", "delete"],
+  meetups: ["create", "update", "approve", "publish", "delete"],
+  persons: ["create", "update", "approve", "delete"],
+  events: ["create", "update", "delete"],
+  videoBasedResults: ["create", "update", "approve", "delete"],
 } as const;
 
-export const ac = createAccessControl(statement);
+export const ac = createAccessControl({ ...defaultStatements, ...permissions });
 
-const permissions = {
-  ...adminAc.statements, // includes "user" and "session" permissions
-  modDashboard,
-  recordConfigs,
-  competitions,
-  meetups,
-  persons,
-  events,
-  videoBasedResults,
-};
-
-export type RrPermissions = Partial<typeof permissions>;
+export type RrPermissions = Partial<{
+  user: Array<(typeof adminAc.statements.user)[number]>;
+  session: Array<(typeof adminAc.statements.session)[number]>;
+  adminDashboard: Array<(typeof permissions.adminDashboard)[number]>;
+  modDashboard: Array<(typeof permissions.modDashboard)[number]>;
+  recordConfigs: Array<(typeof permissions.recordConfigs)[number]>;
+  competitions: Array<(typeof permissions.competitions)[number]>;
+  meetups: Array<(typeof permissions.meetups)[number]>;
+  persons: Array<(typeof permissions.persons)[number]>;
+  events: Array<(typeof permissions.events)[number]>;
+  videoBasedResults: Array<(typeof permissions.videoBasedResults)[number]>;
+}>;
 
 export const Roles = ["admin", "mod", "videoBasedResultReviewer", "user"] as const;
 export type Role = (typeof Roles)[number];
 
-export const admin = ac.newRole(permissions);
+export const admin = ac.newRole({ ...adminAc.statements, ...permissions });
 
 export const mod = ac.newRole({
   modDashboard: ["view"],
@@ -56,3 +48,10 @@ export const videoBasedResultReviewer = ac.newRole({
 export const user = ac.newRole({
   videoBasedResults: ["create"],
 });
+
+export const rolesObject = {
+  user: "User",
+  mod: "Mod",
+  videoBasedResultReviewer: "Video-based result reviewer",
+  admin: "Admin",
+};

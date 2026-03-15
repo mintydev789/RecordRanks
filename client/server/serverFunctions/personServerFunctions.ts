@@ -5,9 +5,10 @@ import { z } from "zod";
 import { CountryCodes } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
 import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
-import { fetchWcaPerson, getIsAdmin, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
+import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   type PersonResponse,
@@ -16,12 +17,7 @@ import {
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import {
-  checkUserPermissions,
-  getOrCreatePersonByWcaId,
-  getPersonExactMatchWcaId,
-  logMessage,
-} from "../serverOnlyFunctions.ts";
+import { getOrCreatePersonByWcaId, getPersonExactMatchWcaId, logMessage } from "../serverOnlyFunctions.ts";
 
 export const getPersonByIdSF = actionClient
   .metadata({ permissions: null })
@@ -111,9 +107,11 @@ export const createPersonSF = actionClient
       const { name, wcaId } = newPersonDto;
       logMessage("RR0019", `Creating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
-      const canApprove = await checkUserPermissions(user.id, { persons: ["approve"] });
+      const { success: canApprove } = await auth.api.userHasPermission({
+        body: { userId: user.id, permissions: { persons: ["approve"] } },
+      });
 
-      await validatePerson(newPersonDto, { ignoreDuplicate, isAdmin: getIsAdmin(user.role) });
+      await validatePerson(newPersonDto, { ignoreDuplicate, canApprove });
 
       const query = db.insert(table).values({ ...newPersonDto, createdBy: user.id });
       const [createdPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
@@ -135,7 +133,9 @@ export const updatePersonSF = actionClient
       const { name, wcaId } = newPersonDto;
       logMessage("RR0020", `Updating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
-      const canApprove = await checkUserPermissions(session.user.id, { persons: ["approve"] });
+      const { success: canApprove } = await auth.api.userHasPermission({
+        body: { userId: session.user.id, permissions: { persons: ["approve"] } },
+      });
 
       const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
       if (!person) throw new RrActionError("Person with the provided ID not found");
@@ -158,7 +158,7 @@ export const updatePersonSF = actionClient
         );
       }
 
-      await validatePerson(personDto, { excludeId: id, ignoreDuplicate, isAdmin: canApprove });
+      await validatePerson(personDto, { excludeId: id, ignoreDuplicate, canApprove });
 
       const query = db.update(table).set(personDto).where(eq(table.id, id));
       const [updatedPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
@@ -176,7 +176,9 @@ export const deletePersonSF = actionClient
   .action(async ({ parsedInput: { id }, ctx: { session } }) => {
     logMessage("RR0021", `Deleting person with ID ${id}`);
 
-    const canApprove = await checkUserPermissions(session.user.id, { persons: ["approve"] });
+    const { success: canApprove } = await auth.api.userHasPermission({
+      body: { userId: session.user.id, permissions: { persons: ["approve"] } },
+    });
 
     const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
     if (!person) throw new RrActionError("Person with the provided ID not found");
@@ -248,11 +250,11 @@ async function validatePerson(
   {
     ignoreDuplicate,
     excludeId,
-    isAdmin,
+    canApprove,
   }: {
     ignoreDuplicate?: boolean;
     excludeId?: number;
-    isAdmin?: boolean;
+    canApprove?: boolean;
   } = {},
 ) {
   const excludeCondition = excludeId ? ne(table.id, excludeId) : undefined;
@@ -265,7 +267,7 @@ async function validatePerson(
       .limit(1);
 
     if (sameWcaIdPerson) throw new RrActionError("A person with the same WCA ID already exists in the CC database");
-  } else if (!ignoreDuplicate || !isAdmin) {
+  } else if (!ignoreDuplicate || !canApprove) {
     const [duplicatePerson] = await db
       .select()
       .from(table)
@@ -275,7 +277,7 @@ async function validatePerson(
     if (duplicatePerson) {
       throw new RrActionError(
         `A person with the same name and country already exists. If it's actually a different competitor with the same name, ${
-          isAdmin
+          canApprove
             ? "simply submit them again."
             : "please report this to the admin team. For now, simply add (2) at the end of their name to do data entry."
         }`,

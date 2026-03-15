@@ -7,27 +7,19 @@ import { useContext, useMemo, useState } from "react";
 import Competitor from "~/app/components/Competitor.tsx";
 import FiltersContainer from "~/app/components/FiltersContainer.tsx";
 import Form from "~/app/components/form/Form.tsx";
+import FormCheckbox from "~/app/components/form/FormCheckbox";
 import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
-import FormSelect from "~/app/components/form/FormSelect.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { InputPerson } from "~/helpers/types.ts";
-import { getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
-import type { Role, Roles } from "~/server/permissions.ts";
+import { type Role, rolesObject } from "~/server/permissions.ts";
 import { updateUserSF } from "~/server/serverFunctions/serverFunctions.ts";
-
-const roleOptions: MultiChoiceOption<Role>[] = [
-  { label: "User", value: "user" },
-  { label: "Mod", value: "mod" },
-  { label: "Video-based result reviewer", value: "videoBasedResultReviewer" },
-  { label: "Admin", value: "admin" },
-];
 
 type Props = {
   users: (typeof authClient.$Infer.Session.user)[];
@@ -45,7 +37,10 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
   const [email, setEmail] = useState("");
   const [personNames, setPersonNames] = useState([""]);
   const [persons, setPersons] = useState<InputPerson[]>([null]);
-  const [role, setRole] = useState<(typeof Roles)[number]>("user");
+  const [isUser, setIsUser] = useState(false);
+  const [isMod, setIsMod] = useState(false);
+  const [isVideoBasedResultReviewer, setIsVideoBasedResultReviewer] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [search, setSearch] = useState("");
 
   const filteredUsers = useMemo(() => {
@@ -64,7 +59,13 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
       return;
     }
 
-    const res = await updateUser({ id: userId!, personId: persons[0]?.id, role });
+    const roles: Role[] = [];
+    if (isUser) roles.push("user");
+    if (isMod) roles.push("mod");
+    if (isVideoBasedResultReviewer) roles.push("videoBasedResultReviewer");
+    if (isAdmin) roles.push("admin");
+
+    const res = await updateUser({ id: userId!, personId: persons[0]?.id, roles });
 
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
@@ -87,7 +88,10 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
     setEmail(user.email);
 
     if (!user.role) throw new Error("Error: user role is empty");
-    setRole(user.role as Role);
+    setIsUser(getHasRole("user", user.role));
+    setIsMod(getHasRole("mod", user.role));
+    setIsVideoBasedResultReviewer(getHasRole("videoBasedResultReviewer", user.role));
+    setIsAdmin(getHasRole("admin", user.role));
 
     const person = user.personId ? userPersons.find((p) => p.id === user.personId) : undefined;
 
@@ -128,9 +132,19 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
             setPersons={setPersons}
             personNames={personNames}
             setPersonNames={setPersonNames}
+            disabled={isUpdating}
             addNewPersonMode="default"
           />
-          <FormSelect title="Role" options={roleOptions} selected={role} setSelected={setRole} />
+          <h5 className="mb-4">Roles</h5>
+          <FormCheckbox title={rolesObject.user} selected={isUser} setSelected={setIsUser} disabled={isUpdating} />
+          <FormCheckbox title={rolesObject.mod} selected={isMod} setSelected={setIsMod} disabled={isUpdating} />
+          <FormCheckbox
+            title={rolesObject.videoBasedResultReviewer}
+            selected={isVideoBasedResultReviewer}
+            setSelected={setIsVideoBasedResultReviewer}
+            disabled={isUpdating}
+          />
+          <FormCheckbox title={rolesObject.admin} selected={isAdmin} setSelected={setIsAdmin} disabled={isUpdating} />
         </Form>
       )}
 
@@ -153,14 +167,14 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
               <th scope="col">Username</th>
               <th scope="col">Email</th>
               <th scope="col">Competitor</th>
-              <th scope="col">Role</th>
+              <th scope="col">Roles</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => {
               const person = userPersons.find((p) => p.id === user.personId);
-              const roleLabel = roleOptions.find((r) => r.value === user.role)!.label;
+              const roles = user.role!.split(",").map((role) => (rolesObject as any)[role]);
 
               return (
                 <tr key={user.id}>
@@ -168,7 +182,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
                   <td>{user.username}</td>
                   <td>{user.email}</td>
                   <td>{person && <Competitor person={person} noFlag />}</td>
-                  <td>{roleLabel}</td>
+                  <td>{roles.join(", ")}</td>
                   <td>
                     <Button
                       id={`edit_${user.username}_button`}

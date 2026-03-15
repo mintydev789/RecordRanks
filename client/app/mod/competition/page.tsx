@@ -1,7 +1,8 @@
 import { eq, inArray, ne, sql } from "drizzle-orm";
+import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import type { Creator } from "~/helpers/types.ts";
-import { getIsAdmin } from "~/helpers/utilityFunctions.ts";
+import { auth } from "~/server/auth.ts";
 import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
@@ -20,12 +21,20 @@ type Props = {
 };
 
 async function CreateEditContestPage({ searchParams }: Props) {
+  const { editId, copyId } = z
+    .strictObject({
+      editId: z.string().nonempty().optional(),
+      copyId: z.string().nonempty().optional(),
+    })
+    .parse(await searchParams);
   const session = await authorizeUser({
     permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
-  const { editId, copyId } = await searchParams;
 
-  const isAdmin = getIsAdmin(session.user.role);
+  const { success: canApprove } = await auth.api.userHasPermission({
+    body: { userId: session.user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
+  });
+
   const mode = editId ? "edit" : copyId ? "copy" : "new";
   const competitionId = editId ?? copyId;
 
@@ -36,13 +45,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
     .orderBy(eventsTable.rank);
   const contestPromise = competitionId
     ? db.query.contests.findFirst({
-        columns: isAdmin
-          ? undefined
-          : {
-              createdBy: false,
-              createdAt: false,
-              updatedAt: false,
-            },
+        columns: canApprove ? undefined : { createdBy: false, createdAt: false, updatedAt: false },
         where: { competitionId },
       })
     : undefined;
@@ -82,7 +85,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
         .from(personsTable)
         .where(inArray(personsTable.id, contest.organizerIds));
       const creatorPromise =
-        isAdmin && contest.createdBy
+        canApprove && contest.createdBy
           ? db.select(creatorCols).from(usersTable).where(eq(usersTable.id, contest.createdBy))
           : undefined;
       const [totalResultsByRoundRes, organizersRes, creatorRes] = await Promise.all([

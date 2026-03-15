@@ -19,7 +19,7 @@ import {
   getBestAndAverage,
   getDefaultAverageAttempts,
   getFormattedTime,
-  getIsAdmin,
+  getHasRole,
   getMakesCutoff,
   getRoundDate,
 } from "~/helpers/utilityFunctions.ts";
@@ -29,6 +29,7 @@ import {
   type VideoBasedResultDto,
   VideoBasedResultValidator,
 } from "~/helpers/validators/Result.ts";
+import { auth } from "~/server/auth.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
 import type { SelectRound } from "~/server/db/schema/rounds.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
@@ -47,7 +48,6 @@ import { sendVideoBasedResultApprovedEmail, sendVideoBasedResultSubmittedEmail }
 import { actionClient, RrActionError } from "../safeAction.ts";
 import {
   approvePersons,
-  checkUserPermissions,
   getContestParticipantIds,
   getRecordConfigs,
   getRecordResult,
@@ -175,7 +175,7 @@ export const createContestResultSF = actionClient
 
       if (
         !process.env.VITEST &&
-        !getIsAdmin(user.role) &&
+        !getHasRole("admin", user.role) &&
         (newResult.regionalSingleRecord || newResult.regionalAverageRecord) &&
         differenceInDays(new Date(), newResult.date) > 30
       ) {
@@ -255,7 +255,7 @@ export const updateContestResultSF = actionClient
 
       if (
         !process.env.VITEST &&
-        !getIsAdmin(user.role) &&
+        !getHasRole("admin", user.role) &&
         (result.regionalSingleRecord ||
           result.regionalAverageRecord ||
           newResult.regionalSingleRecord ||
@@ -324,7 +324,7 @@ export const deleteContestResultSF = actionClient
 
       if (
         !process.env.VITEST &&
-        !getIsAdmin(user.role) &&
+        !getHasRole("admin", user.role) &&
         (result.regionalSingleRecord || result.regionalAverageRecord) &&
         differenceInDays(new Date(), result.date) > 30
       ) {
@@ -402,8 +402,10 @@ export const createVideoBasedResultSF = actionClient
     }) => {
       logMessage("RR0016", `Creating video-based result: ${JSON.stringify(newResultDto)}`);
 
-      const userCanApprove = await checkUserPermissions(user.id, { videoBasedResults: ["approve"] });
-      await validateVideoBasedResult(newResultDto, { userCanApprove });
+      const { success: canApprove } = await auth.api.userHasPermission({
+        body: { userId: user.id, permissions: { videoBasedResults: ["approve"] } },
+      });
+      await validateVideoBasedResult(newResultDto, { userCanApprove: canApprove });
 
       const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
         db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
@@ -429,7 +431,6 @@ export const createVideoBasedResultSF = actionClient
       const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
       const newResult: InsertResult = {
         ...newResultDto,
-        approved: userCanApprove, // approve automatically, if user has permission
         best,
         average,
         recordCategory: "video-based-results",
@@ -438,20 +439,9 @@ export const createVideoBasedResultSF = actionClient
 
       await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
 
-      const createdResult = await db.transaction(async (tx) => {
-        const [createdResult] = await tx.insert(table).values(newResult).returning(resultsPublicCols);
+      const [createdResult] = await db.insert(table).values(newResult).returning(resultsPublicCols);
 
-        if (userCanApprove) {
-          if (createdResult.regionalSingleRecord) await cancelFutureRecords(tx, createdResult, "best", recordConfigs);
-          if (createdResult.regionalAverageRecord)
-            await cancelFutureRecords(tx, createdResult, "average", recordConfigs);
-        }
-
-        return createdResult;
-      });
-
-      if (!userCanApprove)
-        sendVideoBasedResultSubmittedEmail(user.email, event, createdResult, user.username, creatorPerson?.name);
+      sendVideoBasedResultSubmittedEmail(user.email, event, createdResult, user.username, creatorPerson?.name);
 
       return createdResult;
     },
@@ -995,7 +985,7 @@ async function validateVideoBasedResult(
   newResultDto: Pick<VideoBasedResultDto, "attempts" | "videoLink">,
   { userCanApprove }: { userCanApprove: boolean },
 ) {
-  // Disallow video-based-result-moderator-only features
+  // Disallow video-based-result-reviewer-only features
   if (!userCanApprove) {
     if (newResultDto.videoLink === "") throw new RrActionError("Please enter a video link");
     if (newResultDto.attempts.some((a) => a.result === C.maxTime))

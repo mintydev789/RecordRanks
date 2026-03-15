@@ -33,7 +33,7 @@ import {
   getActionError,
   getContestIdFromName,
   getDateOnly,
-  getIsAdmin,
+  getHasRole,
   getIsCompType,
   getIsUrgent,
 } from "~/helpers/utilityFunctions.ts";
@@ -171,7 +171,7 @@ function ContestForm({
     { title: "Events", value: "events", hidden: !type },
     { title: "Schedule", value: "schedule", hidden: !type || !getIsCompType(type) },
   ];
-  const isAdmin = getIsAdmin(session.user.role);
+  const isAdmin = getHasRole("admin", session.user.role);
   const isPending =
     isCreating ||
     isUpdating ||

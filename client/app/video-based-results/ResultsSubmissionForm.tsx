@@ -16,12 +16,11 @@ import FormSelect from "~/app/components/form/FormSelect.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
-import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { type RoundFormatObject, roundFormats } from "~/helpers/roundFormats.ts";
 import type { Creator, EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
-import { getActionError, getBlankCompetitors, getIsAdmin, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
@@ -42,6 +41,7 @@ type Props = {
   participants?: PersonResponse[];
   creator?: Creator | undefined;
   creatorPerson?: PersonResponse;
+  isVideoBasedResultReviewer: boolean;
 };
 
 function ResultsSubmissionForm({
@@ -51,12 +51,12 @@ function ResultsSubmissionForm({
   participants: initParticipants,
   creator,
   creatorPerson,
+  isVideoBasedResultReviewer,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
-  const { data: session } = authClient.useSession();
 
   const {
     executeAsync: getWrPairUpToDate,
@@ -76,7 +76,6 @@ function ResultsSubmissionForm({
   );
   const [participants, setParticipants] = useState<InputPerson[]>(initParticipants ?? [null]);
   const [personNames, setPersonNames] = useState(initParticipants?.map((p) => p.name) ?? [""]);
-  const [keepCompetitors, setKeepCompetitors] = useState(false);
   const [attempts, setAttempts] = useState<Attempt[]>(result?.attempts ?? []);
   // null means the date is invalid; undefined means it's empty
   const [date, setDate] = useState<Date | null | undefined>(result ? new Date(result.date) : undefined);
@@ -99,7 +98,6 @@ function ResultsSubmissionForm({
     [],
   );
 
-  const isAdmin = getIsAdmin(session?.user.role);
   const isPending = isCreating || isUpdating || isPendingWrPairs;
 
   useEffect(() => {
@@ -136,11 +134,7 @@ function ResultsSubmissionForm({
         setVideoLink("");
         setDiscussionLink("");
         resetAttempts();
-
-        if (!keepCompetitors) {
-          resetCompetitors();
-          document.getElementById("Competitor_1")?.focus();
-        }
+        document.getElementById(event.format !== "multi" ? "attempt_1" : "attempt_1_solved")?.focus();
       }
     } else {
       setLoadingId(approve ? "APPROVING" : "UPDATING");
@@ -169,8 +163,7 @@ function ResultsSubmissionForm({
     const newEvent = events.find((e) => e.eventId === newEventId)!;
     setEvent(newEvent);
     resetAttempts();
-
-    if (!keepCompetitors) resetCompetitors(newEvent.participants);
+    if (event.participants !== newEvent.participants) resetCompetitors(newEvent.participants);
   };
 
   const resetCompetitors = (participants: number = event.participants) => {
@@ -280,15 +273,9 @@ function ResultsSubmissionForm({
           setPersons={setParticipants}
           nextFocusTargetId={event.format !== "multi" ? "attempt_1" : "attempt_1_solved"}
           redirectToOnAddPerson={pathname}
-          addNewPersonMode={isAdmin ? "default" : "disabled"}
+          addNewPersonMode={isVideoBasedResultReviewer ? "default" : "disabled"}
           disabled={result !== undefined}
           showWcaId
-        />
-        <FormCheckbox
-          title="Don't clear competitors"
-          selected={keepCompetitors}
-          setSelected={setKeepCompetitors}
-          disabled={result !== undefined}
         />
         {attempts.map((attempt: Attempt, i: number) => (
           <AttemptInput
@@ -298,7 +285,7 @@ function ResultsSubmissionForm({
             setAttempt={(val: Attempt) => changeAttempt(i, val)}
             event={event}
             memoInputForBld
-            allowUnknownTime={isAdmin && ["1", "2"].includes(roundFormat.value)}
+            allowUnknownTime={isVideoBasedResultReviewer && ["1", "2"].includes(roundFormat.value)}
             nextFocusTargetId={i + 1 === attempts.length ? (result?.approved ? "video_link" : "date") : undefined}
           />
         ))}
@@ -332,7 +319,7 @@ function ResultsSubmissionForm({
           disabled={videoUnavailable}
           className="mb-3"
         />
-        {isAdmin && (
+        {isVideoBasedResultReviewer && (
           <FormCheckbox
             title={C.videoNoLongerAvailableMsg}
             selected={videoUnavailable}

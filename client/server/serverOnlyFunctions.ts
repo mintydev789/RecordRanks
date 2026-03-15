@@ -19,7 +19,7 @@ import {
   compareAvgs,
   compareSingles,
   fetchWcaPerson,
-  getIsAdmin,
+  getHasRole,
   getResultProceeds,
 } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
@@ -58,12 +58,6 @@ export function logMessage(code: LogCode, message: string, { metadata }: { metad
   }
 }
 
-export async function checkUserPermissions(userId: string, permissions: RrPermissions): Promise<boolean> {
-  // @ts-expect-error TEMPORARY! GET RID OF THIS TS IGNORE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  const { success } = await auth.api.userHasPermission({ body: { userId, permissions } });
-  return success;
-}
-
 export async function authorizeUser({
   permissions,
 }: {
@@ -74,8 +68,8 @@ export async function authorizeUser({
   if (!session) redirect("/login");
 
   if (permissions) {
-    const isAuthorized = await checkUserPermissions(session.user.id, permissions);
-    if (!isAuthorized) redirect("/login");
+    const { success } = await auth.api.userHasPermission({ body: { userId: session.user.id, permissions } });
+    if (!success) redirect("/login");
 
     // The user must have an assigned person to be able to do any operation except creating video-based results
     if (
@@ -95,7 +89,7 @@ export function getUserHasAccessToContest(
 ) {
   if (!user.personId) return false;
   if (contest.state === "removed") return false;
-  if (getIsAdmin(user.role)) return true;
+  if (getHasRole("admin", user.role)) return true;
 
   const modHasAccess =
     ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(user.personId);

@@ -10,7 +10,7 @@ import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
   generateAccessToken,
-  getIsAdmin,
+  getHasRole,
   getMaxAllowedRounds,
   getNameAndLocalizedName,
   getResultProceeds,
@@ -18,7 +18,7 @@ import {
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";
-import type { auth } from "~/server/auth.ts";
+import { auth } from "~/server/auth.ts";
 import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
@@ -132,8 +132,12 @@ export const getModContestsSF = actionClient
   .action<ContestResponse[]>(async ({ parsedInput: { organizerPersonId }, ctx: { session } }) => {
     const queryFilters = [];
 
+    const { success: isAdmin } = await auth.api.userHasPermission({
+      body: { userId: session.user.id, permissions: { adminDashboard: ["view"] } },
+    });
+
     // If it's a moderator, only get their own contests
-    if (!getIsAdmin(session.user.role)) {
+    if (!isAdmin) {
       const msg = "Your competitor profile must be tied to your account before you can use moderator features";
       if (!session.user.personId) throw new RrActionError(msg);
 
@@ -208,7 +212,11 @@ export const createContestSF = actionClient
       if (sameShortContest)
         throw new RrActionError(`A contest with the short name ${newContestDto.shortName} already exists`);
 
-      await validateAndCleanUpContest(newContestDto, rounds, user);
+      const { success: canApprove } = await auth.api.userHasPermission({
+        body: { userId: user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
+      });
+
+      await validateAndCleanUpContest(newContestDto, rounds, user.personId!, canApprove);
 
       const creatorPerson = await db.query.persons.findFirst({
         columns: { name: true },
@@ -510,7 +518,9 @@ export const updateContestSF = actionClient
     }) => {
       logMessage("RR0010", `Updating contest ${originalCompetitionId}`);
 
-      const isAdmin = getIsAdmin(user.role);
+      const { success: canApprove } = await auth.api.userHasPermission({
+        body: { userId: user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
+      });
 
       const contestPromise = db.query.contests.findFirst({
         columns: { competitionId: true, type: true, state: true, organizerIds: true, schedule: true },
@@ -527,7 +537,7 @@ export const updateContestSF = actionClient
       if (!["created", "approved", "ongoing"].includes(contest.state))
         throw new RrActionError("Finished contests cannot be edited");
 
-      await validateAndCleanUpContest(newContestDto, rounds, user);
+      await validateAndCleanUpContest(newContestDto, rounds, user.personId!, canApprove);
 
       await db.transaction(async (tx) => {
         const updateContestObject: Partial<SelectContest> = {
@@ -536,7 +546,7 @@ export const updateContestSF = actionClient
           description: newContestDto.description,
         };
 
-        if (isAdmin || contest.state === "created") {
+        if (canApprove || contest.state === "created") {
           if (newContestDto.competitionId !== originalCompetitionId) {
             const sameIdContest = await db.query.contests.findFirst({
               where: { competitionId: newContestDto.competitionId },
@@ -554,6 +564,10 @@ export const updateContestSF = actionClient
               .update(roundsTable)
               .set({ competitionId: newContestDto.competitionId })
               .where(eq(roundsTable.competitionId, originalCompetitionId));
+            await tx
+              .update(accessTokensTable)
+              .set({ competitionId: newContestDto.competitionId })
+              .where(eq(accessTokensTable.competitionId, originalCompetitionId));
           }
 
           updateContestObject.name = newContestDto.name;
@@ -580,7 +594,7 @@ export const updateContestSF = actionClient
         }
 
         await updateRounds(tx, prevRounds, rounds, results, {
-          canAddNewEvents: isAdmin || contest.state === "created",
+          canAddNewEvents: canApprove || contest.state === "created",
         });
 
         await tx.update(table).set(updateContestObject).where(eq(table.competitionId, originalCompetitionId));
@@ -706,7 +720,7 @@ export const createAccessTokenSF = actionClient
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
       if (!getUserHasAccessToContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
-      if (user.id !== contest.createdBy && !getIsAdmin(user.role))
+      if (user.id !== contest.createdBy && !getHasRole("admin", user.role))
         throw new RrActionError("Only the creator of the contest or an admin can generate access tokens");
       if (contest.state === "created")
         throw new RrActionError("You may not create an access token for a contest that hasn't been approved yet");
@@ -722,17 +736,16 @@ export const createAccessTokenSF = actionClient
 async function validateAndCleanUpContest(
   contest: ContestDto,
   rounds: RoundDto[],
-  user: typeof auth.$Infer.Session.user,
+  userPersonId: number,
+  canApprove: boolean,
 ) {
-  const isAdmin = getIsAdmin(user.role);
   const events = await db.query.events.findMany({
     columns: { eventId: true, name: true, category: true, format: true },
   });
 
-  // Protect against admin-only stuff
-  if (!isAdmin) {
-    if (!contest.organizerIds.some((id) => id === user.personId))
-      throw new RrActionError("You cannot create a contest which you are not organizing");
+  if (!canApprove) {
+    if (!contest.organizerIds.some((id) => id === userPersonId))
+      throw new RrActionError("You cannot create or edit a contest where you are not an organizer");
   }
 
   const activityCodes = new Set<string>(); // also used below in schedule validation
