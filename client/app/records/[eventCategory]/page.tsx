@@ -100,7 +100,7 @@ async function RecordsPage({ params, searchParams }: Props) {
       </div>
 
       {eventCategory === "extremebld" && (
-        <Link href="/user/submit-results" prefetch={false} className="btn btn-success btn ms-2">
+        <Link href="/video-based-results/submit" prefetch={false} className="btn btn-success btn ms-2">
           Submit a result
         </Link>
       )}

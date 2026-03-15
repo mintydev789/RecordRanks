@@ -6,17 +6,15 @@ import { authorizeUser, getRecordConfigs } from "~/server/serverOnlyFunctions.ts
 import ManageResultsScreen from "./ManageResultsScreen.tsx";
 
 async function ManageResultsPage() {
-  await authorizeUser({ permissions: { videoBasedResults: ["update", "approve"] } });
+  await authorizeUser({ permissions: { videoBasedResults: ["update", "approve", "delete"] } });
 
   const recordConfigs = await getRecordConfigs("video-based-results");
   const results = (await db.query.results.findMany({
-    // with: { event: true, persons: true },
     with: { event: true },
     where: { competitionId: { isNull: true } },
     orderBy: { createdAt: "desc" },
   })) as FullResult[];
 
-  // This is a temporary hack until I figure out how to populate the persons in the first query directly
   const allPersonIds = new Set<number>();
   for (const r of results) for (const pid of r.personIds) allPersonIds.add(pid);
   const persons = await db

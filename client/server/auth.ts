@@ -11,7 +11,7 @@ import {
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
 import { sendPasswordChangedEmail, sendResetPasswordEmail, sendVerificationEmail } from "~/server/email/mailer.ts";
-import { ac, admin, mod, user } from "~/server/permissions.ts";
+import { ac, admin, mod, user, videoBasedResultReviewer } from "~/server/permissions.ts";
 import { logMessage } from "~/server/serverOnlyFunctions";
 
 if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
@@ -36,7 +36,7 @@ export const auth = betterAuth({
     }),
     adminPlugin({
       ac,
-      roles: { admin, mod, user },
+      roles: { admin, mod, videoBasedResultReviewer, user },
     }),
   ],
   emailAndPassword: {

@@ -24,6 +24,6 @@ export const config = {
     "/donate/(.*)",
     "/moderator-instructions/(.*)",
     "/posts/(.*)",
-    "/user/submit-results",
+    "/video-based-results/submit",
   ],
 };

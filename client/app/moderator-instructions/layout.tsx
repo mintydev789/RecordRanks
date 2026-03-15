@@ -6,8 +6,9 @@ type Props = {
   children: React.ReactNode;
 };
 
-function ModeratorInstructions({ children }: Props) {
-  if (!IS_CUBING_CONTESTS_INSTANCE) return <span>THIS PAGE IS ONLY SUPPORTED FOR CUBINGCONTESTS.COM</span>;
+function ModeratorInstructionsLayout({ children }: Props) {
+  if (!IS_CUBING_CONTESTS_INSTANCE)
+    return <span className="text-center">THIS PAGE IS ONLY SUPPORTED FOR CUBINGCONTESTS.COM</span>;
 
   return (
     <div className="px-3 pb-4">
@@ -49,4 +50,4 @@ function ModeratorInstructions({ children }: Props) {
   );
 }
 
-export default ModeratorInstructions;
+export default ModeratorInstructionsLayout;

@@ -54,31 +54,35 @@ function ManageResultsScreen({ results, recordConfigs }: Props) {
     <>
       <div className="px-2">
         <ToastMessages />
+
+        <Link href="/mod/competitors" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
+          Manage competitors
+        </Link>
+
+        <p className="mt-3">
+          Number of video-based results:&nbsp;<b>{filteredResults.length}</b>
+          &#8194;|&#8194;Not approved:&nbsp;
+          <b>{filteredResults.filter((r) => !r.approved).length}</b>
+        </p>
+
+        <FiltersContainer>
+          <FormPersonInputs
+            title="Competitor"
+            persons={persons}
+            setPersons={setPersons}
+            personNames={personNames}
+            setPersonNames={setPersonNames}
+            disabled={results.length === 0}
+            addNewPersonMode="disabled"
+            display="one-line"
+          />
+          {persons.at(0) && (
+            <Button onClick={resetFilters} className="btn-secondary btn-md">
+              Reset
+            </Button>
+          )}
+        </FiltersContainer>
       </div>
-
-      <FiltersContainer>
-        <FormPersonInputs
-          title="Competitor"
-          persons={persons}
-          setPersons={setPersons}
-          personNames={personNames}
-          setPersonNames={setPersonNames}
-          disabled={results.length === 0}
-          addNewPersonMode="disabled"
-          display="one-line"
-        />
-        {persons.at(0) && (
-          <Button onClick={resetFilters} className="btn-secondary btn-md">
-            Reset
-          </Button>
-        )}
-      </FiltersContainer>
-
-      <p className="px-3">
-        Number of video-based results:&nbsp;<b>{filteredResults.length}</b>
-        &#8194;|&#8194;Not approved:&nbsp;
-        <b>{filteredResults.filter((r) => !r.approved).length}</b>
-      </p>
 
       <div ref={parentRef as any} className="table-responsive mt-3 overflow-y-auto" style={{ height: "700px" }}>
         <div style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
@@ -133,7 +137,7 @@ function ManageResultsScreen({ results, recordConfigs }: Props) {
                     </td>
                     <td>
                       <Link
-                        href={`/admin/results/${result.id}`}
+                        href={`/video-based-results/${result.id}`}
                         prefetch={false}
                         className="btn btn-primary btn-xs"
                         title="Edit"

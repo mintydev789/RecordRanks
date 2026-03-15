@@ -22,9 +22,10 @@ import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { Role, Roles } from "~/server/permissions.ts";
 import { updateUserSF } from "~/server/serverFunctions/serverFunctions.ts";
 
-const roleOptions: MultiChoiceOption[] = [
+const roleOptions: MultiChoiceOption<Role>[] = [
   { label: "User", value: "user" },
   { label: "Mod", value: "mod" },
+  { label: "Video-based result reviewer", value: "videoBasedResultReviewer" },
   { label: "Admin", value: "admin" },
 ];
 
@@ -133,14 +134,16 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
         </Form>
       )}
 
-      <FiltersContainer className="mt-4">
-        <FormTextInput title="Search" value={search} setValue={setSearch} oneLine />
-      </FiltersContainer>
+      <div className="px-2">
+        <FiltersContainer className="mt-4">
+          <FormTextInput title="Search" value={search} setValue={setSearch} oneLine />
+        </FiltersContainer>
 
-      <p className="mb-2 px-3">
-        Number of users:&nbsp;<b>{filteredUsers.length}</b>
-        {filteredUsers.length === C.maxUsers ? " (reached limit; please contact the development team)" : ""}
-      </p>
+        <p className="mb-2">
+          Number of users:&nbsp;<b>{filteredUsers.length}</b>
+          {filteredUsers.length === C.maxUsers ? " (reached limit; please contact the development team)" : ""}
+        </p>
+      </div>
 
       <div className="table-responsive mt-3">
         <table className="table-hover table text-nowrap">
@@ -157,6 +160,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
           <tbody>
             {filteredUsers.map((user, index) => {
               const person = userPersons.find((p) => p.id === user.personId);
+              const roleLabel = roleOptions.find((r) => r.value === user.role)!.label;
 
               return (
                 <tr key={user.id}>
@@ -164,7 +168,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
                   <td>{user.username}</td>
                   <td>{user.email}</td>
                   <td>{person && <Competitor person={person} noFlag />}</td>
-                  <td>{user.role}</td>
+                  <td>{roleLabel}</td>
                   <td>
                     <Button
                       id={`edit_${user.username}_button`}

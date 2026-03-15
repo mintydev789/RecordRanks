@@ -1,5 +1,5 @@
-import ResultsSubmissionForm from "~/app/components/video-based-results/ResultsSubmissionForm";
-import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverOnlyFunctions";
+import ResultsSubmissionForm from "~/app/video-based-results/ResultsSubmissionForm.tsx";
+import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverOnlyFunctions.ts";
 
 async function SubmitResultsPage() {
   await authorizeUser({ permissions: { videoBasedResults: ["create"] } });
@@ -9,6 +9,8 @@ async function SubmitResultsPage() {
 
   return (
     <section>
+      <h2 className="text-center">Submit Results</h2>
+
       <ResultsSubmissionForm events={events} recordConfigs={recordConfigs} />
     </section>
   );

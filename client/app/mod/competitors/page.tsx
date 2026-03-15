@@ -14,16 +14,14 @@ import { authorizeUser, checkUserPermissions } from "~/server/serverOnlyFunction
 
 async function CompetitorsPage() {
   const { user } = await authorizeUser({ permissions: { persons: ["create", "update", "delete"] } });
-  const isAdmin = await checkUserPermissions(user.id, { persons: ["approve"] });
+  const canApprovePersons = await checkUserPermissions(user.id, { persons: ["approve"] });
 
   let persons: SelectPerson[] | PersonResponse[] | undefined;
   let users: Creator[] | undefined;
 
-  if (isAdmin) {
+  if (canApprovePersons) {
     persons = await db.select().from(table).orderBy(desc(table.id));
-    const userIds = Array.from(
-      new Set(persons.filter((p) => (p as SelectPerson).createdBy).map((p) => (p as SelectPerson).createdBy)),
-    );
+    const userIds = Array.from(new Set((persons as SelectPerson[]).filter((p) => p.createdBy).map((p) => p.createdBy)));
 
     users = await db
       .select({
@@ -42,7 +40,7 @@ async function CompetitorsPage() {
       .orderBy(desc(table.id));
   }
 
-  if (!persons || (isAdmin && !users)) return <LoadingError loadingEntity="persons" />;
+  if (!persons || (canApprovePersons && !users)) return <LoadingError loadingEntity="persons" />;
 
   return (
     <section>

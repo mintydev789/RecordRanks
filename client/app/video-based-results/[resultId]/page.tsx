@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import ResultsSubmissionForm from "~/app/components/video-based-results/ResultsSubmissionForm";
-import { creatorCols } from "~/server/db/dbUtils";
+import ResultsSubmissionForm from "~/app/video-based-results/ResultsSubmissionForm.tsx";
+import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
-import { usersTable } from "~/server/db/schema/auth-schema";
-import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverOnlyFunctions";
+import { usersTable } from "~/server/db/schema/auth-schema.ts";
+import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverOnlyFunctions.ts";
 
 type Props = {
   params: Promise<{ resultId: string }>;
@@ -32,6 +32,8 @@ async function EditResultPage({ params }: Props) {
 
   return (
     <section>
+      <h2 className="text-center">Edit Result</h2>
+
       <ResultsSubmissionForm
         events={events}
         recordConfigs={recordConfigs}

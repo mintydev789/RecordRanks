@@ -35,7 +35,7 @@ const permissions = {
 
 export type RrPermissions = Partial<typeof permissions>;
 
-export const Roles = ["admin", "mod", "user"] as const;
+export const Roles = ["admin", "mod", "videoBasedResultReviewer", "user"] as const;
 export type Role = (typeof Roles)[number];
 
 export const admin = ac.newRole(permissions);
@@ -46,6 +46,11 @@ export const mod = ac.newRole({
   meetups: ["create", "update"],
   persons: ["create", "update", "delete"],
   videoBasedResults: ["create"],
+});
+
+export const videoBasedResultReviewer = ac.newRole({
+  persons: ["create", "update", "delete"],
+  videoBasedResults: ["create", "update", "approve", "delete"],
 });
 
 export const user = ac.newRole({

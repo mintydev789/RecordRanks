@@ -84,11 +84,8 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
           <Link href="/mod/competitors" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
             Manage competitors
           </Link>
-          {isAdmin ? (
+          {isAdmin && (
             <>
-              <Link href="/admin/results" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
-                Manage results
-              </Link>
               <Link href="/admin/users" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
                 Manage users
               </Link>
@@ -99,7 +96,8 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
                 Configure records
               </Link>
             </>
-          ) : (
+          )}
+          {IS_CUBING_CONTESTS_INSTANCE && (
             <a
               href="https://docs.google.com/forms/d/12AuZdtH4qHwTxd4Kxd2Y_TwZHlBuBu8XuKX3VdKrE60"
               target="_blank"
@@ -126,9 +124,9 @@ function ModDashboardScreen({ modContestsPromise, session }: Props) {
             </p>
           </>
         )}
-      </div>
 
-      <ModFilters onSelectPerson={selectPerson} onResetFilters={resetFilters} disabled={isPendingContests} />
+        <ModFilters onSelectPerson={selectPerson} onResetFilters={resetFilters} disabled={isPendingContests} />
+      </div>
 
       {isPendingContests ? (
         <Loading />

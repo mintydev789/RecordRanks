@@ -176,30 +176,32 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
 
       {mode !== "add-once" && (
         <>
-          <FiltersContainer className="mt-4">
-            <FormTextInput
-              title="Search"
-              value={search}
-              setValue={setSearch}
-              tooltip={
-                "Search by name, localized name, or CC ID" +
-                (isAdmin ? ". Admins can also search by the username of the creator." : "")
-              }
-              oneLine
-            />
-            <FormSelect
-              title="Status"
-              selected={approvedFilter}
-              setSelected={setApprovedFilter}
-              options={approvedFilterOptions}
-              oneLine
-              style={{ maxWidth: "15rem" }}
-            />
-          </FiltersContainer>
+          <div className="px-2">
+            <FiltersContainer className="mt-4">
+              <FormTextInput
+                title="Search"
+                value={search}
+                setValue={setSearch}
+                tooltip={
+                  "Search by name, localized name, or CC ID" +
+                  (isAdmin ? ". Admins can also search by the username of the creator." : "")
+                }
+                oneLine
+              />
+              <FormSelect
+                title="Status"
+                selected={approvedFilter}
+                setSelected={setApprovedFilter}
+                options={approvedFilterOptions}
+                oneLine
+                style={{ maxWidth: "15rem" }}
+              />
+            </FiltersContainer>
 
-          <p className="mb-2 px-2">
-            Number of competitors:&nbsp;<b>{filteredPersons.length}</b>
-          </p>
+            <p className="mb-2">
+              Number of competitors:&nbsp;<b>{filteredPersons.length}</b>
+            </p>
+          </div>
 
           <div ref={parentRef as any} className="table-responsive mt-3 overflow-y-auto" style={{ height: "600px" }}>
             <div style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>

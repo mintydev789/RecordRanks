@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { authClient } from "~/helpers/authClient.ts";
+import { IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants";
 
 function NavbarItems() {
   const pathname = usePathname();
@@ -18,12 +19,19 @@ function NavbarItems() {
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [userExpanded, setUserExpanded] = useState(false);
   const [canAccessModDashboard, setCanAccessModDashboard] = useState(false);
+  const [canApproveVideoBasedResults, setCanApproveVideoBasedResults] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
       authClient.admin.hasPermission({ permissions: { modDashboard: ["view"] } }).then(({ data }) => {
         if (data) setCanAccessModDashboard(data.success);
       });
+
+      if (IS_CUBING_CONTESTS_INSTANCE) {
+        authClient.admin.hasPermission({ permissions: { videoBasedResults: ["approve"] } }).then(({ data }) => {
+          if (data) setCanApproveVideoBasedResults(data.success);
+        });
+      }
     }
   }, [session]);
 
@@ -58,7 +66,7 @@ function NavbarItems() {
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary">
       <div className="container-md position-relative">
-        <Link className="navbar-brand" href="/" prefetch={false}>
+        <Link href="/" prefetch={false} className="navbar-brand">
           <Image src="/favicon.png" height={45} width={45} alt="Home" />
         </Link>
         <button
@@ -74,24 +82,24 @@ function NavbarItems() {
           <ul className="navbar-nav fs-5 mx-2 mt-3 mt-lg-0 gap-lg-2 align-items-lg-end align-items-start">
             <li className="nav-item">
               <Link
-                className={`nav-link ${pathname === "/competitions" ? "active" : ""}`}
-                prefetch={false}
                 href="/competitions"
                 onClick={collapseAll}
+                prefetch={false}
+                className={`nav-link ${pathname === "/competitions" ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faCalendarDays} size="xs" className="me-2" />
                 Contests
               </Link>
             </li>
             <li
-              className="nav-item dropdown"
               onMouseEnter={() => toggleDropdown("results", true)}
               onMouseLeave={() => toggleDropdown("results", false)}
+              className="nav-item dropdown"
             >
               <button
                 type="button"
-                className={`nav-link dropdown-toggle ${/^\/(rankings|records|export)/.test(pathname) ? "active" : ""}`}
                 onClick={() => toggleDropdown("results", !resultsExpanded)}
+                className={`nav-link dropdown-toggle ${/^\/(rankings|records|export)/.test(pathname) ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faRankingStar} size="xs" className="me-2" />
                 Results
@@ -99,20 +107,20 @@ function NavbarItems() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${resultsExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    className={`nav-link ${/^\/records\//.test(pathname) ? "active" : ""}`}
                     href="/records"
-                    prefetch={false}
                     onClick={collapseAll}
+                    prefetch={false}
+                    className={`nav-link ${/^\/records\//.test(pathname) ? "active" : ""}`}
                   >
                     Records
                   </Link>
                 </li>
                 <li>
                   <Link
-                    className={`nav-link ${/^\/rankings\//.test(pathname) ? "active" : ""}`}
                     href="/rankings"
-                    prefetch={false}
                     onClick={collapseAll}
+                    prefetch={false}
+                    className={`nav-link ${/^\/rankings\//.test(pathname) ? "active" : ""}`}
                   >
                     Rankings
                   </Link>
@@ -120,10 +128,10 @@ function NavbarItems() {
                 {process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP && process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP !== "0" && (
                   <li>
                     <Link
-                      className={`nav-link ${pathname === "/export" ? "active" : ""}`}
                       href="/export"
-                      prefetch={false}
                       onClick={collapseAll}
+                      prefetch={false}
+                      className={`nav-link ${pathname === "/export" ? "active" : ""}`}
                     >
                       Exports
                     </Link>
@@ -133,24 +141,24 @@ function NavbarItems() {
             </li>
             <li className="nav-item">
               <Link
-                className={`nav-link ${pathname === "/rules" ? "active" : ""}`}
                 href="/rules"
-                prefetch={false}
                 onClick={collapseAll}
+                prefetch={false}
+                className={`nav-link ${pathname === "/rules" ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
                 Rules
               </Link>
             </li>
             <li
-              className="nav-item dropdown"
               onMouseEnter={() => toggleDropdown("more", true)}
               onMouseLeave={() => toggleDropdown("more", false)}
+              className="nav-item dropdown"
             >
               <button
                 type="button"
-                className="nav-link dropdown-toggle"
                 onClick={() => toggleDropdown("more", !moreExpanded)}
+                className="nav-link dropdown-toggle"
               >
                 <FontAwesomeIcon icon={faStar} size="xs" className="me-2" />
                 More
@@ -158,40 +166,40 @@ function NavbarItems() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${moreExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    className={`nav-link ${pathname === "/about" ? "active" : ""}`}
-                    prefetch={false}
                     href="/about"
                     onClick={collapseAll}
+                    prefetch={false}
+                    className={`nav-link ${pathname === "/about" ? "active" : ""}`}
                   >
                     About
                   </Link>
                 </li>
                 <li>
                   <Link
-                    className={`nav-link ${/^\/posts/.test(pathname) ? "active" : ""}`}
                     href="/posts"
-                    prefetch={false}
                     onClick={collapseAll}
+                    prefetch={false}
+                    className={`nav-link ${/^\/posts/.test(pathname) ? "active" : ""}`}
                   >
                     Blog
                   </Link>
                 </li>
                 <li>
                   <Link
-                    className={`nav-link ${/^\/moderator-instructions/.test(pathname) ? "active" : ""}`}
-                    prefetch={false}
                     href="/moderator-instructions"
                     onClick={collapseAll}
+                    prefetch={false}
+                    className={`nav-link ${/^\/moderator-instructions/.test(pathname) ? "active" : ""}`}
                   >
                     Moderator instructions
                   </Link>
                 </li>
                 <li>
                   <Link
-                    className={`nav-link ${pathname === "/donate" ? "active" : ""}`}
-                    prefetch={false}
                     href="/donate"
                     onClick={collapseAll}
+                    prefetch={false}
+                    className={`nav-link ${pathname === "/donate" ? "active" : ""}`}
                   >
                     Donate
                   </Link>
@@ -200,16 +208,16 @@ function NavbarItems() {
             </li>
             {!session ? (
               <li className="nav-item">
-                <Link className="nav-link" href="/login" prefetch={false} onClick={collapseAll}>
+                <Link href="/login" prefetch={false} onClick={collapseAll} className="nav-link">
                   <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
                   Log In
                 </Link>
               </li>
             ) : (
               <li
-                className="nav-item dropdown"
                 onMouseEnter={() => toggleDropdown("user", true)}
                 onMouseLeave={() => toggleDropdown("user", false)}
+                className="nav-item dropdown"
               >
                 <button
                   type="button"
@@ -223,24 +231,55 @@ function NavbarItems() {
                 <ul className={`dropdown-menu end-0 px-3 px-lg-2 py-0 ${userExpanded ? "show" : ""}`}>
                   {canAccessModDashboard && (
                     <li>
-                      <Link className="nav-link" href="/mod" prefetch={false} onClick={collapseAll}>
-                        Mod Dashboard
+                      <Link
+                        href="/mod"
+                        prefetch={false}
+                        onClick={collapseAll}
+                        className={`nav-link ${pathname === "/mod" ? "active" : ""}`}
+                      >
+                        Mod dashboard
                       </Link>
                     </li>
                   )}
+                  {IS_CUBING_CONTESTS_INSTANCE && (
+                    <>
+                      {canApproveVideoBasedResults && (
+                        <li>
+                          <Link
+                            href="/video-based-results"
+                            prefetch={false}
+                            onClick={collapseAll}
+                            className={`nav-link ${pathname === "/video-based-results" ? "active" : ""}`}
+                          >
+                            Video-based results
+                          </Link>
+                        </li>
+                      )}
+                      <li>
+                        <Link
+                          href="/video-based-results/submit"
+                          prefetch={false}
+                          onClick={collapseAll}
+                          className={`nav-link ${pathname === "/video-based-results/submit" ? "active" : ""}`}
+                        >
+                          Submit results
+                        </Link>
+                      </li>
+                    </>
+                  )}
                   <li>
-                    <Link className="nav-link" href="/user/submit-results" prefetch={false} onClick={collapseAll}>
-                      Submit Results
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="nav-link" href="/user/settings" prefetch={false} onClick={collapseAll}>
+                    <Link
+                      href="/user/settings"
+                      prefetch={false}
+                      onClick={collapseAll}
+                      className={`nav-link ${pathname === "/user/settings" ? "active" : ""}`}
+                    >
                       Settings
                     </Link>
                   </li>
                   <li>
                     <button type="button" onClick={logOut} className="nav-link">
-                      Log Out
+                      Log out
                     </button>
                   </li>
                 </ul>

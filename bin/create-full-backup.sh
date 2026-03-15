@@ -10,7 +10,7 @@ nc='\033[0m' # no color
 backup_name="backup_$(date "+%Y-%m-%d_%H-%M-%S")"
 
 echo -e "${cyan}Backing up .env, volumes/db/data and volumes/storage to $backup_name...${nc}\n" &&
-sudo rsync --archive --xattrs .env volumes/db/data volumes/storage ./$backup_name/ &&
+sudo rsync --archive --xattrs .env volumes/db/data volumes/storage volumes/snippets ./$backup_name/ &&
 
 echo -e "${cyan}Stopping DB and storage containers...${nc}\n" &&
 sudo docker stop supabase-db supabase-storage supabase-imgproxy &&

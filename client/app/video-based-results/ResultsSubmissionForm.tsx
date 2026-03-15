@@ -160,7 +160,7 @@ function ResultsSubmissionForm({
         setLoadingId(undefined);
       } else {
         changeSuccessMessage(approve ? "Result successfully approved" : "Result successfully updated");
-        setTimeout(() => router.push("/admin/results"), 1000);
+        setTimeout(() => router.push("/video-based-results"), 1000);
       }
     }
   };
@@ -221,8 +221,6 @@ function ResultsSubmissionForm({
 
   return (
     <>
-      <h2 className="text-center">{result ? "Edit Result" : "Submit Result"}</h2>
-
       <div className="fs-6 mx-auto mt-3 px-3" style={{ maxWidth: "900px" }}>
         {result ? (
           <p>
@@ -230,9 +228,6 @@ function ResultsSubmissionForm({
           </p>
         ) : (
           <>
-            <div className="alert alert-warning mb-4" role="alert">
-              The error with users being restricted from submitting results has been fixed!
-            </div>
             <p>
               Here you can submit results for events that allow submissions. You may submit other people's results too.
               New results will be included in the rankings after an admin approves them. A result can only be accepted
@@ -287,6 +282,7 @@ function ResultsSubmissionForm({
           redirectToOnAddPerson={pathname}
           addNewPersonMode={isAdmin ? "default" : "disabled"}
           disabled={result !== undefined}
+          showWcaId
         />
         <FormCheckbox
           title="Don't clear competitors"
