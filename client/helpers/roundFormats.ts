@@ -6,6 +6,7 @@ export type RoundFormatObject = {
   shortLabel: string;
   attempts: number;
   isAverage: boolean;
+  bestAndWorstAttemptsToExclude: number; // TO-DO: ADD SUPPORT FOR THIS VALUE BEING > 1 TO getBestAndAverage()!!!
 };
 
 export const roundFormats: RoundFormatObject[] = [
@@ -15,6 +16,7 @@ export const roundFormats: RoundFormatObject[] = [
     shortLabel: "Bo1",
     attempts: 1,
     isAverage: false,
+    bestAndWorstAttemptsToExclude: 0,
   },
   {
     value: "2",
@@ -22,13 +24,16 @@ export const roundFormats: RoundFormatObject[] = [
     shortLabel: "Bo2",
     attempts: 2,
     isAverage: false,
+    bestAndWorstAttemptsToExclude: 0,
   },
+  // Average is always calculated for results with 3 or more attempts, even if it's a Best of N format
   {
     value: "3",
     label: "Best of 3",
     shortLabel: "Bo3",
     attempts: 3,
     isAverage: false,
+    bestAndWorstAttemptsToExclude: 0,
   },
   {
     value: "m",
@@ -36,6 +41,15 @@ export const roundFormats: RoundFormatObject[] = [
     shortLabel: "Mo3",
     attempts: 3,
     isAverage: true,
+    bestAndWorstAttemptsToExclude: 0,
+  },
+  {
+    value: "5",
+    label: "Best of 5",
+    shortLabel: "Bo5",
+    attempts: 5,
+    isAverage: false,
+    bestAndWorstAttemptsToExclude: 1,
   },
   {
     value: "a",
@@ -43,5 +57,6 @@ export const roundFormats: RoundFormatObject[] = [
     shortLabel: "Ao5",
     attempts: 5,
     isAverage: true,
+    bestAndWorstAttemptsToExclude: 1,
   },
 ];

@@ -63,7 +63,9 @@ function RoundResultsTable({
             <th scope="col">#</th>
             <th scope="col">Name</th>
             <th scope="col">Best</th>
-            {roundCanHaveAverage && <th scope="col">{round.format === "a" ? "Average" : "Mean"}</th>}
+            {roundCanHaveAverage && (
+              <th scope="col">{roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"}</th>
+            )}
             <th scope="col">Attempts</th>
             {onDeleteResult && <th scope="col">Actions</th>}
           </tr>

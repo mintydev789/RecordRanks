@@ -393,43 +393,46 @@ export function getBestAndAverage(
   attempts: Attempt[],
   eventFormat: EventFormat,
   roundFormat: RoundFormat,
-  cutoffAttemptResult?: number | null,
-  cutoffNumberOfAttempts?: number | null,
 ): { best: number; average: number } {
   let best: number, average: number;
   let sum = 0;
   let dnfDnsCount = 0;
-  const makesCutoff = getMakesCutoff(attempts, cutoffAttemptResult, cutoffNumberOfAttempts);
-  const expectedAttempts = roundFormats.find((rf) => rf.value === roundFormat)!.attempts;
-  const enteredAttempts = attempts.filter((a) => a.result !== 0).length;
+  let hasInvalidOrEmptyResult = false;
+  const { attempts: expectedAttempts, bestAndWorstAttemptsToExclude } = roundFormats.find(
+    (rf) => rf.value === roundFormat,
+  )!;
 
   // This actually follows the rule that the lower the attempt value is - the better
   const convertedAttempts: number[] = attempts.map(({ result }) => {
-    if (result) {
-      if (result > 0) {
-        sum += result;
-        return result;
-      }
-      if (result !== 0) dnfDnsCount++;
+    if (result === 0 || Number.isNaN(result)) {
+      hasInvalidOrEmptyResult = true;
+    } else if (result < 0) {
+      dnfDnsCount++;
+    } else {
+      sum += result;
+      return result;
     }
     return Infinity;
   });
 
   best = Math.min(...convertedAttempts);
-  if (best === Infinity) best = -1; // if infinity, that means every attempt was DNF/DNS
+  if (best === Infinity) best = -1; // if infinity, that means every attempt was DNF/DNS/invalid
 
-  if (!makesCutoff || expectedAttempts < 3 || enteredAttempts < expectedAttempts) {
+  if (hasInvalidOrEmptyResult || expectedAttempts < 3 || attempts.length < expectedAttempts) {
     average = 0;
-  } else if (dnfDnsCount > 1 || (dnfDnsCount > 0 && roundFormat !== "a")) {
+  } else if (dnfDnsCount > bestAndWorstAttemptsToExclude) {
     average = -1;
   } else {
     // Subtract best and worst results, if it's an Ao5 round
-    if (attempts.length === 5) {
+    if (bestAndWorstAttemptsToExclude && bestAndWorstAttemptsToExclude > 0) {
+      if (bestAndWorstAttemptsToExclude > 1)
+        throw new Error(`bestAndWorstAttemptsToExclude higher than 1 is not yet supported`);
       sum -= best;
       if (dnfDnsCount === 0) sum -= Math.max(...convertedAttempts);
     }
 
-    average = Math.round((sum / 3) * (eventFormat === "number" ? 100 : 1));
+    const countingAttempts = expectedAttempts - bestAndWorstAttemptsToExclude * 2;
+    average = Math.round((sum / countingAttempts) * (eventFormat === "number" ? 100 : 1));
   }
 
   return { best, average };

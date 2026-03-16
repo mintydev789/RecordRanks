@@ -43,19 +43,19 @@ describe("setRankingAndProceedsValues", () => {
     {
       testDetails: "result that doesn't make cutoff",
       personId: 5,
-      attempts: [{ result: cutoffAttemptResult! + 5 * 100 }, { result: cutoffAttemptResult! + 6 * 100 }],
+      attempts: [{ result: cutoffAttemptResult! + 5_00 }, { result: cutoffAttemptResult! + 6_00 }],
       expectedRanking: 5,
     },
     {
       testDetails: "result that doesn't make cutoff with better single than another result that doesn't make cutoff",
       personId: 6,
-      attempts: [{ result: cutoffAttemptResult! + 1 * 100 }, { result: cutoffAttemptResult! + 2 * 100 }],
+      attempts: [{ result: cutoffAttemptResult! + 1_00 }, { result: cutoffAttemptResult! + 2_00 }],
       expectedRanking: 5,
     },
     {
       testDetails: "result that doesn't make cutoff with single between two other results that don't make cutoff",
       personId: 7,
-      attempts: [{ result: cutoffAttemptResult! + 3 * 100 }, { result: cutoffAttemptResult! + 4 * 100 }],
+      attempts: [{ result: cutoffAttemptResult! + 3_00 }, { result: cutoffAttemptResult! + 4_00 }],
       expectedRanking: 6,
     },
   ])("ranking values", ({ testDetails, personId, attempts, expectedRanking }) => {

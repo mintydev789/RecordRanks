@@ -14,31 +14,15 @@ type Props = {
   attempts: Attempt[];
   eventWrPair: EventWrPair | undefined;
   recordConfigs: RecordConfigResponse[];
-  cutoffAttemptResult?: number | null;
-  cutoffNumberOfAttempts?: number | null;
 };
 
-function BestAndAverage({
-  event,
-  roundFormat,
-  attempts,
-  eventWrPair,
-  recordConfigs,
-  cutoffAttemptResult,
-  cutoffNumberOfAttempts,
-}: Props) {
+function BestAndAverage({ event, roundFormat, attempts, eventWrPair, recordConfigs }: Props) {
   const pseudoResult = useMemo<ResultResponse>(() => {
-    const { best, average } = getBestAndAverage(
-      attempts,
-      event.format,
-      roundFormat,
-      cutoffAttemptResult,
-      cutoffNumberOfAttempts,
-    );
+    const { best, average } = getBestAndAverage(attempts, event.format, roundFormat);
     let tempResult = { best, average, attempts, eventId: event.eventId } as ResultResponse;
     if (eventWrPair) tempResult = setResultWorldRecords(tempResult, event, eventWrPair);
     return tempResult;
-  }, [attempts, event, roundFormat, eventWrPair, cutoffAttemptResult, cutoffNumberOfAttempts]);
+  }, [attempts, event, roundFormat, eventWrPair]);
 
   return (
     <div>

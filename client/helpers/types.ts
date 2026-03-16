@@ -30,7 +30,7 @@ export const EventFormatValues = [
 ] as const;
 export type EventFormat = (typeof EventFormatValues)[number];
 
-export const RoundFormatValues = ["a", "m", "3", "2", "1"] as const;
+export const RoundFormatValues = ["a", "5", "m", "3", "2", "1"] as const;
 export type RoundFormat = (typeof RoundFormatValues)[number];
 
 export const RoundTypeValues = ["1", "2", "3", "4", "5", "6", "7", "8", "s", "f"] as const;

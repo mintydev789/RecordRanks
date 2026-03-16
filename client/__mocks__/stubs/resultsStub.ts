@@ -120,13 +120,7 @@ function getContestResult(
 ): InsertResult {
   const contest = contestsStub.find((c) => c.competitionId === round.competitionId)!;
   const event = eventsStub.find((e) => e.eventId === round.eventId)!;
-  const { best, average } = getBestAndAverage(
-    result.attempts,
-    event.format,
-    round.format,
-    round.cutoffAttemptResult,
-    round.cutoffNumberOfAttempts,
-  );
+  const { best, average } = getBestAndAverage(result.attempts, event.format, round.format);
 
   return {
     ...result,

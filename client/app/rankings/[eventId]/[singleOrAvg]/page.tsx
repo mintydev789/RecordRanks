@@ -8,6 +8,7 @@ import Loading from "~/app/components/UI/Loading";
 import Tooltip from "~/app/components/UI/Tooltip";
 import RankingsTable from "~/app/rankings/[eventId]/[singleOrAvg]/RankingsTable";
 import RegionSelect from "~/app/rankings/[eventId]/[singleOrAvg]/RegionSelect.tsx";
+import { roundFormats } from "~/helpers/roundFormats";
 import type { RecordCategory } from "~/helpers/types";
 import { db } from "~/server/db/provider";
 import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events";
@@ -88,6 +89,7 @@ async function RankingsPage({ params, searchParams }: Props) {
     (event.category === "extreme-bld" || (event.category !== "unofficial" && event.submissionsAllowed)
       ? "video-based-results"
       : "competitions");
+  const roundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
 
   const rankingsPromise = getRankings(event, singleOrAvg === "single" ? "best" : "average", recordCategory, {
     show,
@@ -148,7 +150,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   prefetch={false}
                   className={`btn btn-primary ${singleOrAvg === "average" ? "active" : ""}`}
                 >
-                  {event.defaultRoundFormat === "a" ? "Average" : "Mean"}
+                  {roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"}
                 </Link>
               </div>
             </div>

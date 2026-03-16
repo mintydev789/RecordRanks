@@ -9,7 +9,10 @@ type Props = {
 
 function EventInformation({ event }: Props) {
   const roundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
-  const rankedFormat = roundFormat.value === "a" ? roundFormat : roundFormats[3];
+  const mo3Format = roundFormats.find((rf) => rf.value === "m")!;
+  const ao5Format = roundFormats.find((rf) => rf.value === "a")!;
+  const rankedAverageFormat = roundFormat.bestAndWorstAttemptsToExclude > 0 ? ao5Format : mo3Format;
+  const formatsAreSame = roundFormat.value === rankedAverageFormat.value;
 
   return (
     <div key={event.eventId} className="mt-4">
@@ -24,11 +27,12 @@ function EventInformation({ event }: Props) {
           <span className="fw-bold">Description:</span> {event.description}
         </p>
       )}
-      <p className="mb-1">
-        The ranked average format is <b>{rankedFormat.label}</b>
+      <p>
+        The ranked average format{formatsAreSame ? " and the default round format" : ""} is{" "}
+        <b>{rankedAverageFormat.label}</b>
       </p>
-      {roundFormat.value !== rankedFormat.value && (
-        <p>
+      {!formatsAreSame && (
+        <p className="mb-1">
           The default round format is <b>{roundFormat.label}</b>
         </p>
       )}

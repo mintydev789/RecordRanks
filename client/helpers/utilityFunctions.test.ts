@@ -437,23 +437,197 @@ describe(getFormattedTime.name, () => {
 });
 
 describe(getBestAndAverage.name, () => {
-  it("sets average to 0 when there is only one attempt", () => {
-    const attempts: Attempt[] = [{ result: 1234 }];
+  describe("time format events", () => {
+    it("sets average to 0 when there is only one attempt", () => {
+      const attempts: Attempt[] = [{ result: 1234 }];
 
-    const { best, average } = getBestAndAverage(attempts, mockTimeEvent.format, "1");
+      const { best, average } = getBestAndAverage(attempts, "time", "1");
 
-    expect(best).toBe(1234);
-    expect(average).toBe(0);
+      expect(best).toBe(1234);
+      expect(average).toBe(0);
+    });
+
+    it("sets average to 0 when there are only 2 attempts", () => {
+      const attempts: Attempt[] = [{ result: 1234 }, { result: 2345 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "2");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(0);
+    });
+
+    it("correctly calculates best and average for Bo3", () => {
+      const attempts: Attempt[] = [{ result: 1234 }, { result: 1500 }, { result: 1300 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "3");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(1345);
+    });
+
+    it("correctly calculates best and average for Mo3", () => {
+      const attempts: Attempt[] = [{ result: 1234 }, { result: 1500 }, { result: 1300 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "m");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(1345);
+    });
+
+    it("correctly calculates best and average for Ao5", () => {
+      const attempts: Attempt[] = [
+        { result: 1234 },
+        { result: 1500 },
+        { result: 1300 },
+        { result: 1100 },
+        { result: 1400 },
+      ];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "a");
+
+      expect(best).toBe(1100);
+      expect(average).toBe(1311);
+    });
+
+    it("correctly calculates best and average for Bo5", () => {
+      const attempts: Attempt[] = [
+        { result: 1234 },
+        { result: 1500 },
+        { result: 1300 },
+        { result: 1100 },
+        { result: 1400 },
+      ];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "5");
+
+      expect(best).toBe(1100);
+      expect(average).toBe(1311);
+    });
+
+    it("handles DNF for Mo3", () => {
+      const attempts: Attempt[] = [{ result: 1234 }, { result: -1 }, { result: 1300 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "m");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(-1);
+    });
+
+    it("handles multiple DNFs for Ao5", () => {
+      const attempts: Attempt[] = [
+        { result: 1234 },
+        { result: -1 },
+        { result: 1300 },
+        { result: -1 },
+        { result: 1400 },
+      ];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "a");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(-1);
+    });
+
+    it("handles not yet entered attempts for Mo3", () => {
+      const attempts: Attempt[] = [{ result: 1234 }, { result: 1300 }, { result: 0 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "m");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(0);
+    });
+
+    it("handles not yet entered attempts for Ao5", () => {
+      const attempts: Attempt[] = [
+        { result: 1234 },
+        { result: 1300 },
+        { result: 1400 },
+        { result: 1500 },
+        { result: 0 },
+      ];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "a");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(0);
+    });
+
+    it("handles all DNF/DNS attempts", () => {
+      const attempts: Attempt[] = [{ result: -1 }, { result: -2 }, { result: -1 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "m");
+
+      expect(best).toBe(-1);
+      expect(average).toBe(-1);
+    });
+
+    it("handles NaN attempt for Mo3 (invalid time value, like 70.00)", () => {
+      const attempts: Attempt[] = [{ result: -1 }, { result: -2 }, { result: NaN }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "m");
+
+      expect(best).toBe(-1);
+      expect(average).toBe(0);
+    });
+
+    it("handles NaN attempt for Ao5 (invalid time value, like 70.00)", () => {
+      const attempts: Attempt[] = [
+        { result: 1234 },
+        { result: 1300 },
+        { result: NaN },
+        { result: 1400 },
+        { result: 1500 },
+      ];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "a");
+
+      expect(best).toBe(1234);
+      expect(average).toBe(0);
+    });
+
+    it("handles result that doesn't make cutoff for Mo3", () => {
+      // Doesn't make 15.00 Bo1 cutoff
+      const attempts: Attempt[] = [{ result: 1700 }, { result: 0 }, { result: 0 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "m");
+
+      expect(best).toBe(1700);
+      expect(average).toBe(0);
+    });
+
+    it("handles result that doesn't make cutoff for Ao5 (with result that exactly matches cutoff)", () => {
+      // Doesn't make 15.00 Bo2 cutoff
+      const attempts: Attempt[] = [{ result: 1700 }, { result: 1500 }, { result: 0 }, { result: 0 }, { result: 0 }];
+
+      const { best, average } = getBestAndAverage(attempts, "time", "a");
+
+      expect(best).toBe(1500);
+      expect(average).toBe(0);
+    });
   });
 
-  it("sets average to 0 when there are only 2 attempts", () => {
-    const attempts: Attempt[] = [{ result: 1234 }, { result: 2345 }];
+  describe("number format events", () => {
+    it("correctly calculates best and average for Bo3", () => {
+      const attempts: Attempt[] = [{ result: 10 }, { result: 12 }, { result: 11 }];
 
-    const { best, average } = getBestAndAverage(attempts, mockTimeEvent.format, "2");
+      const { best, average } = getBestAndAverage(attempts, "number", "3");
 
-    expect(best).toBe(1234);
-    expect(average).toBe(0);
+      expect(best).toBe(10);
+      expect(average).toBe(1100);
+    });
+
+    it("correctly calculates best and average for Ao5", () => {
+      const attempts: Attempt[] = [{ result: 10 }, { result: 12 }, { result: 11 }, { result: 9 }, { result: -1 }];
+
+      const { best, average } = getBestAndAverage(attempts, "number", "a");
+
+      expect(best).toBe(9);
+      expect(average).toBe(1100);
+    });
   });
+
+  // TO-DO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  describe.todo("multi format events");
 });
 
 describe(compareSingles.name, () => {

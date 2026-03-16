@@ -10,7 +10,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestMeetupJan2023",
@@ -18,7 +18,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 60 * 60 * 100,
+    timeLimitCentiseconds: 60 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -27,7 +27,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -36,8 +36,8 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
-    cutoffAttemptResult: 8 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
+    cutoffAttemptResult: 8 * 60_00,
     cutoffNumberOfAttempts: 1,
   },
   {
@@ -46,7 +46,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -55,7 +55,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -64,7 +64,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -73,8 +73,8 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "a" as RoundFormat,
-    timeLimitCentiseconds: 1 * 60 * 100,
-    cutoffAttemptResult: 15 * 100,
+    timeLimitCentiseconds: 1 * 60_00,
+    cutoffAttemptResult: 15_00,
     cutoffNumberOfAttempts: 2,
   },
   // 2026
@@ -84,8 +84,8 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "a" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
-    cutoffAttemptResult: 8 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
+    cutoffAttemptResult: 8 * 60_00,
     cutoffNumberOfAttempts: 2,
   },
   {
@@ -94,7 +94,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat, // intentionally set to non-default format
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestComp2026",
@@ -102,7 +102,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -111,7 +111,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 60 * 60 * 100,
+    timeLimitCentiseconds: 60 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -120,9 +120,9 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
-    cutoffAttemptResult: 8 * 60 * 100,
+    cutoffAttemptResult: 8 * 60_00,
     cutoffNumberOfAttempts: 1,
   },
   {
@@ -131,7 +131,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestMeetupFeb2026",
@@ -139,7 +139,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestMeetupMar2026",
@@ -147,7 +147,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   // 2028
   {
@@ -156,7 +156,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestCompJan2028",
@@ -164,7 +164,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "1" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
     proceedType: "number" as RoundProceed,
     proceedValue: 1, // this isn't allowed normally, but this is just for testing purposes
@@ -175,7 +175,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 2,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -184,7 +184,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestCompFeb2028",
@@ -192,7 +192,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -201,7 +201,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "3" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestCompMar2028",
@@ -209,7 +209,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
   {
@@ -218,7 +218,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "a" as RoundFormat, // not the ranked average format
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
   },
   {
     competitionId: "TestCompApr2028",
@@ -226,7 +226,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     roundNumber: 1,
     roundTypeId: "f" as RoundType,
     format: "m" as RoundFormat,
-    timeLimitCentiseconds: 10 * 60 * 100,
+    timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
 ].map((r, index) => ({ ...r, id: index + 1, open: true }));

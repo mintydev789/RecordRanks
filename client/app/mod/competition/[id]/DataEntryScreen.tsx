@@ -331,11 +331,9 @@ function DataEntryScreen({
                 attempts={attempts}
                 eventWrPair={eventWrPair}
                 recordConfigs={recordConfigs}
-                cutoffAttemptResult={round.cutoffAttemptResult}
-                cutoffNumberOfAttempts={round.cutoffNumberOfAttempts}
               />
             )}
-            <div className="d-flex mt-3 gap-3">
+            <div className="d-flex mt-3 flex-wrap gap-3">
               <Button
                 id="submit_attempt_button"
                 onClick={submitResult}

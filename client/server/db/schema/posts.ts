@@ -10,7 +10,7 @@ export const postsTable = rrSchema.table("posts", {
   postId: text().notNull().unique(),
   title: text().notNull(),
   content: text().notNull(),
-  date: timestamp().default(new Date()).notNull(),
+  date: timestamp().defaultNow().notNull(),
   createdBy: text().references(() => usersTable.id, { onDelete: "set null" }),
   ...tableTimestamps,
 });
