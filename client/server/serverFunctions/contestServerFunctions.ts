@@ -70,43 +70,48 @@ export const getContestSF = actionClient
     persons: PersonResponse[];
     recordConfigs: RecordConfigResponse[];
   } | null>(async ({ parsedInput: { competitionId, eventId } }) => {
-    const contestPromise = db.query.contests.findFirst({
-      columns: {
-        competitionId: true,
-        state: true,
-        name: true,
-        shortName: true,
-        type: true,
-        startDate: true,
-        organizerIds: true,
-        schedule: true,
-      },
-      where: { competitionId },
-    });
-    const roundsPromise = db
-      .select(roundsPublicCols)
-      .from(roundsTable)
-      .where(eq(roundsTable.competitionId, competitionId));
-    const [contest, rounds] = await Promise.all([contestPromise, roundsPromise]);
-
+    const [contest, rounds] = await Promise.all([
+      db.query.contests.findFirst({
+        columns: {
+          competitionId: true,
+          state: true,
+          name: true,
+          shortName: true,
+          type: true,
+          startDate: true,
+          organizerIds: true,
+          schedule: true,
+        },
+        where: { competitionId },
+      }),
+      // Rounds are further filtered below, once it's known what event is needed
+      db
+        .select(roundsPublicCols)
+        .from(roundsTable)
+        .where(eq(roundsTable.competitionId, competitionId))
+        .orderBy(roundsTable.roundNumber),
+    ]);
     if (!contest || !rounds) return null;
 
     const eventIds = Array.from(new Set(rounds.map((r) => r.eventId)));
-    const eventsPromise = db
-      .select(eventsPublicCols)
-      .from(eventsTable)
-      .where(inArray(eventsTable.eventId, eventIds))
-      .orderBy(eventsTable.rank);
-    const recordConfigsPromise = getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions");
-    const [events, recordConfigs] = await Promise.all([eventsPromise, recordConfigsPromise]);
 
+    const [events, recordConfigs] = await Promise.all([
+      db
+        .select(eventsPublicCols)
+        .from(eventsTable)
+        .where(inArray(eventsTable.eventId, eventIds))
+        .orderBy(eventsTable.rank),
+      getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions"),
+    ]);
     if (!events || !recordConfigs) return null;
+
     const eventIdOrFirst = eventId ?? events[0].eventId;
 
     const results = await db
       .select(resultsPublicCols)
       .from(resultsTable)
       .where(and(eq(resultsTable.competitionId, competitionId), eq(resultsTable.eventId, eventIdOrFirst)));
+
     const personIds = Array.from(
       new Set(results.map((r) => r.personIds).reduce((prev, curr) => [...(prev as []), ...curr], [])),
     );

@@ -73,7 +73,7 @@ function DataEntryScreen({
   const { executeAsync: openRound, isPending: isOpeningRound } = useAction(openRoundSF);
   const [resultUnderEdit, setResultUnderEdit] = useState<ResultResponse | null>(null);
   const [eventWrPair, setEventWrPair] = useState<EventWrPair | undefined>();
-  const [round, setRound] = useState<RoundResponse>(rounds[0]);
+  const [round, setRound] = useState<RoundResponse>(rounds[0]); // display round 1 by default
   const [results, setResults] = useState<ResultResponse[]>(initResults);
 
   const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
@@ -85,9 +85,14 @@ function DataEntryScreen({
   const [persons, setPersons] = useState<PersonResponse[]>(initPersons);
   const [loadingId, setLoadingId] = useState("");
 
+  // Assumes the rounds are already in the correct order, from round 1 to finals
   const roundOptions = useMemo<MultiChoiceOption[]>(
     () => rounds.map((r) => ({ label: roundTypes[r.roundTypeId].label, value: r.roundTypeId })),
     [rounds],
+  );
+  const sortedResults = useMemo(
+    () => results.filter((r) => r.roundId === round.id).sort((a, b) => a.ranking! - b.ranking!),
+    [results, round],
   );
 
   const isPending = isCreating || isUpdating || isDeleting || isOpeningRound || isGettingPerson || isPendingWrPairs;
@@ -110,10 +115,6 @@ function DataEntryScreen({
   useEffect(() => {
     if (resultUnderEdit) document.getElementById("attempt_1")?.focus();
   }, [resultUnderEdit]);
-
-  //////////////////////////////////////////////////////////////////////////////
-  // FUNCTIONS
-  //////////////////////////////////////////////////////////////////////////////
 
   const submitResult = async () => {
     const parsed = ResultValidator.safeParse({
@@ -367,7 +368,7 @@ function DataEntryScreen({
             <RoundResultsTable
               event={currEvent}
               round={round}
-              results={results.filter((r) => r.roundId === round.id).sort((a, b) => a.ranking! - b.ranking!)}
+              results={sortedResults}
               persons={persons}
               recordConfigs={recordConfigs}
               onEditResult={round.open ? onEditResult : undefined}
