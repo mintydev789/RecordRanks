@@ -12,7 +12,7 @@ import {
   collectiveSolutionsPublicCols,
   collectiveSolutionsTable as csTable,
 } from "../server/db/schema/collective-solutions.ts";
-import PartialHomePageDetails from "./components/PartialHomePageDetails.tsx";
+import SupportingTheProject from "./components/SupportingTheProject.tsx";
 
 export const dynamic = "force-dynamic";
 
@@ -96,10 +96,12 @@ async function HomePage() {
         </>
       )}
 
-      <PartialHomePageDetails />
+      <SupportingTheProject />
+
+      <h3 className="rr-basic-heading">Contact</h3>
+      <p>For general inquiries, send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.</p>
 
       <h3 className="rr-basic-heading">Collective Cubing</h3>
-
       <CollectiveCubing initCollectiveSolution={collectiveSolution ?? null} />
     </section>
   );
