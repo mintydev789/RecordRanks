@@ -278,7 +278,9 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
           />
           <p className="fs-6">
             This will be displayed whenever a user selects this event for a contest to make sure they're familiar with
-            this information.
+            this information, and it's also displayed on the data entry page. Include some critical info here to make
+            sure organizers know about it (e.g. "This event has no inspection time" or "Do not confuse this with the
+            similar "X" puzzle").
           </p>
         </Form>
       )}

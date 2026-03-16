@@ -504,7 +504,7 @@ export async function setRankingAndProceedsValues(
 
 export async function approvePersons(
   tx: DbTransactionType,
-  personsToBeApproved: Pick<SelectPerson, "id" | "name" | "regionCode" | "wcaId">[],
+  personsToBeApproved: Pick<SelectPerson, "id" | "name" | "localizedName" | "regionCode" | "wcaId">[],
 ) {
   const matchedPersonWcaIds: { name: string; wcaId: string }[] = [];
 
@@ -534,7 +534,7 @@ export async function approvePersons(
 }
 
 export async function getPersonExactMatchWcaId(
-  person: Pick<SelectPerson, "name" | "regionCode">,
+  person: Pick<SelectPerson, "name" | "localizedName" | "regionCode">,
   ignoredWcaMatches: string[] = [],
 ): Promise<string | null> {
   const res = await fetch(`${C.wcaV0ApiBaseUrl}/search/users?persons_table=true&q=${person.name}`);
@@ -543,11 +543,12 @@ export async function getPersonExactMatchWcaId(
     const { result: wcaPersons } = await res.json();
 
     for (const wcaPerson of wcaPersons) {
-      const { name } = getNameAndLocalizedName(wcaPerson.name);
+      const { name, localizedName } = getNameAndLocalizedName(wcaPerson.name);
 
       if (
         !ignoredWcaMatches.includes(wcaPerson.wca_id) &&
         name === person.name &&
+        localizedName === person.localizedName &&
         wcaPerson.country_iso2 === person.regionCode
       ) {
         return wcaPerson.wca_id;
