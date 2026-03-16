@@ -12,7 +12,7 @@ import type { RecordCategory } from "~/helpers/types.ts";
 import { getRecords } from "~/server/serverOnlyFunctions";
 
 export const metadata = {
-  title: "Records | Cubing Contests",
+  title: `Records | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
   description: "Records from unofficial Rubik's Cube competitions and speedcuber meetups.",
   keywords:
     "records rankings rubik's rubiks cube contest contests competition competitions meetup meetups speedcubing speed cubing puzzle",

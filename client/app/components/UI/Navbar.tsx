@@ -184,16 +184,18 @@ function NavbarItems() {
                     Blog
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/moderator-instructions"
-                    onClick={collapseAll}
-                    prefetch={false}
-                    className={`nav-link ${/^\/moderator-instructions/.test(pathname) ? "active" : ""}`}
-                  >
-                    Moderator instructions
-                  </Link>
-                </li>
+                {IS_CUBING_CONTESTS_INSTANCE && (
+                  <li>
+                    <Link
+                      href="/moderator-instructions"
+                      onClick={collapseAll}
+                      prefetch={false}
+                      className={`nav-link ${/^\/moderator-instructions/.test(pathname) ? "active" : ""}`}
+                    >
+                      Moderator instructions
+                    </Link>
+                  </li>
+                )}
                 <li>
                   <Link
                     href="/donate"

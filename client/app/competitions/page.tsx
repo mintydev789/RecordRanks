@@ -11,7 +11,7 @@ import LoadingError from "../components/UI/LoadingError.tsx";
 import RegionSelect from "../rankings/[eventId]/[singleOrAvg]/RegionSelect.tsx";
 
 export const metadata = {
-  title: "All contests | Cubing Contests",
+  title: `All contests | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
   description: "List of unofficial Rubik's Cube competitions and speedcuber meetups.",
   keywords:
     "rubik's rubiks cube contest contests competition competitions meetup meetups speedcubing speed cubing puzzle",

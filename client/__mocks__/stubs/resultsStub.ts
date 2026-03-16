@@ -567,7 +567,7 @@ export const resultsStub: InsertResult[] = [
   {
     // Real result from Cubing Contests
     eventId: "333",
-    date: new Date(2026, 5, 30), // June 30th, 2026
+    date: new Date(2026, 5, 30), // June 30th, 2026 (the date is different)
     personIds: [9], // Oliver Fritz
     regionCode: "DE",
     superRegionCode: "EUROPE",

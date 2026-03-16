@@ -46,7 +46,7 @@ const eventsWith3x3 = [
 
 // TO-DO: MAKE THIS DYNAMICALLY INCLUDE THE EVENT, IF POSSIBLE!!!!!
 export const metadata = {
-  title: "Rankings | Cubing Contests",
+  title: `Rankings | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
   description: "Rankings for unofficial Rubik's Cube competitions and speedcuber meetups.",
   keywords:
     "rankings rubik's rubiks cube contest contests competition competitions meetup meetups speedcubing speed cubing puzzle",

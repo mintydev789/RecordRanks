@@ -9,7 +9,7 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 config.autoAddCss = false;
 
 export const metadata = {
-  title: "Cubing Contests",
+  title: process.env.NEXT_PUBLIC_PROJECT_NAME,
   description: "The best place for hosting unofficial Rubik's Cube competitions and speedcuber meetups.",
   keywords:
     "rubik's rubiks cube contest contests competition competitions meetup meetups speedcubing speed cubing puzzle",

@@ -15,7 +15,7 @@ import { getOrCreatePersonByWcaIdSF, getPersonsByNameSF } from "~/server/serverF
 import FormTextInput from "./FormTextInput.tsx";
 
 const personInputTooltip =
-  "Enter the competitor's name if they are already on Cubing Contests. If not, enter their full WCA ID to add them.";
+  "Enter the competitor's name if they are already in the database. If not, enter their full WCA ID to add them.";
 
 type Props = {
   title: string;
