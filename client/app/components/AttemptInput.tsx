@@ -160,11 +160,11 @@ function AttemptInput({
     }
   };
 
-  const onCubesKeyDown = (e: any) => {
+  const onCubesKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (DNSKeys.includes(e.key)) handleSetDNS(e);
   };
 
-  const onTimeChange = (e: any, forMemo = false) => {
+  const onTimeChange = (e: React.ChangeEvent<HTMLInputElement, Element>, forMemo = false) => {
     const prevValue = forMemo ? formattedMemoText : formattedAttemptText;
 
     // Erase character
@@ -195,7 +195,7 @@ function AttemptInput({
       }
     } // Add character
     else if (e.target.value.length > prevValue.length) {
-      const newCharacter = e.target.value[e.target.selectionStart - 1];
+      const newCharacter = e.target.value[e.target.selectionStart! - 1];
 
       if (!forMemo && DNFKeys.includes(newCharacter)) {
         if (event.format !== "multi") dnfTheAttempt();
@@ -223,7 +223,10 @@ function AttemptInput({
 
         const newText = !forMemo ? text + newCharacter : `${text.slice(0, -2)}${newCharacter}00`;
 
-        if (newText.length <= C.maxFmMoves.toString().length || (newText.length <= 8 && event.format !== "number")) {
+        if (
+          newText.length <= C.maxNumberFormatValue.toString().length ||
+          (newText.length <= 8 && event.format !== "number")
+        ) {
           const newAttempt = getAttempt(attempt, event, forMemo ? attemptText : newText, {
             solved,
             attempted,
@@ -241,7 +244,7 @@ function AttemptInput({
     }
   };
 
-  const onTimeKeyDown = (e: any, forMemo = false) => {
+  const onTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, forMemo = false) => {
     if (e.key === "Enter") {
       e.preventDefault();
 
@@ -307,6 +310,7 @@ function AttemptInput({
     }
   }
 
+  // TO-DO: CLEAN UP THIS COMPONENT!!! THE INPUTS SHOULDN'T BE CONTROLLED SO MUCH; A TON OF NATIVE FEATURES BREAK THIS WAY!!!
   return (
     <div className={`${attNumber !== 0 ? "row px-3" : ""} gap-2 gap-md-3`}>
       {event.format === "multi" && (
@@ -317,7 +321,7 @@ function AttemptInput({
               title={attNumber === 1 ? "Solved" : ""}
               value={solved}
               setValue={changeSolved}
-              onKeyDown={(e: any) => onCubesKeyDown(e)}
+              onKeyDown={(e) => onCubesKeyDown(e)}
               nextFocusTargetId={`attempt_${attNumber}_attempted`}
               disabled={attempt.result === -2}
               integer
@@ -353,6 +357,7 @@ function AttemptInput({
           onKeyDown={(e) => onTimeKeyDown(e)}
           onClick={resetCursorPosition}
           onFocus={resetCursorPosition}
+          onSelect={resetCursorPosition}
           onBlur={() => onTimeFocusOut()}
           invalid={isInvalidAttempt}
           disabled={disabled}
@@ -370,6 +375,7 @@ function AttemptInput({
             onKeyDown={(e: any) => onTimeKeyDown(e, true)}
             onClick={resetCursorPosition}
             onFocus={resetCursorPosition}
+            onSelect={resetCursorPosition}
             onBlur={() => onTimeFocusOut(true)}
             disabled={["DNF", "DNS", "Unknown"].includes(formattedAttemptText)}
             invalid={isInvalidAttempt}

@@ -10,7 +10,7 @@ export const C = {
   maxTime: 24 * 60 * 60 * 100, // 24 hours
   maxTimeHumanReadable: "24000000", // MUST MATCH maxTime!
   maxResult: 999_999_999_999_999, // accounts for max possible Multi-Blind result
-  maxFmMoves: 999,
+  maxNumberFormatValue: 999,
   maxTimeLimit: 60 * 60 * 100, // 1 hour
   maxContestShortName: 32,
   defaultTimeLimit: 10 * 60 * 100, // 10 minutes

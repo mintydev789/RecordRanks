@@ -168,15 +168,16 @@ function ContestEvents({
 
   const changeRoundCutoffEnabled = (eventId: string, roundNumber: number) => {
     setRounds(
-      rounds.map((r) =>
-        r.eventId === eventId && r.roundNumber === roundNumber
+      rounds.map((r) => {
+        const roundFormat = roundFormats.find((rf) => rf.value === r.format)!;
+        return r.eventId === eventId && r.roundNumber === roundNumber
           ? {
               ...r,
-              cutoffAttemptResult: r.cutoffAttemptResult ? null : 12000,
-              cutoffNumberOfAttempts: r.cutoffNumberOfAttempts ? null : r.format === "a" ? 2 : 1,
+              cutoffAttemptResult: r.cutoffAttemptResult === null ? 0 : null,
+              cutoffNumberOfAttempts: r.cutoffNumberOfAttempts === null ? (roundFormat.attempts > 3 ? 2 : 1) : null,
             }
-          : r,
-      ),
+          : r;
+      }),
     );
   };
 

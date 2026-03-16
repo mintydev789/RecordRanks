@@ -107,7 +107,7 @@ export function getAttempt(
 ): Attempt {
   if (time.length > 8 || (memo && memo.length > 8)) throw new Error("Times longer than 8 digits are not supported");
 
-  const maxFmResultDigits = C.maxFmMoves.toString().length;
+  const maxFmResultDigits = C.maxNumberFormatValue.toString().length;
   if (time.length > maxFmResultDigits && event.format === "number")
     throw new Error(`Fewest Moves solutions longer than ${maxFmResultDigits} digits are not supported`);
 
@@ -163,26 +163,6 @@ export function getContestIdFromName(name: string): string {
     .join("");
 
   return output;
-}
-
-export function genericOnKeyDown(
-  e: any,
-  {
-    nextFocusTargetId,
-    onKeyDown,
-    submitOnEnter,
-  }: {
-    nextFocusTargetId?: string;
-    onKeyDown?: (e: any) => void;
-    submitOnEnter?: boolean;
-  },
-) {
-  if (e.key === "Enter") {
-    if (!submitOnEnter) e.preventDefault();
-    if (nextFocusTargetId) document.getElementById(nextFocusTargetId)?.focus();
-  }
-
-  if (onKeyDown) onKeyDown(e);
 }
 
 export function shortenEventName(name: string): string {
@@ -331,7 +311,7 @@ export function getFormattedTime(
     return "Unknown";
   } else if (event?.format === "number") {
     // FM singles are limited to 999 moves, so if it's more than that, it must be the mean. Format it accordingly.
-    if (time > C.maxFmMoves && !noDelimiterChars) return (time / 100).toFixed(2);
+    if (time > C.maxNumberFormatValue && !noDelimiterChars) return (time / 100).toFixed(2);
     else return time.toString();
   } else {
     let centiseconds: number;

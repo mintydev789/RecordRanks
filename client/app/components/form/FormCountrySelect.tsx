@@ -2,7 +2,6 @@
 
 import FormInputLabel from "~/app/components/form/FormInputLabel.tsx";
 import { Continents, Countries } from "~/helpers/Countries.ts";
-import { genericOnKeyDown } from "~/helpers/utilityFunctions.ts";
 
 type Props = {
   countryIso2: string;
@@ -19,6 +18,13 @@ function FormCountrySelect({
   continentOptions = false,
   disabled = false,
 }: Props) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLSelectElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (nextFocusTargetId) document.getElementById(nextFocusTargetId)?.focus();
+    }
+  };
+
   return (
     <div className="fs-5">
       <FormInputLabel text={continentOptions ? "Region" : "Country"} inputId="country_iso_2" />
@@ -27,7 +33,7 @@ function FormCountrySelect({
         id="country_iso_2"
         value={countryIso2}
         onChange={(e) => setCountryIso2(e.target.value)}
-        onKeyDown={(e: any) => genericOnKeyDown(e, { nextFocusTargetId })}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
         className="form-select mt-2"
       >

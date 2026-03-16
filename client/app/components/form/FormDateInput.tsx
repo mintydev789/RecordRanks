@@ -4,7 +4,6 @@ import { isValid, parseISO } from "date-fns";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { useEffect, useMemo, useState } from "react";
 import { C } from "~/helpers/constants.ts";
-import { genericOnKeyDown } from "~/helpers/utilityFunctions.ts";
 
 type Props = {
   id?: string;
@@ -99,7 +98,7 @@ function FormDateInput({
 
   const onKeyDown = (e: any) => {
     if (e.key === "Enter") {
-      genericOnKeyDown(e, { nextFocusTargetId });
+      if (nextFocusTargetId) document.getElementById(nextFocusTargetId)?.focus();
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
       changePosition({ change: -1 });

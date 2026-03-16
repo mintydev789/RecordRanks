@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { genericOnKeyDown } from "~/helpers/utilityFunctions.ts";
 import FormInputLabel from "./FormInputLabel.tsx";
 
 type Props = {
@@ -11,14 +10,13 @@ type Props = {
   tooltip?: string;
   value: number | undefined;
   setValue: (val: number | undefined) => void;
-  onKeyDown?: (e: any) => void;
   nextFocusTargetId?: string;
   disabled?: boolean;
   integer?: boolean;
   min?: number;
   max?: number;
   invalid?: boolean;
-} & React.HTMLAttributes<HTMLElement>;
+} & React.HTMLAttributes<HTMLInputElement>;
 
 function FormNumberInput({
   id,
@@ -74,6 +72,12 @@ function FormNumberInput({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && nextFocusTargetId) document.getElementById(nextFocusTargetId)?.focus();
+
+    onKeyDown?.(e);
+  };
+
   return (
     <div className={`fs-5 ${className}`}>
       {title && <FormInputLabel text={title} inputId={inputId} tooltip={tooltip} />}
@@ -83,8 +87,8 @@ function FormNumberInput({
         id={inputId}
         value={displayValue}
         placeholder={placeholder}
-        onChange={(e: any) => validateAndChange(e.target.value)}
-        onKeyDown={(e: any) => genericOnKeyDown(e, { nextFocusTargetId, onKeyDown })}
+        onChange={(e) => validateAndChange(e.target.value)}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
         className={`form-control mt-2 ${Number.isNaN(value) || invalid ? "is-invalid" : ""}`}
       />

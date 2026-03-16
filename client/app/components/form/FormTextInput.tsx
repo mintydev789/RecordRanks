@@ -4,7 +4,6 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import Button from "~/app/components/UI/Button.tsx";
-import { genericOnKeyDown } from "~/helpers/utilityFunctions.ts";
 import FormInputLabel from "./FormInputLabel.tsx";
 
 type Props = {
@@ -32,10 +31,11 @@ function FormTextInput({
   value,
   setValue,
   onChange,
+  onKeyDown,
   onClick,
   onFocus,
+  onSelect,
   onBlur,
-  onKeyDown,
   nextFocusTargetId,
   autoFocus,
   required,
@@ -54,20 +54,20 @@ function FormTextInput({
 
   const inputId = (id || title) as string;
 
-  const handleFocus = (e: any) => {
-    // Prevent the whole input from being highlighted
-    e.target.selectionStart = e.target.selectionEnd;
-    if (onFocus) onFocus(e);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (!submitOnEnter) e.preventDefault();
+      if (password) setHidePassword(true);
+      if (nextFocusTargetId) document.getElementById(nextFocusTargetId)?.focus();
+    }
+
+    onKeyDown?.(e);
   };
 
-  const handleKeyDown = (e: any) => {
-    if (password && e.key === "Enter") setHidePassword(true);
-    genericOnKeyDown(e, { nextFocusTargetId, onKeyDown, submitOnEnter });
-  };
-
-  const handleBlur = (e: any) => {
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement, Element>) => {
     if (password) setHidePassword(true);
-    if (onBlur) onBlur(e);
+
+    onBlur?.(e);
   };
 
   return (
@@ -87,7 +87,8 @@ function FormTextInput({
           onChange={setValue ? (e) => setValue(e.target.value) : onChange}
           onKeyDown={handleKeyDown}
           onClick={onClick}
-          onFocus={handleFocus}
+          onFocus={onFocus}
+          onSelect={onSelect}
           onBlur={handleBlur}
           className={`form-control flex-grow-1 ${monospace ? "font-monospace" : ""} ${invalid ? "is-invalid" : ""}`}
         />
