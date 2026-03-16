@@ -51,6 +51,7 @@ import {
   getContestParticipantIds,
   getRecordConfigs,
   getRecordResult,
+  getSettingFromDb,
   getUserHasAccessToContest,
   logMessage,
   setRankingAndProceedsValues,
@@ -407,13 +408,14 @@ export const createVideoBasedResultSF = actionClient
       });
       await validateVideoBasedResult(newResultDto, { userCanApprove: canApprove });
 
-      const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
+      const [event, participants, recordConfigs, creatorPerson, videoBasedResultsContactEmail] = await Promise.all([
         db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
         db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
         getRecordConfigs("video-based-results"),
         user.personId
           ? db.query.persons.findFirst({ columns: { name: true }, where: { id: user.personId } })
           : undefined,
+        getSettingFromDb({ key: "video-based-results-contact-email", optional: true }),
       ]);
 
       if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
@@ -441,7 +443,14 @@ export const createVideoBasedResultSF = actionClient
 
       const [createdResult] = await db.insert(table).values(newResult).returning(resultsPublicCols);
 
-      sendVideoBasedResultSubmittedEmail(user.email, event, createdResult, user.username, creatorPerson?.name);
+      sendVideoBasedResultSubmittedEmail(
+        user.email,
+        videoBasedResultsContactEmail,
+        event,
+        createdResult,
+        user.username,
+        creatorPerson?.name,
+      );
 
       return createdResult;
     },

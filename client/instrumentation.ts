@@ -1,25 +1,19 @@
 import type fsType from "node:fs";
-import type { writeFile as writeFileType } from "node:fs/promises";
-import { eq, inArray, sql } from "drizzle-orm";
+// import type { writeFile as writeFileType } from "node:fs/promises";
+import { eq } from "drizzle-orm";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
-import { RoundFormatObject, roundFormats } from "~/helpers/roundFormats.ts";
-import {
-  compareAvgs,
-  compareSingles,
-  getDefaultAverageAttempts,
-  getFormattedTime,
-  getNameAndLocalizedName,
-} from "~/helpers/utilityFunctions.ts";
+import { roundFormats } from "~/helpers/roundFormats.ts";
+import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utilityFunctions.ts";
 import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition.ts";
 import type { auth as authType } from "~/server/auth.ts";
 import type { db as dbType } from "~/server/db/provider.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { type InsertSetting, settingsTable } from "~/server/db/schema/settings.ts";
-import { Continents, Countries } from "./helpers/Countries.ts";
+import { Countries } from "./helpers/Countries.ts";
 import { C } from "./helpers/constants.ts";
 import { RecordTypeValues } from "./helpers/types.ts";
 import type { InsertContest } from "./server/db/schema/contests.ts";
-import { eventsTable, type SelectEvent } from "./server/db/schema/events.ts";
+import { eventsTable } from "./server/db/schema/events.ts";
 import { type PersonResponse, personsTable } from "./server/db/schema/persons.ts";
 import { recordConfigsTable } from "./server/db/schema/record-configs.ts";
 import type { SelectResult } from "./server/db/schema/results.ts";
@@ -72,6 +66,18 @@ const initSettings: InsertSetting[] = [
     group: "default",
     value: "",
     description: "Contact email address to send error logs to",
+  },
+  {
+    key: "video-based-results-contact-email",
+    group: "default",
+    value: "",
+    description: "Contact email address to send notifications about video-based results to",
+  },
+  {
+    key: "about-page-content",
+    group: "page-contents",
+    value: "",
+    description: "Page content for the about page (Markdown supported)",
   },
 ];
 

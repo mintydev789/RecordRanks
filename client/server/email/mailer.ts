@@ -331,6 +331,7 @@ export function sendContestPublishedEmail(
 
 export function sendVideoBasedResultSubmittedEmail(
   to: string,
+  videoBasedResultsContactEmail: string | null,
   event: SelectEvent,
   result: ResultResponse,
   creatorUsername: string,
@@ -359,9 +360,9 @@ export function sendVideoBasedResultSubmittedEmail(
     callback: async (html) => {
       await transporter.sendMail({
         from: resultsEmail,
-        replyTo: adminEmail,
+        replyTo: videoBasedResultsContactEmail ?? adminEmail,
         to,
-        bcc: adminEmail,
+        bcc: videoBasedResultsContactEmail ?? adminEmail,
         subject: `Result submitted: ${event.name}`,
         html,
       });

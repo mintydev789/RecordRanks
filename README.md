@@ -137,7 +137,7 @@ There is a simple blog feature, but it currently has no UI for creating posts wi
 
 - `postId`: a unique text ID for the post; this is used in the URL for the post (e.g. `our-first-announcement`)
 - `title`: the title of the post, shown at the top of the page
-- `content`: the content of the post (supports Markdown)
+- `content`: the content of the post (Markdown supported)
 - `date`: the date of the post (this doesn't have to be the same as the creation date; `createdAt` is a separate auto-generated column)
 - `createdBy`: the user ID of the author; it's expected that there is a person tied to the user (get this value from the `users` table)
 

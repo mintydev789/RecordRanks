@@ -5,8 +5,14 @@ import { tableTimestamps } from "~/server/db/dbUtils";
 import { rrSchema } from "~/server/db/schema/schema";
 
 // More groups and keys can be added here
-export type SettingKey = "error-logs-contact-email";
-export type SettingGroup = "default";
+export type SettingGroup = "default" | "page-contents";
+export type SettingKey =
+  // default
+  | "error-logs-contact-email"
+  | "video-based-results-contact-email"
+
+  // page-contents
+  | "about-page-content";
 
 export const settingsTable = rrSchema.table("settings", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
