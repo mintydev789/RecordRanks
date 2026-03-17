@@ -229,9 +229,11 @@ This repo uses Biome for formatting and linting. If you intend to contribute cod
 
 Go to `localhost:3000` to see the website. Go to `localhost:8000` to open Supabase Studio. The default username is `supabase` and the password is `rr` (you can see this in the `.env` file). The default ports can be overridden in the `.env` file.
 
+Global constants are located in `constants.ts`. Keep in mind that some features are only enabled for the Cubing Contests instance (via the `IS_CUBING_CONTESTS_INSTANCE` constant).
+
 Please note that some Supabase features, like analytics and cron only work in a production environment. You can test the production environment using the `test-prod.sh` script (see the Supabase section for more information).
 
-To stop Supabase, run `docker compose -f docker-compose.supabase.yml down`.
+To stop Supabase, use this command: `docker compose -f docker-compose.supabase.yml down`.
 
 ### Mock data
 

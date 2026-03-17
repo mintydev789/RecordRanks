@@ -5,7 +5,7 @@ import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } fr
 import z from "zod";
 import { ContinentRecordType, Continents, Countries, getSuperRegion } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
-import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
+import { getRankedAverageFormat, roundFormats, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import {
   ContinentalRecordTypes,
   type ContinentCode,
@@ -429,7 +429,7 @@ export const createVideoBasedResultSF = actionClient
         );
       }
 
-      const roundFormat = roundFormats.find((rf) => rf.attempts === newResultDto.attempts.length && rf.value !== "3")!;
+      const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
       const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
       const newResult: InsertResult = {
         ...newResultDto,
@@ -491,7 +491,7 @@ export const updateVideoBasedResultSF = actionClient
     if (newResultDto.attempts.length !== result.attempts.length)
       throw new RrActionError("The number of attempts cannot be changed");
 
-    const roundFormat = roundFormats.find((rf) => rf.attempts === newResultDto.attempts.length && rf.value !== "3")!;
+    const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
     const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
     const newResult: SelectResult = {
       ...result,

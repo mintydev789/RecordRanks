@@ -68,6 +68,8 @@ export const roundFormats: RoundFormatObject[] = [
   },
 ];
 
+export const videoBasedFormats = roundFormats.filter((rf) => !["3", "5"].includes(rf.value));
+
 export function getRankedAverageFormat(eventDefaultRoundFormat: RoundFormat): RoundFormatObject {
   const roundFormat = roundFormats.find((rf) => rf.value === eventDefaultRoundFormat)!;
   const rankedAverageFormat = roundFormats.find((rf) => rf.value === roundFormat.rankedAverageFormat)!;

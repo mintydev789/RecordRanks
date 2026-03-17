@@ -7,7 +7,7 @@ import nodemailer from "nodemailer";
 import type Mail from "nodemailer/lib/mailer/index";
 import { Countries } from "~/helpers/Countries.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
-import { roundFormats } from "~/helpers/roundFormats.ts";
+import { videoBasedFormats } from "~/helpers/roundFormats.ts";
 import { getFormattedTime, getIsCompType, getIsUrgent } from "~/helpers/utilityFunctions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import { rolesObject } from "~/server/permissions.ts";
@@ -343,7 +343,7 @@ export function sendVideoBasedResultSubmittedEmail(
       baseUrl,
       projectName,
       eventName: event.name,
-      roundFormat: roundFormats.find((rf) => rf.value !== "3" && rf.attempts === result.attempts.length)!.label,
+      roundFormat: videoBasedFormats.find((rf) => rf.attempts === result.attempts.length)!.label,
       best:
         getFormattedTime(result.best, { event, showMultiPoints: true }) +
         (result.regionalSingleRecord ? ` (${result.regionalSingleRecord})` : ""),

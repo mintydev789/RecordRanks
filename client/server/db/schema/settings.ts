@@ -12,7 +12,8 @@ export type SettingKey =
   | "video-based-results-contact-email"
 
   // page-contents
-  | "about-page-content";
+  | "about-page-content"
+  | "video-based-results-instructions";
 
 export const settingsTable = rrSchema.table("settings", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

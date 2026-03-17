@@ -18,7 +18,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import { type RoundFormatObject, roundFormats } from "~/helpers/roundFormats.ts";
+import { type RoundFormatObject, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import type { Creator, EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
@@ -31,8 +31,6 @@ import {
   updateVideoBasedResultSF,
 } from "~/server/serverFunctions/resultServerFunctions.ts";
 import Rules from "./video-based-results-rules.mdx";
-
-const allowedRoundFormats: RoundFormatObject[] = roundFormats.filter((rf) => rf.value !== "3");
 
 type Props = {
   events: EventResponse[];
@@ -72,7 +70,7 @@ function ResultsSubmissionForm({
     events.find((e) => e.eventId === (result?.eventId ?? searchParams.get("eventId"))) ?? events[0],
   );
   const [roundFormat, setRoundFormat] = useState<RoundFormatObject>(
-    result ? allowedRoundFormats.find((rf) => rf.attempts === result.attempts.length)! : allowedRoundFormats[0],
+    result ? videoBasedFormats.find((rf) => rf.attempts === result.attempts.length)! : videoBasedFormats[0],
   );
   const [participants, setParticipants] = useState<InputPerson[]>(initParticipants ?? [null]);
   const [personNames, setPersonNames] = useState(initParticipants?.map((p) => p.name) ?? [""]);
@@ -173,7 +171,7 @@ function ResultsSubmissionForm({
   };
 
   const changeRoundFormat = (newFormat: RoundFormat) => {
-    const newRoundFormat = allowedRoundFormats.find((rf) => rf.value === newFormat) as RoundFormatObject;
+    const newRoundFormat = videoBasedFormats.find((rf) => rf.value === newFormat) as RoundFormatObject;
     setRoundFormat(newRoundFormat);
     resetAttempts(newRoundFormat.attempts);
   };
@@ -259,7 +257,7 @@ function ResultsSubmissionForm({
         />
         <FormSelect
           title="Format"
-          options={getRoundFormatOptions(allowedRoundFormats)}
+          options={getRoundFormatOptions(videoBasedFormats)}
           selected={roundFormat.value}
           setSelected={(val: RoundFormat) => changeRoundFormat(val)}
           disabled={result !== undefined}
