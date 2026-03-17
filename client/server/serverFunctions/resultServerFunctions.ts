@@ -1,15 +1,16 @@
 "use server";
 
 import { addDays, differenceInDays, format } from "date-fns";
-import { and, eq, gt, gte, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import z from "zod";
-import { ContinentRecordType, Countries, getSuperRegion } from "~/helpers/Countries.ts";
+import { ContinentRecordType, Continents, Countries, getSuperRegion } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
-import { roundFormats } from "~/helpers/roundFormats.ts";
+import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import {
   ContinentalRecordTypes,
   type ContinentCode,
   type EventWrPair,
+  type RecordCategory,
   RecordCategoryValues,
   type RecordType,
 } from "~/helpers/types.ts";
@@ -17,7 +18,7 @@ import {
   compareAvgs,
   compareSingles,
   getBestAndAverage,
-  getDefaultAverageAttempts,
+  getDateOnly,
   getFormattedTime,
   getHasRole,
   getMakesCutoff,
@@ -50,7 +51,6 @@ import {
   approvePersons,
   getContestParticipantIds,
   getRecordConfigs,
-  getRecordResult,
   getSettingFromDb,
   getUserHasAccessToContest,
   logMessage,
@@ -473,7 +473,8 @@ export const updateVideoBasedResultSF = actionClient
   .action<ResultResponse>(async ({ parsedInput: { id, newResultDto, approve } }) => {
     const result = await db.query.results.findFirst({ where: { id, competitionId: { isNull: true } } });
     if (!result) throw new RrActionError(`Result with ID ${id} not found`);
-    if (result.approved) throw new RrActionError("Editing approved results is not allowed. Please contact a sysadmin.");
+    if (result.approved)
+      throw new RrActionError("Editing approved results is currently not supported. Please contact a sysadmin.");
 
     logMessage("RR0017", `Updating video-based result with ID ${id}: ${JSON.stringify(newResultDto)}`);
 
@@ -545,6 +546,52 @@ export const updateVideoBasedResultSF = actionClient
     return updatedResult;
   });
 
+async function getRecordResult(
+  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
+  bestOrAverage: "best" | "average",
+  recordType: RecordType,
+  recordCategory: RecordCategory,
+  {
+    tx,
+    recordsUpTo = getDateOnly(new Date())!,
+    excludeResultId,
+    regionCode,
+  }: {
+    tx?: DbTransactionType; // this can optionally be run inside of a transaction
+    recordsUpTo?: Date;
+    excludeResultId?: number;
+    regionCode?: string;
+  } = {
+    recordsUpTo: getDateOnly(new Date())!,
+  },
+): Promise<SelectResult | undefined> {
+  const superRegion = Continents.find((c) => c.recordTypeId === recordType);
+
+  const [recordResult] = await (tx ?? db)
+    .select()
+    .from(table)
+    .where(
+      and(
+        eq(table.eventId, event.eventId),
+        excludeResultId ? ne(table.id, excludeResultId) : undefined,
+        lte(table.date, recordsUpTo),
+        eq(table.recordCategory, recordCategory),
+        gt(table[bestOrAverage], 0),
+        bestOrAverage === "average"
+          ? or(
+              lt(table.date, new Date(C.cutoffDateForFlexibleAverageRecords)),
+              sql`CARDINALITY(${table.attempts}) = ${getRankedAverageFormat(event.defaultRoundFormat).attempts}`,
+            )
+          : undefined,
+        superRegion ? eq(table.superRegionCode, superRegion.code) : undefined,
+        regionCode ? eq(table.regionCode, regionCode) : undefined,
+      ),
+    )
+    .orderBy(table[bestOrAverage])
+    .limit(1);
+  return recordResult;
+}
+
 async function setResultRecordsAndRegions(
   result: InsertResult,
   event: EventResponse,
@@ -571,10 +618,11 @@ async function setResultRecords(
   { excludeResultId }: { excludeResultId?: number } = {},
 ) {
   if (result.best > 0) await setResultRecord(result, event, "best", recordConfigs, { excludeResultId });
-  if (result.average > 0 && result.attempts.length === getDefaultAverageAttempts(event.defaultRoundFormat))
+  if (result.average > 0 && result.attempts.length === getRankedAverageFormat(event.defaultRoundFormat).attempts)
     await setResultRecord(result, event, "average", recordConfigs, { excludeResultId });
 }
 
+// Updates the specified record field directly in the result object
 async function setResultRecord(
   result: InsertResult,
   event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
@@ -654,9 +702,9 @@ async function setFutureRecords(
   const type = bestOrAverage === "best" ? "single" : "average";
   const { category } = recordConfigs[0];
   const recordsUpTo = addDays(deletedResult.date, -1);
-  const defaultNumberOfAttempts = getDefaultAverageAttempts(event.defaultRoundFormat);
+  const rankedAverageFormat = getRankedAverageFormat(event.defaultRoundFormat);
   const numberOfAttemptsCondition =
-    bestOrAverage === "best" ? sql`` : sql`AND CARDINALITY(${table.attempts}) = ${defaultNumberOfAttempts}`;
+    bestOrAverage === "best" ? sql`` : sql`AND CARDINALITY(${table.attempts}) = ${rankedAverageFormat.attempts}`;
 
   // Set WRs
   if (deletedResult[recordField] === "WR") {

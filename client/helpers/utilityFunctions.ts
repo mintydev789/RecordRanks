@@ -14,7 +14,7 @@ import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";
 import type { Role } from "~/server/permissions.ts";
 import type { RrServerErrorObject } from "~/server/safeAction.ts";
-import { type RoundFormatObject, roundFormats } from "./roundFormats.ts";
+import { getRankedAverageFormat, type RoundFormatObject, roundFormats } from "./roundFormats.ts";
 import type { MultiChoiceOption } from "./types/MultiChoiceOption.ts";
 import type { ContestType, EventFormat, EventWrPair, RoundFormat } from "./types.ts";
 import type { PersonDto } from "./validators/Person.ts";
@@ -263,7 +263,7 @@ export function setResultWorldRecords(
   const comparisonToRecordSingle = compareSingles(result, { best: eventWrPair.best ?? Infinity });
   if (result.best > 0 && comparisonToRecordSingle <= 0) result.regionalSingleRecord = "WR";
 
-  if (result.attempts.length === getDefaultAverageAttempts(event.defaultRoundFormat)) {
+  if (result.attempts.length === getRankedAverageFormat(event.defaultRoundFormat).attempts) {
     const comparisonToRecordAvg = compareAvgs(result, { average: eventWrPair.average ?? Infinity });
     if (result.average > 0 && comparisonToRecordAvg <= 0) result.regionalAverageRecord = "WR";
   }
@@ -453,11 +453,6 @@ export function getResultProceeds(
     result.ranking! <=
       (round.proceedType === "number" ? round.proceedValue! : Math.floor((results.length * round.proceedValue!) / 100))
   );
-}
-
-export function getDefaultAverageAttempts(eventDefaultRoundFormat: RoundFormat) {
-  const roundFormat = roundFormats.find((rf) => rf.value === eventDefaultRoundFormat)!;
-  return roundFormat.attempts === 5 ? 5 : 3;
 }
 
 export const getAlwaysShowDecimals = (event: Pick<EventResponse, "category" | "format">): boolean =>

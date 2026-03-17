@@ -1,12 +1,12 @@
 import "server-only";
-import { and, desc, eq, gt, inArray, lt, lte, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { camelCase } from "lodash";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import z from "zod";
 import { Continents, Countries } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
-import { roundFormats } from "~/helpers/roundFormats.ts";
+import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import type { Ranking, RecordsData } from "~/helpers/types/Rankings.ts";
 import {
   type GetOrCreatePersonObject,
@@ -26,16 +26,16 @@ import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPa
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { type ContestResponse, contestsTable } from "~/server/db/schema/contests.ts";
-import { type EventResponse, eventsPublicCols, eventsTable, type SelectEvent } from "~/server/db/schema/events.ts";
+import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
 import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
-import { type ResultResponse, resultsTable, type SelectResult } from "~/server/db/schema/results.ts";
+import { type ResultResponse, resultsTable } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import type { SettingKey } from "~/server/db/schema/settings.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
 import { RrActionError } from "~/server/safeAction.ts";
-import { getDateOnly, getDefaultAverageAttempts, getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
+import { getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
 import { auth } from "./auth.ts";
 import type { RrPermissions } from "./permissions.ts";
 
@@ -132,52 +132,6 @@ export async function getVideoBasedEvents() {
     .orderBy(eventsTable.rank);
 
   return events;
-}
-
-export async function getRecordResult(
-  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
-  bestOrAverage: "best" | "average",
-  recordType: RecordType,
-  recordCategory: RecordCategory,
-  {
-    tx,
-    recordsUpTo = getDateOnly(new Date())!,
-    excludeResultId,
-    regionCode,
-  }: {
-    tx?: DbTransactionType; // this can optionally be run inside of a transaction
-    recordsUpTo?: Date;
-    excludeResultId?: number;
-    regionCode?: string;
-  } = {
-    recordsUpTo: getDateOnly(new Date())!,
-  },
-): Promise<SelectResult | undefined> {
-  const superRegion = Continents.find((c) => c.recordTypeId === recordType);
-
-  const [recordResult] = await (tx ?? db)
-    .select()
-    .from(resultsTable)
-    .where(
-      and(
-        eq(resultsTable.eventId, event.eventId),
-        excludeResultId ? ne(resultsTable.id, excludeResultId) : undefined,
-        lte(resultsTable.date, recordsUpTo),
-        eq(resultsTable.recordCategory, recordCategory),
-        gt(resultsTable[bestOrAverage], 0),
-        bestOrAverage === "average"
-          ? or(
-              lt(resultsTable.date, new Date(C.cutoffDateForFlexibleAverageRecords)),
-              sql`CARDINALITY(${resultsTable.attempts}) = ${getDefaultAverageAttempts(event.defaultRoundFormat)}`,
-            )
-          : undefined,
-        superRegion ? eq(resultsTable.superRegionCode, superRegion.code) : undefined,
-        regionCode ? eq(resultsTable.regionCode, regionCode) : undefined,
-      ),
-    )
-    .orderBy(resultsTable[bestOrAverage])
-    .limit(1);
-  return recordResult;
 }
 
 const personsArrayJsonSql = sql`
@@ -302,7 +256,7 @@ export async function getRankings(
     topN: z.int().min(1).max(C.maxRankings),
   }).parse({ bestOrAverage, recordCategory, show, region, topN });
 
-  const defaultNumberOfAttempts = getDefaultAverageAttempts(event.defaultRoundFormat);
+  const rankedAverageFormat = getRankedAverageFormat(event.defaultRoundFormat);
   const recordCategoryCondition =
     recordCategory === "all" ? sql`` : sql`AND ${resultsTable.recordCategory} = ${recordCategory}`;
   const regionCondition = region
@@ -358,7 +312,7 @@ export async function getRankings(
               bestOrAverage === "best"
                 ? sql``
                 : sql`AND (${resultsTable.date} < ${C.cutoffDateForFlexibleAverageRecords}
-                        OR  CARDINALITY(${resultsTable.attempts}) = ${defaultNumberOfAttempts})`
+                        OR  CARDINALITY(${resultsTable.attempts}) = ${rankedAverageFormat.attempts})`
             }
             ${regionCondition}
           ORDER BY person_id, ${resultsTable[bestOrAverage]}, ${resultsTable.date}
@@ -455,7 +409,7 @@ export async function getRankings(
             ${recordCategoryCondition}
             AND ${resultsTable.average} > 0
             AND (${resultsTable.date} < ${C.cutoffDateForFlexibleAverageRecords}
-              OR CARDINALITY(${resultsTable.attempts}) = ${defaultNumberOfAttempts})
+              OR CARDINALITY(${resultsTable.attempts}) = ${rankedAverageFormat.attempts})
             ${regionCondition}
           ORDER BY ${resultsTable.average}, ${resultsTable.date}
         )

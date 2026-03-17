@@ -4,6 +4,7 @@ export type RoundFormatObject = {
   value: RoundFormat;
   label: string;
   shortLabel: string;
+  rankedAverageFormat: RoundFormat;
   attempts: number;
   isAverage: boolean;
   bestAndWorstAttemptsToExclude: number; // TO-DO: ADD SUPPORT FOR THIS VALUE BEING > 1 TO getBestAndAverage()!!!
@@ -14,6 +15,7 @@ export const roundFormats: RoundFormatObject[] = [
     value: "1",
     label: "Best of 1",
     shortLabel: "Bo1",
+    rankedAverageFormat: "m",
     attempts: 1,
     isAverage: false,
     bestAndWorstAttemptsToExclude: 0,
@@ -22,6 +24,7 @@ export const roundFormats: RoundFormatObject[] = [
     value: "2",
     label: "Best of 2",
     shortLabel: "Bo2",
+    rankedAverageFormat: "m",
     attempts: 2,
     isAverage: false,
     bestAndWorstAttemptsToExclude: 0,
@@ -31,6 +34,7 @@ export const roundFormats: RoundFormatObject[] = [
     value: "3",
     label: "Best of 3",
     shortLabel: "Bo3",
+    rankedAverageFormat: "m",
     attempts: 3,
     isAverage: false,
     bestAndWorstAttemptsToExclude: 0,
@@ -39,6 +43,7 @@ export const roundFormats: RoundFormatObject[] = [
     value: "m",
     label: "Mean of 3",
     shortLabel: "Mo3",
+    rankedAverageFormat: "m",
     attempts: 3,
     isAverage: true,
     bestAndWorstAttemptsToExclude: 0,
@@ -47,6 +52,7 @@ export const roundFormats: RoundFormatObject[] = [
     value: "5",
     label: "Best of 5",
     shortLabel: "Bo5",
+    rankedAverageFormat: "a",
     attempts: 5,
     isAverage: false,
     bestAndWorstAttemptsToExclude: 1,
@@ -55,8 +61,15 @@ export const roundFormats: RoundFormatObject[] = [
     value: "a",
     label: "Average of 5",
     shortLabel: "Ao5",
+    rankedAverageFormat: "a",
     attempts: 5,
     isAverage: true,
     bestAndWorstAttemptsToExclude: 1,
   },
 ];
+
+export function getRankedAverageFormat(eventDefaultRoundFormat: RoundFormat): RoundFormatObject {
+  const roundFormat = roundFormats.find((rf) => rf.value === eventDefaultRoundFormat)!;
+  const rankedAverageFormat = roundFormats.find((rf) => rf.value === roundFormat.rankedAverageFormat)!;
+  return rankedAverageFormat;
+}

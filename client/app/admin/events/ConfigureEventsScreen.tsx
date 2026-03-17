@@ -17,7 +17,7 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import { eventCategoryOptions, eventFormatOptions } from "~/helpers/multipleChoiceOptions.ts";
-import { roundFormats } from "~/helpers/roundFormats.ts";
+import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import type { EventFormat, ListPageMode, RoundFormat } from "~/helpers/types.ts";
 import { getActionError, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
 import type { EventDto } from "~/helpers/validators/Event.ts";
@@ -54,6 +54,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
   const [importantInfo, setImportantInfo] = useState("");
 
   const isPending = isCreating || isUpdating;
+  const rankedAverageFormat = getRankedAverageFormat(defaultRoundFormat);
 
   const handleSubmit = async () => {
     if (
@@ -207,6 +208,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
                 setSelected={setDefaultRoundFormat}
                 disabled={mode === "edit" || isPending}
               />
+              <p className="fs-6 mt-2 text-secondary">The ranked average format is {rankedAverageFormat.label}</p>
             </div>
             <div className="col">
               <FormNumberInput
