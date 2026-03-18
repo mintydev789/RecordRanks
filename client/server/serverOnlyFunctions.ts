@@ -204,6 +204,7 @@ export async function getRecords(
     .leftJoin(contestsTable, eq(resultsTable.competitionId, contestsTable.competitionId))
     .where(
       and(
+        eq(resultsTable.approved, true),
         inArray(
           eventsTable.eventId,
           events.map((e) => e.eventId),
