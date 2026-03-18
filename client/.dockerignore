@@ -1,4 +1,4 @@
-.env*.local
+.env*
 .next
 node_modules
 dump

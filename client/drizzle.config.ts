@@ -20,17 +20,20 @@ if (
   );
 }
 
-// This has to be different from the DB URL in the DB provider file, because
-// it needs a direct DB connection (i.e. not through the connection pooler).
-const url = `postgresql://${process.env.RR_DB_USERNAME}.${process.env.POOLER_TENANT_ID}:${process.env.RR_DB_PASSWORD}@localhost:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`;
-
 export default defineConfig({
   out: "./server/db/drizzle",
   schema: "./server/db/schema",
   schemaFilter: [process.env.RR_DB_SCHEMA],
   migrations: { schema: process.env.RR_DB_SCHEMA },
   dialect: "postgresql",
-  dbCredentials: { url },
+  // This uses a direct DB connection instead of the Supabase connection pooler
+  dbCredentials: {
+    host: "localhost",
+    port: Number(process.env.POSTGRES_PORT),
+    user: `${process.env.RR_DB_USERNAME}.${process.env.POOLER_TENANT_ID}`,
+    password: process.env.RR_DB_PASSWORD!,
+    database: process.env.POSTGRES_DB!,
+  },
   casing: "snake_case",
   strict: true,
   // verbose: true,

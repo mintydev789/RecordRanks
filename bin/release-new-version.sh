@@ -7,7 +7,6 @@ fi
 
 if [ -z "$1" ] || [ "$1" != "--no-checks" ]; then
   cd client
-  rm .env # if a .env file is somehow present in the client directory from previous failed releases, it would make tests fail
   pnpm run check && pnpm run test --bail=1
 
   if [ $? -gt 0 ]; then
@@ -15,16 +14,13 @@ if [ -z "$1" ] || [ "$1" != "--no-checks" ]; then
     exit 2
   fi
 
-  cp ../.env ./
   pnpm run build
 
   if [ $? -gt 0 ]; then
-    rm .env
     echo -e "\nPlease make sure the application can build successfully before publishing a new version"
     exit 3
   fi
 
-  rm .env
   cd ..
 fi
 

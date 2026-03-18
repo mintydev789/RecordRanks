@@ -20,7 +20,6 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-COPY .env .env.development
 
 ARG NEXT_PUBLIC_BASE_URL
 ARG NEXT_PUBLIC_PROJECT_NAME
@@ -31,7 +30,7 @@ ARG NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN corepack enable pnpm
 RUN pnpm run build
@@ -44,7 +43,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME="0.0.0.0"
 # Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
