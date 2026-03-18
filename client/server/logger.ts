@@ -40,53 +40,58 @@ const transport = pino.transport({
 
 export const logger = pino(transport);
 
-export type LogCode =
-  | "RR0001" // page visit
+export const LogCodes = {
+  RR0001: "page visit",
   // Events
-  | "RR0002" // create event
-  | "RR0003" // update event
-  | "RR0004" // affiliate link click
+  RR0002: "create event",
+  RR0003: "update event",
+  RR0004: "affiliate link click",
   // Contests
-  | "RR0005" // create contest
-  | "RR0006" // approve contest
-  | "RR0007" // finish contest
-  | "RR0008" // un-finish contest
-  | "RR0009" // publish contest
-  | "RR0010" // update contest
-  | "RR0011" // delete contest
-  | "RR0012" // open round
+  RR0005: "create contest",
+  RR0006: "approve contest",
+  RR0007: "finish contest",
+  RR0008: "un-finish contest",
+  RR0009: "publish contest",
+  RR0010: "update contest",
+  RR0011: "delete contest",
+  RR0012: "open round",
   // Results
-  | "RR0013" // create contest result
-  | "RR0014" // update contest result
-  | "RR0015" // delete contest result
-  | "RR0016" // create video-based result
-  | "RR0017" // update video-based result
-  | "RR0018" // delete video-based result
+  RR0013: "create contest result",
+  RR0014: "update contest result",
+  RR0015: "delete contest result",
+  RR0016: "create video-based result",
+  RR0017: "update video-based result",
+  RR0018: "delete video-based result",
   // Persons
-  | "RR0019" // create person
-  | "RR0020" // update person
-  | "RR0021" // delete person
-  | "RR0022" // approve person
-  | "RR0023" // approve persons
+  RR0019: "create person",
+  RR0020: "update person",
+  RR0021: "delete person",
+  RR0022: "approve person",
+  RR0023: "approve persons",
   // Records
-  | "RR0024" // set result record
-  | "RR0025" // set future result record
-  | "RR0026" // cancel future result record
-  | "RR0027" // create record config
-  | "RR0028" // update record config
+  RR0024: "set result record",
+  RR0025: "set future result record",
+  RR0026: "cancel future result record",
+  RR0027: "create record config",
+  RR0028: "update record config",
   // Collective Cubing
-  | "RR0029" // start new solution
+  RR0029: "start new solution",
   // Users
-  | "RR0030" // send verification email
-  | "RR0031" // send reset password email
-  | "RR0032" // send password changed email
-  | "RR0033" // update user
-  | "RR0034" // delete user
-  | "RR0035" // send user deletion verification email
-  | "RR0036" // send user deleted email
+  RR0030: "send verification email",
+  RR0031: "send reset password email",
+  RR0032: "send password changed email",
+  RR0033: "update user",
+  RR0034: "delete user",
+  RR0035: "send user deletion verification email",
+  RR0036: "send user deleted email",
   // Access Tokens
-  | "RR0037" // create access token
+  RR0037: "create access token",
 
   // Error codes
-  | "RR5000" // error
-  | "RR5001"; // send email error
+  RR5000: "unknown error",
+  RR5001: "send email error",
+  RR5002: "RR action error",
+  RR5003: "unknown action error",
+} as const;
+
+export type LogCode = keyof typeof LogCodes;

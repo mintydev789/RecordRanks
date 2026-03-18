@@ -15,11 +15,11 @@ import {
   collectiveSolutionsPublicCols,
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
-import { sendEmail, sendErrorEmail, sendRolesChangedEmail } from "~/server/email/mailer.ts";
+import { sendEmail, sendRolesChangedEmail } from "~/server/email/mailer.ts";
 import { Roles } from "~/server/permissions.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { getSettingFromDb, logMessage } from "../serverOnlyFunctions.ts";
+import { logMessage } from "../serverOnlyFunctions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})
@@ -40,11 +40,7 @@ export const logErrorSF = actionClient
     }),
   )
   .action(async ({ parsedInput: { errorMessage } }) => {
-    const contactEmail = await getSettingFromDb({ key: "error-logs-contact-email", optional: true });
-
-    if (contactEmail) sendErrorEmail(contactEmail, errorMessage);
-
-    logMessage("RR5000", errorMessage);
+    logMessage("RR5000", errorMessage, { sendErrorLogEmail: true });
   });
 
 export const logUserDeletedSF = actionClient

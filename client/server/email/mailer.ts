@@ -10,6 +10,7 @@ import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { videoBasedFormats } from "~/helpers/roundFormats.ts";
 import { getFormattedTime, getIsCompType, getIsUrgent } from "~/helpers/utilityFunctions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
+import { type LogCode, LogCodes } from "~/server/logger.ts";
 import { rolesObject } from "~/server/permissions.ts";
 import { logMessage } from "~/server/serverOnlyFunctions.ts";
 import type { SelectEvent } from "../db/schema/events.ts";
@@ -102,12 +103,14 @@ export function sendEmail(to: string, subject: string, content: string) {
   });
 }
 
-export function sendErrorEmail(to: string, errorMessage: string) {
+export function sendErrorEmail(to: string, errorCode: LogCode, errorMessage: string) {
   send({
     templateFileName: "error.hbs",
     context: {
       projectName,
       errorMessage,
+      errorCode,
+      errorCodeDescription: LogCodes[errorCode],
     },
     callback: async (html) => {
       await transporter.sendMail({

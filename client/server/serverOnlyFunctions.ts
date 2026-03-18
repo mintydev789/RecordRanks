@@ -33,13 +33,18 @@ import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/
 import { type ResultResponse, resultsTable } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import type { SettingKey } from "~/server/db/schema/settings.ts";
+import { sendErrorEmail } from "~/server/email/mailer.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
 import { RrActionError } from "~/server/safeAction.ts";
 import { getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
 import { auth } from "./auth.ts";
 import type { RrPermissions } from "./permissions.ts";
 
-export function logMessage(code: LogCode, message: string, { metadata }: { metadata?: object } = {}) {
+export function logMessage(
+  code: LogCode,
+  message: string,
+  { metadata, sendErrorLogEmail = false }: { metadata?: object; sendErrorLogEmail?: boolean } = {},
+) {
   const messageWithCodeAndTimestamp = `${new Date().toISOString()} [${code}] ${message}`;
 
   // Log to terminal/Docker container (except page visit logs)
@@ -54,6 +59,14 @@ export function logMessage(code: LogCode, message: string, { metadata }: { metad
       logger.child(childObject).info(messageWithCodeAndTimestamp);
     } catch (err) {
       console.error("Error while sending log to Supabase Analytics:", err);
+    }
+
+    if (sendErrorLogEmail) {
+      getSettingFromDb({ key: "error-logs-contact-email", optional: true })
+        .then((contactEmail) => {
+          if (contactEmail) sendErrorEmail(contactEmail, code, message);
+        })
+        .catch((err) => console.error("Error while sending email about error log:", err));
     }
   }
 }

@@ -85,6 +85,7 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
   };
 
   const scramblePuzzle = async () => {
+    resetMessages();
     const res = await startNewSolution();
 
     if (res.serverError || res.validationErrors) {
@@ -98,6 +99,7 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
 
   const submitMove = async () => {
     if (collectiveSolution && selectedMove) {
+      resetMessages();
       const res = await makeMove({ move: selectedMove, lastSeenSolution: collectiveSolution.solution });
 
       if (res.serverError || res.validationErrors) {

@@ -3,7 +3,7 @@ import { createSafeActionClient, DEFAULT_SERVER_ERROR_MESSAGE } from "next-safe-
 import z from "zod";
 import type { authClient } from "~/helpers/authClient.ts";
 import { db } from "~/server/db/provider.ts";
-import { authorizeUser } from "./serverOnlyFunctions.ts";
+import { authorizeUser, logMessage } from "./serverOnlyFunctions.ts";
 
 export const actionClient = createSafeActionClient({
   defineMetadataSchema() {
@@ -12,13 +12,15 @@ export const actionClient = createSafeActionClient({
       permissions: z.any().nullable().optional(),
     });
   },
+  // If it's an expected RR error, log it and return it, along with the optional error data.
+  // If it's an unexpected error, log it and return the default error message.
   handleServerError(e): RrServerErrorObject {
     if (e instanceof RrActionError) {
-      if (!process.env.VITEST) console.error("RR action error:", e.message);
+      logMessage("RR5002", e.message, { sendErrorLogEmail: true });
       return { message: e.message, data: e.data };
     }
 
-    console.error("Action error:", e.message);
+    logMessage("RR5003", e.message, { sendErrorLogEmail: true });
     return { message: DEFAULT_SERVER_ERROR_MESSAGE };
   },
 }).use<{ session: typeof authClient.$Infer.Session }>(async ({ next, metadata }) => {
