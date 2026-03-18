@@ -21,6 +21,8 @@ npm-debug.log*
 # env files
 .env*
 !.env.example
+# This is just a symlink to the .env file in the root of the repo
+!client/.env
 !client/.env.development
 !client/.env.production
 !client/.env.test

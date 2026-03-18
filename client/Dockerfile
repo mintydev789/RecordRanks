@@ -1,26 +1,47 @@
-# syntax=docker.io/docker/dockerfile:1
+# This file originally comes from the Next JS Dockerfile example:
+# https://github.com/vercel/next.js/tree/canary/examples/with-docker
+# With some recommendations taken from PNPM docs: https://pnpm.io/docker
 
-FROM node:24-alpine AS base
+# ============================================
+# Stage 1: Dependencies Installation Stage
+# ============================================
 
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+# IMPORTANT: Node.js Version Maintenance
+# To ensure security and compatibility, regularly update the NODE_VERSION ARG to the latest LTS version.
+FROM node:24.13.0-slim AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable
+
+FROM base AS dependencies
+
+# Set working directory
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json5 pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN corepack enable pnpm
-RUN pnpm install --frozen-lockfile
+# Copy package-related files first to leverage Docker's caching mechanism
+COPY package.json5 pnpm-lock.yaml ./
 
+# Install project dependencies with frozen lockfile for reproducible builds
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# Rebuild the source code only when needed
+# ============================================
+# Stage 2: Build Next.js application in standalone mode
+# ============================================
+
 FROM base AS builder
+
+# Set working directory
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
+# Copy project dependencies from dependencies stage
+COPY --from=dependencies /app/node_modules ./node_modules
+
+# Copy application source code
 COPY . .
 
+ENV NODE_ENV=production
 ARG NEXT_PUBLIC_BASE_URL
 ARG NEXT_PUBLIC_PROJECT_NAME
 ARG NEXT_PUBLIC_CONTACT_EMAIL
@@ -32,34 +53,56 @@ ARG NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN corepack enable pnpm
-RUN pnpm run build
+# Build Next.js application
+# If you want to speed up Docker rebuilds, you can cache the build artifacts
+# by adding: --mount=type=cache,target=/app/.next/cache
+# This caches the .next/cache directory across builds, but it also prevents
+# .next/cache/fetch-cache from being included in the final image, meaning
+# cached fetch responses from the build won't be available at runtime.
+RUN --mount=type=cache,target=/app/.next/cache pnpm run build
 
+# ============================================
+# Stage 3: Run Next.js application
+# ============================================
 
-# Production image, copy all the files and run next
 FROM base AS runner
+
+# Set working directory
 WORKDIR /app
 
+# Set production environment variables
 ENV NODE_ENV=production
+ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-# Uncomment the following line in case you want to disable telemetry during runtime.
+
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry during the run time.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Copy production assets
+COPY --from=builder --chown=node:node /app/public ./public
 
-COPY --from=builder /app/public ./public
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown node:node .next
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY ./server/loggerUtils.js ./server/loggerUtils.js
 COPY ./server/email/templates ./server/email/templates
 
-USER nextjs
+# If you want to persist the fetch cache generated during the build so that
+# cached responses are available immediately on startup, uncomment this line:
+# COPY --from=builder --chown=node:node /app/.next/cache ./.next/cache
 
+# Switch to non-root user for security best practices
+USER node
+
+# Expose port 3000 to allow HTTP traffic
 EXPOSE 3000
 
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
+# Start Next.js standalone server
 CMD ["node", "server.js"]

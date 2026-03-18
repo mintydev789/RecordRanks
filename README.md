@@ -223,7 +223,7 @@ This project uses Next JS as a full-stack web application and self-hosted Supaba
 5. Run DB migrations: `pnpm db:migrate` (skip this step if there are no new migrations since last time)
 6. Start Next JS: `pnpm dev`
 
-Note that Next JS accesses the variables in `.env` through the `.env.development` symlink, which means that it won't be able to detect changes made to the source file. If you change any values in `.env`, simply restart `pnpm dev`.
+Note that Next JS accesses the variables in `.env` through the `client/.env` symlink, which means that it won't be able to detect changes made to the source file. If you change any values in `.env`, simply restart `pnpm dev`.
 
 This repo uses Biome for formatting and linting. If you intend to contribute code to this repo, please install the Biome extension for your IDE and set it up as your default formatter.
 

@@ -27,7 +27,8 @@ services:
     networks:
       - shared
     ports:
-      - 127.0.0.1:${NEXTJS_PORT}:3000 # the Caddyfile assumes the Next JS port used internally in the container is 3000
+      # The Caddyfile assumes the Next JS port used internally in the container is 3000
+      - 127.0.0.1:${NEXTJS_PORT}:3000 # port matches the PORT env var in the Dockerfile
     environment:
       PROD_HOSTNAME: ${PROD_HOSTNAME}
       EMAIL_HOST: ${EMAIL_HOST}
