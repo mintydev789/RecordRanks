@@ -48,7 +48,7 @@ export type RecordCategory = (typeof RecordCategoryValues)[number];
 
 export const RecordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"] as const;
 export type RecordType = (typeof RecordTypeValues)[number];
-export const ContinentalRecordTypes: RecordType[] = ["ER", "NAR", "SAR", "AsR", "AfR", "OcR"];
+export const ContinentalRecordTypes: RecordType[] = ["ER", "NAR", "SAR", "AsR", "AfR", "OcR"] as const;
 
 export const ContestTypeValues = ["meetup", "wca-comp", "comp"] as const;
 export type ContestType = (typeof ContestTypeValues)[number];

@@ -24,6 +24,7 @@ import {
   personsStub,
   usPersonJayScott,
   usPersonJohnDoe,
+  zaPersonKayaKhumalo,
 } from "./personsStub.ts";
 import {
   testComp2026_222_r1,
@@ -433,7 +434,18 @@ export const resultsStub: InsertResult[] = [
   ...generateRandom444bfResults(),
 
   // 4x4x4 Blindfolded (video-based)
-  // 2023 results
+  // 2022 results (back when the ranked average format was Ao5)
+  getVideoBasedResult({
+    eventId: "444bf",
+    date: new Date(2022, 0, 1), // January 1st
+    personIds: [zaPersonKayaKhumalo.id],
+    regionCode: "ZA",
+    superRegionCode: "AFRICA",
+    attempts: [{ result: 9500 }, { result: 9600 }, { result: 9700 }, { result: 9800 }, { result: 9900 }],
+    regionalSingleRecord: "WR",
+    regionalAverageRecord: "WR",
+  }),
+  // 2023 results (ranked average format is now Mo3)
   getVideoBasedResult({
     eventId: "444bf",
     date: new Date(2023, 0, 1), // January 1st

@@ -7,8 +7,8 @@ import { Continents, Countries } from "~/helpers/Countries.ts";
 import { db } from "~/server/db/provider.ts";
 import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import AffiliateLink from "../components/AffiliateLink.tsx";
+import RegionSelect from "../components/RegionSelect.tsx";
 import LoadingError from "../components/UI/LoadingError.tsx";
-import RegionSelect from "../rankings/[eventId]/[singleOrAvg]/RegionSelect.tsx";
 
 export const metadata = {
   title: `All contests | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,

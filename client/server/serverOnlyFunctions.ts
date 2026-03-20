@@ -250,7 +250,7 @@ export async function getRecords(
 
 export async function getRankings(
   event: EventResponse,
-  bestOrAverage: "best" | "average",
+  type: "single" | "average" | "all-avg-formats",
   recordCategory: RecordCategory | "all",
   {
     show = "persons",
@@ -263,16 +263,19 @@ export async function getRankings(
   },
 ): Promise<Ranking[]> {
   z.strictObject({
-    bestOrAverage: z.enum(["best", "average"]),
+    type: z.enum(["single", "average", "all-avg-formats"]),
     recordCategory: z.enum([...RecordCategoryValues, "all"]),
     show: z.enum(["persons", "results"]).optional(),
     region: z.string().optional(),
     topN: z.int().min(1).max(C.maxRankings),
-  }).parse({ bestOrAverage, recordCategory, show, region, topN });
+  }).parse({ type, recordCategory, show, region, topN });
 
+  const bestOrAverage = type === "single" ? "best" : "average";
   const rankedAverageFormat = getRankedAverageFormat(event.defaultRoundFormat);
   const recordCategoryCondition =
     recordCategory === "all" ? sql`` : sql`AND ${resultsTable.recordCategory} = ${recordCategory}`;
+  const numberOfAttemptsCondition =
+    type === "average" ? sql`AND CARDINALITY(${resultsTable.attempts}) = ${rankedAverageFormat.attempts}` : sql``;
   const regionCondition = region
     ? Continents.some((c) => c.code === region)
       ? sql`AND ${resultsTable.superRegionCode} = ${region}`
@@ -322,12 +325,7 @@ export async function getRankings(
             AND ${resultsTable.eventId} = ${event.eventId}
             ${recordCategoryCondition}
             AND ${resultsTable[bestOrAverage]} > 0
-            ${
-              bestOrAverage === "best"
-                ? sql``
-                : sql`AND (${resultsTable.date} < ${C.cutoffDateForFlexibleAverageRecords}
-                        OR  CARDINALITY(${resultsTable.attempts}) = ${rankedAverageFormat.attempts})`
-            }
+            ${numberOfAttemptsCondition}
             ${regionCondition}
           ORDER BY person_id, ${resultsTable[bestOrAverage]}, ${resultsTable.date}
         ), rankings AS (
@@ -344,7 +342,7 @@ export async function getRankings(
       .then(mapRankingsData);
 
     // If getting single rankings for an event that has memo, set the memo time from the attempts array for each entry
-    if (bestOrAverage === "best" && event.hasMemo) {
+    if (type === "single" && event.hasMemo) {
       rankings = rankings.map((ranking) => {
         let memo: number | null = null;
         const numberOfAttemptsEqualToBest = ranking.attempts.filter((a) => a.result === ranking.result).length;
@@ -355,7 +353,7 @@ export async function getRankings(
     }
   }
   // Top singles
-  else if (bestOrAverage === "best") {
+  else if (type === "single") {
     rankings = await db
       .execute(sql`
         WITH rankings AS (
@@ -422,8 +420,7 @@ export async function getRankings(
             AND ${resultsTable.eventId} = ${event.eventId}
             ${recordCategoryCondition}
             AND ${resultsTable.average} > 0
-            AND (${resultsTable.date} < ${C.cutoffDateForFlexibleAverageRecords}
-              OR CARDINALITY(${resultsTable.attempts}) = ${rankedAverageFormat.attempts})
+            ${numberOfAttemptsCondition}
             ${regionCondition}
           ORDER BY ${resultsTable.average}, ${resultsTable.date}
         )

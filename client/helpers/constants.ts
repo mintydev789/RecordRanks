@@ -29,8 +29,6 @@ export const C = {
   wcaV0ApiBaseUrl: "https://www.worldcubeassociation.org/api/v0",
   wcaIdRegex: /[0-9]{4}[A-Z]{4}[0-9]{2}/,
   wcaIdRegexLoose: /[0-9]{4}[a-zA-Z]{4}[0-9]{2}/, // allows lowercase letters too
-  // From this date onwards, average records are only set for results with the same number of attempts as the ranked average format
-  cutoffDateForFlexibleAverageRecords: "2023-01-01T00:00:00.000Z",
   navigationKeys: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"],
   moneroDonationAddress:
     "8AaML2et9RQKmZp4NYm9STKbjhfFB4h81ZxeGV166oapNzPFUTneaRmakwE61cyHr1ZUYreEU7eHF8XmMBykG8TpAwM6SVq",

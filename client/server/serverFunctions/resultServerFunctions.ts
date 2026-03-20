@@ -1,7 +1,7 @@
 "use server";
 
 import { addDays, differenceInDays, format } from "date-fns";
-import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import z from "zod";
 import { ContinentRecordType, Continents, Countries, getSuperRegion } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
@@ -18,7 +18,6 @@ import {
   compareAvgs,
   compareSingles,
   getBestAndAverage,
-  getDateOnly,
   getFormattedTime,
   getHasRole,
   getMakesCutoff,
@@ -66,7 +65,7 @@ export const getWrPairUpToDateSF = actionClient
     z.strictObject({
       recordCategory: z.enum(RecordCategoryValues),
       eventId: z.string(),
-      recordsUpTo: z.date().optional(),
+      recordsUpTo: z.date(),
       excludeResultId: z.int().optional(),
     }),
   )
@@ -553,43 +552,68 @@ async function getRecordResult(
   recordCategory: RecordCategory,
   {
     tx,
-    recordsUpTo = getDateOnly(new Date())!,
+    recordsUpTo,
     excludeResultId,
     regionCode,
   }: {
     tx?: DbTransactionType; // this can optionally be run inside of a transaction
-    recordsUpTo?: Date;
+    recordsUpTo: Date;
     excludeResultId?: number;
     regionCode?: string;
-  } = {
-    recordsUpTo: getDateOnly(new Date())!,
   },
 ): Promise<SelectResult | undefined> {
-  const superRegion = Continents.find((c) => c.recordTypeId === recordType);
+  const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
+  const isCrRecordType = ContinentalRecordTypes.includes(recordType);
+  const baseConditions = [
+    eq(table.eventId, event.eventId),
+    eq(table.recordCategory, recordCategory),
+    gt(table[bestOrAverage], 0),
+    isCrRecordType ? eq(table.superRegionCode, Continents.find((c) => c.recordTypeId === recordType)!.code) : undefined,
+    regionCode ? eq(table.regionCode, regionCode) : undefined,
+  ];
 
-  const [recordResult] = await (tx ?? db)
+  // This is necessary to account for excludeResultId, since that could be the record that is being updated,
+  // and there could be another result on the same day that is the new record, but the record field hasn't been set yet.
+  const [sameDayBestResult] = await (tx ?? db)
     .select()
     .from(table)
     .where(
       and(
-        eq(table.eventId, event.eventId),
+        ...baseConditions,
         excludeResultId ? ne(table.id, excludeResultId) : undefined,
-        lte(table.date, recordsUpTo),
-        eq(table.recordCategory, recordCategory),
-        gt(table[bestOrAverage], 0),
+        eq(table.date, recordsUpTo),
         bestOrAverage === "average"
-          ? or(
-              lt(table.date, new Date(C.cutoffDateForFlexibleAverageRecords)),
-              sql`CARDINALITY(${table.attempts}) = ${getRankedAverageFormat(event.defaultRoundFormat).attempts}`,
-            )
+          ? sql`CARDINALITY(${table.attempts}) = ${getRankedAverageFormat(event.defaultRoundFormat).attempts}`
           : undefined,
-        superRegion ? eq(table.superRegionCode, superRegion.code) : undefined,
-        regionCode ? eq(table.regionCode, regionCode) : undefined,
       ),
     )
     .orderBy(table[bestOrAverage])
     .limit(1);
-  return recordResult;
+
+  const recordTypes: RecordType[] = ["WR"];
+  if (recordType === "NR") {
+    const region = Countries.find((c) => c.code === regionCode)!;
+    const superRegion = Continents.find((c) => c.code === region.superRegionCode)!;
+    recordTypes.push(...[superRegion.recordTypeId, recordType]);
+  } else if (isCrRecordType) {
+    recordTypes.push(recordType);
+  }
+
+  const [previousRecordResult] = await (tx ?? db)
+    .select()
+    .from(table)
+    .where(and(...baseConditions, lt(table.date, recordsUpTo), inArray(table[recordField], recordTypes)))
+    .orderBy(desc(table.date))
+    .limit(1);
+
+  if (previousRecordResult) {
+    // If the best result of the day is better than the previous record, return that
+    if (sameDayBestResult && sameDayBestResult[bestOrAverage] < previousRecordResult[bestOrAverage])
+      return sameDayBestResult;
+    return previousRecordResult;
+  }
+
+  return sameDayBestResult;
 }
 
 async function setResultRecordsAndRegions(

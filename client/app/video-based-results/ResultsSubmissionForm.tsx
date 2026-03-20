@@ -82,7 +82,7 @@ function ResultsSubmissionForm({
   const [discussionLink, setDiscussionLink] = useState(result?.discussionLink ?? "");
 
   const updateWrPair = useCallback(
-    debounce(async (eventId: string, recordsUpTo?: Date) => {
+    debounce(async (eventId: string, recordsUpTo: Date) => {
       const res = await getWrPairUpToDate({
         recordCategory: "video-based-results",
         eventId,

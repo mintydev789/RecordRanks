@@ -4,10 +4,10 @@ import { Suspense } from "react";
 import AffiliateLink from "~/app/components/AffiliateLink.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
+import RegionSelect from "~/app/components/RegionSelect.tsx";
 import Loading from "~/app/components/UI/Loading";
 import Tooltip from "~/app/components/UI/Tooltip";
-import RankingsTable from "~/app/rankings/[eventId]/[singleOrAvg]/RankingsTable";
-import RegionSelect from "~/app/rankings/[eventId]/[singleOrAvg]/RegionSelect.tsx";
+import RankingsTable from "~/app/rankings/[eventId]/[type]/RankingsTable";
 import { roundFormats } from "~/helpers/roundFormats";
 import type { RecordCategory } from "~/helpers/types";
 import { db } from "~/server/db/provider";
@@ -60,7 +60,7 @@ export const metadata = {
 type Props = {
   params: Promise<{
     eventId: string;
-    singleOrAvg: "single" | "average";
+    type: "single" | "average" | "all-avg-formats";
   }>;
   searchParams: Promise<{
     show?: "results";
@@ -71,7 +71,7 @@ type Props = {
 };
 
 async function RankingsPage({ params, searchParams }: Props) {
-  const { eventId, singleOrAvg } = await params;
+  const { eventId, type } = await params;
   const { show, category, region, topN } = await searchParams;
 
   const urlSearchParams = new URLSearchParams(omitBy({ show, category, region, topN } as any, (val) => !val));
@@ -91,7 +91,7 @@ async function RankingsPage({ params, searchParams }: Props) {
       : "competitions");
   const roundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
 
-  const rankingsPromise = getRankings(event, singleOrAvg === "single" ? "best" : "average", recordCategory, {
+  const rankingsPromise = getRankings(event, type, recordCategory, {
     show,
     region,
     topN: topN ? parseInt(topN, 10) : undefined,
@@ -129,10 +129,10 @@ async function RankingsPage({ params, searchParams }: Props) {
             <div>
               <h5 className="d-flex gap-1">
                 Type
-                {singleOrAvg === "average" && (
+                {type === "all-avg-formats" && (
                   <Tooltip
                     id="type_tooltip"
-                    text="For results from 01.01.2023 onwards this only includes averages that have the ranked average format"
+                    text="Includes both Mo3 and Ao5 results, even if they don't match the ranked average format"
                   />
                 )}
               </h5>
@@ -141,16 +141,23 @@ async function RankingsPage({ params, searchParams }: Props) {
                 <Link
                   href={`/rankings/${eventId}/single?${urlSearchParams}`}
                   prefetch={false}
-                  className={`btn btn-primary ${singleOrAvg === "single" ? "active" : ""}`}
+                  className={`btn btn-primary ${type === "single" ? "active" : ""}`}
                 >
                   Single
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/average?${urlSearchParams}`}
                   prefetch={false}
-                  className={`btn btn-primary ${singleOrAvg === "average" ? "active" : ""}`}
+                  className={`btn btn-primary ${type === "average" ? "active" : ""}`}
                 >
                   {roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"}
+                </Link>
+                <Link
+                  href={`/rankings/${eventId}/all-avg-formats?${urlSearchParams}`}
+                  prefetch={false}
+                  className={`btn btn-primary ${type === "all-avg-formats" ? "active" : ""}`}
+                >
+                  All Avgs
                 </Link>
               </div>
             </div>
@@ -160,14 +167,14 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Show">
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${urlSearchParamsWithoutShow}`}
+                  href={`/rankings/${eventId}/${type}?${urlSearchParamsWithoutShow}`}
                   prefetch={false}
                   className={`btn btn-primary ${!show ? "active" : ""}`}
                 >
                   Top Persons
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${
+                  href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutShow.toString() ? `${urlSearchParamsWithoutShow}&` : ""
                   }show=results`}
                   prefetch={false}
@@ -183,14 +190,14 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Top">
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${urlSearchParamsWithoutTopN}`}
+                  href={`/rankings/${eventId}/${type}?${urlSearchParamsWithoutTopN}`}
                   prefetch={false}
                   className={`btn btn-primary ${!topN || topN === "100" ? "active" : ""}`}
                 >
                   100
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${
+                  href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
                   }topN=1000`}
                   prefetch={false}
@@ -199,7 +206,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   1000
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${
+                  href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
                   }topN=10000`}
                   prefetch={false}
@@ -215,7 +222,7 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${
+                  href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=competitions`}
                   prefetch={false}
@@ -224,7 +231,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   Competitions
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${
+                  href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=meetups`}
                   prefetch={false}
@@ -233,7 +240,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   Meetups
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${
+                  href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=video-based-results`}
                   prefetch={false}
@@ -242,7 +249,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   Video-based
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${singleOrAvg}?${
+                  href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=all`}
                   prefetch={false}
@@ -275,7 +282,7 @@ async function RankingsPage({ params, searchParams }: Props) {
       ) : undefined}
 
       <Suspense fallback={<Loading />}>
-        <RankingsTable rankingsPromise={rankingsPromise} event={event} singleOrAvg={singleOrAvg} show={show} />
+        <RankingsTable rankingsPromise={rankingsPromise} event={event} type={type} show={show} />
       </Suspense>
     </div>
   );

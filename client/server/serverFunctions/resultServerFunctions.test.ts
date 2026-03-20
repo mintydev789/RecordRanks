@@ -12,6 +12,7 @@ import {
   krPersonDongJunHyon,
   krPersonSooMinNam,
   usPersonJohnDoe,
+  zaPersonKayaKhumalo,
 } from "~/__mocks__/stubs/personsStub.ts";
 import { resultsStub } from "~/__mocks__/stubs/resultsStub.ts";
 import {
@@ -915,15 +916,15 @@ describe("deleteContestResultSF", () => {
 describe("createVideoBasedResultSF", () => {
   beforeEach(reseedTestData);
 
+  const eventId = "444bf";
+  const partialResult = { eventId, date, videoLink: "https://example.com", discussionLink: null };
+
   it("creates non-record result", async () => {
     const res = await createVideoBasedResultSF({
       newResultDto: {
-        eventId: "444bf",
-        date,
+        ...partialResult,
         personIds: [1],
         attempts: [{ result: 10000, memo: 50 }, { result: 10100 }, { result: 10200 }],
-        videoLink: "https://example.com",
-        discussionLink: null,
       },
     });
 
@@ -942,14 +943,23 @@ describe("createVideoBasedResultSF", () => {
   it("doesn't set average record for result with different average format", async () => {
     const res = await createVideoBasedResultSF({
       newResultDto: {
-        eventId: "444bf",
-        date,
+        ...partialResult,
         personIds: [1],
         attempts: [{ result: 1234 }, { result: 1234 }, { result: 1234 }, { result: 1234 }, { result: 1234 }],
-        videoLink: "https://example.com",
-        discussionLink: null,
       },
     });
+
+    expect(res.data).toBeDefined();
+    expect(res.data!.regionalAverageRecord).toBeNull();
+  });
+
+  it("doesn't set average record, respecting former record set when the ranked average format was different", async () => {
+    const newResultDto = {
+      ...partialResult,
+      personIds: [zaPersonKayaKhumalo.id],
+      attempts: [{ result: 10000 }, { result: 10100 }, { result: 10200 }],
+    };
+    const res = await createVideoBasedResultSF({ newResultDto });
 
     expect(res.data).toBeDefined();
     expect(res.data!.regionalAverageRecord).toBeNull();
@@ -976,12 +986,9 @@ describe("createVideoBasedResultSF", () => {
     it("throws validation error for empty attempt", async () => {
       const res = await createVideoBasedResultSF({
         newResultDto: {
-          eventId: "444bf",
-          date,
+          ...partialResult,
           personIds: [1],
           attempts: [{ result: 0 }],
-          videoLink: "https://example.com",
-          discussionLink: null,
         },
       });
 
@@ -995,12 +1002,9 @@ describe("createVideoBasedResultSF", () => {
     it("throws validation error for all attempts being DNF/DNS", async () => {
       const res = await createVideoBasedResultSF({
         newResultDto: {
-          eventId: "444bf",
-          date,
+          ...partialResult,
           personIds: [1],
           attempts: [{ result: -1 }, { result: -2 }, { result: -1 }],
-          videoLink: "https://example.com",
-          discussionLink: null,
         },
       });
 
@@ -1034,12 +1038,9 @@ describe("createVideoBasedResultSF", () => {
       const personId = 999999;
       const res = await createVideoBasedResultSF({
         newResultDto: {
-          eventId: "444bf",
-          date,
+          ...partialResult,
           personIds: [personId],
           attempts: [{ result: 1234 }],
-          videoLink: "https://example.com",
-          discussionLink: null,
         },
       });
 
@@ -1066,12 +1067,9 @@ describe("createVideoBasedResultSF", () => {
     it("throws error for wrong number of participants (too many)", async () => {
       const res = await createVideoBasedResultSF({
         newResultDto: {
-          eventId: "444bf",
-          date,
+          ...partialResult,
           personIds: [1, 2],
           attempts: [{ result: 1234 }],
-          videoLink: "https://example.com",
-          discussionLink: null,
         },
       });
 
@@ -1084,9 +1082,6 @@ describe("createVideoBasedResultSF", () => {
     const updateVbrDtoProperties = ["date", "attempts", "videoLink", "discussionLink"] as const;
 
     describe("4x4x4 Blindfolded results", async () => {
-      const eventId = "444bf";
-      const partialResult = { eventId, date, videoLink: "https://example.com", discussionLink: null };
-
       it("creates NR result (beating FWR) and cancels future NR", async () => {
         const newResultDto = {
           ...partialResult,
@@ -1152,21 +1147,12 @@ describe("createVideoBasedResultSF", () => {
           personIds: [krPersonDongJunHyon.id],
           attempts: [{ result: 7800 }, { result: 7900 }, { result: 8000 }],
         };
-        const res = await createVideoBasedResultSF({
-          newResultDto,
-        });
+        const res = await createVideoBasedResultSF({ newResultDto });
+
         expect(res.data).toBeDefined();
-
-        const res2 = await updateVideoBasedResultSF({
-          id: res.data!.id,
-          newResultDto: pick(newResultDto, updateVbrDtoProperties),
-          approve: true,
-        });
-        expect(res2.data).toBeDefined();
-
-        expect(res2.data!.regionCode).toBe("KR");
-        expect(res2.data!.regionalSingleRecord).toBe("NR");
-        expect(res2.data!.regionalAverageRecord).toBe("NR");
+        expect(res.data!.regionCode).toBe("KR");
+        expect(res.data!.regionalSingleRecord).toBe("NR");
+        expect(res.data!.regionalAverageRecord).toBe("NR");
       });
 
       it("creates NR result", async () => {
@@ -1175,21 +1161,12 @@ describe("createVideoBasedResultSF", () => {
           personIds: [dePersonHansBauer.id],
           attempts: [{ result: 7300 }, { result: 7400 }, { result: 7500 }],
         };
-        const res = await createVideoBasedResultSF({
-          newResultDto,
-        });
+        const res = await createVideoBasedResultSF({ newResultDto });
+
         expect(res.data).toBeDefined();
-
-        const res2 = await updateVideoBasedResultSF({
-          id: res.data!.id,
-          newResultDto: pick(newResultDto, updateVbrDtoProperties),
-          approve: true,
-        });
-        expect(res2.data).toBeDefined();
-
-        expect(res2.data!.regionCode).toBe("DE");
-        expect(res2.data!.regionalSingleRecord).toBe("NR");
-        expect(res2.data!.regionalAverageRecord).toBe("NR");
+        expect(res.data!.regionCode).toBe("DE");
+        expect(res.data!.regionalSingleRecord).toBe("NR");
+        expect(res.data!.regionalAverageRecord).toBe("NR");
       });
 
       it("creates CR result and cancels future CR", async () => {
@@ -1198,9 +1175,7 @@ describe("createVideoBasedResultSF", () => {
           personIds: [krPersonSooMinNam.id],
           attempts: [{ result: 6800 }, { result: 6900 }, { result: 7000 }],
         };
-        const res = await createVideoBasedResultSF({
-          newResultDto,
-        });
+        const res = await createVideoBasedResultSF({ newResultDto });
         expect(res.data).toBeDefined();
 
         const res2 = await updateVideoBasedResultSF({
@@ -1227,9 +1202,7 @@ describe("createVideoBasedResultSF", () => {
           personIds: [dePersonJakobBach.id],
           attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
         };
-        const res = await createVideoBasedResultSF({
-          newResultDto,
-        });
+        const res = await createVideoBasedResultSF({ newResultDto });
         expect(res.data).toBeDefined();
 
         const res2 = await updateVideoBasedResultSF({
@@ -1265,9 +1238,7 @@ describe("createVideoBasedResultSF", () => {
           personIds: [krPersonSooMinNam.id],
           attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
         };
-        const res = await createVideoBasedResultSF({
-          newResultDto,
-        });
+        const res = await createVideoBasedResultSF({ newResultDto });
         expect(res.data).toBeDefined();
 
         const res2 = await updateVideoBasedResultSF({
@@ -1308,9 +1279,7 @@ describe("createVideoBasedResultSF", () => {
           personIds: [usPersonJohnDoe.id],
           attempts: [{ result: 5000 }, { result: 5100 }, { result: 5200 }],
         };
-        const res = await createVideoBasedResultSF({
-          newResultDto,
-        });
+        const res = await createVideoBasedResultSF({ newResultDto });
         expect(res.data).toBeDefined();
 
         const res2 = await updateVideoBasedResultSF({
@@ -1357,21 +1326,12 @@ describe("createVideoBasedResultSF", () => {
             personIds: [usPersonJohnDoe.id],
             attempts: [{ result: 9000 }, { result: 9100 }, { result: 9200 }],
           };
-          const res = await createVideoBasedResultSF({
-            newResultDto,
-          });
+          const res = await createVideoBasedResultSF({ newResultDto });
+
           expect(res.data).toBeDefined();
-
-          const res2 = await updateVideoBasedResultSF({
-            id: res.data!.id,
-            newResultDto: pick(newResultDto, updateVbrDtoProperties),
-            approve: true,
-          });
-          expect(res2.data).toBeDefined();
-
-          expect(res2.data!.regionCode).toBe("US");
-          expect(res2.data!.regionalSingleRecord).toBe("NR");
-          expect(res2.data!.regionalAverageRecord).toBe("NR");
+          expect(res.data!.regionCode).toBe("US");
+          expect(res.data!.regionalSingleRecord).toBe("NR");
+          expect(res.data!.regionalAverageRecord).toBe("NR");
         });
 
         it("creates tied NR result (tying future NR)", async () => {
@@ -1380,9 +1340,7 @@ describe("createVideoBasedResultSF", () => {
             personIds: [usPersonJohnDoe.id],
             attempts: [{ result: 8900 }, { result: 9000 }, { result: 9100 }],
           };
-          const res = await createVideoBasedResultSF({
-            newResultDto,
-          });
+          const res = await createVideoBasedResultSF({ newResultDto });
           expect(res.data).toBeDefined();
 
           const res2 = await updateVideoBasedResultSF({
@@ -1409,9 +1367,7 @@ describe("createVideoBasedResultSF", () => {
             personIds: [usPersonJohnDoe.id],
             attempts: [{ result: 8500 }, { result: 8600 }, { result: 8700 }],
           };
-          const res = await createVideoBasedResultSF({
-            newResultDto,
-          });
+          const res = await createVideoBasedResultSF({ newResultDto });
           expect(res.data).toBeDefined();
 
           const res2 = await updateVideoBasedResultSF({
@@ -1438,9 +1394,7 @@ describe("createVideoBasedResultSF", () => {
             personIds: [usPersonJohnDoe.id],
             attempts: [{ result: 8400 }, { result: 8500 }, { result: 8600 }],
           };
-          const res = await createVideoBasedResultSF({
-            newResultDto,
-          });
+          const res = await createVideoBasedResultSF({ newResultDto });
           expect(res.data).toBeDefined();
 
           const res2 = await updateVideoBasedResultSF({
@@ -1472,9 +1426,7 @@ describe("createVideoBasedResultSF", () => {
             personIds: [usPersonJohnDoe.id],
             attempts: [{ result: 6500 }, { result: 6600 }, { result: 6700 }],
           };
-          const res = await createVideoBasedResultSF({
-            newResultDto,
-          });
+          const res = await createVideoBasedResultSF({ newResultDto });
           expect(res.data).toBeDefined();
 
           const res2 = await updateVideoBasedResultSF({
@@ -1505,9 +1457,7 @@ describe("createVideoBasedResultSF", () => {
             personIds: [usPersonJohnDoe.id],
             attempts: [{ result: 6400 }, { result: 6500 }, { result: 6600 }],
           };
-          const res = await createVideoBasedResultSF({
-            newResultDto,
-          });
+          const res = await createVideoBasedResultSF({ newResultDto });
           expect(res.data).toBeDefined();
 
           const res2 = await updateVideoBasedResultSF({
@@ -1545,18 +1495,11 @@ describe("createVideoBasedResultSF", () => {
             attempts: [{ result: 7600 }, { result: 7700 }, { result: 7800 }],
           };
           const res = await createVideoBasedResultSF({ newResultDto });
+
           expect(res.data).toBeDefined();
-
-          const res2 = await updateVideoBasedResultSF({
-            id: res.data!.id,
-            newResultDto: pick(newResultDto, updateVbrDtoProperties),
-            approve: true,
-          });
-          expect(res2.data).toBeDefined();
-
-          expect(res2.data!.regionCode).toBe("DE");
-          expect(res2.data!.regionalSingleRecord).toBeNull();
-          expect(res2.data!.regionalAverageRecord).toBeNull();
+          expect(res.data!.regionCode).toBe("DE");
+          expect(res.data!.regionalSingleRecord).toBeNull();
+          expect(res.data!.regionalAverageRecord).toBeNull();
         });
 
         it("cancels record set on the same day as an even better record", async () => {

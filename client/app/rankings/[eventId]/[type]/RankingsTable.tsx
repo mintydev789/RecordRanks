@@ -8,18 +8,18 @@ import type { EventResponse } from "~/server/db/schema/events";
 type Props = {
   rankingsPromise: Promise<Ranking[]>;
   event: EventResponse;
-  singleOrAvg: "single" | "average";
+  type: "single" | "average" | "all-avg-formats";
   show?: "results";
 };
 
-function RankingsTable({ rankingsPromise, event, singleOrAvg, show }: Props) {
+function RankingsTable({ rankingsPromise, event, type, show }: Props) {
   const rankings = use(rankingsPromise);
 
   const hasComp = rankings.some((r) => r.contest);
   const hasLink = rankings.some((r) => r.videoLink || r.discussionLink);
   const showAllTeammates = event && event.participants > 1 && show === "results";
   const showTeamColumn = event && event.participants > 1 && !showAllTeammates;
-  const showDetailsColumn = singleOrAvg === "average" || rankings.some((e) => e.memo);
+  const showDetailsColumn = type !== "single" || rankings.some((e) => e.memo);
 
   return (
     <div className="table-responsive flex-grow-1">
@@ -37,14 +37,14 @@ function RankingsTable({ rankingsPromise, event, singleOrAvg, show }: Props) {
               {hasLink ? "Links" : ""}
             </th>
             {showTeamColumn && <th>Team</th>}
-            {showDetailsColumn && <th>{singleOrAvg === "average" ? "Solves" : "Memorization time"}</th>}
+            {showDetailsColumn && <th>{type === "single" ? "Memorization time" : "Solves"}</th>}
           </tr>
         </thead>
         <tbody>
           {rankings.map((ranking, i) => (
             <RankingRow
               key={ranking.rankingId}
-              type={singleOrAvg === "single" ? "single-ranking" : "average-ranking"}
+              type={type === "single" ? "single-ranking" : "average-ranking"}
               ranking={ranking}
               isTiedRanking={ranking.ranking !== i + 1}
               event={event}

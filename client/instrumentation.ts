@@ -534,13 +534,15 @@ export async function register() {
 
     //         const newWrResults = [];
 
+    //         // From this date onwards, average records are only set for results with the same number of attempts as the ranked average format
+    //         const cutoffDateForFlexibleAverageRecords = "2023-01-01T00:00:00.000Z",
     //         for (const bestOrAverage of ["best", "average"] as ("best" | "average")[]) {
     //           const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
     //           const defaultNumberOfAttempts = getDefaultAverageAttempts(event.defaultRoundFormat);
     //           const numberOfAttemptsCondition =
     //             bestOrAverage === "best"
     //               ? sql``
-    //               : sql`AND (${resultsTable.date} < ${C.cutoffDateForFlexibleAverageRecords}
+    //               : sql`AND (${resultsTable.date} < ${cutoffDateForFlexibleAverageRecords}
     //                       OR CARDINALITY(${resultsTable.attempts}) = ${defaultNumberOfAttempts})`;
 
     //           const newWrIds = await tx
