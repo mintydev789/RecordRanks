@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { C } from "~/helpers/constants.ts";
 
-function SupportingTheProject() {
+function SupportingTheProjectSection() {
   return (
     <>
       <h3 className="rr-basic-heading">Supporting the project</h3>
@@ -20,4 +20,4 @@ function SupportingTheProject() {
   );
 }
 
-export default SupportingTheProject;
+export default SupportingTheProjectSection;

@@ -104,6 +104,13 @@ If you see any errors, correct them before submitting. If you see anything that 
     description:
       "These instructions are shown at the top of the video-based results page. Only video-based result reviewers can see this.",
   },
+  {
+    key: "collective-cubing-enabled",
+    group: "features",
+    value: "false",
+    description:
+      "Whether or not to enable Collective Cubing - the minigame where people solve a 2x2x2 Rubik's Cube one move at a time on the home page (true/false)",
+  },
 ];
 
 export async function register() {

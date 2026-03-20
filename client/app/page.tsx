@@ -1,26 +1,16 @@
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { desc, ne } from "drizzle-orm";
 import Link from "next/link";
+import { Suspense } from "react";
+import BlogSection from "~/app/components/BlogSection.tsx";
 import CollectiveCubing from "~/app/components/CollectiveCubing.tsx";
-import BlogPostCard from "~/app/posts/BlogPostCard.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
-import { db } from "~/server/db/provider.ts";
-import { postsTable } from "~/server/db/schema/posts.ts";
-import { blogPostsQuery } from "~/server/serverOnlyFunctions.ts";
-import {
-  collectiveSolutionsPublicCols,
-  collectiveSolutionsTable as csTable,
-} from "../server/db/schema/collective-solutions.ts";
-import SupportingTheProject from "./components/SupportingTheProject.tsx";
-
-export const dynamic = "force-dynamic";
+import { blogPostsQuery, getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import SupportingTheProjectSection from "./components/SupportingTheProjectSection.tsx";
 
 async function HomePage() {
-  const [[collectiveSolution], [latestBlogPost]] = await Promise.all([
-    db.select(collectiveSolutionsPublicCols).from(csTable).where(ne(csTable.state, "archived")).limit(1),
-    blogPostsQuery.orderBy(desc(postsTable.date)).limit(1),
-  ]);
+  const latestBlogPostPromise = blogPostsQuery.limit(1).then((res) => res.at(0));
+  const collectiveCubingEnabledSettingPromise = getSettingFromDb({ key: "collective-cubing-enabled", optional: true });
 
   return (
     <section className="px-3">
@@ -64,13 +54,9 @@ async function HomePage() {
         </Link>
       </div>
 
-      {latestBlogPost && (
-        <>
-          <h3 className="rr-basic-heading">Latest blog post</h3>
-
-          <BlogPostCard post={latestBlogPost} />
-        </>
-      )}
+      <Suspense>
+        <BlogSection latestBlogPostPromise={latestBlogPostPromise} />
+      </Suspense>
 
       {IS_CUBING_CONTESTS_INSTANCE && (
         <>
@@ -96,13 +82,14 @@ async function HomePage() {
         </>
       )}
 
-      <SupportingTheProject />
+      <SupportingTheProjectSection />
 
       <h3 className="rr-basic-heading">Contact</h3>
       <p>For general inquiries, send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.</p>
 
-      <h3 className="rr-basic-heading">Collective Cubing</h3>
-      <CollectiveCubing initCollectiveSolution={collectiveSolution ?? null} />
+      <Suspense>
+        <CollectiveCubing settingValuePromise={collectiveCubingEnabledSettingPromise} />
+      </Suspense>
     </section>
   );
 }

@@ -3,14 +3,15 @@
 import { Alg } from "cubing/alg";
 import { TwistyPlayer } from "cubing/twisty";
 import { useAction } from "next-safe-action/hooks";
-import { useContext, useEffect, useRef, useState } from "react";
+import { use, useContext, useEffect, useRef, useState } from "react";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { type NxNMove, nxnMoves } from "~/helpers/types/NxNMove.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
-import type { CollectiveSolutionResponse } from "~/server/db/schema/collective-solutions.ts";
+import type { CurrentCollectiveSolution } from "~/server/db/schema/collective-solutions.ts";
 import {
+  getCurrentCollectiveCubingSolutionSF,
   makeCollectiveCubingMoveSF,
   startNewCollectiveCubingSolutionSF,
 } from "~/server/serverFunctions/serverFunctions.ts";
@@ -28,18 +29,18 @@ export function getIsWebglSupported(): boolean {
 }
 
 type Props = {
-  initCollectiveSolution: CollectiveSolutionResponse | null;
+  settingValuePromise: Promise<string | null>;
 };
 
-function CollectiveCubing({ initCollectiveSolution }: Props) {
+function CollectiveCubing({ settingValuePromise }: Props) {
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
+  const settingValue = use(settingValuePromise);
+  const { executeAsync: getCurrentCollectiveSolution } = useAction(getCurrentCollectiveCubingSolutionSF);
   const { executeAsync: startNewSolution, isPending: isScrambling } = useAction(startNewCollectiveCubingSolutionSF);
   const { executeAsync: makeMove, isPending: isMakingMove } = useAction(makeCollectiveCubingMoveSF);
-  // null means a solution has never been started
-  const [collectiveSolution, setCollectiveSolution] = useState<CollectiveSolutionResponse | null>(
-    initCollectiveSolution,
-  );
+  // undefined means it's not been fetched yet; null means a solution has never been started
+  const [collectiveSolution, setCollectiveSolution] = useState<CurrentCollectiveSolution | null | undefined>();
   const [selectedMove, setSelectedMove] = useState<NxNMove | null>(null);
   const twistyPlayerContainerRef = useRef<HTMLDivElement | null>(null);
   const twistyPlayerRef = useRef<TwistyPlayer | null>(null);
@@ -50,14 +51,24 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
     : 0;
 
   useEffect(() => {
-    if (!getIsWebglSupported()) {
-      changeErrorMessages(["Please enable WebGL to render the cube"]);
-    } else if (!twistyPlayerRef.current && twistyPlayerContainerRef.current) {
-      updatePuzzleState(collectiveSolution);
-    }
-  }, [changeErrorMessages]);
+    if (settingValue === "true") {
+      (async () => {
+        const res = await getCurrentCollectiveSolution();
 
-  const updatePuzzleState = (newSolution: CollectiveSolutionResponse | null, reset = false) => {
+        if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+        else setCollectiveSolution(res.data);
+      })();
+    }
+  }, [settingValue]);
+
+  useEffect(() => {
+    if (collectiveSolution !== undefined && !twistyPlayerRef.current && twistyPlayerContainerRef.current) {
+      if (!getIsWebglSupported()) changeErrorMessages(["Please enable WebGL to render the cube"]);
+      else updatePuzzleState(collectiveSolution);
+    }
+  }, [collectiveSolution]);
+
+  const updatePuzzleState = (newSolution: CurrentCollectiveSolution | null, reset = false) => {
     setCollectiveSolution(newSolution);
 
     const alg =
@@ -106,7 +117,9 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
         if (res.serverError?.data) updatePuzzleState(res.serverError.data.isSolved ? null : res.serverError.data);
         changeErrorMessages([getActionError(res)]);
       } else {
+        // Applying the move this way instead of using updatePuzzleState() so that the animation is shown
         twistyPlayerRef.current!.experimentalAddMove(selectedMove);
+        setCollectiveSolution(res.data!);
         resetMessages();
       }
 
@@ -118,11 +131,15 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
     if (e.key === "Enter" && e.ctrlKey) submitMove();
   };
 
+  if (settingValue !== "true") return;
+
   return (
     <>
+      <h3 className="rr-basic-heading">Collective Cubing</h3>
+
       <p>
-        Let's solve Rubik's Cubes together! Simply log in and make a turn. You may not make two turns in a row. Submit
-        with Ctrl + Enter after selecting a move as a shortcut.
+        Let's solve a Rubik's Cube together! Simply log in and make a turn. You may not make two turns in a row. After
+        selecting a move, submit with Ctrl + Enter as a shortcut.
       </p>
 
       <ToastMessages />
@@ -131,17 +148,27 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
         <div className="row gap-3">
           <div className="col-md-4">
             <div className="d-flex flex-column align-items-center">
-              <div ref={twistyPlayerContainerRef} style={{ maxWidth: "100%" }} />
+              <div
+                ref={twistyPlayerContainerRef}
+                className="d-flex justify-content-center overflow-hidden"
+                style={{ maxWidth: "100%" }}
+              />
 
               {isSolved && (
-                <Button
-                  id="scramble_button"
-                  onClick={scramblePuzzle}
-                  isLoading={isScrambling}
-                  className="btn-success mt-2 mb-4 w-100"
-                >
-                  Scramble
-                </Button>
+                <>
+                  {collectiveSolution?.currentUserInteractedLast && (
+                    <p className="my-1 text-warning">You are the last user who interacted with the puzzle</p>
+                  )}
+                  <Button
+                    id="scramble_button"
+                    onClick={scramblePuzzle}
+                    isLoading={isScrambling}
+                    disabled={collectiveSolution?.currentUserInteractedLast}
+                    className="btn-success mt-2 mb-4 w-100"
+                  >
+                    Scramble
+                  </Button>
+                </>
               )}
               <p>
                 All-time number of solves: <b>{numberOfSolves}</b>
@@ -151,8 +178,11 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
           <div className="col-md-8" style={{ maxWidth: "500px" }}>
             {!isSolved && (
               <>
+                {collectiveSolution.currentUserInteractedLast && (
+                  <p className="mb-3 text-warning">You are the last user who interacted with the puzzle</p>
+                )}
                 <div
-                  className="mt-1 mt-md-4 gap-1 gap-md-3"
+                  className="mt-md-4 gap-1 gap-md-3"
                   style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)" }}
                 >
                   {nxnMoves.map((move) => (
@@ -160,7 +190,7 @@ function CollectiveCubing({ initCollectiveSolution }: Props) {
                       <button
                         type="button"
                         onClick={() => setSelectedMove(move)}
-                        disabled={isMakingMove}
+                        disabled={isMakingMove || collectiveSolution.currentUserInteractedLast}
                         onKeyDown={selectedMove === move ? onConfirmKeybind : undefined}
                         className={`btn btn-primary ${selectedMove === move ? "active" : ""} w-100`}
                       >

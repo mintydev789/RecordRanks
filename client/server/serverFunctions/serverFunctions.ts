@@ -11,7 +11,7 @@ import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import {
-  type CollectiveSolutionResponse,
+  type CurrentCollectiveSolution,
   collectiveSolutionsPublicCols,
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
@@ -127,15 +127,38 @@ export const updateUserSF = actionClient
     },
   );
 
+export const getCurrentCollectiveCubingSolutionSF = actionClient
+  .metadata({})
+  .action<CurrentCollectiveSolution | null>(async () => {
+    // Doing it like this, because authentication is optional for this server function
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    const collectiveSolution = await db.query.collectiveSolutions.findFirst({
+      columns: {
+        attemptNumber: true,
+        state: true,
+        scramble: true,
+        solution: true,
+        lastUserWhoInteractedId: true,
+      },
+      where: { state: { ne: "archived" } },
+    });
+
+    if (!collectiveSolution) return null;
+
+    const { lastUserWhoInteractedId, ...rest } = collectiveSolution;
+    return { ...rest, currentUserInteractedLast: session?.user.id === lastUserWhoInteractedId };
+  });
+
 export const startNewCollectiveCubingSolutionSF = actionClient
   .metadata({ permissions: null })
-  .action<CollectiveSolutionResponse>(async ({ ctx: { session } }) => {
+  .action<CurrentCollectiveSolution>(async ({ ctx: { session } }) => {
     logMessage("RR0029", "Starting new Collective Cubing solution");
 
     const ongoingSolution = await db.query.collectiveSolutions.findFirst({ where: { state: "ongoing" } });
     if (ongoingSolution) throw new RrActionError("The cube has already been scrambled", { data: ongoingSolution });
 
-    const eventId = "222";
+    const eventId = "222"; // the collective-cubing-enabled setting also references 2x2x2
     const scramble = await randomScrambleForEvent(eventId);
 
     const [createdSolution] = await db.transaction(async (tx) => {
@@ -152,7 +175,7 @@ export const startNewCollectiveCubingSolutionSF = actionClient
         .returning(collectiveSolutionsPublicCols);
     });
 
-    return createdSolution;
+    return { ...createdSolution, currentUserInteractedLast: true };
   });
 
 async function getIsSolved(currentState: Alg): Promise<boolean> {
@@ -173,7 +196,7 @@ export const makeCollectiveCubingMoveSF = actionClient
       lastSeenSolution: z.string(),
     }),
   )
-  .action<CollectiveSolutionResponse>(
+  .action<CurrentCollectiveSolution>(
     async ({
       parsedInput: { move, lastSeenSolution },
       ctx: {
@@ -214,6 +237,6 @@ export const makeCollectiveCubingMoveSF = actionClient
         .where(eq(csTable.id, ongoingSolution.id))
         .returning(collectiveSolutionsPublicCols);
 
-      return updatedSolution;
+      return { ...updatedSolution, currentUserInteractedLast: true };
     },
   );

@@ -1,5 +1,5 @@
 import Markdown from "react-markdown";
-import SupportingTheProject from "~/app/components/SupportingTheProject";
+import SupportingTheProjectSection from "~/app/components/SupportingTheProjectSection";
 import { getSettingFromDb } from "~/server/serverOnlyFunctions";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ async function AboutPage() {
 
       <Markdown>{content}</Markdown>
 
-      <SupportingTheProject />
+      <SupportingTheProjectSection />
     </section>
   );
 }

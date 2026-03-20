@@ -1,19 +1,11 @@
-import { eq } from "drizzle-orm";
 import AffiliateLink from "~/app/components/AffiliateLink";
 import BlogPostCard from "~/app/posts/BlogPostCard.tsx";
-import { db } from "~/server/db/provider";
-import { usersTable } from "~/server/db/schema/auth-schema";
-import { personsTable } from "~/server/db/schema/persons.ts";
-import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
+import { blogPostsQuery } from "~/server/serverOnlyFunctions";
 
 export const dynamic = "force-dynamic";
 
 async function PostsPage() {
-  const posts = await db
-    .select({ ...postsPublicCols, authorName: personsTable.name })
-    .from(postsTable)
-    .leftJoin(usersTable, eq(postsTable.createdBy, usersTable.id))
-    .leftJoin(personsTable, eq(usersTable.personId, personsTable.id));
+  const posts = await blogPostsQuery;
 
   return (
     <section>

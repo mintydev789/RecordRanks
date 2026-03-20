@@ -25,12 +25,15 @@ export const collectiveSolutionsTable = rrSchema.table("collective_solutions", {
 export type SelectCollectiveSolution = typeof collectiveSolutionsTable.$inferSelect;
 
 const {
-  lastUserWhoInteractedId: _,
-  usersWhoMadeMoves: _1,
-  createdAt: _2,
-  updatedAt: _3,
+  eventId: _, // not a private column, but it's not needed client-side
+  lastUserWhoInteractedId: _1,
+  usersWhoMadeMoves: _2,
+  createdAt: _3,
+  updatedAt: _4,
   ...collectiveSolutionsPublicCols
 } = getColumns(collectiveSolutionsTable);
 export { collectiveSolutionsPublicCols };
 
 export type CollectiveSolutionResponse = Pick<SelectCollectiveSolution, keyof typeof collectiveSolutionsPublicCols>;
+
+export type CurrentCollectiveSolution = Omit<CollectiveSolutionResponse, "id"> & { currentUserInteractedLast: boolean };

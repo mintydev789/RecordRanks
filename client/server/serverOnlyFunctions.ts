@@ -583,7 +583,8 @@ export const blogPostsQuery = db
   .select({ ...postsPublicCols, authorName: personsTable.name })
   .from(postsTable)
   .leftJoin(usersTable, eq(postsTable.createdBy, usersTable.id))
-  .leftJoin(personsTable, eq(usersTable.personId, personsTable.id));
+  .leftJoin(personsTable, eq(usersTable.personId, personsTable.id))
+  .orderBy(desc(postsTable.date));
 
 export async function getSettingFromDb({
   key,
