@@ -16,7 +16,7 @@ type Props = {
 
 function EventButtons({ eventId, events, forPage }: Props) {
   const router = useRouter();
-  const { id, singleOrAvg } = useParams();
+  const { id, type } = useParams();
   const searchParams = useSearchParams();
 
   const [selectedCat, setSelectedCat] = useState(
@@ -41,7 +41,7 @@ function EventButtons({ eventId, events, forPage }: Props) {
       searchParams.forEach((value, key) => {
         queryString += `${queryString ? "&" : "?"}${key}=${value}`;
       });
-      router.push(`/rankings/${newEventId}/${singleOrAvg}${queryString}`);
+      router.push(`/rankings/${newEventId}/${type}${queryString}`);
     } else if (forPage === "competitions") {
       if (searchParams.get("eventId") === newEventId) router.replace("/competitions");
       else router.replace(`/competitions?eventId=${newEventId}`);

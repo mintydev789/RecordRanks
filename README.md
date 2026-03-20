@@ -262,7 +262,7 @@ To get the list of events, use the endpoint below:
 To get the rankings, use the endpoint below:
 
 ```
-/api/results/rankings/[eventId]/[singleOrAvg]/[category]?show=[show]&region=[region]&topN=[topN]
+/api/results/rankings/[eventId]/[type]/[category]?show=[show]&region=[region]&topN=[topN]
 
 eventId           = ID of the event
 type              = "single" for top single rankings; "average" for top average rankings; "all-avg-formats" for top average rankings, including Mo3 and Ao5 formats
