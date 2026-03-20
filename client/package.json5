@@ -44,6 +44,7 @@
     next: '16.1.6',
     'next-safe-action': '8.1.8',
     nodemailer: '8.0.2',
+    nuqs: '2.8.9',
     pino: '10.3.1',
     'pino-logflare': '0.5.2',
     postgres: '3.4.8',

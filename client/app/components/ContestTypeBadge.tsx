@@ -7,7 +7,7 @@ type Props = {
   short?: boolean;
 };
 
-const ContestTypeBadge = ({ type, short = false }: Props) => {
+function ContestTypeBadge({ type, short = false }: Props) {
   const contestType = contestTypeOptions.find((ct) => ct.value === type)!;
 
   return (
@@ -18,6 +18,6 @@ const ContestTypeBadge = ({ type, short = false }: Props) => {
       {short ? contestType.shortLabel || contestType.label : contestType.label}
     </div>
   );
-};
+}
 
 export default ContestTypeBadge;

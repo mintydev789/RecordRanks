@@ -8,14 +8,13 @@ import { useAction } from "next-safe-action/hooks";
 import { useContext } from "react";
 import Button from "~/app/components/UI/Button.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
-import type { ContestState } from "~/helpers/types";
 import { getActionError } from "~/helpers/utilityFunctions";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import { approveContestSF, finishContestSF, publishContestSF } from "~/server/serverFunctions/contestServerFunctions";
 
 type ModDashboardProps = {
   forPage: "mod-dashboard";
-  onUpdateContestState: (competitionId: string, newState: ContestState) => void;
+  onUpdateContestState: () => void;
 };
 
 type ContestDetailsProps = {
@@ -44,7 +43,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
       const res = await approveContest({ competitionId: contest.competitionId });
 
       if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-      else if (forPage === "mod-dashboard") onUpdateContestState(contest.competitionId, "approved");
+      else if (forPage === "mod-dashboard") onUpdateContestState();
       else router.refresh();
     }
   };
@@ -54,7 +53,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
       const res = await finishContest({ competitionId: contest.competitionId });
 
       if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-      else if (forPage === "mod-dashboard") onUpdateContestState(contest.competitionId, "finished");
+      else if (forPage === "mod-dashboard") onUpdateContestState();
       else router.refresh();
     }
   };
@@ -64,13 +63,13 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
       const res = await publishContest({ competitionId: contest.competitionId });
 
       if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-      else if (forPage === "mod-dashboard") onUpdateContestState(contest.competitionId, "published");
+      else if (forPage === "mod-dashboard") onUpdateContestState();
       else router.refresh();
     }
   };
 
   return (
-    <div className="d-flex gap-2">
+    <div className="d-flex gap-2 align-items-center">
       {(["created", "approved", "ongoing"].includes(contest.state) || isAdmin) && (
         <Link
           href={`/mod/competition?editId=${contest.competitionId}`}
@@ -137,7 +136,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
           </Button>
         ) : (
           <span title="Contest pending review">
-            <FontAwesomeIcon icon={faClock} aria-label="Contest pending review" className="fs-5 my-1" />
+            <FontAwesomeIcon icon={faClock} aria-label="Contest pending review" className="fs-5 mt-1" />
           </span>
         ))}
     </div>

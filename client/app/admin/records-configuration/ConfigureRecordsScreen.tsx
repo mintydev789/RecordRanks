@@ -62,7 +62,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
   const [label, setLabel] = useState("");
   const [active, setActive] = useState(true);
   const [rank, setRank] = useState<number | undefined>();
-  const [color, setColor] = useState(C.color.danger);
+  const [color, setColor] = useState<string>(C.color.danger);
 
   const isPending = isCreating || isUpdating;
 

@@ -2,7 +2,7 @@
 
 import { endOfDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { and, arrayContains, desc, eq, inArray } from "drizzle-orm";
+import { and, arrayContains, desc, eq, gte, inArray, lt, notInArray, or } from "drizzle-orm";
 import { find as findTimezone } from "geo-tz";
 import z from "zod";
 import { C } from "~/helpers/constants.ts";
@@ -10,6 +10,7 @@ import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
   generateAccessToken,
+  getDateOnly,
   getHasRole,
   getMaxAllowedRounds,
   getNameAndLocalizedName,
@@ -17,6 +18,7 @@ import {
 } from "~/helpers/utilityFunctions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
+import { ModDashboardFiltersValidator } from "~/helpers/validators/ModDashboardFilters.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";
 import { auth } from "~/server/auth.ts";
 import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";
@@ -129,50 +131,69 @@ export const getContestSF = actionClient
 
 export const getModContestsSF = actionClient
   .metadata({ permissions: { modDashboard: ["view"] } })
-  .inputSchema(
-    z.strictObject({
-      organizerPersonId: z.int().optional(),
-    }),
-  )
-  .action<ContestResponse[]>(async ({ parsedInput: { organizerPersonId }, ctx: { session } }) => {
-    const queryFilters = [];
+  .inputSchema(ModDashboardFiltersValidator)
+  .action<{ contests: ContestResponse[]; organizerPerson?: PersonResponse }>(
+    async ({ parsedInput: { organizerPersonId, state }, ctx: { session } }) => {
+      const queryFilters = [];
 
-    const { success: isAdmin } = await auth.api.userHasPermission({
-      body: { userId: session.user.id, permissions: { adminDashboard: ["view"] } },
-    });
+      const { success: isAdmin } = await auth.api.userHasPermission({
+        body: { userId: session.user.id, permissions: { adminDashboard: ["view"] } },
+      });
 
-    // If it's a moderator, only get their own contests
-    if (!isAdmin) {
-      const msg = "Your competitor profile must be tied to your account before you can use moderator features";
-      if (!session.user.personId) throw new RrActionError(msg);
+      // If it's a moderator, only get their own contests
+      if (!isAdmin) {
+        const msg = "Your competitor profile must be tied to your account before you can use moderator features";
+        if (!session.user.personId) throw new RrActionError(msg);
 
-      const [userPerson] = await db
-        .select({ id: personsTable.id })
-        .from(personsTable)
-        .where(eq(personsTable.id, session.user.personId));
+        const [userPerson] = await db
+          .select({ id: personsTable.id })
+          .from(personsTable)
+          .where(eq(personsTable.id, session.user.personId));
 
-      if (!userPerson) throw new RrActionError(msg);
-      queryFilters.push(arrayContains(table.organizerIds, [userPerson.id]));
-    }
+        if (!userPerson) throw new RrActionError(msg);
+        queryFilters.push(arrayContains(table.organizerIds, [userPerson.id]));
+      }
 
-    if (organizerPersonId) {
-      const [organizerPerson] = await db
-        .select({ id: personsTable.id })
-        .from(personsTable)
-        .where(eq(personsTable.id, organizerPersonId));
+      let organizerPerson: PersonResponse | undefined;
+      if (organizerPersonId) {
+        const [person] = await db
+          .select(personsPublicCols)
+          .from(personsTable)
+          .where(eq(personsTable.id, organizerPersonId));
 
-      if (!organizerPerson) throw new RrActionError(`Person with ID ${organizerPersonId} not found`);
-      queryFilters.push(arrayContains(table.organizerIds, [organizerPerson.id]));
-    }
+        if (!person) throw new RrActionError(`Person with ID ${organizerPersonId} not found`);
+        queryFilters.push(arrayContains(table.organizerIds, [person.id]));
+        organizerPerson = person;
+      }
 
-    const contests = await db
-      .select(contestsPublicCols)
-      .from(table)
-      .where(and(...queryFilters))
-      .orderBy(desc(table.startDate));
+      if (state) {
+        switch (state) {
+          case "pending":
+            {
+              const today = getDateOnly(new Date())!;
+              queryFilters.push(
+                or(
+                  and(gte(table.endDate, today), inArray(table.state, ["created", "finished"])),
+                  and(lt(table.endDate, today), notInArray(table.state, ["published", "removed"])),
+                ),
+              );
+            }
+            break;
+          default:
+            queryFilters.push(eq(table.state, state));
+            break;
+        }
+      }
 
-    return contests;
-  });
+      const contests = await db
+        .select(contestsPublicCols)
+        .from(table)
+        .where(and(...queryFilters))
+        .orderBy(desc(table.startDate));
+
+      return { contests, organizerPerson };
+    },
+  );
 
 export const getTimeZoneFromCoordsSF = actionClient
   .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })

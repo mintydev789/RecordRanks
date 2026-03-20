@@ -2,10 +2,11 @@
 
 import FormInputLabel from "~/app/components/form/FormInputLabel.tsx";
 import { Continents, Countries } from "~/helpers/Countries.ts";
+import { C } from "~/helpers/constants.ts";
 
 type Props = {
-  countryIso2: string;
-  setCountryIso2: any;
+  countryIso2: string | typeof C.notSelectedOption;
+  setCountryIso2: (value: string | typeof C.notSelectedOption) => void;
   nextFocusTargetId?: string;
   continentOptions?: boolean;
   disabled?: boolean;
@@ -39,7 +40,7 @@ function FormCountrySelect({
       >
         {continentOptions ? (
           <>
-            <option value="NOT_SELECTED">All regions</option>
+            <option value={C.notSelectedOption}>All regions</option>
             {Continents.map((c) => (
               <option key={c.code} value={c.code}>
                 {c.name}
@@ -47,7 +48,7 @@ function FormCountrySelect({
             ))}
           </>
         ) : (
-          <option value="NOT_SELECTED">Select country</option>
+          <option value={C.notSelectedOption}>Select country</option>
         )}
 
         {Countries.map((c) => (

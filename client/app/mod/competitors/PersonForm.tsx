@@ -9,6 +9,7 @@ import Form from "~/app/components/form/Form.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
 import FormCountrySelect from "~/app/components/form/FormCountrySelect.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
+import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { Creator } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
@@ -42,7 +43,7 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, onSubmit, onCance
   const [localizedName, setLocalizedName] = useState(personUnderEdit?.localizedName ?? "");
   const [wcaId, setWcaId] = useState(personUnderEdit?.wcaId ?? "");
   const [hasWcaId, setHasWcaId] = useState<boolean>(personUnderEdit === undefined || !!personUnderEdit.wcaId);
-  const [regionCode, setRegionCode] = useState(personUnderEdit?.regionCode ?? "NOT_SELECTED");
+  const [regionCode, setRegionCode] = useState(personUnderEdit?.regionCode ?? C.notSelectedOption);
   // This is set to true when the user is an admin, and they attempted to set a person with a duplicate name/country combination.
   // If the person is submitted again with no changes, the request will be sent with ignoreDuplicate=true.
   const isConfirmation = useRef(false);
@@ -160,7 +161,7 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, onSubmit, onCance
   const reset = (exceptWcaId = false) => {
     setName("");
     setLocalizedName("");
-    setRegionCode("NOT_SELECTED");
+    setRegionCode(C.notSelectedOption);
     if (!exceptWcaId) setWcaId("");
   };
 

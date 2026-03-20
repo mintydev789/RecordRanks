@@ -3,8 +3,8 @@
 import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
+import { parseAsInteger, useQueryState } from "nuqs";
 import { use, useContext, useState } from "react";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Country from "~/app/components/Country.tsx";
@@ -14,10 +14,9 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import ModFilters from "~/app/mod/ModFilters.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import type { ContestState } from "~/helpers/types.ts";
 import { getActionError, getFormattedDate } from "~/helpers/utilityFunctions.ts";
+import type { ModDashboardFiltersDto } from "~/helpers/validators/ModDashboardFilters.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
-import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import { getModContestsSF } from "~/server/serverFunctions/contestServerFunctions.ts";
 import ContestControls from "./ContestControls.tsx";
 
@@ -30,33 +29,20 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
   const res = use(modContestsPromise);
   if (!res.data) return <LoadingError loadingEntity="contests" />;
 
-  const router = useRouter();
   const { changeErrorMessages } = useContext(MainContext);
 
   const { executeAsync: getModContests, isPending: isPendingContests } = useAction(getModContestsSF);
-  const [contests, setContests] = useState<ContestResponse[]>(res.data);
+  const [organizerPersonId] = useQueryState("organizerPersonId", parseAsInteger);
+  const [state] = useQueryState("state");
+  const [contests, setContests] = useState<ContestResponse[]>(res.data.contests);
 
   const pendingContests = contests.filter((c) => ["created", "ongoing", "finished"].includes(c.state)).length;
 
-  const fetchContests = async (newOrganizerPersonId?: number) => {
-    const res = await getModContests({ organizerPersonId: newOrganizerPersonId });
+  const fetchContests = async (newFilters?: ModDashboardFiltersDto) => {
+    const res = await getModContests(newFilters ?? { organizerPersonId, state: state as any });
 
     if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-    else setContests(res.data!);
-  };
-
-  const updateContestState = (competitionId: string, newState: ContestState) => {
-    setContests(contests.map((c) => (c.competitionId === competitionId ? { ...c, state: newState } : c)));
-  };
-
-  const selectPerson = (person: PersonResponse) => {
-    router.replace(`/mod?organizerPersonId=${person.id}`);
-    fetchContests(person.id);
-  };
-
-  const resetFilters = () => {
-    router.replace("/mod");
-    fetchContests();
+    else setContests(res.data!.contests);
   };
 
   return (
@@ -75,7 +61,7 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
           </div>
         )}
 
-        <div className="d-flex fs-5 my-4 flex-wrap gap-3">
+        <div className="d-flex fs-5 column-gap-3 row-gap-2 mt-4 mb-3 flex-wrap">
           <Link href="/mod/competition" prefetch={false} className="btn btn-success btn-sm btn-lg-md">
             Create new contest
           </Link>
@@ -112,7 +98,7 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
         </p>
         {!isAdminView && contests && (
           <>
-            {!contests.some((c) => c.state !== "created") && (
+            {!state && !contests.some((c) => c.state !== "created") && (
               <p className="fw-bold my-3 text-danger">
                 Your contests will not be publicly visible and you will not be able to enter results until an admin
                 approves them
@@ -124,15 +110,18 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
           </>
         )}
 
-        <ModFilters onSelectPerson={selectPerson} onResetFilters={resetFilters} disabled={isPendingContests} />
+        <ModFilters
+          onChangeFilters={fetchContests}
+          initOrganizerPerson={res.data.organizerPerson}
+          isAdminView={isAdminView}
+          disabled={isPendingContests}
+        />
       </div>
 
       {isPendingContests ? (
         <Loading />
       ) : contests.length === 0 ? (
-        <p className="fs-5 px-2">
-          {isAdminView ? "No contests have been held yet" : "You haven't created any contests yet"}
-        </p>
+        <p className="fs-5 px-2">No contests found</p>
       ) : (
         <div className="table-responsive mb-5">
           <table className="table-hover table text-nowrap">
@@ -180,7 +169,7 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
                         contest={contest}
                         isAdmin={isAdminView}
                         forPage="mod-dashboard"
-                        onUpdateContestState={updateContestState}
+                        onUpdateContestState={fetchContests}
                       />
                     )}
                   </td>

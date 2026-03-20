@@ -265,7 +265,7 @@ To get the rankings, use the endpoint below:
 /api/results/rankings/[eventId]/[singleOrAvg]/[category]?show=[show]&region=[region]&topN=[topN]
 
 eventId           = ID of the event
-singleOrAvg       = "single" for top single rankings; "average" for top average rankings
+type              = "single" for top single rankings; "average" for top average rankings; "all-avg-formats" for top average rankings, including Mo3 and Ao5 formats
 category          = record category; accepts values: "competitions" | "meetups" | "video-based-results" | "all"
 show (optional)   = "persons" for top persons rankings (default); "results" for top results rankings
 region (optional) = region (shows World rankings if omitted); accepts values: 2 letter country ISO code | "AFRICA" | "ASIA" | "EUROPE" | "OCEANIA" | "NORTH_AMERICA" | "SOUTH_AMERICA"

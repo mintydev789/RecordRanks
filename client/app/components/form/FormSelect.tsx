@@ -27,11 +27,13 @@ function FormSelect({ id, title, options, selected, setSelected, disabled, oneLi
         disabled={disabled}
         className={`form-select ${oneLine || !title ? "" : "mt-2"}`}
       >
-        {options.map((option: MultiChoiceOption) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
+        {options
+          .filter((o) => !o.disabled)
+          .map((option: MultiChoiceOption) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
       </select>
     </div>
   );

@@ -1,14 +1,14 @@
 import { and, eq, ne } from "drizzle-orm";
 import { Suspense } from "react";
+import AffiliateLink from "~/app/components/AffiliateLink.tsx";
 import ContestsTable from "~/app/components/ContestsTable.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
+import RegionSelect from "~/app/components/RegionSelect.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
+import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { Continents, Countries } from "~/helpers/Countries.ts";
 import { db } from "~/server/db/provider.ts";
 import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
-import AffiliateLink from "../components/AffiliateLink.tsx";
-import RegionSelect from "../components/RegionSelect.tsx";
-import LoadingError from "../components/UI/LoadingError.tsx";
 
 export const metadata = {
   title: `All contests | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,

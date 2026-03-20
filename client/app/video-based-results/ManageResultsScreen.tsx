@@ -41,7 +41,7 @@ function ManageResultsScreen({ results, recordConfigs }: Props) {
   const rowVirtualizer = useVirtualizer({
     count: filteredResults.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 43.4167, // UPDATE THIS IF THE TR HEIGHT IN PIXELS EVER CHANGES!
+    estimateSize: () => 43.3333, // UPDATE THIS IF THE TR HEIGHT IN PIXELS EVER CHANGES!
     overscan: 20,
   });
 

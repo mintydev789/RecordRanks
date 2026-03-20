@@ -71,6 +71,7 @@ type Props = {
 };
 
 async function RankingsPage({ params, searchParams }: Props) {
+  // All params are validated in getRankings()
   const { eventId, type } = await params;
   const { show, category, region, topN } = await searchParams;
 

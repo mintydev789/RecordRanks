@@ -106,7 +106,7 @@ function ContestForm({
   const [shortName, setShortName] = useState(contest?.shortName ?? "");
   const [type, setType] = useState<ContestType | undefined>(contest?.type);
   const [city, setCity] = useState(contest?.city ?? "");
-  const [regionCode, setRegionCode] = useState(contest?.regionCode ?? "NOT_SELECTED");
+  const [regionCode, setRegionCode] = useState(contest?.regionCode ?? C.notSelectedOption);
   const [venue, setVenue] = useState(contest?.venue ?? "");
   const [address, setAddress] = useState(contest?.address ?? "");
   // Vertical coordinate (Y); ranges from -90 to 90
@@ -172,6 +172,7 @@ function ContestForm({
     { title: "Schedule", value: "schedule", hidden: !type || !getIsCompType(type) },
   ];
   const isAdmin = getHasRole("admin", session.user.role);
+  const modDashboardUrl = isAdmin ? "/mod?state=pending" : "/mod";
   const isPending =
     isCreating ||
     isUpdating ||
@@ -271,7 +272,7 @@ function ContestForm({
         : await createContest({ newContestDto: parsed.data!, rounds: rounds.map((r) => ({ ...r, competitionId })) });
 
     if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-    else router.push("/mod");
+    else router.push(modDashboardUrl);
   };
 
   const fillWithMockData = async (mockContestType: ContestType = "comp") => {
@@ -452,7 +453,7 @@ function ContestForm({
       const res = await unfinishContest({ competitionId });
 
       if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-      else router.push("/mod");
+      else router.push(modDashboardUrl);
     }
   };
 
@@ -461,7 +462,7 @@ function ContestForm({
       const res = await deleteContest({ competitionId });
 
       if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-      else router.push("/mod");
+      else router.push(modDashboardUrl);
     }
   };
 

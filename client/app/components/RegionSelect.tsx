@@ -1,24 +1,24 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useQueryState } from "nuqs";
 import FormCountrySelect from "~/app/components/form/FormCountrySelect.tsx";
+import { C } from "~/helpers/constants.ts";
 
 function RegionSelect() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const [region, setRegion] = useQueryState("region", { defaultValue: C.notSelectedOption });
 
-  const region = searchParams.get("region") || "NOT_SELECTED";
-
-  const onChangeCountryIso2 = (newRegion: string) => {
+  const onChangeCountryIso2 = (newRegion: string | typeof C.notSelectedOption) => {
     if (newRegion !== region) {
-      let queryString = newRegion === "NOT_SELECTED" ? "" : `region=${newRegion}`;
+      setRegion(newRegion);
 
-      searchParams.forEach((val, key) => {
-        if (key !== "region") queryString += `${queryString ? "&" : ""}${key}=${val}`;
-      });
-
-      router.replace(`${pathname}${queryString ? `?${queryString}` : ""}`);
+      // THIS IS CODE SMELL!!! FILTERING SHOULD BE DONE CLIENT-SIDE, LIKE ON THE MOD DASHBOARD!!!!!!!!!!!!!!
+      const urlSearchParams = new URLSearchParams(searchParams);
+      urlSearchParams.delete("region");
+      if (newRegion !== C.notSelectedOption) urlSearchParams.append("region", newRegion);
+      window.location.replace(`${pathname}?${urlSearchParams}`);
     }
   };
 

@@ -177,7 +177,7 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
       {mode !== "add-once" && (
         <>
           <div className="px-2">
-            <FiltersContainer className="mt-4">
+            <FiltersContainer className="mt-4 mb-3">
               <FormTextInput
                 title="Search"
                 value={search}
@@ -190,9 +190,9 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
               />
               <FormSelect
                 title="Status"
+                options={approvedFilterOptions}
                 selected={approvedFilter}
                 setSelected={setApprovedFilter}
-                options={approvedFilterOptions}
                 oneLine
                 style={{ maxWidth: "15rem" }}
               />

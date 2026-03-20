@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { useEffect, useState } from "react";
 import Footer from "~/app/components/UI/Footer.tsx";
 import Navbar from "~/app/components/UI/Navbar.tsx";
@@ -56,21 +57,23 @@ function MainLayout({ children }: Props) {
 
   return (
     <body data-bs-theme={theme} className="min-vh-100 d-flex flex-column" style={{ overflowX: "hidden" }}>
-      <MainContext.Provider
-        value={{
-          theme,
-          setTheme: changeTheme,
-          errorMessages,
-          changeErrorMessages,
-          successMessage,
-          changeSuccessMessage,
-          resetMessages,
-        }}
-      >
-        <Navbar />
-        <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
-        <Footer />
-      </MainContext.Provider>
+      <NuqsAdapter>
+        <MainContext.Provider
+          value={{
+            theme,
+            setTheme: changeTheme,
+            errorMessages,
+            changeErrorMessages,
+            successMessage,
+            changeSuccessMessage,
+            resetMessages,
+          }}
+        >
+          <Navbar />
+          <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
+          <Footer />
+        </MainContext.Provider>
+      </NuqsAdapter>
     </body>
   );
 }

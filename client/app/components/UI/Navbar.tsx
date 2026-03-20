@@ -7,7 +7,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { authClient } from "~/helpers/authClient.ts";
-import { IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants";
+import { IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { getHasRole } from "~/helpers/utilityFunctions.ts";
 
 function NavbarItems() {
   const pathname = usePathname();
@@ -27,11 +28,9 @@ function NavbarItems() {
         if (data) setCanAccessModDashboard(data.success);
       });
 
-      if (IS_CUBING_CONTESTS_INSTANCE) {
-        authClient.admin.hasPermission({ permissions: { videoBasedResults: ["approve"] } }).then(({ data }) => {
-          if (data) setCanApproveVideoBasedResults(data.success);
-        });
-      }
+      authClient.admin.hasPermission({ permissions: { videoBasedResults: ["approve"] } }).then(({ data }) => {
+        if (data) setCanApproveVideoBasedResults(data.success);
+      });
     }
   }, [session]);
 
@@ -234,7 +233,7 @@ function NavbarItems() {
                   {canAccessModDashboard && (
                     <li>
                       <Link
-                        href="/mod"
+                        href={`/mod${getHasRole("admin", session.user.role) ? "?state=pending" : ""}`}
                         prefetch={false}
                         onClick={collapseAll}
                         className={`nav-link ${pathname === "/mod" ? "active" : ""}`}
@@ -243,32 +242,28 @@ function NavbarItems() {
                       </Link>
                     </li>
                   )}
-                  {IS_CUBING_CONTESTS_INSTANCE && (
-                    <>
-                      {canApproveVideoBasedResults && (
-                        <li>
-                          <Link
-                            href="/video-based-results"
-                            prefetch={false}
-                            onClick={collapseAll}
-                            className={`nav-link ${pathname === "/video-based-results" ? "active" : ""}`}
-                          >
-                            Video-based results
-                          </Link>
-                        </li>
-                      )}
-                      <li>
-                        <Link
-                          href="/video-based-results/submit"
-                          prefetch={false}
-                          onClick={collapseAll}
-                          className={`nav-link ${pathname === "/video-based-results/submit" ? "active" : ""}`}
-                        >
-                          Submit results
-                        </Link>
-                      </li>
-                    </>
+                  {canApproveVideoBasedResults && (
+                    <li>
+                      <Link
+                        href="/video-based-results"
+                        prefetch={false}
+                        onClick={collapseAll}
+                        className={`nav-link ${pathname === "/video-based-results" ? "active" : ""}`}
+                      >
+                        Video-based results
+                      </Link>
+                    </li>
                   )}
+                  <li>
+                    <Link
+                      href="/video-based-results/submit"
+                      prefetch={false}
+                      onClick={collapseAll}
+                      className={`nav-link ${pathname === "/video-based-results/submit" ? "active" : ""}`}
+                    >
+                      Submit results
+                    </Link>
+                  </li>
                   <li>
                     <Link
                       href="/user/settings"

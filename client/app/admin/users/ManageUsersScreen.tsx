@@ -149,7 +149,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
       )}
 
       <div className="px-2">
-        <FiltersContainer className="mt-4">
+        <FiltersContainer className="mt-4 mb-3">
           <FormTextInput title="Search" value={search} setValue={setSearch} oneLine />
         </FiltersContainer>
 

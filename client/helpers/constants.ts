@@ -34,6 +34,7 @@ export const C = {
     "8AaML2et9RQKmZp4NYm9STKbjhfFB4h81ZxeGV166oapNzPFUTneaRmakwE61cyHr1ZUYreEU7eHF8XmMBykG8TpAwM6SVq",
   unknownErrorMsg: "Unknown error",
   videoNoLongerAvailableMsg: "Video no longer available",
+  notSelectedOption: "NOT_SELECTED",
   color: {
     rankingHighlight: "#10c010",
     // These are the same as the Bootstrap colors
@@ -42,7 +43,7 @@ export const C = {
     warning: "#ffc107",
     danger: "#dc3545",
   },
-};
+} as const;
 
 export const IS_CUBING_CONTESTS_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === `https://${C.cubingContestsHostname}`;
 
