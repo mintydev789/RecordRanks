@@ -262,7 +262,7 @@ function AttemptInput({
       } else {
         focusNext();
       }
-    } else if (C.navigationKeys.includes(e.key)) {
+    } else if (C.navigationKeys.includes(e.key as any)) {
       e.preventDefault();
     }
   };

@@ -8,7 +8,9 @@ import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { blogPostsQuery, getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 import SupportingTheProjectSection from "./components/SupportingTheProjectSection.tsx";
 
-async function HomePage() {
+export const dynamic = "force-dynamic";
+
+function HomePage() {
   const latestBlogPostPromise = blogPostsQuery.limit(1).then((res) => res.at(0));
   const collectiveCubingEnabledSettingPromise = getSettingFromDb({ key: "collective-cubing-enabled", optional: true });
 
