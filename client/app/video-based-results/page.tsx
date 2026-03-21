@@ -31,7 +31,7 @@ async function ManageResultsPage() {
 
   return (
     <section>
-      <div className="mb-4 px-3">
+      <div className="mb-4 px-2">
         <h2 className="mb-4 text-center">Results</h2>
 
         <div className="lh-lg overflow-y-auto border p-2" style={{ maxHeight: "300px" }}>
