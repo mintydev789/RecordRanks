@@ -80,6 +80,12 @@ const initSettings: InsertSetting[] = [
     description: "Page content for the about page (Markdown supported)",
   },
   {
+    key: "rules-page-content",
+    group: "page-contents",
+    value: "",
+    description: "Page content for the rules page (Markdown supported)",
+  },
+  {
     key: "video-based-results-instructions",
     group: "page-contents",
     value: `Video-based results can be submitted by any user, but there is a review process involved. Until a video-based result reviewer approves the result, it won't be included in the rankings. The review process works as follows:

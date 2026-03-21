@@ -13,6 +13,7 @@ export type SettingKey =
 
   // page-contents
   | "about-page-content"
+  | "rules-page-content"
   | "video-based-results-instructions"
 
   // features
