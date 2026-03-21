@@ -9,7 +9,7 @@ import FormNumberInput from "~/app/components/form/FormNumberInput.tsx";
 import FormRadio from "~/app/components/form/FormRadio.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
 import Button from "~/app/components/UI/Button.tsx";
-import EventImportantInfo from "~/app/mod/competition/EventImportantInfo";
+import EventImportantInfo from "~/app/mod/competition/EventImportantInfo.tsx";
 import { C } from "~/helpers/constants.ts";
 import { cutoffAttemptsOptions, roundProceedOptions } from "~/helpers/multipleChoiceOptions.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
@@ -65,7 +65,7 @@ function ContestEvents({
   }
   contestEvents.sort((a, b) => a.event.rank - b.event.rank);
   const remainingEvents: EventResponse[] = filteredEvents.filter(
-    (e) => !contestEvents.some((ce) => ce.event.eventId === e.eventId),
+    (e) => e.category !== "removed" && !contestEvents.some((ce) => ce.event.eventId === e.eventId),
   );
 
   // Disable new events if new rounds are disabled or if there are no more events to add

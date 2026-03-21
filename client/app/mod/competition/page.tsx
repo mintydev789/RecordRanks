@@ -1,4 +1,4 @@
-import { eq, inArray, ne, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import type { Creator } from "~/helpers/types.ts";
@@ -38,23 +38,19 @@ async function CreateEditContestPage({ searchParams }: Props) {
   const mode = editId ? "edit" : copyId ? "copy" : "new";
   const competitionId = editId ?? copyId;
 
-  const eventsPromise = db
-    .select(eventsPublicCols)
-    .from(eventsTable)
-    .where(ne(eventsTable.category, "removed"))
-    .orderBy(eventsTable.rank);
-  const contestPromise = competitionId
-    ? db.query.contests.findFirst({
-        columns: canApprove ? undefined : { createdBy: false, createdAt: false, updatedAt: false },
-        where: { competitionId },
-      })
-    : undefined;
-  const roundsPromise = competitionId
-    ? db.select(roundsPublicCols).from(roundsTable).where(eq(roundsTable.competitionId, competitionId))
-    : undefined;
-
   try {
-    const [events, contest, rounds] = await Promise.all([eventsPromise, contestPromise, roundsPromise]);
+    const [events, contest, rounds] = await Promise.all([
+      db.select(eventsPublicCols).from(eventsTable).orderBy(eventsTable.rank),
+      competitionId
+        ? db.query.contests.findFirst({
+            columns: canApprove ? undefined : { createdBy: false, createdAt: false, updatedAt: false },
+            where: { competitionId },
+          })
+        : undefined,
+      competitionId
+        ? db.select(roundsPublicCols).from(roundsTable).where(eq(roundsTable.competitionId, competitionId))
+        : undefined,
+    ]);
 
     if (competitionId && !contest) return <LoadingError reason="Contest not found" />;
 
@@ -105,7 +101,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
     }
 
     return (
-      <div>
+      <section>
         <h2 className="mb-4 text-center">{mode === "edit" ? "Edit Contest" : "Create Contest"}</h2>
 
         <ContestForm
@@ -119,7 +115,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
           creatorPerson={creatorPerson}
           session={session}
         />
-      </div>
+      </section>
     );
   } catch (err) {
     console.error(err);

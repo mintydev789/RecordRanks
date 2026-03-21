@@ -769,6 +769,7 @@ async function validateAndCleanUpContest(
     columns: { eventId: true, name: true, category: true, format: true },
   });
 
+  // There's also a check for only admins being allowed to select removed events below
   if (!canApprove) {
     if (!contest.organizerIds.some((id) => id === userPersonId))
       throw new RrActionError("You cannot create or edit a contest where you are not an organizer");
@@ -786,7 +787,8 @@ async function validateAndCleanUpContest(
 
     const event = events.find((e) => e.eventId === round.eventId);
     if (!event) throw new RrActionError(`Event with ID ${round.eventId} not found`);
-    if (event.category === "removed") throw new RrActionError(`${event.name} is a removed event, so it cannot be held`);
+    if (!canApprove && event.category === "removed")
+      throw new RrActionError(`${event.name} is a removed event, so it cannot be held`);
     if (event.format === "time" && !round.timeLimitCentiseconds)
       throw new RrActionError(`${event.name} round ${round.roundNumber} doesn't have a time limit`);
 
