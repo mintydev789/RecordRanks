@@ -1,6 +1,5 @@
 "use client";
 
-import capitalize from "lodash/capitalize";
 import { useRouter } from "next/navigation";
 import { useContext, useEffect, useTransition } from "react";
 import Competitor from "~/app/components/Competitor.tsx";
@@ -9,7 +8,8 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
-import { logUserDeletedSF } from "~/server/serverFunctions/serverFunctions";
+import { rolesObject } from "~/server/permissions.ts";
+import { logUserDeletedSF } from "~/server/serverFunctions/serverFunctions.ts";
 
 type Props = {
   person: PersonResponse | undefined;
@@ -20,6 +20,13 @@ function UserSettingsScreen({ person }: Props) {
   const { changeErrorMessages, changeSuccessMessage } = useContext(MainContext);
   const { data: session, isPending } = authClient.useSession();
   const [isDeleting, startTransition] = useTransition();
+
+  const roles = session
+    ? session.user
+        .role!.split(",")
+        .map((role) => (rolesObject as any)[role])
+        .join(", ")
+    : "";
 
   useEffect(() => {
     if (!isPending && !session) router.push("/login");
@@ -67,7 +74,7 @@ function UserSettingsScreen({ person }: Props) {
           )}
           {session.user.role && (
             <p>
-              Your role: <strong>{capitalize(session.user.role)}</strong>.
+              Your role: <strong>{roles}</strong>.
             </p>
           )}
 
