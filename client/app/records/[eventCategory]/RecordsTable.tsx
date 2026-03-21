@@ -2,13 +2,14 @@
 
 import omit from "lodash/omit";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { use } from "react";
 import Competitors from "~/app/components/Competitors.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
 import RankingLinks from "~/app/components/RankingLinks.tsx";
-import RankingRow from "~/app/components/RankingRow";
+import RankingRow from "~/app/components/RankingRow.tsx";
 import Solves from "~/app/components/Solves.tsx";
-import type { RecordRanking, RecordsData } from "~/helpers/types/Rankings";
+import type { RecordRanking, RecordsData } from "~/helpers/types/Rankings.tsx";
 import { getFormattedDate, getFormattedTime } from "~/helpers/utilityFunctions.ts";
 
 type Props = {
@@ -17,6 +18,8 @@ type Props = {
 
 function RecordsTable({ recordsDataPromise }: Props) {
   const recordsData = use(recordsDataPromise);
+
+  const searchParams = useSearchParams();
 
   return (
     <div className="mt-4">
@@ -55,7 +58,12 @@ function RecordsTable({ recordsDataPromise }: Props) {
 
           return (
             <div key={event.eventId} className="mb-3">
-              <EventTitle event={event} showIcon linkToRankings showDescription />
+              <EventTitle
+                event={event}
+                showIcon
+                linkToRankings={searchParams.size > 0 ? `?${searchParams}` : true}
+                showDescription
+              />
 
               {/* MOBILE VIEW */}
               <div className="d-lg-none mt-2 mb-4 border-bottom border-top">

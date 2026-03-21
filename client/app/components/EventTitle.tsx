@@ -7,7 +7,7 @@ type Props = {
   event: Pick<EventResponse, "eventId" | "name" | "category" | "removedWca" | "description">;
   showIcon?: boolean;
   showDescription?: boolean;
-  linkToRankings?: boolean;
+  linkToRankings?: true | string; // if this is a string, it'll be used as the query string for the URL
   noMargin?: boolean;
   fontSize?: "1" | "2" | "3" | "4" | "5" | "6";
 };
@@ -21,7 +21,7 @@ function EventTitle({ event, showIcon, showDescription, linkToRankings, noMargin
         event.name
       ) : (
         <Link
-          href={`/rankings/${event.eventId}/single`}
+          href={`/rankings/${event.eventId}/single${typeof linkToRankings === "string" ? linkToRankings : ""}`}
           prefetch={false}
           className="link-body-emphasis link-underline-opacity-0 link-underline-opacity-100-hover"
           style={{ maxWidth: "80vw" }}

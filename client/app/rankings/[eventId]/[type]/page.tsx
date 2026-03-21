@@ -62,6 +62,7 @@ type Props = {
     eventId: string;
     type: "single" | "average" | "all-avg-formats";
   }>;
+  // Keep in mind that the rankings links on the records page also pass the search params along, so they have to match
   searchParams: Promise<{
     show?: "results";
     category?: RecordCategory | "all";

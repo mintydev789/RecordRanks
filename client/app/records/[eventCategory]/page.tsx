@@ -3,13 +3,13 @@ import Link from "next/link";
 import { Suspense } from "react";
 import AffiliateLink from "~/app/components/AffiliateLink.tsx";
 import RegionSelect from "~/app/components/RegionSelect.tsx";
-import Loading from "~/app/components/UI/Loading";
+import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
-import RecordsTable from "~/app/records/[eventCategory]/RecordsTable";
+import RecordsTable from "~/app/records/[eventCategory]/RecordsTable.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import type { RecordCategory } from "~/helpers/types.ts";
-import { getRecords } from "~/server/serverOnlyFunctions";
+import { getRecords } from "~/server/serverOnlyFunctions.ts";
 
 export const metadata = {
   title: `Records | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
@@ -24,6 +24,7 @@ export const metadata = {
 
 type Props = {
   params: Promise<{ eventCategory: string }>;
+  // Keep in mind that the rankings links on the records page also pass the search params along, so they have to match
   searchParams: Promise<{
     category?: RecordCategory;
     region?: string;
