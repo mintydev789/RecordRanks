@@ -1,9 +1,9 @@
 import "server-only";
 import { getColumns } from "drizzle-orm";
 import { boolean, integer, text, varchar } from "drizzle-orm/pg-core";
+import { tableTimestamps } from "~/server/db/dbUtils.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
-import { tableTimestamps } from "../dbUtils.ts";
 
 export const personsTable = rrSchema.table("persons", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -28,6 +28,7 @@ const {
   updatedAt: _3,
   ...personsPublicCols
 } = getColumns(personsTable);
+
 export { personsPublicCols };
 
 export type PersonResponse = Pick<SelectPerson, keyof typeof personsPublicCols>;

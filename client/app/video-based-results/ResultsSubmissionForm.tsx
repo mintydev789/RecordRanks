@@ -325,7 +325,7 @@ function ResultsSubmissionForm({
           />
         )}
         {videoLink && (
-          <a href={videoLink} target="_blank" className="d-block mb-3">
+          <a href={videoLink} target="_blank" rel="noopener noreferrer" className="d-block mb-3">
             Video link
           </a>
         )}
@@ -339,7 +339,7 @@ function ResultsSubmissionForm({
           className="mb-3"
         />
         {discussionLink && (
-          <a href={discussionLink} target="_blank" className="d-block">
+          <a href={discussionLink} target="_blank" rel="noopener noreferrer" className="d-block">
             Discussion link
           </a>
         )}

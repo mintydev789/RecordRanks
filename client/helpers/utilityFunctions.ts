@@ -533,7 +533,7 @@ export function getRoundDate(round: RoundResponse, contest: Pick<SelectContest, 
 
     for (const venue of contest.schedule.venues) {
       for (const room of venue.rooms) {
-        // ADD SUPPORT FOR CHILD ACTIVITIES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // TO-DO: ADD SUPPORT FOR CHILD ACTIVITIES!!!
         const activity = room.activities.find((a) => a.activityCode === roundActivityCode);
 
         if (activity) return getDateOnly(toZonedTime(activity.startTime, contest.schedule.venues[0].timezone))!;

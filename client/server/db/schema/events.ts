@@ -2,8 +2,8 @@ import "server-only";
 import { boolean, integer, text } from "drizzle-orm/pg-core";
 import { getColumns } from "drizzle-orm/utils";
 import { EventCategoryValues, EventFormatValues, RoundFormatValues } from "~/helpers/types.ts";
+import { tableTimestamps } from "~/server/db/dbUtils.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
-import { tableTimestamps } from "../dbUtils.ts";
 
 export const eventFormatEnum = rrSchema.enum("event_format", EventFormatValues);
 export const roundFormatEnum = rrSchema.enum("round_format", RoundFormatValues);
@@ -37,6 +37,7 @@ const {
   updatedAt: _2,
   ...eventsPublicCols
 } = getColumns(eventsTable);
+
 export { eventsPublicCols };
 
 export type EventResponse = Pick<SelectEvent, keyof typeof eventsPublicCols>;

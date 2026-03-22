@@ -10,13 +10,11 @@ type Props = {
 };
 
 function EventIcon({ event, onClick, isActive }: Props) {
-  const isOrWasWCAEvent = event.category === "wca" || event.removedWca;
-  const availableIcons = Object.values(CubingIcons).map((iconId) =>
-    (iconId as string).replace("event-", "").replace("unofficial-", ""),
+  const iconCode = Object.values(CubingIcons).find((icon) =>
+    new RegExp(`(event|unofficial)-${event.eventId}`).test(icon),
   );
-  const iconExists = isOrWasWCAEvent || availableIcons.includes(event.eventId);
 
-  if (!iconExists) {
+  if (!iconCode) {
     if (!onClick) return undefined;
 
     return (
@@ -26,9 +24,7 @@ function EventIcon({ event, onClick, isActive }: Props) {
     );
   }
 
-  const iconElement = (
-    <span className={`cubing-icon ${isOrWasWCAEvent ? "event" : "unofficial"}-${event.eventId}`} title={event.name} />
-  );
+  const iconElement = <span className={`cubing-icon ${iconCode}`} title={event.name} />;
 
   if (!onClick) return iconElement;
 

@@ -573,28 +573,8 @@ export const updateContestSF = actionClient
         };
 
         if (canApprove || contest.state === "created") {
-          if (newContestDto.competitionId !== originalCompetitionId) {
-            const sameIdContest = await db.query.contests.findFirst({
-              where: { competitionId: newContestDto.competitionId },
-            });
-            if (sameIdContest)
-              throw new RrActionError(`A contest with the ID ${newContestDto.competitionId} already exists`);
-
-            // Update competition ID everywhere
+          if (newContestDto.competitionId !== originalCompetitionId)
             updateContestObject.competitionId = newContestDto.competitionId;
-            await tx
-              .update(resultsTable)
-              .set({ competitionId: newContestDto.competitionId })
-              .where(eq(resultsTable.competitionId, originalCompetitionId));
-            await tx
-              .update(roundsTable)
-              .set({ competitionId: newContestDto.competitionId })
-              .where(eq(roundsTable.competitionId, originalCompetitionId));
-            await tx
-              .update(accessTokensTable)
-              .set({ competitionId: newContestDto.competitionId })
-              .where(eq(accessTokensTable.competitionId, originalCompetitionId));
-          }
 
           updateContestObject.name = newContestDto.name;
           updateContestObject.shortName = newContestDto.shortName;
@@ -606,7 +586,7 @@ export const updateContestSF = actionClient
           updateContestObject.competitorLimit = newContestDto.competitorLimit;
         }
 
-        // Even an admin is not allowed to edit the date after a comp has been approved
+        // Even admins aren't allowed to edit the date after a contest has been approved
         if (contest.state === "created") {
           updateContestObject.startDate = newContestDto.startDate;
           updateContestObject.endDate = newContestDto.endDate;

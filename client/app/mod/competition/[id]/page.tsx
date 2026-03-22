@@ -9,11 +9,11 @@ type Props = {
 };
 
 async function DataEntryPage({ params, searchParams }: Props) {
+  const { id } = await params;
+  const { eventId } = await searchParams;
   const { user } = await authorizeUser({
     permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
-  const { id } = await params;
-  const { eventId } = await searchParams;
 
   const res = await getContestSF({ competitionId: id, eventId });
 

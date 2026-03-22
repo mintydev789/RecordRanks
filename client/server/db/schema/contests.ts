@@ -4,8 +4,8 @@ import { check, integer, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-
 import { C } from "~/helpers/constants.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import { ContestStateValues, ContestTypeValues } from "~/helpers/types.ts";
+import { tableTimestamps } from "~/server/db/dbUtils.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
-import { tableTimestamps } from "../dbUtils.ts";
 import { usersTable } from "./auth-schema.ts";
 
 export const contestStateEnum = rrSchema.enum("contest_state", ContestStateValues);
@@ -65,6 +65,7 @@ const {
   updatedAt: _3,
   ...contestsPublicCols
 } = getColumns(contestsTable);
+
 export { contestsPublicCols };
 
 export type ContestResponse = Pick<SelectContest, keyof typeof contestsPublicCols>;

@@ -11,14 +11,6 @@ if (!process.env.LOGFLARE_API_BASE_URL) console.error("LOGFLARE_API_BASE_URL env
 if (!process.env.LOGFLARE_PUBLIC_ACCESS_TOKEN)
   console.error("LOGFLARE_PUBLIC_ACCESS_TOKEN environment variable not set!");
 
-/**
- * Use this query in Supabase Logs to view the logs:
- *
- * select id, timestamp, event_message, metadata from function_edge_logs where metadata->>'rr_code' is not null order by timestamp desc limit 100;
- *
- * That query can also be used to filter by a specific RR log code.
- */
-
 const transport = pino.transport({
   target: "pino-logflare",
   options: {

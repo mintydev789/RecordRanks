@@ -23,6 +23,7 @@ export type InsertRecordConfig = typeof recordConfigsTable.$inferInsert;
 export type SelectRecordConfig = typeof recordConfigsTable.$inferSelect;
 
 const { createdAt: _, updatedAt: _1, ...recordConfigsPublicCols } = getColumns(recordConfigsTable);
+
 export { recordConfigsPublicCols };
 
 export type RecordConfigResponse = Pick<SelectRecordConfig, keyof typeof recordConfigsPublicCols>;

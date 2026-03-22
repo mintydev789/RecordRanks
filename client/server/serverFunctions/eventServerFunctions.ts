@@ -4,8 +4,10 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { EventValidator } from "~/helpers/validators/Event.ts";
 import { db } from "~/server/db/provider.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 import { eventsTable as table } from "~/server/db/schema/events.ts";
+import { sendEmail } from "~/server/email/mailer.ts";
 import { logMessage } from "~/server/serverOnlyFunctions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
 
@@ -30,6 +32,13 @@ export const createEventSF = actionClient
     if (sameNameEvent) throw new RrActionError(`Event with name ${newEventDto.name} already exists`);
 
     const [createdEvent] = await db.insert(table).values(newEventDto).returning();
+
+    sendEmail(
+      process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
+      "Important: Event created",
+      `A new event has been created:\n\n${JSON.stringify(createdEvent, null, 2)}`,
+    );
+
     return createdEvent;
   });
 
@@ -42,62 +51,49 @@ export const updateEventSF = actionClient
     }),
   )
   .action<SelectEvent>(async ({ parsedInput: { originalEventId, newEventDto } }) => {
-    logMessage("RR0003", `Updating event with ID ${newEventDto.eventId}`);
+    const isNewId = newEventDto.eventId !== originalEventId;
+    logMessage(
+      "RR0003",
+      `Updating event with ID ${newEventDto.eventId}${isNewId ? ` (new event ID: ${newEventDto.eventId})` : ""}`,
+    );
 
     const [event] = await db.select().from(table).where(eq(table.eventId, originalEventId)).limit(1);
     if (!event) throw new RrActionError(`Event with ID ${originalEventId} not found`);
 
     const [updatedEvent] = await db.transaction(async (tx) => {
-      if (newEventDto.eventId !== originalEventId) {
-        throw new RrActionError("NOT IMPLEMENTED! Please contact the development team.");
+      if (isNewId) {
+        const roundsWithEvent = await tx.query.rounds.findMany({
+          columns: { competitionId: true },
+          where: { eventId: originalEventId },
+        });
+        const competitionIds = new Set<string>(roundsWithEvent.map((r) => r.competitionId));
 
-        // const [sameIdEvent] = await tx.select().from(table).where(eq(table.eventId, newEventDto.eventId)).limit(1);
-        // if (sameIdEvent) throw new CcActionError(`Event with ID ${newEventDto.eventId} already exists`);
+        if (competitionIds.size > 0) {
+          const contestsWithEventInTheSchedule = await tx.query.contests.findMany({
+            columns: { id: true, schedule: true },
+            where: { schedule: { isNotNull: true }, competitionId: { in: Array.from(competitionIds) } },
+          });
 
-        // await tx
-        //   .update(collectiveSolutionsTable)
-        //   .set({ eventId: newEventDto.eventId })
-        //   .where(eq(collectiveSolutionsTable.eventId, originalEventId));
-
-        // console.log(`Updating rounds and schedules, changing event ID ${originalEventId} to ${newEventDto.eventId}`);
-
-        // // Update round IDs
-        // // for (let i = 1; i <= 10; i++) {
-        // //   const roundId = `${originalEventId}-r${i}`;
-        // //   const newRoundId = `${newEvent.eventId}-r${i}`;
-        // //   const res = await this.roundModel.updateMany({ roundId }, {
-        // //     $set: { roundId: newRoundId },
-        // //   }).exec();
-
-        // //   if (res.matchedCount > 0) {
-        // //     // TO-DO: UPDATE CHILD ACTIVITIES' CODES TOO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // //     const schedules = await this.scheduleModel.find({
-        // //       "venues.rooms.activities.activityCode": roundId,
-        // //     }).exec();
-
-        // //     for (const schedule of schedules) {
-        // //       // Keep in mind that one schedule can only have one occurrence of the same activity code
-        // //       venue_loop: for (const venue of schedule.venues) {
-        // //         for (const room of venue.rooms) {
-        // //           for (const activity of room.activities) {
-        // //             if (activity.activityCode === roundId) {
-        // //               activity.activityCode = newRoundId;
-        // //               await schedule.save();
-        // //               break venue_loop;
-        // //             }
-        // //           }
-        // //         }
-        // //       }
-        // //     }
-        // //   }
-        // // }
-
-        // // Update results
-        // console.log(`Updating results, changing event ID ${originalEventId} to ${newEventDto.eventId}`);
-
-        // // await this.resultModel.updateMany({ eventId }, {
-        // //   $set: { eventId: newId },
-        // // }).exec();
+          const activityCodeRegex = new RegExp(`^${originalEventId}(-r[1-9][0-9]?(-g[1-9][0-9]?(-a[1-9][0-9]?)?)?)?$`);
+          for (const { id, schedule } of contestsWithEventInTheSchedule) {
+            let isChanged = false;
+            for (const venue of schedule!.venues) {
+              for (const room of venue.rooms) {
+                // TO-DO: ADD SUPPORT FOR CHILD ACTIVITIES!!!
+                for (const activity of room.activities) {
+                  if (activityCodeRegex.test(activity.activityCode)) {
+                    activity.activityCode = activity.activityCode.replace(
+                      new RegExp(`^${originalEventId}`),
+                      newEventDto.eventId,
+                    );
+                    isChanged = true;
+                  }
+                }
+              }
+            }
+            if (isChanged) await tx.update(contestsTable).set({ schedule }).where(eq(contestsTable.id, id));
+          }
+        }
       }
 
       return await tx
@@ -118,6 +114,12 @@ export const updateEventSF = actionClient
         .where(eq(table.eventId, originalEventId))
         .returning();
     });
+
+    sendEmail(
+      process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
+      "Important: Event updated",
+      `Event ${event.name} has been updated:\n\n${JSON.stringify(event, null, 2)}`,
+    );
 
     return updatedEvent;
   });

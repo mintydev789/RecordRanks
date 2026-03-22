@@ -125,7 +125,7 @@ The Scripts section shows how to start RecordRanks.
 
 ### Supabase
 
-RecordRanks instances run alongside self-hosted Supabase, which provides the database, blob storage, a sysadmin dashboard (Supabase Studio), and more. The credentials for accessing Supabase Studio are in the `.env` file.
+RecordRanks instances run alongside self-hosted Supabase, which provides the database, blob storage, a sysadmin dashboard (Supabase Studio), and more. The credentials for accessing Supabase Studio are in the `.env` file. Note that the Auth, Edge Functions and PostgREST modules are excluded in the self-hosted Supabase configuration in this project.
 
 #### RecordRanks settings
 
@@ -140,6 +140,12 @@ There is a simple blog feature, but it currently has no UI for creating posts wi
 - `content`: the content of the post (Markdown supported)
 - `date`: the date of the post (this doesn't have to be the same as the creation date; `createdAt` is a separate auto-generated column)
 - `createdBy`: the user ID of the author; it's expected that there is a person tied to the user (get this value from the `users` table)
+
+#### Logs
+
+Supabase Logs contains logs for both the Supabase services and the RecordRanks application. There is a snippet in SQL Editor that can be copied over to Supabase Logs to view RecordRanks logs. The snippet also contains the instructions for this.
+
+Note that RecordRanks simply uses the existing Edge Functions sink for internal logs, but this project excludes the Edge Functions module in the self-hosted Supabase configuration.
 
 #### Storage
 
