@@ -628,11 +628,11 @@ export const updateContestSF = actionClient
     },
   );
 
-export const deleteContestSF = actionClient
+export const removeContestSF = actionClient
   .metadata({ permissions: { competitions: ["delete"], meetups: ["delete"] } })
   .inputSchema(z.strictObject({ competitionId: z.string() }))
   .action(async ({ parsedInput: { competitionId } }) => {
-    logMessage("RR0011", `Deleting contest ${competitionId}`);
+    logMessage("RR0011", `Removing contest ${competitionId}`);
 
     const contest = await db.query.contests.findFirst({
       columns: {
@@ -659,10 +659,8 @@ export const deleteContestSF = actionClient
         .set({ state: "removed", competitionId: newCompetitionId })
         .where(eq(table.competitionId, competitionId));
 
-      await tx
-        .update(roundsTable)
-        .set({ competitionId: newCompetitionId, open: false })
-        .where(eq(roundsTable.competitionId, competitionId));
+      // We search by the new ID here, because the competition ID update cascades through to the rounds
+      await tx.update(roundsTable).set({ open: false }).where(eq(roundsTable.competitionId, newCompetitionId));
     });
 
     const creatorUser = await db.query.users.findFirst({ columns: { email: true }, where: { id: contest.createdBy! } });

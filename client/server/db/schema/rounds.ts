@@ -15,10 +15,10 @@ export const roundsTable = rrSchema.table(
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     competitionId: text()
-      .references(() => contestsTable.competitionId)
+      .references(() => contestsTable.competitionId, { onUpdate: "cascade" })
       .notNull(),
     eventId: text()
-      .references(() => eventsTable.eventId)
+      .references(() => eventsTable.eventId, { onUpdate: "cascade" })
       .notNull(),
     roundNumber: smallint().notNull(),
     roundTypeId: roundTypeEnum().notNull(),
@@ -57,6 +57,7 @@ export type InsertRound = typeof roundsTable.$inferInsert;
 export type SelectRound = typeof roundsTable.$inferSelect;
 
 const { createdAt: _, updatedAt: _1, ...roundsPublicCols } = getColumns(roundsTable);
+
 export { roundsPublicCols };
 
 export type RoundResponse = Pick<SelectRound, keyof typeof roundsPublicCols>;

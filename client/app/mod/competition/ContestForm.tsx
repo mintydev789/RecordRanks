@@ -48,8 +48,8 @@ import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import {
   createAccessTokenSF,
   createContestSF,
-  deleteContestSF,
   getTimeZoneFromCoordsSF,
+  removeContestSF,
   unfinishContestSF,
   updateContestSF,
 } from "~/server/serverFunctions/contestServerFunctions.ts";
@@ -95,7 +95,7 @@ function ContestForm({
   const { executeAsync: createContest, isPending: isCreating } = useAction(createContestSF);
   const { executeAsync: updateContest, isPending: isUpdating } = useAction(updateContestSF);
   const { executeAsync: unfinishContest, isPending: isUnfinishing } = useAction(unfinishContestSF);
-  const { executeAsync: deleteContest, isPending: isDeleting } = useAction(deleteContestSF);
+  const { executeAsync: removeContest, isPending: isDeleting } = useAction(removeContestSF);
   const { executeAsync: createAccessToken, isPending: isCreatingAccessToken } = useAction(createAccessTokenSF);
   const [activeTab, setActiveTab] = useState("details");
   const [detailsImported, setDetailsImported] = useState(mode === "edit" && contest?.type === "wca-comp");
@@ -459,7 +459,7 @@ function ContestForm({
 
   const onDeleteContest = async () => {
     if (confirm(`Are you sure you would like to remove ${contest!.name}?`)) {
-      const res = await deleteContest({ competitionId });
+      const res = await removeContest({ competitionId });
 
       if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
       else router.push(modDashboardUrl);

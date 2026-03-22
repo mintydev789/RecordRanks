@@ -22,7 +22,7 @@ export const resultsTable = rrSchema.table(
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     eventId: text()
-      .references(() => eventsTable.eventId)
+      .references(() => eventsTable.eventId, { onUpdate: "cascade" })
       .notNull(),
     date: timestamp().notNull(),
     approved: boolean().default(false).notNull(),
@@ -35,7 +35,7 @@ export const resultsTable = rrSchema.table(
     recordCategory: recordCategoryEnum().notNull(),
     regionalSingleRecord: recordTypeEnum(),
     regionalAverageRecord: recordTypeEnum(),
-    competitionId: text().references(() => contestsTable.competitionId), // only used for contest results
+    competitionId: text().references(() => contestsTable.competitionId, { onUpdate: "cascade" }), // only used for contest results
     roundId: integer().references(() => roundsTable.id), // only used for contest results
     ranking: integer(), // only used for contest results
     proceeds: boolean(), // only used for contest results from non-final rounds
@@ -78,6 +78,7 @@ const {
   updatedAt: _3,
   ...resultsPublicCols
 } = getColumns(resultsTable);
+
 export { resultsPublicCols };
 
 export type ResultResponse = Pick<SelectResult, keyof typeof resultsPublicCols>;

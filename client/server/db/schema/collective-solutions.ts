@@ -11,7 +11,7 @@ export const collectiveSolutionStateEnum = rrSchema.enum("state", ["ongoing", "s
 export const collectiveSolutionsTable = rrSchema.table("collective_solutions", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   eventId: text()
-    .references(() => eventsTable.eventId)
+    .references(() => eventsTable.eventId, { onUpdate: "cascade" })
     .notNull(),
   attemptNumber: serial().notNull().unique(),
   state: collectiveSolutionStateEnum().default("ongoing").notNull(),
@@ -32,6 +32,7 @@ const {
   updatedAt: _4,
   ...collectiveSolutionsPublicCols
 } = getColumns(collectiveSolutionsTable);
+
 export { collectiveSolutionsPublicCols };
 
 export type CollectiveSolutionResponse = Pick<SelectCollectiveSolution, keyof typeof collectiveSolutionsPublicCols>;
