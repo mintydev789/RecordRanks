@@ -14,9 +14,9 @@ function ErrorPage({ error }: Props) {
 
   return (
     <section>
-      <h4 className="mt-4 text-center">Error</h4>
+      <h4 className="my-4 text-center">Error</h4>
 
-      <p className="mt-4 text-center">An unexpected error has occurred. Please contact the development team.</p>
+      <p className="text-center">An unexpected error has occurred. Please contact the development team.</p>
     </section>
   );
 }
