@@ -151,7 +151,10 @@ function UserSettingsScreen({ initPerson }: Props) {
           );
 
           if (error) {
-            changeErrorMessages([error.message || error.statusText]);
+            changeErrorMessages([
+              error.message || error.statusText,
+              "The error may be due to this competitor already being tied to another user. Please contact the admin team.",
+            ]);
           } else {
             changeSuccessMessage("Successfully linked WCA competitor profile");
             setWcaLinkStatus(null);

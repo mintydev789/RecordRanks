@@ -179,6 +179,24 @@ export function sendPasswordChangedEmail(to: string) {
   });
 }
 
+export function sendAccountDeletedEmail(to: string) {
+  send({
+    templateFileName: "account-deleted.hbs",
+    context: {
+      baseUrl,
+      projectName,
+    },
+    callback: async (html) => {
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
+        subject: "Account deleted",
+        html,
+      });
+    },
+  });
+}
+
 export function sendRolesChangedEmail(
   to: string,
   roles: string[],

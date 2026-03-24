@@ -11,7 +11,12 @@ import {
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
-import { sendPasswordChangedEmail, sendResetPasswordEmail, sendVerificationEmail } from "~/server/email/mailer.ts";
+import {
+  sendAccountDeletedEmail,
+  sendPasswordChangedEmail,
+  sendResetPasswordEmail,
+  sendVerificationEmail,
+} from "~/server/email/mailer.ts";
 import { ac, admin, mod, user, videoBasedResultReviewer } from "~/server/permissions.ts";
 import { logMessage } from "~/server/serverOnlyFunctions.ts";
 
@@ -95,6 +100,11 @@ export const auth = betterAuth({
     },
     deleteUser: {
       enabled: true,
+      afterDelete: async (user) => {
+        if (process.env.EMAIL_HOST) logMessage("RR0036", `Sending user deleted email for user with ID ${user.id}`);
+
+        sendAccountDeletedEmail(user.email);
+      },
     },
   },
   account: {
