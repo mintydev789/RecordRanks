@@ -98,6 +98,9 @@ export const auth = betterAuth({
         unique: true,
       },
     },
+    changeEmail: {
+      enabled: true,
+    },
     deleteUser: {
       enabled: true,
       afterDelete: async (user) => {

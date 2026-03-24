@@ -6,6 +6,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useContext, useEffect, useState, useTransition } from "react";
 import z from "zod";
 import Competitor from "~/app/components/Competitor.tsx";
+import FormTextInput from "~/app/components/form/FormTextInput";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { authClient } from "~/helpers/authClient.ts";
@@ -38,14 +39,16 @@ function UserSettingsScreen({ initPerson }: Props) {
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
   const { data: session, isPending: isPendingSession } = authClient.useSession();
 
-  const [wcaLinkStatus, setWcaLinkStatus] = useQueryState(
-    "wca-link-status",
-    parseAsStringLiteral(["signup-success", "link-success"]),
+  const [status, setStatus] = useQueryState(
+    "status",
+    parseAsStringLiteral(["signup-success", "link-success", "email-change-success"]),
   );
   const [person, setPerson] = useState(initPerson);
   const [accounts, setAccounts] = useState<Account[]>();
+  const [newEmail, setNewEmail] = useState("");
   const [isPendingWcaProfileLink, setIsPendingWcaProfileLink] = useState(false);
   const [isPendingWcaLink, startWcaLinkTransition] = useTransition();
+  const [isInitiatingEmailChange, startEmailChange] = useTransition();
   const [isDeleting, startDeleteAccountTransition] = useTransition();
 
   const hasLinkedWcaAccount = !!accounts?.some((a) => a.providerId === C.wcaOAuthProviderId);
@@ -55,7 +58,8 @@ function UserSettingsScreen({ initPerson }: Props) {
         .map((role) => (rolesObject as any)[role])
         .join(", ")
     : "";
-  const isPending = isPendingSession || isDeleting || isPendingWcaLink || isPendingWcaProfileLink;
+  const isPending =
+    isPendingSession || isPendingWcaProfileLink || isPendingWcaLink || isInitiatingEmailChange || isDeleting;
 
   useEffect(() => {
     if (session && !accounts) {
@@ -68,8 +72,10 @@ function UserSettingsScreen({ initPerson }: Props) {
         } else {
           setAccounts(data);
 
+          if (status === "email-change-success") changeSuccessMessage("Your email has been changed successfully");
+
           if (HAS_WCA_AUTH) {
-            if (wcaLinkStatus === "link-success") {
+            if (status === "link-success") {
               if (!data.some((a) => a.providerId === C.wcaOAuthProviderId)) {
                 changeErrorMessages(["An error has occurred while linking your WCA account"]);
               } else {
@@ -80,7 +86,7 @@ function UserSettingsScreen({ initPerson }: Props) {
                 setIsPendingWcaProfileLink(true);
                 setTimeout(() => linkWcaProfile(data), 2000);
               }
-            } else if (wcaLinkStatus === "signup-success") {
+            } else if (status === "signup-success") {
               changeSuccessMessage(
                 "Your account has been created successfully! Linking your WCA competitor profile...",
               );
@@ -92,7 +98,7 @@ function UserSettingsScreen({ initPerson }: Props) {
         }
       })();
     }
-  }, [wcaLinkStatus, session, accounts]);
+  }, [status, session, accounts]);
 
   useEffect(() => {
     if (!isPending && !session) router.push("/login");
@@ -103,7 +109,7 @@ function UserSettingsScreen({ initPerson }: Props) {
     startWcaLinkTransition(async () => {
       const { error } = await authClient.oauth2.link({
         providerId: C.wcaOAuthProviderId,
-        callbackURL: "/user/settings?wca-link-status=link-success",
+        callbackURL: "/user/settings?status=link-success",
         // errorCallbackURL: "/oauth-error", // this is currently broken in Better Auth; see next.config.ts
       });
 
@@ -118,7 +124,7 @@ function UserSettingsScreen({ initPerson }: Props) {
     const { data, error } = await authClient.accountInfo({ query: { accountId: wcaAccount!.accountId } });
 
     if (error) {
-      changeErrorMessages([error?.message || error?.statusText]);
+      changeErrorMessages([error.message || error.statusText]);
     } else {
       // This doesn't include the full schema of the user information the WCA returns
       const parsed = z
@@ -141,7 +147,7 @@ function UserSettingsScreen({ initPerson }: Props) {
           changeErrorMessages([
             "Couldn't update user data, because there is already a different competitor linked to this user. Please contact the admin team.",
           ]);
-          setWcaLinkStatus(null);
+          setStatus(null);
         } else {
           const credentialAccount = accs.find((a) => a.providerId === "credential");
 
@@ -157,7 +163,7 @@ function UserSettingsScreen({ initPerson }: Props) {
             ]);
           } else {
             changeSuccessMessage("Successfully linked WCA competitor profile");
-            setWcaLinkStatus(null);
+            setStatus(null);
             setPerson(res.data!.person);
           }
         }
@@ -165,6 +171,23 @@ function UserSettingsScreen({ initPerson }: Props) {
     }
 
     setIsPendingWcaProfileLink(false);
+  };
+
+  const initiateEmailChange = () => {
+    startEmailChange(async () => {
+      const { error } = await authClient.changeEmail({
+        newEmail,
+        callbackURL: "/user/settings?status=email-change-success",
+      });
+
+      if (error) {
+        changeErrorMessages([error.message || error.statusText]);
+      } else {
+        changeSuccessMessage(
+          "A verification link has been sent to your new email. Please click that link for confirmation.",
+        );
+      }
+    });
   };
 
   const deleteUser = () => {
@@ -201,19 +224,21 @@ function UserSettingsScreen({ initPerson }: Props) {
         />
       )}
       {session.user.username && (
-        <p className="mb-2">
+        <p className="mb-3">
           Username: <b>{session.user.username}</b>
         </p>
       )}
       <p className="mb-2">
         Email address: <b>{session.user.email}</b>
       </p>
-      <p className="mb-4" style={{ fontSize: "0.85rem" }}>
-        Changing your email address is currently not supported. Please contact the development team if you would like to
-        change your email.
-      </p>
+      <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
+        <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
+        <Button onClick={() => initiateEmailChange()} isLoading={isInitiatingEmailChange} disabled={isPending}>
+          Change email
+        </Button>
+      </div>
       {session.user.role && (
-        <p>
+        <p className="mt-3">
           Your role: <strong>{roles}</strong>.
         </p>
       )}
@@ -244,7 +269,7 @@ function UserSettingsScreen({ initPerson }: Props) {
               Link WCA account
             </div>
           </Button>
-        ) : !person || wcaLinkStatus ? (
+        ) : !person || status ? (
           <Button
             onClick={() => linkWcaProfile()}
             isLoading={isPendingWcaProfileLink}

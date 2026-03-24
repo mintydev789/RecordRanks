@@ -63,7 +63,7 @@ function LoginPage() {
     startWcaSignInTransition(async () => {
       const { error } = await authClient.signIn.oauth2({
         providerId: C.wcaOAuthProviderId,
-        callbackURL: "/user/settings?wca-link-status=signup-success",
+        callbackURL: "/user/settings?status=signup-success",
         // errorCallbackURL: "/oauth-error", // this is currently broken in Better Auth; see next.config.ts
       });
 
