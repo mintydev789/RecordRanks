@@ -1,6 +1,7 @@
 import { inArray } from "drizzle-orm";
 import { headers } from "next/headers";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
+import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { C } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
@@ -12,7 +13,7 @@ async function ManageUsersPage() {
   await authorizeUser({ permissions: { user: ["list"] } });
 
   const res = await auth.api.listUsers({
-    query: { filterField: "emailVerified", filterValue: true, sortBy: "createdAt", limit: C.maxUsers },
+    query: { sortBy: "createdAt", sortDirection: "desc", limit: C.maxUsers },
     headers: await headers(),
   });
 
@@ -26,6 +27,8 @@ async function ManageUsersPage() {
   return (
     <section>
       <h2 className="mb-4 text-center">Users</h2>
+
+      <ToastMessages className="mx-2" />
 
       <ManageUsersScreen users={users} userPersons={persons} />
     </section>

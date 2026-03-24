@@ -12,7 +12,7 @@ export const tableTimestamps = {
 // This has to stay consistent with the Creator type in types.ts
 export const creatorCols = {
   id: usersTable.id,
-  username: usersTable.username,
+  name: usersTable.name,
   email: usersTable.email,
   personId: usersTable.personId,
 };

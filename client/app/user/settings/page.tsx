@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
@@ -12,10 +13,12 @@ async function UserSettingsPage() {
     : undefined;
 
   return (
-    <section>
+    <section className="px-2">
       <h2 className="mb-4 text-center">Settings</h2>
 
-      <UserSettingsScreen person={person} />
+      <ToastMessages className="mb-4" />
+
+      <UserSettingsScreen initPerson={person} />
     </section>
   );
 }

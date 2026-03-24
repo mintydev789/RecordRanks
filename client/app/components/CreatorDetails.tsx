@@ -27,14 +27,14 @@ function CreatorDetails({ creator, person, createdExternally = false, isCurrentU
 
   if (specialCase) return small ? specialCase : <div className="mb-3">Created by:&#8194;{specialCase}</div>;
 
-  const username = <a href={`mailto:${creator!.email}`}>{creator!.username}</a>;
+  const creatorName = <a href={`mailto:${creator!.email}`}>{creator!.name}</a>;
   const competitor = <Competitor person={person} noFlag />;
 
   if (small) {
     return (
       <span className="d-flex column-gap-2 flex-wrap align-items-center">
         {competitor}
-        <span>({username})</span>
+        <span>({creatorName})</span>
       </span>
     );
   }
@@ -46,10 +46,10 @@ function CreatorDetails({ creator, person, createdExternally = false, isCurrentU
       {person ? (
         <>
           {competitor}
-          <span>(user: {username})</span>
+          <span>(user: {creatorName})</span>
         </>
       ) : (
-        <span>{username}</span>
+        <span>{creatorName}</span>
       )}
     </div>
   );

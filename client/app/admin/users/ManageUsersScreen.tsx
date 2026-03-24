@@ -10,8 +10,8 @@ import Form from "~/app/components/form/Form.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox";
 import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
+import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
-import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
@@ -33,7 +33,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
   const [users, setUsers] = useState(initUsers);
   const [userPersons, setUserPersons] = useState(initUserPersons);
   const [userId, setUserId] = useState<string>();
-  const [username, setUsername] = useState("");
+  const [name, setName] = useState(""); // for email + password users this is the same as the username
   const [email, setEmail] = useState("");
   const [personNames, setPersonNames] = useState([""]);
   const [persons, setPersons] = useState<InputPerson[]>([null]);
@@ -48,7 +48,8 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
 
     return users.filter(
       (u) =>
-        u.username.toLocaleLowerCase().includes(simplifiedSearch) ||
+        u.name.toLocaleLowerCase().includes(simplifiedSearch) ||
+        u.email.toLocaleLowerCase().includes(simplifiedSearch) ||
         getSimplifiedString(userPersons.find((p) => p.id === u.personId)?.name ?? "").includes(simplifiedSearch),
     );
   }, [search, users, userPersons]);
@@ -72,7 +73,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
     } else {
       resetMessages();
       setUserId(undefined);
-      setUsername("");
+      setName("");
       setUsers(users.map((u) => (u.id === userId ? res.data!.user : u)));
       const { person } = res.data!;
       if (person && !userPersons.some((p) => p.id === person.id)) setUserPersons([...userPersons, person]);
@@ -84,7 +85,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
     resetMessages();
 
     setUserId(user.id);
-    setUsername(user.username);
+    setName(user.name);
     setEmail(user.email);
 
     if (!user.role) throw new Error("Error: user role is empty");
@@ -106,21 +107,17 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
 
   return (
     <>
-      <div className="px-2">
-        <ToastMessages />
-      </div>
-
-      {username && (
+      {name && (
         <Form
           buttonText="Submit"
           onSubmit={handleSubmit}
           hideToasts
-          onCancel={() => setUsername("")}
+          onCancel={() => setName("")}
           isLoading={isUpdating}
         >
           <div className="row mb-3">
             <div className="col">
-              <FormTextInput title="Username" value={username} disabled />
+              <FormTextInput title="Name" value={name} disabled />
             </div>
             <div className="col">
               <FormTextInput title="Email" value={email} setValue={setEmail} disabled />
@@ -149,9 +146,10 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
       )}
 
       <div className="px-2">
-        <FiltersContainer className="mt-4 mb-3">
+        <FiltersContainer className="mt-4 mb-2">
           <FormTextInput title="Search" value={search} setValue={setSearch} oneLine />
         </FiltersContainer>
+        <p className="text-secondary">Search by name, username, email or competitor name</p>
 
         <p className="mb-2">
           Number of users:&nbsp;<b>{filteredUsers.length}</b>
@@ -164,7 +162,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
           <thead>
             <tr>
               <th scope="col">#</th>
-              <th scope="col">Username</th>
+              <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col">Competitor</th>
               <th scope="col">Roles</th>
@@ -174,24 +172,25 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
           <tbody>
             {filteredUsers.map((user, index) => {
               const person = userPersons.find((p) => p.id === user.personId);
-              const roles = user.role!.split(",").map((role) => (rolesObject as any)[role]);
+              const roles = user
+                .role!.split(",")
+                .map((role) => (rolesObject as any)[role])
+                .join(", ");
 
               return (
                 <tr key={user.id}>
                   <td>{index + 1}</td>
-                  <td>{user.username}</td>
-                  <td>{user.email}</td>
-                  <td>{person && <Competitor person={person} noFlag />}</td>
-                  <td>{roles.join(", ")}</td>
+                  <td>{user.name}</td>
                   <td>
-                    <Button
-                      id={`edit_${user.username}_button`}
-                      type="button"
-                      onClick={() => onEditUser(user)}
-                      className="btn-xs"
-                      title="Edit"
-                      ariaLabel="Edit"
-                    >
+                    <div className="d-flex gap-2 align-items-center">
+                      {user.email}
+                      <ActiveInactiveIcon isActive={user.emailVerified} />
+                    </div>
+                  </td>
+                  <td>{person && <Competitor person={person} noFlag />}</td>
+                  <td>{roles}</td>
+                  <td>
+                    <Button onClick={() => onEditUser(user)} className="btn-xs" title="Edit" ariaLabel="Edit">
                       <FontAwesomeIcon icon={faPencil} />
                     </Button>
                   </td>

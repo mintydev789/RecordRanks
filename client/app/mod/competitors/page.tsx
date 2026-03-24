@@ -2,7 +2,7 @@ import { desc, eq, inArray } from "drizzle-orm";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ManageCompetitorsScreen from "~/app/mod/competitors/ManageCompetitorsScreen.tsx";
 import type { Creator } from "~/helpers/types.ts";
-import { auth } from "~/server/auth";
+import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import {
@@ -11,7 +11,7 @@ import {
   type SelectPerson,
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions";
+import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
 
 async function CompetitorsPage() {
   const { user } = await authorizeUser({ permissions: { persons: ["create", "update", "delete"] } });
@@ -27,12 +27,7 @@ async function CompetitorsPage() {
     const userIds = Array.from(new Set((persons as SelectPerson[]).filter((p) => p.createdBy).map((p) => p.createdBy)));
 
     users = await db
-      .select({
-        id: usersTable.id,
-        username: usersTable.username,
-        email: usersTable.email,
-        personId: usersTable.personId,
-      })
+      .select({ id: usersTable.id, name: usersTable.name, email: usersTable.email, personId: usersTable.personId })
       .from(usersTable)
       .where(inArray(usersTable.id, userIds as string[]));
   } else {

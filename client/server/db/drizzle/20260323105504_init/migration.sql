@@ -1,17 +1,18 @@
+-- CREATE SCHEMA "record_ranks"; -- THIS WAS COMMENTED OUT, BECAUSE THE SUPABASE SETUP ALREADY CREATES THE SCHEMA!
 --> statement-breakpoint
 CREATE TYPE "record_ranks"."state" AS ENUM('ongoing', 'solved', 'archived');--> statement-breakpoint
 CREATE TYPE "record_ranks"."contest_state" AS ENUM('created', 'approved', 'ongoing', 'finished', 'published', 'removed');--> statement-breakpoint
 CREATE TYPE "record_ranks"."contest_type" AS ENUM('meetup', 'wca-comp', 'comp');--> statement-breakpoint
 CREATE TYPE "record_ranks"."event_category" AS ENUM('unofficial', 'wca', 'extreme-bld', 'miscellaneous', 'removed');--> statement-breakpoint
 CREATE TYPE "record_ranks"."event_format" AS ENUM('time', 'number', 'multi');--> statement-breakpoint
-CREATE TYPE "record_ranks"."round_format" AS ENUM('a', 'm', '3', '2', '1');--> statement-breakpoint
+CREATE TYPE "record_ranks"."round_format" AS ENUM('a', '5', 'm', '3', '2', '1');--> statement-breakpoint
 CREATE TYPE "record_ranks"."record_category" AS ENUM('competitions', 'meetups', 'video-based-results');--> statement-breakpoint
 CREATE TYPE "record_ranks"."record_type" AS ENUM('WR', 'ER', 'NAR', 'SAR', 'AsR', 'AfR', 'OcR', 'NR');--> statement-breakpoint
 CREATE TYPE "record_ranks"."round_proceed" AS ENUM('percentage', 'number');--> statement-breakpoint
 CREATE TYPE "record_ranks"."round_type" AS ENUM('1', '2', '3', '4', '5', '6', '7', '8', 's', 'f');--> statement-breakpoint
 CREATE TABLE "record_ranks"."access_tokens" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "record_ranks"."access_tokens_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"token_hash" text NOT NULL,
+	"token_hash" text NOT NULL UNIQUE,
 	"competition_id" text NOT NULL,
 	"created_by" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -54,13 +55,13 @@ CREATE TABLE "record_ranks"."users" (
 	"image" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"username" text NOT NULL,
+	"username" text UNIQUE,
 	"display_username" text,
 	"role" text,
 	"banned" boolean DEFAULT false,
 	"ban_reason" text,
 	"ban_expires" timestamp,
-	"person_id" integer
+	"person_id" integer UNIQUE
 );
 --> statement-breakpoint
 CREATE TABLE "record_ranks"."verifications" (
@@ -74,7 +75,7 @@ CREATE TABLE "record_ranks"."verifications" (
 --> statement-breakpoint
 CREATE TABLE "record_ranks"."collective_solutions" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "record_ranks"."collective_solutions_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"event_id" varchar(32) NOT NULL,
+	"event_id" text NOT NULL,
 	"attempt_number" serial UNIQUE,
 	"state" "record_ranks"."state" DEFAULT 'ongoing'::"record_ranks"."state" NOT NULL,
 	"scramble" text NOT NULL,
@@ -104,7 +105,7 @@ CREATE TABLE "record_ranks"."contests" (
 	"timezone" text,
 	"organizer_ids" integer[] NOT NULL,
 	"contact" text,
-	"description" text NOT NULL,
+	"description" text,
 	"competitor_limit" integer,
 	"participants" integer DEFAULT 0 NOT NULL,
 	"schedule" jsonb,
@@ -147,10 +148,21 @@ CREATE TABLE "record_ranks"."persons" (
 	"name" text NOT NULL,
 	"localized_name" text,
 	"region_code" text NOT NULL,
-	"wca_id" varchar(10),
+	"wca_id" varchar(10) UNIQUE,
 	"approved" boolean DEFAULT false NOT NULL,
 	"created_by" text,
 	"created_externally" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "record_ranks"."posts" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "record_ranks"."posts_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"post_id" text NOT NULL UNIQUE,
+	"title" text NOT NULL,
+	"content" text NOT NULL,
+	"date" timestamp DEFAULT now() NOT NULL,
+	"created_by" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -218,6 +230,7 @@ CREATE TABLE "record_ranks"."rounds" (
 	"open" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "competition_id_event_id_round_number" UNIQUE("competition_id","event_id","round_number"),
 	CONSTRAINT "rounds_timelimit_check" CHECK ("time_limit_cumulative_round_ids" IS NULL OR "time_limit_centiseconds" IS NOT NULL),
 	CONSTRAINT "rounds_cutoff_check" CHECK (("cutoff_attempt_result" IS NOT NULL AND "cutoff_number_of_attempts" IS NOT NULL)
         OR ("cutoff_attempt_result" IS NULL AND "cutoff_number_of_attempts" IS NULL)),
@@ -226,14 +239,31 @@ CREATE TABLE "record_ranks"."rounds" (
 	CONSTRAINT "rounds_finals_check" CHECK ("round_type_id" <> 'f' OR "proceed_type" IS NULL)
 );
 --> statement-breakpoint
+CREATE TABLE "record_ranks"."settings" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "record_ranks"."settings_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"key" text NOT NULL UNIQUE,
+	"group" text,
+	"value" text NOT NULL,
+	"description" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE INDEX "accounts_userId_idx" ON "record_ranks"."accounts" ("user_id");--> statement-breakpoint
 CREATE INDEX "sessions_userId_idx" ON "record_ranks"."sessions" ("user_id");--> statement-breakpoint
 CREATE INDEX "verifications_identifier_idx" ON "record_ranks"."verifications" ("identifier");--> statement-breakpoint
+ALTER TABLE "record_ranks"."access_tokens" ADD CONSTRAINT "access_tokens_competition_id_contests_competition_id_fkey" FOREIGN KEY ("competition_id") REFERENCES "record_ranks"."contests"("competition_id") ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "record_ranks"."access_tokens" ADD CONSTRAINT "access_tokens_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "record_ranks"."users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "record_ranks"."accounts" ADD CONSTRAINT "accounts_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "record_ranks"."users"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "record_ranks"."sessions" ADD CONSTRAINT "sessions_user_id_users_id_fkey" FOREIGN KEY ("user_id") REFERENCES "record_ranks"."users"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "record_ranks"."collective_solutions" ADD CONSTRAINT "collective_solutions_event_id_events_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "record_ranks"."events"("event_id") ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "record_ranks"."collective_solutions" ADD CONSTRAINT "collective_solutions_last_user_who_interacted_id_users_id_fkey" FOREIGN KEY ("last_user_who_interacted_id") REFERENCES "record_ranks"."users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "record_ranks"."contests" ADD CONSTRAINT "contests_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "record_ranks"."users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "record_ranks"."persons" ADD CONSTRAINT "persons_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "record_ranks"."users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "record_ranks"."posts" ADD CONSTRAINT "posts_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "record_ranks"."users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "record_ranks"."results" ADD CONSTRAINT "results_event_id_events_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "record_ranks"."events"("event_id") ON UPDATE CASCADE;--> statement-breakpoint
+ALTER TABLE "record_ranks"."results" ADD CONSTRAINT "results_competition_id_contests_competition_id_fkey" FOREIGN KEY ("competition_id") REFERENCES "record_ranks"."contests"("competition_id") ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "record_ranks"."results" ADD CONSTRAINT "results_round_id_rounds_id_fkey" FOREIGN KEY ("round_id") REFERENCES "record_ranks"."rounds"("id");--> statement-breakpoint
-ALTER TABLE "record_ranks"."results" ADD CONSTRAINT "results_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "record_ranks"."users"("id") ON DELETE SET NULL;
+ALTER TABLE "record_ranks"."results" ADD CONSTRAINT "results_created_by_users_id_fkey" FOREIGN KEY ("created_by") REFERENCES "record_ranks"."users"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "record_ranks"."rounds" ADD CONSTRAINT "rounds_competition_id_contests_competition_id_fkey" FOREIGN KEY ("competition_id") REFERENCES "record_ranks"."contests"("competition_id") ON UPDATE CASCADE;--> statement-breakpoint
+ALTER TABLE "record_ranks"."rounds" ADD CONSTRAINT "rounds_event_id_events_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "record_ranks"."events"("event_id") ON UPDATE CASCADE;

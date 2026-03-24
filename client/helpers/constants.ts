@@ -27,6 +27,7 @@ export const C = {
   duePerCompetitor: 0.1,
   wcaApiBaseUrl: "https://api.worldcubeassociation.org",
   wcaV0ApiBaseUrl: "https://www.worldcubeassociation.org/api/v0",
+  wcaOAuthProviderId: "wca",
   wcaIdRegex: /[0-9]{4}[A-Z]{4}[0-9]{2}/,
   wcaIdRegexLoose: /[0-9]{4}[a-zA-Z]{4}[0-9]{2}/, // allows lowercase letters too
   navigationKeys: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"],
@@ -46,6 +47,7 @@ export const C = {
 } as const;
 
 export const IS_CUBING_CONTESTS_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === `https://${C.cubingContestsHostname}`;
+export const HAS_WCA_AUTH = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",").includes("wca");
 
 export const PUBLIC_EXPORTS_FORMAT_VERSIONS = ["v1"];
 

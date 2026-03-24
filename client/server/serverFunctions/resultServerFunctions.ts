@@ -447,7 +447,7 @@ export const createVideoBasedResultSF = actionClient
         videoBasedResultsContactEmail,
         event,
         createdResult,
-        user.username,
+        user.name,
         creatorPerson?.name,
       );
 

@@ -96,6 +96,7 @@ function FormTextInput({
         {password && (
           <Button
             onClick={() => setHidePassword(!hidePassword)}
+            disabled={disabled}
             className="px-2"
             title="Toggle show password"
             ariaLabel="Toggle show password"

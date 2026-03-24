@@ -11,7 +11,7 @@ type Props = {
 
 function EventIcon({ event, onClick, isActive }: Props) {
   const iconCode = Object.values(CubingIcons).find((icon) =>
-    new RegExp(`^(event|unofficial)-${event.eventId}$`).test(icon),
+    [`event-${event.eventId}`, `unofficial-${event.eventId}`].includes(icon),
   );
 
   if (!iconCode) {

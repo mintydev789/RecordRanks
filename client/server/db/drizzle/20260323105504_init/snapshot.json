@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "dfb46218-fdf7-4f1b-83c9-a7cd3433bde7",
+  "id": "07277887-51ba-42fc-ae3a-e5261b387edc",
   "prevIds": [
-    "66f5fc0b-7c13-427d-8213-cbb058bec51d"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -680,7 +680,7 @@
     {
       "type": "text",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -2998,6 +2998,30 @@
       "entityType": "pks"
     },
     {
+      "nameExplicit": true,
+      "columns": [
+        "competition_id",
+        "event_id",
+        "round_number"
+      ],
+      "nullsNotDistinct": false,
+      "name": "competition_id_event_id_round_number",
+      "entityType": "uniques",
+      "schema": "record_ranks",
+      "table": "rounds"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "token_hash"
+      ],
+      "nullsNotDistinct": false,
+      "name": "access_tokens_token_hash_key",
+      "schema": "record_ranks",
+      "table": "access_tokens",
+      "entityType": "uniques"
+    },
+    {
       "nameExplicit": false,
       "columns": [
         "token"
@@ -3015,6 +3039,28 @@
       ],
       "nullsNotDistinct": false,
       "name": "users_email_key",
+      "schema": "record_ranks",
+      "table": "users",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "username"
+      ],
+      "nullsNotDistinct": false,
+      "name": "users_username_key",
+      "schema": "record_ranks",
+      "table": "users",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "person_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "users_person_id_key",
       "schema": "record_ranks",
       "table": "users",
       "entityType": "uniques"
@@ -3050,6 +3096,17 @@
       "name": "events_event_id_key",
       "schema": "record_ranks",
       "table": "events",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "wca_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "persons_wca_id_key",
+      "schema": "record_ranks",
+      "table": "persons",
       "entityType": "uniques"
     },
     {

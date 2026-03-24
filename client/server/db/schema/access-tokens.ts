@@ -8,7 +8,7 @@ import { tableTimestamps } from "../dbUtils.ts";
 
 export const accessTokensTable = rrSchema.table("access_tokens", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  tokenHash: text().notNull(),
+  tokenHash: text().notNull().unique(),
   competitionId: text()
     .references(() => contestsTable.competitionId, { onUpdate: "cascade" })
     .notNull(),

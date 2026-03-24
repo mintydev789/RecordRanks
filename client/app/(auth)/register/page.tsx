@@ -40,7 +40,7 @@ function RegisterPage() {
         });
 
         if (error) {
-          changeErrorMessages([error.message ?? error.statusText]);
+          changeErrorMessages([error.message || error.statusText]);
         } else {
           changeSuccessMessage(
             "A verification link has been sent to your email. Please click the link in the email to finish your registration.",
@@ -53,7 +53,7 @@ function RegisterPage() {
   };
 
   return (
-    <div>
+    <section>
       <h2 className="mb-4 text-center">Register</h2>
 
       <Form buttonText="Register" onSubmit={handleSubmit} isLoading={isPending} disableControls={isSubmitted}>
@@ -101,7 +101,7 @@ function RegisterPage() {
           Log in
         </Link>
       </div>
-    </div>
+    </section>
   );
 }
 

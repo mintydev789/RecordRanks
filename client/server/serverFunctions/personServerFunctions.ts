@@ -187,7 +187,7 @@ export const deletePersonSF = actionClient
     const user = await db.query.users.findFirst({ where: { personId: person.id } });
     if (user) {
       throw new RrActionError(
-        `You may not delete a person tied to a user. This person is tied to the user ${user.username}.`,
+        `You may not delete a person tied to a user. This person is tied to the user ${user.name}.`,
       );
     }
 

@@ -1,6 +1,6 @@
 import "server-only";
 import { getColumns, sql } from "drizzle-orm";
-import { boolean, check, integer, smallint, text } from "drizzle-orm/pg-core";
+import { boolean, check, integer, smallint, text, unique } from "drizzle-orm/pg-core";
 import { RoundProceedValues, RoundTypeValues } from "~/helpers/types.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
@@ -34,6 +34,7 @@ export const roundsTable = rrSchema.table(
     ...tableTimestamps,
   },
   (table) => [
+    unique("competition_id_event_id_round_number").on(table.competitionId, table.eventId, table.roundNumber),
     // Cumulative round IDs can only be set when the round has a time limit
     check(
       "rounds_timelimit_check",

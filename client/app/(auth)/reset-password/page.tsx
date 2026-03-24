@@ -40,7 +40,7 @@ function ResetPasswordPage() {
         });
 
         if (error) {
-          changeErrorMessages([error.message ?? error.statusText]);
+          changeErrorMessages([error.message || error.statusText]);
         } else {
           changeSuccessMessage("Your password has been successfully reset");
           setIsDisabled(true);
@@ -52,7 +52,7 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div>
+    <section>
       <h2 className="mb-4 text-center">Reset Password</h2>
 
       <Form onSubmit={handleSubmit} disableControls={isDisabled} isLoading={isPending}>
@@ -77,7 +77,7 @@ function ResetPasswordPage() {
           disabled={isPending || isPending}
         />
       </Form>
-    </div>
+    </section>
   );
 }
 

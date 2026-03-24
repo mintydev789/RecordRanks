@@ -757,7 +757,8 @@ async function validateAndCleanUpContest(
 
   for (const round of rounds) {
     const activityCode = `${round.eventId}-r${round.roundNumber}`;
-    if (activityCodes.has(activityCode)) throw new RrActionError(`Duplicate round found: ${activityCode}`);
+    if (activityCodes.has(activityCode))
+      throw new RrActionError(`Duplicate round schedule activity found: ${activityCode}`);
     activityCodes.add(activityCode);
 
     if (round.competitionId !== contest.competitionId)

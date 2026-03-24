@@ -21,7 +21,7 @@ export type ListPageMode = "view" | "add" | "edit";
 export type InputPerson = PersonResponse | null;
 
 // This has to stay consistent with the creator columns object in dbUtils.ts
-export type Creator = Pick<typeof authClient.$Infer.Session.user, "id" | "username" | "email" | "personId">;
+export type Creator = Pick<typeof authClient.$Infer.Session.user, "id" | "name" | "email" | "personId">;
 
 export const EventFormatValues = [
   "time",

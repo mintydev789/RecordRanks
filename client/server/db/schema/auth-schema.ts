@@ -13,13 +13,13 @@ export const usersTable = rrSchema.table("users", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-  username: text("username").notNull(),
+  username: text("username").unique(),
   displayUsername: text("display_username"),
   role: text("role"),
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
-  personId: integer("person_id"),
+  personId: integer("person_id").unique(),
 });
 
 export const sessionsTable = rrSchema.table(

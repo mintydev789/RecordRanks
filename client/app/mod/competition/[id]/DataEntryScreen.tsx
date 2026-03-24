@@ -284,7 +284,7 @@ function DataEntryScreen({
     <div className="px-2">
       <ToastMessages />
 
-      <div className="row py-4">
+      <div className="row mb-4">
         <div className="col-lg-3 mb-4">
           <div>
             <EventButtons eventId={eventId} events={events} forPage="data-entry" />

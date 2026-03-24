@@ -227,7 +227,7 @@ function NavbarItems() {
                   style={{ maxWidth: "15rem" }}
                 >
                   <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
-                  {session.user.username}
+                  {session.user.name}
                 </button>
                 <ul className={`dropdown-menu end-0 px-3 px-lg-2 py-0 ${userExpanded ? "show" : ""}`}>
                   {canAccessModDashboard && (

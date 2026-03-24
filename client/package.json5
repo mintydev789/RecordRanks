@@ -9,12 +9,11 @@
     check: 'npx @biomejs/biome check',
     test: 'vitest run',
     'test:watch': 'vitest watch',
-    'db:push': 'NODE_OPTIONS="--conditions=react-server" drizzle-kit push',
-    'db:migrate': 'NODE_OPTIONS="--conditions=react-server" drizzle-kit migrate',
-    'db:generate': 'NODE_OPTIONS="--conditions=react-server" drizzle-kit generate',
-    'auth:migrate': 'auth migrate',
-    // BEFORE RUNNING THIS COMMENT OUT THE "relations" PROPERTY IN THE DRIZZLE CONFIG OBJECT IN provider.ts
-    'auth:generate': 'auth generate --output ./server/db/schema/auth-schema.ts',
+    // BEFORE RUNNING DRIZZLE OR BETTER AUTH COMMANDS, COMMENT OUT ALL "server-only" IMPORTS!
+    'db:migrate': 'drizzle-kit migrate',
+    'db:generate': 'drizzle-kit generate',
+    'auth:migrate': 'npx auth migrate --config server/auth.ts',
+    'auth:generate': 'npx auth generate --config server/auth.ts --output ./server/db/schema/auth-schema.ts',
   },
   dependencies: {
     '@better-auth/drizzle-adapter': '1.5.5',
@@ -36,7 +35,7 @@
     cubing: '0.63.3',
     'date-fns': '4.1.0',
     'date-fns-tz': '3.2.0',
-    'drizzle-orm': '1.0.0-beta.12-5845444',
+    'drizzle-orm': '1.0.0-beta.18-7eb39f0',
     'geo-tz': '8.1.6',
     handlebars: '4.7.8',
     jszip: '3.10.1',
@@ -67,7 +66,7 @@
     '@types/pg': '8.20.0',
     '@types/react': '19.2.14',
     '@types/react-dom': '19.2.3',
-    'drizzle-kit': '1.0.0-beta.12-5845444',
+    'drizzle-kit': '1.0.0-beta.18-7eb39f0',
     vitest: '4.1.0',
   },
 }

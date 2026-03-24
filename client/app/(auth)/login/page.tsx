@@ -1,12 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState, useTransition } from "react";
 import { z } from "zod";
 import Form from "~/app/components/form/Form.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
+import Button from "~/app/components/UI/Button.tsx";
 import { authClient } from "~/helpers/authClient.ts";
+import { C, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { LoginFormValidator } from "~/helpers/validators/Auth.ts";
 
@@ -17,7 +20,11 @@ function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isPendingSignIn, startSignInTransition] = useTransition();
+  const [isPendingWcaSignIn, startWcaSignInTransition] = useTransition();
+
+  const isPending = isPendingSignIn || isPendingWcaSignIn;
+  const redirectUrl = searchParams.get("redirect") || "/";
 
   useEffect(() => {
     const email = searchParams.get("email");
@@ -34,35 +41,48 @@ function LoginPage() {
     }
   }, [searchParams]);
 
-  const handleSubmit = async () => {
+  const signIn = () => {
     const parsed = LoginFormValidator.safeParse({ username, password });
 
     if (!parsed.success) {
       changeErrorMessages([z.prettifyError(parsed.error)]);
     } else {
-      startTransition(async () => {
+      startSignInTransition(async () => {
         const isEmailLogin = z.email().safeParse(username).success;
         const { error } = isEmailLogin
           ? await authClient.signIn.email({ email: username, password })
           : await authClient.signIn.username({ username, password });
 
-        if (error) changeErrorMessages([error.message ?? error.statusText]);
-        else router.replace(searchParams.get("redirect") || "/");
+        if (error) changeErrorMessages([error.message || error.statusText]);
+        else router.replace(redirectUrl);
       });
     }
   };
 
+  const signInWithWca = () => {
+    startWcaSignInTransition(async () => {
+      const { error } = await authClient.signIn.oauth2({
+        providerId: C.wcaOAuthProviderId,
+        callbackURL: "/user/settings?wca-link-status=signup-success",
+        // errorCallbackURL: "/oauth-error", // this is currently broken in Better Auth; see next.config.ts
+      });
+
+      if (error) changeErrorMessages([error.message || error.statusText]);
+    });
+  };
+
   return (
-    <div>
+    <section>
       <h2 className="mb-4 text-center">Login</h2>
 
-      <Form buttonText="Log in" onSubmit={handleSubmit} isLoading={isPending}>
+      <Form buttonText="Log in" onSubmit={signIn} disableControls={isPending} isLoading={isPendingSignIn}>
         <FormTextInput
           id="username"
           title="Username or email"
           value={username}
           setValue={setUsername}
           nextFocusTargetId="password"
+          disabled={isPending}
           autoFocus
           className="mb-3"
         />
@@ -71,21 +91,34 @@ function LoginPage() {
           title="Password"
           value={password}
           setValue={setPassword}
+          disabled={isPending}
           password
           submitOnEnter
           className="mb-3"
         />
-        <Link href="/forgot-password" prefetch={false} className="d-block mt-4">
+        <Link href="/forgot-password" className="d-block mt-4">
           Forgot password?
         </Link>
       </Form>
 
       <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
-        <Link href="/register" prefetch={false}>
-          Create account
-        </Link>
+        <Link href="/register">Sign up using email</Link>
+
+        {HAS_WCA_AUTH && (
+          <Button
+            onClick={signInWithWca}
+            disabled={isPending}
+            isLoading={isPendingWcaSignIn}
+            className="d-block mt-3 px-4"
+          >
+            <div className="d-flex gap-2 align-items-center">
+              <Image src="/wca_logo.svg" height={30} width={30} alt="WCA" />
+              WCA
+            </div>
+          </Button>
+        )}
       </div>
-    </div>
+    </section>
   );
 }
 

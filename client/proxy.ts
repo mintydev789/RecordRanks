@@ -23,6 +23,7 @@ export const config = {
     "/donate",
     "/donate/(.*)",
     "/moderator-instructions/(.*)",
+    "/posts",
     "/posts/(.*)",
     "/video-based-results/submit",
   ],

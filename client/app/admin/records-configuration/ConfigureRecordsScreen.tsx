@@ -139,12 +139,10 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
 
   return (
     <>
-      <div className="px-2">
-        <ToastMessages />
-      </div>
+      <ToastMessages className="mx-2" />
 
       {mode === "view" ? (
-        <Button onClick={onAddRecordConfig} className="btn-success btn-sm ms-3">
+        <Button onClick={onAddRecordConfig} className="btn-success btn-sm mx-2">
           Create Record Type
         </Button>
       ) : (
@@ -215,7 +213,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
         </Form>
       )}
 
-      <p className="mt-3">
+      <p className="mx-2 mt-3">
         Note: the code assumes that if there is an active NR or CR record type, the WR record type and all CR record
         types under that category are also active.
       </p>

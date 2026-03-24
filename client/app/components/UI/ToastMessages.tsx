@@ -3,7 +3,9 @@
 import { useContext, useEffect } from "react";
 import { MainContext } from "~/helpers/contexts.ts";
 
-function ToastMessages() {
+type Props = React.HTMLAttributes<HTMLElement>;
+
+function ToastMessages({ className }: Props) {
   const { errorMessages, successMessage } = useContext(MainContext);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ function ToastMessages() {
       <div
         key={index.toString()}
         id={`error_message_${index + 1}`}
-        className="alert alert-danger"
+        className={`alert alert-danger ${className}`}
         style={{ whiteSpace: "pre-wrap" }}
         role="alert"
       >
@@ -32,7 +34,7 @@ function ToastMessages() {
     return (
       <div
         id="success_message"
-        className="alert alert-success fs-5 mb-3"
+        className={`alert alert-success ${className}`}
         style={{ whiteSpace: "pre-wrap" }}
         role="alert"
       >

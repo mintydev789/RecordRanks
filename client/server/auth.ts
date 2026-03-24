@@ -2,7 +2,8 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin as adminPlugin, username } from "better-auth/plugins";
+import { admin as adminPlugin, genericOAuth, username } from "better-auth/plugins";
+import { C } from "~/helpers/constants.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   accountsTable as accounts,
@@ -12,7 +13,7 @@ import {
 } from "~/server/db/schema/auth-schema.ts";
 import { sendPasswordChangedEmail, sendResetPasswordEmail, sendVerificationEmail } from "~/server/email/mailer.ts";
 import { ac, admin, mod, user, videoBasedResultReviewer } from "~/server/permissions.ts";
-import { logMessage } from "~/server/serverOnlyFunctions";
+import { logMessage } from "~/server/serverOnlyFunctions.ts";
 
 if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
 if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");
@@ -37,6 +38,24 @@ export const auth = betterAuth({
     adminPlugin({
       ac,
       roles: { admin, mod, videoBasedResultReviewer, user },
+    }),
+    genericOAuth({
+      config: process.env
+        .NEXT_PUBLIC_AUTH_PROVIDERS!.split(",")
+        .map((providerId) =>
+          providerId === C.wcaOAuthProviderId
+            ? {
+                providerId,
+                clientId: process.env.WCA_OAUTH_CLIENT_ID!,
+                clientSecret: process.env.WCA_OAUTH_SECRET,
+                discoveryUrl: "https://www.worldcubeassociation.org/.well-known/openid-configuration",
+                // issuer: "https://www.worldcubeassociation.org",
+                // requireIssuerValidation: true, // the WCA doesn't support this
+                scopes: ["public", "openid", "email", "profile"],
+              }
+            : undefined,
+        )
+        .filter((provider) => provider !== undefined),
     }),
   ],
   emailAndPassword: {
@@ -65,15 +84,25 @@ export const auth = betterAuth({
     additionalFields: {
       username: {
         type: "string",
-        required: true,
+        required: false,
+        unique: true,
       },
       personId: {
         type: "number",
         required: false,
+        unique: true,
       },
     },
     deleteUser: {
       enabled: true,
+    },
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+      disableImplicitLinking: true,
+      allowDifferentEmails: false,
+      // updateUserInfoOnLink: true, // this doesn't work https://github.com/better-auth/better-auth/issues/8742
     },
   },
 });

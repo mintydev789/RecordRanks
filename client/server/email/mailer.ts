@@ -225,7 +225,7 @@ export function sendContestSubmittedEmail(recipients: string[], contest: SelectC
 
       if (recipients.length > 0) {
         await transporter.sendMail({
-          from: noReplyEmail,
+          from: contestsEmail,
           replyTo: adminEmail,
           to: recipients,
           bcc: adminEmail,
@@ -235,7 +235,7 @@ export function sendContestSubmittedEmail(recipients: string[], contest: SelectC
         });
       } else {
         await transporter.sendMail({
-          from: noReplyEmail,
+          from: contestsEmail,
           to: adminEmail,
           subject,
           html,
@@ -337,8 +337,8 @@ export function sendVideoBasedResultSubmittedEmail(
   videoBasedResultsContactEmail: string | null,
   event: SelectEvent,
   result: ResultResponse,
-  creatorUsername: string,
-  creatorName: string | undefined,
+  creatorName: string,
+  creatorPersonName: string | undefined,
 ) {
   send({
     templateFileName: "video-based-result-submitted.hbs",
@@ -357,8 +357,8 @@ export function sendVideoBasedResultSubmittedEmail(
           : "",
       videoLink: result.videoLink!,
       discussionLink: result.discussionLink ?? "",
-      creatorUsername,
-      creatorName: creatorName ?? "",
+      creatorName,
+      creatorPersonName: creatorPersonName ?? "",
     },
     callback: async (html) => {
       await transporter.sendMail({

@@ -113,7 +113,7 @@ export const updateUserSF = actionClient
           sendEmail(
             process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
             "Important: New admin user",
-            `User ${user.username}${person ? ` (${person.name})` : ""} has been given the admin role.`,
+            `User ${user.name}${person ? ` (competitor ${person.name})` : ""} has been given the admin role.`,
           );
         }
       }

@@ -41,7 +41,7 @@ function VerificationLinkExpiredPage() {
       });
 
       if (error) {
-        changeErrorMessages([error.message ?? error.statusText]);
+        changeErrorMessages([error.message || error.statusText]);
       } else {
         changeSuccessMessage("A new verification link has been sent to your email");
         setIsDisabled(true);
@@ -50,23 +50,17 @@ function VerificationLinkExpiredPage() {
   };
 
   return (
-    <section>
+    <section className="px-3">
       <h2 className="mb-4 text-center">Verification Link Expired</h2>
 
-      <ToastMessages />
+      <ToastMessages className="mb-4" />
 
-      <p className="mb-4 text-center">
+      <p className="mb-4">
         The verification link has expired or isn't valid. Click the button below to send a new verification link to your
         email.
       </p>
 
-      <Button
-        id="resend_code_button"
-        onClick={resendVerificationLink}
-        isLoading={isPending}
-        disabled={isDisabled}
-        className="btn-primary d-block mx-auto"
-      >
+      <Button onClick={resendVerificationLink} isLoading={isPending} disabled={isDisabled}>
         Resend Verification Link
       </Button>
     </section>

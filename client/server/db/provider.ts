@@ -21,6 +21,7 @@ export const db =
         },
         casing: "snake_case",
         relations,
+        // logger: true,
       });
 
 export type DbTransactionType = PgAsyncTransaction<PostgresJsQueryResultHKT, Record<string, never>, typeof relations>;

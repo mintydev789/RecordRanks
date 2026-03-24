@@ -10,7 +10,7 @@ export const personsTable = rrSchema.table("persons", {
   name: text().notNull(),
   localizedName: text(),
   regionCode: text().notNull(),
-  wcaId: varchar({ length: 10 }),
+  wcaId: varchar({ length: 10 }).unique(),
   approved: boolean().default(false).notNull(),
   // Before the v0.13, createdExternally wasn't a column, and createdBy was just set to undefined if the person was created externally
   createdBy: text().references(() => usersTable.id, { onDelete: "set null" }),

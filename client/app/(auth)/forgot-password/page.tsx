@@ -28,7 +28,7 @@ function RequestPasswordResetPage() {
         });
 
         if (error) {
-          changeErrorMessages([error.message ?? error.statusText]);
+          changeErrorMessages([error.message || error.statusText]);
         } else {
           changeSuccessMessage(
             "A password reset link will be sent to your email if the entered email address is correct",
@@ -40,7 +40,7 @@ function RequestPasswordResetPage() {
   };
 
   return (
-    <div>
+    <section>
       <h2 className="mb-5 text-center">Forgot Password</h2>
 
       <Form onSubmit={handleSubmit} disableControls={isDisabled} isLoading={isPending}>
@@ -57,7 +57,7 @@ function RequestPasswordResetPage() {
           autoFocus
         />
       </Form>
-    </div>
+    </section>
   );
 }
 

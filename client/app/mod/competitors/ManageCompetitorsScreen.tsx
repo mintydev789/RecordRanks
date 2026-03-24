@@ -64,7 +64,7 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
         p.id.toString() === simplifiedSearch || // search by ID
         getSimplifiedString(p.name).includes(simplifiedSearch) || // search by name
         (p.localizedName && getSimplifiedString(p.localizedName).includes(simplifiedSearch)) || // search by localized name
-        (users && users.find((c) => c.id === (p as SelectPerson).createdBy)?.username === simplifiedSearch); // search by creator username
+        (users && users.find((c) => c.id === (p as SelectPerson).createdBy)?.name === simplifiedSearch); // search by creator name
 
       const passesApprovedFilter =
         approvedFilter === "" ||
@@ -151,9 +151,7 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
 
   return (
     <>
-      <div className="px-2">
-        <ToastMessages />
-      </div>
+      <ToastMessages className="mx-2" />
 
       {mode === "view" ? (
         <Button
@@ -184,7 +182,7 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
                 setValue={setSearch}
                 tooltip={
                   "Search by name, localized name, or CC ID" +
-                  (isAdmin ? ". Admins can also search by the username of the creator." : "")
+                  (isAdmin ? ". Admins can also search by the name or username of the creator." : "")
                 }
                 oneLine
               />

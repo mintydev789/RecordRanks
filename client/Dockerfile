@@ -47,6 +47,7 @@ ARG NEXT_PUBLIC_PROJECT_NAME
 ARG NEXT_PUBLIC_CONTACT_EMAIL
 ARG NEXT_PUBLIC_EXPORTS_TO_KEEP
 ARG NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL
+ARG NEXT_PUBLIC_AUTH_PROVIDERS
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
