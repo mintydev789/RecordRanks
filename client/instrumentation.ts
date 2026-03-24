@@ -123,24 +123,6 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { db }: { db: typeof dbType } = await import("~/server/db/provider.ts");
 
-    // TEMPORARY!!! {
-    const rounds = await db.query.rounds.findMany();
-    for (const round1 of rounds) {
-      for (const round2 of rounds) {
-        if (
-          round1.id !== round2.id &&
-          round1.competitionId === round2.competitionId &&
-          round1.eventId === round2.competitionId &&
-          round1.roundNumber === round2.roundNumber
-        )
-          console.log(
-            `Rounds ${round1.id} and ${round2.id} have the same competition ID (${round1.competitionId}), event ID (${round1.eventId}) and round number (${round1.roundNumber})`,
-          );
-      }
-    }
-    console.log("Finished checking for duplicate rounds");
-    // }
-
     // Seed init record configs
     if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
       console.log("Seeding init record configs...");

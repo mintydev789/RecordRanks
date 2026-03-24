@@ -43,9 +43,9 @@ else
   sudo docker stop rr-nextjs &&
   sudo docker exec -w /etc/caddy rr-caddy caddy reload &&
 
-  cd client &&
-  pnpm run db:migrate &&
-  cd .. &&
+  #cd client &&
+  #pnpm run db:migrate &&
+  #cd .. &&
   echo && # just print a new line in the terminal
 
   sudo docker compose -f docker-compose.rr.yml up -d
