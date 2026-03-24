@@ -118,7 +118,7 @@ describe("updateUserSF", () => {
     expect(sendEmailSpy).toHaveBeenCalledWith(
       process.env.NEXT_PUBLIC_CONTACT_EMAIL,
       "Important: New admin user",
-      `User ${user.username} (${person.name}) has been given the admin role.`,
+      `User ${user.username} (competitor ${person.name}) has been given the admin role.`,
     );
     expect(res.data!.user.role).toBe(roles.join(","));
   });
