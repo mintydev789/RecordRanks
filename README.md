@@ -32,26 +32,26 @@ To deploy an instance of RecordRanks, you have to first set up a Linux server an
 
 You will have to set up a local `.env` file for releasing your Docker image and another one on your server, which will contain all of your secrets. Note that you **MUST NOT** use your local `.env` file or the `.env.example` file in production, because using the default values will leave your instance **completely exposed**. To set up a local `.env` file, follow these steps:
 
-1. Create `.env` file: `cp .env.example .env`
-2. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`)
-3. Set `NEXT_PUBLIC_PROJECT_NAME` to your project name (e.g. `My Sports Project`)
-4. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`)
-5. Set `NEXT_PUBLIC_CONTACT_EMAIL` to the email you would like to have displayed as the main contact for your users and where you would like to receive admin email notifications
-6. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated)
-7. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
+1. Create `.env` file: `cp .env.example .env`.
+2. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
+3. Set `NEXT_PUBLIC_PROJECT_NAME` to your project name (e.g. `My Sports Project`).
+4. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
+5. Set `NEXT_PUBLIC_CONTACT_EMAIL` to the email you would like to have displayed as the main contact for your users and where you would like to receive admin email notifications.
+6. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated).
+7. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
 
 To set up a production `.env` file, follow these steps:
 
-1. Create `.env` file: `cp .env.example .env`
-2. Generate secure secret keys for Supabase: `./bin/supabase-generate-keys.sh`
-3. Comment out all variables marked with `for local development` and uncomment variables marked with `for production`
-4. Set `RR_DB_USERNAME` to a custom username for the DB user
-5. Set `RR_DB_PASSWORD` to a secure password
-6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`)
-7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`)
-8. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated)
-9. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials
-10. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
+1. Create `.env` file: `cp .env.example .env`.
+2. Generate secure secret keys for Supabase: `./bin/supabase-generate-keys.sh`.
+3. Comment out all variables marked with `for local development` and uncomment variables marked with `for production`.
+4. Set `RR_DB_USERNAME` to a custom username for the DB user.
+5. Set `RR_DB_PASSWORD` to a secure password.
+6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
+7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
+8. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use, and set the other relevant auth-related variables.
+9. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
+10. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
 
 ### Icon
 
