@@ -1,12 +1,10 @@
-"use client";
-
 import Link from "next/link";
 import { getFormattedDate } from "~/helpers/utilityFunctions";
 import type { PostResponse } from "~/server/db/schema/posts";
 
 type Props = {
   post: PostResponse & {
-    authorName: string | null;
+    authorName?: string | null;
   };
 };
 
@@ -28,7 +26,7 @@ function BlogPostCard({ post }: Props) {
           </p>
         )}
 
-        <Link href={`/posts/${post.postId}`} className="btn btn-primary">
+        <Link href={`/posts/${post.postId}`} prefetch={false} className="btn btn-primary">
           Read more
         </Link>
       </div>

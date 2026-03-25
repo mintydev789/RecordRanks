@@ -5,19 +5,25 @@ import BlogPostCard from "~/app/posts/BlogPostCard.tsx";
 import type { PostResponse } from "~/server/db/schema/posts.ts";
 
 type Props = {
-  latestBlogPostPromise: Promise<(PostResponse & { authorName: string | null }) | undefined>;
+  latestBlogPostsPromise: Promise<PostResponse[]>;
 };
 
-function BlogSection({ latestBlogPostPromise }: Props) {
-  const latestBlogPost = use(latestBlogPostPromise);
+function BlogSection({ latestBlogPostsPromise }: Props) {
+  const latestBlogPosts = use(latestBlogPostsPromise);
 
-  if (!latestBlogPost) return;
+  if (latestBlogPosts.length === 0) return;
 
   return (
     <>
       <h3 className="rr-basic-heading">Latest blog post</h3>
 
-      <BlogPostCard post={latestBlogPost} />
+      <div className="row row-gap-3">
+        {latestBlogPosts.map((post) => (
+          <div key={post.id} className="col-lg-6">
+            <BlogPostCard post={post} />
+          </div>
+        ))}
+      </div>
     </>
   );
 }

@@ -1,17 +1,20 @@
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
 import BlogSection from "~/app/components/BlogSection.tsx";
 import CollectiveCubing from "~/app/components/CollectiveCubing.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
-import { blogPostsQuery, getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { db } from "~/server/db/provider.ts";
+import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
+import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 import SupportingTheProjectSection from "./components/SupportingTheProjectSection.tsx";
 
 export const dynamic = "force-dynamic";
 
 function HomePage() {
-  const latestBlogPostPromise = blogPostsQuery.limit(1).then((res) => res.at(0));
+  const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
   const collectiveCubingEnabledSettingPromise = getSettingFromDb({ key: "collective-cubing-enabled", optional: true });
 
   return (
@@ -57,7 +60,7 @@ function HomePage() {
       </div>
 
       <Suspense>
-        <BlogSection latestBlogPostPromise={latestBlogPostPromise} />
+        <BlogSection latestBlogPostsPromise={latestBlogPostsPromise} />
       </Suspense>
 
       {IS_CUBING_CONTESTS_INSTANCE && (
