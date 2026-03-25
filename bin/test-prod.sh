@@ -24,9 +24,7 @@ if [ "$1" != "--cleanup" ] && [ "$1" != "-c" ]; then
                --build-arg NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL="$NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL" \
                -t "$DOCKER_IMAGE_NAME" ./client &&
 
-  cd client &&
-  pnpm run db:migrate &&
-  cd .. &&
+  ./bin/apply-db-migrations.sh &&
 
   docker compose -f docker-compose.rr.yml up
 fi

@@ -213,6 +213,7 @@ There are several custom scripts located in the `bin` directory. These should be
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | `start-prod.sh`          | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                        |
 | `test-prod.sh`           | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
+| `apply-db-migrations.sh` | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running.      |
 | `supabase-reset.sh`      | Reset Supabase (remove containers and delete DB data and storage).                                               |
 | `release-new-version.sh` | Release new version of RecordRanks (pushes to Codeberg).                                                         |
 | `release-new-image.sh`   | Create Docker image for the Next JS app and publish it.                                                          |
@@ -226,7 +227,7 @@ This project uses Next JS as a full-stack web application and self-hosted Supaba
 2. Start Supabase: `docker compose -f docker-compose.supabase.yml up -d`
 3. `cd client`
 4. Install dependencies: `pnpm install` (skip this step if `package.json5` hasn't changed since last time)
-5. Run DB migrations: `pnpm db:migrate` (skip this step if there are no new migrations since last time)
+5. Run DB migrations using the script (skip this step if there are no new migrations since last time)
 6. Start Next JS: `pnpm dev`
 
 Note that Next JS accesses the variables in `.env` through the `client/.env` symlink, which means that it won't be able to detect changes made to the source file. If you change any values in `.env`, simply restart `pnpm dev`.

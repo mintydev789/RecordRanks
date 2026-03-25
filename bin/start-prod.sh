@@ -18,9 +18,7 @@ sudo docker pull "$DOCKER_IMAGE_NAME"
 if [ "$1" != "--restart" ] && [ "$1" != "-r" ]; then
   # First start
 
-  cd client &&
-  pnpm run db:migrate &&
-  cd .. &&
+  ./bin/apply-db-migrations &&
 
   sudo docker compose -f docker-compose.rr.yml up -d
 else
@@ -43,9 +41,8 @@ else
   sudo docker stop rr-nextjs &&
   sudo docker exec -w /etc/caddy rr-caddy caddy reload &&
 
-  #cd client &&
-  #pnpm run db:migrate &&
-  #cd .. &&
+  ./bin/apply-db-migrations &&
+
   echo && # just print a new line in the terminal
 
   sudo docker compose -f docker-compose.rr.yml up -d
