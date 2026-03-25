@@ -16,7 +16,7 @@ import { getActionError } from "~/helpers/utilityFunctions.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import { rolesObject } from "~/server/permissions.ts";
-import { getOrCreatePersonByWcaIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { getOrCreatePersonByWcaIdSF, syncPersonByWcaIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
 import { logUserDeletedSF } from "~/server/serverFunctions/serverFunctions.ts";
 
 // Just a copy of the type of the data property from the return type of authClient.listAccounts()
@@ -46,7 +46,9 @@ function UserSettingsScreen({ initPerson }: Props) {
   const [person, setPerson] = useState(initPerson);
   const [accounts, setAccounts] = useState<Account[]>();
   const [newEmail, setNewEmail] = useState("");
-  const [isPendingWcaProfileLink, setIsPendingWcaProfileLink] = useState(false);
+  const [wcaProfileLinkStatus, setWcaProfileLinkStatus] = useState<"disabled" | "enabled" | "pending" | "linked">(
+    "disabled",
+  );
   const [isPendingWcaLink, startWcaLinkTransition] = useTransition();
   const [isInitiatingEmailChange, startEmailChange] = useTransition();
   const [isDeleting, startDeleteAccountTransition] = useTransition();
@@ -59,7 +61,7 @@ function UserSettingsScreen({ initPerson }: Props) {
         .join(", ")
     : "";
   const isPending =
-    isPendingSession || isPendingWcaProfileLink || isPendingWcaLink || isInitiatingEmailChange || isDeleting;
+    isPendingSession || wcaProfileLinkStatus === "pending" || isPendingWcaLink || isInitiatingEmailChange || isDeleting;
 
   useEffect(() => {
     if (session && !accounts) {
@@ -83,7 +85,7 @@ function UserSettingsScreen({ initPerson }: Props) {
                   "Your WCA account has been linked successfully! Linking your WCA competitor profile...",
                 );
 
-                setIsPendingWcaProfileLink(true);
+                setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
                 setTimeout(() => linkWcaProfile(data), 2000);
               }
             } else if (status === "signup-success") {
@@ -91,10 +93,14 @@ function UserSettingsScreen({ initPerson }: Props) {
                 "Your account has been created successfully! Linking your WCA competitor profile...",
               );
 
-              setIsPendingWcaProfileLink(true);
+              setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
               setTimeout(() => linkWcaProfile(data), 2000);
+            } else if (data.find((a) => a.providerId === C.wcaOAuthProviderId)) {
+              setWcaProfileLinkStatus("enabled");
             }
           }
+
+          setStatus(null);
         }
       })();
     }
@@ -118,13 +124,14 @@ function UserSettingsScreen({ initPerson }: Props) {
   };
 
   const linkWcaProfile = async (accs: Account[] = accounts!) => {
-    setIsPendingWcaProfileLink(true);
+    setWcaProfileLinkStatus("pending");
     const wcaAccount = accs.find((a) => a.providerId === C.wcaOAuthProviderId);
 
     const { data, error } = await authClient.accountInfo({ query: { accountId: wcaAccount!.accountId } });
 
     if (error) {
       changeErrorMessages([error.message || error.statusText]);
+      setWcaProfileLinkStatus("enabled");
     } else {
       // This doesn't include the full schema of the user information the WCA returns
       const parsed = z
@@ -137,17 +144,21 @@ function UserSettingsScreen({ initPerson }: Props) {
 
       if (!parsed.success) {
         changeErrorMessages([z.prettifyError(parsed.error)]);
+        setWcaProfileLinkStatus("enabled");
       } else {
         const { preferred_username: wcaId, name, image } = parsed.data;
-        const res = await getOrCreatePersonByWcaIdSF({ wcaId });
+        const res = session!.user.personId
+          ? await syncPersonByWcaIdSF({ wcaId })
+          : await getOrCreatePersonByWcaIdSF({ wcaId });
 
         if (res.serverError || res.validationErrors) {
           changeErrorMessages([getActionError(res)]);
+          setWcaProfileLinkStatus("enabled");
         } else if (session!.user.personId && session!.user.personId !== res.data!.person.id) {
           changeErrorMessages([
             "Couldn't update user data, because there is already a different competitor linked to this user. Please contact the admin team.",
           ]);
-          setStatus(null);
+          setWcaProfileLinkStatus("disabled");
         } else {
           const credentialAccount = accs.find((a) => a.providerId === "credential");
 
@@ -161,16 +172,19 @@ function UserSettingsScreen({ initPerson }: Props) {
               error.message || error.statusText,
               "The error may be due to this competitor already being tied to another user. Please contact the admin team.",
             ]);
+            setWcaProfileLinkStatus("enabled");
           } else {
-            changeSuccessMessage("Successfully linked WCA competitor profile");
-            setStatus(null);
+            changeSuccessMessage(
+              session!.user.personId
+                ? "Successfully synced WCA competitor profile"
+                : "Successfully linked WCA competitor profile",
+            );
+            setWcaProfileLinkStatus("linked");
             setPerson(res.data!.person);
           }
         }
       }
     }
-
-    setIsPendingWcaProfileLink(false);
   };
 
   const initiateEmailChange = () => {
@@ -269,16 +283,16 @@ function UserSettingsScreen({ initPerson }: Props) {
               Link WCA account
             </div>
           </Button>
-        ) : !person || status ? (
+        ) : !["disabled", "linked"].includes(wcaProfileLinkStatus) ? (
           <Button
             onClick={() => linkWcaProfile()}
-            isLoading={isPendingWcaProfileLink}
+            isLoading={wcaProfileLinkStatus === "pending"}
             disabled={isPending}
             className="btn-success d-block mt-3 px-4"
           >
             <div className="d-flex gap-2 align-items-center">
               <Image src="/wca_logo.svg" height={30} width={30} alt="WCA Logo" />
-              Link WCA profile
+              {person ? "Sync WCA profile" : "Link WCA profile"}
             </div>
           </Button>
         ) : undefined)}
