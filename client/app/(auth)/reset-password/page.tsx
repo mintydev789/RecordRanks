@@ -6,10 +6,13 @@ import z from "zod";
 import Form from "~/app/components/form/Form.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import { authClient } from "~/helpers/authClient.ts";
+import { HAS_CREDENTIAL_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { ResetPasswordFormValidator } from "~/helpers/validators/Auth.ts";
 
 function ResetPasswordPage() {
+  if (!HAS_CREDENTIAL_AUTH) return <p className="text-center">EMAIL + PASSWORD AUTHENTICATION IS NOT SUPPORTED</p>;
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const { changeErrorMessages, changeSuccessMessage } = useContext(MainContext);

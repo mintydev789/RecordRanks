@@ -36,7 +36,9 @@ You will have to set up a local `.env` file for releasing your Docker image and 
 2. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`)
 3. Set `NEXT_PUBLIC_PROJECT_NAME` to your project name (e.g. `My Sports Project`)
 4. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`)
-5. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
+5. Set `NEXT_PUBLIC_CONTACT_EMAIL` to the email you would like to have displayed as the main contact for your users and where you would like to receive admin email notifications
+6. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated)
+7. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
 
 To set up a production `.env` file, follow these steps:
 
@@ -47,8 +49,9 @@ To set up a production `.env` file, follow these steps:
 5. Set `RR_DB_PASSWORD` to a secure password
 6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`)
 7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`)
-8. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials
-9. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
+8. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated)
+9. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials
+10. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`)
 
 ### Icon
 

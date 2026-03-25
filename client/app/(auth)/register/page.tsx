@@ -6,10 +6,13 @@ import z from "zod";
 import Form from "~/app/components/form/Form.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import { authClient } from "~/helpers/authClient.ts";
+import { HAS_CREDENTIAL_AUTH } from "~/helpers/constants";
 import { MainContext } from "~/helpers/contexts.ts";
 import { RegistrationFormValidator } from "~/helpers/validators/Auth.ts";
 
 function RegisterPage() {
+  if (!HAS_CREDENTIAL_AUTH) return <p className="text-center">EMAIL + PASSWORD AUTHENTICATION IS NOT SUPPORTED</p>;
+
   const { changeErrorMessages, changeSuccessMessage } = useContext(MainContext);
 
   const [username, setUsername] = useState("");

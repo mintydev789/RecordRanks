@@ -13,6 +13,7 @@ cd client &&
 find "./" -type f -name "*.ts" -exec sed -i "s/^$match_string$/\/\/ $match_string/" {} + &&
 
 pnpm run db:migrate &&
+echo && # just print a new line in the terminal
 
 # Uncomment "server-only" imports
 find "./" -type f -name "*.ts" -exec sed -i "s/^\/\/ $match_string$/$match_string/" {} + &&

@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin as adminPlugin, genericOAuth, username } from "better-auth/plugins";
-import { C } from "~/helpers/constants.ts";
+import { C, HAS_CREDENTIAL_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   accountsTable as accounts,
@@ -45,26 +45,23 @@ export const auth = betterAuth({
       roles: { admin, mod, videoBasedResultReviewer, user },
     }),
     genericOAuth({
-      config: process.env
-        .NEXT_PUBLIC_AUTH_PROVIDERS!.split(",")
-        .map((providerId) =>
-          providerId === C.wcaOAuthProviderId
-            ? {
-                providerId,
-                clientId: process.env.WCA_OAUTH_CLIENT_ID!,
-                clientSecret: process.env.WCA_OAUTH_SECRET,
-                discoveryUrl: "https://www.worldcubeassociation.org/.well-known/openid-configuration",
-                // issuer: "https://www.worldcubeassociation.org",
-                // requireIssuerValidation: true, // the WCA doesn't support this
-                scopes: ["public", "openid", "email", "profile"],
-              }
-            : undefined,
-        )
-        .filter((provider) => provider !== undefined),
+      config: [
+        HAS_WCA_AUTH
+          ? {
+              providerId: C.wcaOAuthProviderId,
+              clientId: process.env.WCA_OAUTH_CLIENT_ID!,
+              clientSecret: process.env.WCA_OAUTH_SECRET,
+              discoveryUrl: "https://www.worldcubeassociation.org/.well-known/openid-configuration",
+              // issuer: "https://www.worldcubeassociation.org",
+              // requireIssuerValidation: true, // the WCA doesn't support this
+              scopes: ["public", "openid", "email", "profile"],
+            }
+          : undefined,
+      ].filter((provider) => provider !== undefined),
     }),
   ],
   emailAndPassword: {
-    enabled: true,
+    enabled: HAS_CREDENTIAL_AUTH,
     autoSignIn: false,
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {

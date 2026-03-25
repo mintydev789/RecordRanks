@@ -9,7 +9,7 @@ import Form from "~/app/components/form/Form.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import { authClient } from "~/helpers/authClient.ts";
-import { C, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { C, HAS_CREDENTIAL_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { LoginFormValidator } from "~/helpers/validators/Auth.ts";
 
@@ -75,34 +75,36 @@ function LoginPage() {
     <section>
       <h2 className="mb-4 text-center">Login</h2>
 
-      <Form buttonText="Log in" onSubmit={signIn} disableControls={isPending} isLoading={isPendingSignIn}>
-        <FormTextInput
-          id="username"
-          title="Username or email"
-          value={username}
-          setValue={setUsername}
-          nextFocusTargetId="password"
-          disabled={isPending}
-          autoFocus
-          className="mb-3"
-        />
-        <FormTextInput
-          id="password"
-          title="Password"
-          value={password}
-          setValue={setPassword}
-          disabled={isPending}
-          password
-          submitOnEnter
-          className="mb-3"
-        />
-        <Link href="/forgot-password" className="d-block mt-4">
-          Forgot password?
-        </Link>
-      </Form>
+      {HAS_CREDENTIAL_AUTH && (
+        <Form buttonText="Log in" onSubmit={signIn} disableControls={isPending} isLoading={isPendingSignIn}>
+          <FormTextInput
+            id="username"
+            title="Username or email"
+            value={username}
+            setValue={setUsername}
+            nextFocusTargetId="password"
+            disabled={isPending}
+            autoFocus
+            className="mb-3"
+          />
+          <FormTextInput
+            id="password"
+            title="Password"
+            value={password}
+            setValue={setPassword}
+            disabled={isPending}
+            password
+            submitOnEnter
+            className="mb-3"
+          />
+          <Link href="/forgot-password" className="d-block mt-4">
+            Forgot password?
+          </Link>
+        </Form>
+      )}
 
       <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
-        <Link href="/register">Sign up using email</Link>
+        {HAS_CREDENTIAL_AUTH && <Link href="/register">Sign up using email</Link>}
 
         {HAS_WCA_AUTH && (
           <Button

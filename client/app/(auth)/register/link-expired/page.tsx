@@ -6,9 +6,12 @@ import { z } from "zod";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { authClient } from "~/helpers/authClient.ts";
+import { HAS_CREDENTIAL_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 
 function VerificationLinkExpiredPage() {
+  if (!HAS_CREDENTIAL_AUTH) return <p className="text-center">EMAIL + PASSWORD AUTHENTICATION IS NOT SUPPORTED</p>;
+
   const searchParams = useSearchParams();
   const { changeSuccessMessage, changeErrorMessages } = useContext(MainContext);
   const { data: session } = authClient.useSession();

@@ -47,7 +47,8 @@ export const C = {
 } as const;
 
 export const IS_CUBING_CONTESTS_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === `https://${C.cubingContestsHostname}`;
-export const HAS_WCA_AUTH = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",").includes("wca");
+export const HAS_CREDENTIAL_AUTH = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",").includes("credential");
+export const HAS_WCA_AUTH = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",").includes(C.wcaOAuthProviderId);
 
 export const PUBLIC_EXPORTS_FORMAT_VERSIONS = ["v1"];
 
