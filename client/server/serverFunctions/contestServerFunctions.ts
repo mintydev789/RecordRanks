@@ -5,7 +5,7 @@ import { toZonedTime } from "date-fns-tz";
 import { and, arrayContains, desc, eq, gte, inArray, lt, notInArray, or } from "drizzle-orm";
 import { find as findTimezone } from "geo-tz";
 import z from "zod";
-import { C } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
@@ -743,6 +743,9 @@ async function validateAndCleanUpContest(
   userPersonId: number,
   canApprove: boolean,
 ) {
+  if (contest.type === "wca-comp" && !IS_CUBING_CONTESTS_INSTANCE)
+    throw new RrActionError("WCA contest type is disabled");
+
   const events = await db.query.events.findMany({
     columns: { eventId: true, name: true, category: true, format: true },
   });

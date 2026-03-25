@@ -1,4 +1,4 @@
-import { C } from "./constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "./constants.ts";
 import { eventCategories } from "./eventCategories.ts";
 import type { MultiChoiceOption } from "./types/MultiChoiceOption.ts";
 
@@ -48,6 +48,7 @@ export const contestTypeOptions: MultiChoiceOption[] = [
     shortLabel: "WCA",
     value: "wca-comp",
     color: C.color.danger,
+    disabled: !IS_CUBING_CONTESTS_INSTANCE,
   },
   {
     label: "Competition",
