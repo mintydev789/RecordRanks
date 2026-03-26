@@ -150,7 +150,8 @@ export const createPersonSF = actionClient
   );
 
 export const updatePersonSF = actionClient
-  .metadata({ permissions: { persons: ["update"] } })
+  // Permissions checked below
+  .metadata({ permissions: null })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -163,13 +164,21 @@ export const updatePersonSF = actionClient
       const { name, wcaId } = newPersonDto;
       logMessage("RR0020", `Updating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
-      const { success: canApprove } = await auth.api.userHasPermission({
-        body: { userId: session.user.id, permissions: { persons: ["approve"] } },
-      });
+      const [canUpdate, canApprove] = await Promise.all([
+        auth.api
+          .userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["update"] } } })
+          .then((res) => res.success),
+        auth.api
+          .userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } })
+          .then((res) => res.success),
+      ]);
 
-      const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
+      const person = await db.query.persons.findFirst({ where: { id } });
       if (!person) throw new RrActionError("Person with the provided ID not found");
-      if (!canApprove && person.approved) throw new RrActionError("You may not edit a person who has been approved");
+      const canUpdateOwnPerson = id === session.user.personId && person.wcaId && newPersonDto.wcaId;
+      const canUpdateOwnCreatedPerson = canUpdate && person.createdBy === session.user.id && !person.approved;
+      if (!canApprove && !canUpdateOwnPerson && !canUpdateOwnCreatedPerson)
+        throw new RrActionError("You do not have access to update this person");
       if (person.wcaId && newPersonDto.wcaId && person.wcaId !== newPersonDto.wcaId)
         throw new RrActionError("Changing a person's WCA ID is not allowed");
 
