@@ -74,11 +74,14 @@ export const updateUserSF = actionClient
     async ({ parsedInput: { id, personId, roles } }) => {
       logMessage("RR0033", `Updating user with ID ${id} (new person ID: ${personId}; new roles: ${roles.join(", ")})`);
 
-      const hdrs = await headers();
-
-      const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
+      const [hdrs, user, credentialAccount] = await Promise.all([
+        headers(),
+        db.query.users.findFirst({ where: { id } }),
+        db.query.accounts.findFirst({ columns: { id: true }, where: { userId: id, providerId: "credential" } }),
+      ]);
       if (!user) throw new RrActionError("User not found");
-      if (!user.emailVerified) throw new RrActionError("This user hasn't verified their email address yet");
+      if (credentialAccount && !user.emailVerified)
+        throw new RrActionError("This user hasn't verified their email address yet");
 
       let person: PersonResponse | undefined;
       if (personId) {
