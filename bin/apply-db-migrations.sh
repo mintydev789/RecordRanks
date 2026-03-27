@@ -12,6 +12,7 @@ cd client &&
 # Comment out all "server-only" imports to prevent them messing with Drizzle
 find "./" -type f -name "*.ts" -exec sed -i "s/^$match_string$/\/\/ $match_string/" {} + &&
 
+pnpm install &&
 pnpm run db:migrate &&
 echo && # just print a new line in the terminal
 
