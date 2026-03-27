@@ -1,8 +1,7 @@
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { desc } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
+import Markdown from "react-markdown";
 import BlogSection from "~/app/components/BlogSection.tsx";
 import CollectiveCubing from "~/app/components/CollectiveCubing.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
@@ -13,7 +12,9 @@ import SupportingTheProjectSection from "./components/SupportingTheProjectSectio
 
 export const dynamic = "force-dynamic";
 
-function HomePage() {
+async function HomePage() {
+  const description = await getSettingFromDb({ key: "home-page-description", optional: true });
+
   const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
   const collectiveCubingEnabledSettingPromise = getSettingFromDb({ key: "collective-cubing-enabled", optional: true });
 
@@ -31,18 +32,7 @@ function HomePage() {
         </div>
       )}
 
-      <p>
-        This is a place for hosting unofficial Rubik's Cube competitions, unofficial events held at{" "}
-        <a href="https://www.worldcubeassociation.org/" target="_blank" rel="noopener">
-          WCA
-        </a>{" "}
-        competitions, speedcuber meetups, and other unofficial events.
-      </p>
-      <p>
-        The events are split up into multiple categories: Unofficial, WCA, Extreme BLD, and Miscellaneous. Extreme BLD
-        events are not meant to be done in a competition-like setting, but instead need to be submitted individually
-        with video evidence. Some other events also allow submitted results.
-      </p>
+      {description && <Markdown>{description}</Markdown>}
 
       <div className="d-flex justify-content-center fs-5 my-4 flex-column flex-md-row gap-3 gap-lg-4 align-items-center">
         <Link href="/about" prefetch={false} className="rr-homepage-link btn btn-primary">
@@ -59,6 +49,8 @@ function HomePage() {
         </Link>
       </div>
 
+      <SupportingTheProjectSection />
+
       <Suspense>
         <BlogSection latestBlogPostsPromise={latestBlogPostsPromise} />
       </Suspense>
@@ -70,24 +62,21 @@ function HomePage() {
             Cubing Contests is an open platform where anyone can hold their competitions and meetups. However, you must
             first be granted moderator access to be able to create new contests. If you would like to hold unofficial
             events at a WCA competition or create an unofficial competition or meetup, you must first read the moderator
-            instructions.
+            instructions.{" "}
+            <strong>
+              Please note that an unofficial competition can only be hosted on Cubing Contests if it's infeasible for it
+              to be held as an official{" "}
+              <a href="https://www.worldcubeassociation.org/" target="_blank" rel="noopener">
+                WCA
+              </a>{" "}
+              competition.
+            </strong>
           </p>
-          <div className="fw-bold mx-3 mt-4 rounded-3 border p-3">
-            <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-            Please note that an unofficial competition can only be hosted on Cubing Contests if it's infeasible for it
-            to be held as an official{" "}
-            <a href="https://www.worldcubeassociation.org/" target="_blank" rel="noopener">
-              WCA
-            </a>{" "}
-            competition.
-          </div>
-          <Link href="/moderator-instructions" prefetch={false} className="btn btn-secondary mt-4">
+          <Link href="/moderator-instructions" prefetch={false} className="btn btn-secondary mt-">
             Moderator Instructions
           </Link>
         </>
       )}
-
-      <SupportingTheProjectSection />
 
       <h3 className="rr-basic-heading">Contact</h3>
       <p>For general inquiries, send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.</p>

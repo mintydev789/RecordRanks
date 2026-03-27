@@ -579,10 +579,10 @@ export async function getPersonsForExternalDeviceDataEntry(
 
 export async function getSettingFromDb({
   key,
-  optional = false,
+  optional,
 }: {
   key: SettingKey;
-  optional?: boolean;
+  optional?: true;
 }): Promise<string | null> {
   const setting = await db.query.settings.findFirst({ columns: { value: true }, where: { key } });
 

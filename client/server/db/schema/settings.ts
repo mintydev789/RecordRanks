@@ -12,6 +12,7 @@ export type SettingKey =
   | "video-based-results-contact-email"
 
   // page-contents
+  | "home-page-description"
   | "about-page-content"
   | "rules-page-content"
   | "video-based-results-instructions"
