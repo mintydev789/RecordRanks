@@ -6,9 +6,9 @@ import Handlebars from "handlebars";
 import nodemailer from "nodemailer";
 import type Mail from "nodemailer/lib/mailer/index";
 import { Countries } from "~/helpers/Countries.ts";
-import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { C } from "~/helpers/constants.ts";
 import { videoBasedFormats } from "~/helpers/roundFormats.ts";
-import { getFormattedTime, getIsCompType, getIsUrgent } from "~/helpers/utilityFunctions.ts";
+import { getFormattedTime, getIsUrgent } from "~/helpers/utilityFunctions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import { type LogCode, LogCodes } from "~/server/logger.ts";
 import { rolesObject } from "~/server/permissions.ts";
@@ -291,17 +291,14 @@ export function sendContestFinishedEmail(
   contest: Pick<SelectContest, "competitionId" | "name" | "shortName" | "type" | "participants">,
   creator: string,
 ) {
-  const duesAmount = IS_CUBING_CONTESTS_INSTANCE ? C.duePerCompetitor * contest.participants : 0;
-
   send({
     templateFileName: "contest-finished.hbs",
     context: {
-      baseUrl,
       projectName,
       contestName: contest.name,
       contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
       creator,
-      duesAmount: getIsCompType(contest.type) && duesAmount >= 1 ? duesAmount.toFixed(2) : "",
+      rrDonationLink: C.rrDonationLink,
       isUnofficialCompetition: contest.type === "comp",
     },
     callback: async (html) => {

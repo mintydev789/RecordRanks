@@ -24,7 +24,7 @@ import Tabs from "~/app/components/UI/Tabs.tsx";
 import Tooltip from "~/app/components/UI/Tooltip.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
-import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import type { Room, Schedule } from "~/helpers/types/Schedule.ts";
@@ -128,9 +128,6 @@ function ContestForm({
   // Schedule stuff
   const [rooms, setRooms] = useState<Room[]>(contest?.schedule?.venues[0].rooms ?? []);
   const [timezone, setTimezone] = useState(contest?.schedule?.venues[0].timezone ?? contest?.timezone ?? "Etc/GMT");
-  const [isHonoraryDuesUnderstood, setIsHonoraryDuesUnderstood] = useState(
-    !IS_CUBING_CONTESTS_INSTANCE || mode === "edit",
-  );
   const [isTimelinessUnderstood, setIsTimelinessUnderstood] = useState(mode === "edit");
   const [isCompPhotosUnderstood, setIsCompPhotosUnderstood] = useState(mode === "edit");
 
@@ -188,8 +185,7 @@ function ContestForm({
   const disabledIfContestPublished: boolean = mode === "edit" && !!contest && contest.state === "published";
   const disabledIfDetailsImported = !isAdmin && detailsImported;
   const urgent = isValid(startDate) && getIsUrgent(startDate!);
-  const disabledIfNotUnderstood =
-    (!isHonoraryDuesUnderstood && (!type || getIsCompType(type))) || (!isTimelinessUnderstood && urgent);
+  const disabledIfNotUnderstood = !isTimelinessUnderstood && urgent;
 
   const handleSubmit = async () => {
     const selectedOrganizers = organizers.filter((o: InputPerson) => o !== null);
@@ -833,39 +829,6 @@ function ContestForm({
           />
         )}
 
-        {IS_CUBING_CONTESTS_INSTANCE && !disabled && getIsCompType(type) && (
-          <>
-            <p className="fs-6 mt-4">
-              As part of the Cubing Contests honorary dues system, you will be asked to{" "}
-              <Link href="/donate" prefetch={false}>
-                donate
-              </Link>{" "}
-              $0.10 (USD) per competitor to support the maintenance and continued development of cubingcontests.com
-              after the contest is finished.{" "}
-              <strong>
-                For example, if this contest reaches the competitor limit, you will be asked to donate{" "}
-                <span className="text-success">
-                  ${competitorLimit ? (C.duePerCompetitor * competitorLimit).toFixed(2) : "?"}
-                </span>
-              </strong>
-              . This donation is voluntary.
-              {type === "wca-comp" && (
-                <em>
-                  Note: for WCA Competitions the honorary dues system only considers the number of competitors in
-                  unofficial events.
-                </em>
-              )}
-            </p>
-            {mode !== "edit" && (
-              <FormCheckbox
-                id="understood"
-                title="I understand"
-                selected={isHonoraryDuesUnderstood}
-                setSelected={setIsHonoraryDuesUnderstood}
-              />
-            )}
-          </>
-        )}
         {!disabled && mode !== "edit" && (
           <>
             {type === "comp" && (

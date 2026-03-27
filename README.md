@@ -4,6 +4,12 @@ RecordRanks is a sports organization and ranking system. It's a web application 
 
 RecordRanks can be deployed on any Linux server and runs as a web application, with self-hosted Supabase providing the database, logs, storage, cron, and a rich suite of system administration tools. It also automates the creation of daily backups of DB data.
 
+## Support the project
+
+Deni Mintsaev is the main developer of RecordRanks, and all contributions go directly towards the development of the project. You can support the project on Ko-Fi:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S11WPJA3)
+
 ## Screenshots
 
 Below are some screenshots from one of the RecordRanks instances: [Cubing Contests](https://cubingcontests.com/) (the first ever instance).

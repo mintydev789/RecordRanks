@@ -84,18 +84,6 @@ function ModeratorInstructionsWca() {
           A8. Once you have entered all results and finished double-checking, click <b className="hl">Finish</b> on the
           moderator dashboard. Once an admin publishes the competition, the results will be included in the rankings.
         </p>
-        <p>
-          A9. Cubing Contests has an honorary dues system, which asks the organizers of WCA competitions and unofficial
-          competitions to{" "}
-          <Link href="/donate" prefetch={false}>
-            donate
-          </Link>{" "}
-          $0.10 (USD) per competitor to support the maintenance and continued development of cubingcontests.com, after
-          the contest is finished. For example, if the contest reaches 100 competitors, the organizer will be asked to
-          donate $10. This donation is voluntary. Note: the honorary dues system only considers the number of
-          competitors on the Cubing Contests contest page; if there are more competitors in events held on another
-          website, they are not counted.
-        </p>
       </div>
     </>
   );
