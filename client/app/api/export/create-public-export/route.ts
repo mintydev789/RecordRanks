@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { eq, notInArray } from "drizzle-orm";
 import JSZip from "jszip";
 import type { NextRequest } from "next/server";
-import { PUBLIC_EXPORTS_FORMAT_VERSIONS, PUBLIC_EXPORTS_README } from "~/helpers/constants.ts";
+import { C } from "~/helpers/constants.ts";
 import { generateCsv } from "~/helpers/utilityFunctions.ts";
 import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable } from "~/server/db/schema/contests.ts";
@@ -11,6 +11,7 @@ import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { resultsPublicCols, resultsTable } from "~/server/db/schema/results.ts";
 import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
+import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 
 export async function POST(req: NextRequest) {
   if (!process.env.SERVICE_ROLE_KEY) {
@@ -47,7 +48,11 @@ export async function POST(req: NextRequest) {
   const { data, error } = await storageClient.listBuckets();
   if (error) return new Response(`Error while fetching list of buckets: ${error.message}`, { status: 500 });
 
-  const exportFormatVersion = PUBLIC_EXPORTS_FORMAT_VERSIONS.at(-1);
+  const publicExportsReadme = await getSettingFromDb({ key: "public-exports-readme", optional: true });
+  if (!publicExportsReadme)
+    return new Response("The public exports README is not set in the settings", { status: 500 });
+
+  const exportFormatVersion = C.publicExportsFormatVersions.at(-1);
   let existingExports: string[] | undefined;
 
   if (data.some((bucket) => bucket.name === process.env.PUBLIC_EXPORTS_BUCKET_NAME)) {
@@ -72,17 +77,10 @@ export async function POST(req: NextRequest) {
 
   zip.file(
     "metadata.json",
-    JSON.stringify(
-      {
-        export_format_version: exportFormatVersion,
-        export_date: timestamp.split("_").at(0),
-      },
-      null,
-      2,
-    ),
+    JSON.stringify({ export_format_version: exportFormatVersion, export_date: timestamp.split("_").at(0) }, null, 2),
   );
 
-  zip.file("README.md", PUBLIC_EXPORTS_README);
+  zip.file("README.md", publicExportsReadme);
 
   const eventsCsv = generateCsv(
     await db

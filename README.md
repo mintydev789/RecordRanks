@@ -45,6 +45,7 @@ You will have to set up a local `.env` file for releasing your Docker image and 
 5. Set `NEXT_PUBLIC_CONTACT_EMAIL` to the email you would like to have displayed as the main contact for your users and where you would like to receive admin email notifications.
 6. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated).
 7. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
+8. Set `NEXT_PUBLIC_EXPORTS_TO_KEEP` to a number above 0 to enable the exports page.
 
 To set up a production `.env` file, follow these steps:
 
@@ -58,6 +59,7 @@ To set up a production `.env` file, follow these steps:
 8. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use, and set the other relevant auth-related variables.
 9. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
 10. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
+11. Set `NEXT_PUBLIC_EXPORTS_TO_KEEP` to the number of public exports you'd like to be kept when new ones are generated.
 
 ### Icon
 

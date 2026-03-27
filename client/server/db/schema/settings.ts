@@ -16,6 +16,7 @@ export type SettingKey =
   | "about-page-content"
   | "rules-page-content"
   | "video-based-results-instructions"
+  | "public-exports-readme"
 
   // features
   | "collective-cubing-enabled";

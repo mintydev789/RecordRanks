@@ -577,6 +577,8 @@ export async function getPersonsForExternalDeviceDataEntry(
   }
 }
 
+export async function getSettingFromDb({ key, optional }: { key: SettingKey; optional?: never }): Promise<string>;
+export async function getSettingFromDb({ key, optional }: { key: SettingKey; optional: true }): Promise<string | null>;
 export async function getSettingFromDb({
   key,
   optional,

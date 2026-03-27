@@ -1,8 +1,8 @@
 import { StorageClient } from "@supabase/storage-js";
 import type { NextRequest } from "next/server";
 import z from "zod";
-import { PUBLIC_EXPORTS_FORMAT_VERSIONS } from "~/helpers/constants";
-import type { LatestPublicExportDetailsDto } from "~/helpers/validators/LatestPublicExportDetails";
+import { C } from "~/helpers/constants.ts";
+import type { LatestPublicExportDetailsDto } from "~/helpers/validators/LatestPublicExportDetails.ts";
 
 export async function GET(req: NextRequest, { params }: RouteContext<"/api/export/[version]/csv">) {
   if (!process.env.SERVICE_ROLE_KEY) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: RouteContext<"/api/expor
     return new Response("Internal Server Error", { status: 500 });
   }
 
-  const parsedParams = z.strictObject({ version: z.enum(PUBLIC_EXPORTS_FORMAT_VERSIONS) }).safeParse(await params);
+  const parsedParams = z.strictObject({ version: z.enum(C.publicExportsFormatVersions) }).safeParse(await params);
   if (!parsedParams.success) return new Response(`Validation error: ${parsedParams.error}`, { status: 400 });
   const { version: exportFormatVersion } = parsedParams.data;
   const searchParams = req.nextUrl.searchParams;

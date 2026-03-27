@@ -1,7 +1,8 @@
 import Markdown from "react-markdown";
-import LoadingError from "~/app/components/UI/LoadingError";
-import { PUBLIC_EXPORTS_FORMAT_VERSIONS, PUBLIC_EXPORTS_README } from "~/helpers/constants";
-import { LatestPublicExportDetailsValidator } from "~/helpers/validators/LatestPublicExportDetails";
+import LoadingError from "~/app/components/UI/LoadingError.tsx";
+import { C } from "~/helpers/constants.ts";
+import { LatestPublicExportDetailsValidator } from "~/helpers/validators/LatestPublicExportDetails.ts";
+import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,9 @@ async function ExportPage() {
   if (process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP === "0")
     return <p className="fs-4 mx-3 mt-5 text-center">Public exports are disabled</p>;
 
-  const exportApiUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/export/${PUBLIC_EXPORTS_FORMAT_VERSIONS.at(-1)}/csv`;
+  const publicExportsReadme = await getSettingFromDb({ key: "public-exports-readme" });
+
+  const exportApiUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/export/${C.publicExportsFormatVersions.at(-1)}/csv`;
   const res = await fetch(`${exportApiUrl}?metadataOnly=true`);
   if (!res.ok) return <LoadingError loadingEntity="the latest public export" />;
 
@@ -50,7 +53,7 @@ async function ExportPage() {
       </p>
 
       <div className="mt-5">
-        <Markdown>{PUBLIC_EXPORTS_README}</Markdown>
+        <Markdown>{publicExportsReadme}</Markdown>
       </div>
     </section>
   );
