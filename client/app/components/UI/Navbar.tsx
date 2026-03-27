@@ -7,7 +7,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { authClient } from "~/helpers/authClient.ts";
-import { IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { getHasRole } from "~/helpers/utilityFunctions.ts";
 
 function NavbarItems() {
@@ -196,14 +196,15 @@ function NavbarItems() {
                   </li>
                 )}
                 <li>
-                  <Link
-                    href="/donate"
+                  <a
+                    href={C.rrDonationLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     onClick={collapseAll}
-                    prefetch={false}
-                    className={`nav-link ${pathname === "/donate" ? "active" : ""}`}
+                    className="nav-link"
                   >
-                    Donate
-                  </Link>
+                    Support RecordRanks
+                  </a>
                 </li>
               </ul>
             </li>

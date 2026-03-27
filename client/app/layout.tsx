@@ -1,5 +1,6 @@
 import "bootstrap/dist/css/bootstrap.css";
 import "~/app/globals.css";
+import { Quicksand } from "next/font/google";
 import MainLayout from "~/app/components/UI/MainLayout.tsx";
 // Prevent server-side rendering bug with FA icons, where the icons flash as very large before full page load
 import "@fortawesome/fontawesome-svg-core/styles.css";
@@ -7,6 +8,8 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 
 config.autoAddCss = false;
+
+const quicksand = Quicksand();
 
 export const metadata = {
   title: process.env.NEXT_PUBLIC_PROJECT_NAME,
@@ -25,7 +28,7 @@ type Props = {
 
 export default function RootLayout({ children }: Props) {
   return (
-    <html lang="en">
+    <html lang="en" className={quicksand.className}>
       <MainLayout>{children}</MainLayout>
     </html>
   );

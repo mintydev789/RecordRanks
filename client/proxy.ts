@@ -20,8 +20,6 @@ export const config = {
     "/rules",
     "/rules/(.*)",
     "/about",
-    "/donate",
-    "/donate/(.*)",
     "/moderator-instructions/(.*)",
     "/posts",
     "/posts/(.*)",

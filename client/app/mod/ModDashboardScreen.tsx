@@ -8,6 +8,7 @@ import { parseAsInteger, useQueryState } from "nuqs";
 import { use, useContext, useState } from "react";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Country from "~/app/components/Country.tsx";
+import DonateButton from "~/app/components/DonateButton.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
@@ -61,7 +62,7 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
           </div>
         )}
 
-        <div className="d-flex fs-5 column-gap-3 row-gap-2 mt-4 mb-3 flex-wrap">
+        <div className="d-flex fs-5 column-gap-2 column-gap-xl-3 row-gap-2 mt-4 mb-3 flex-wrap">
           <Link href="/mod/competition" prefetch={false} className="btn btn-success btn-sm btn-lg-md">
             Create new contest
           </Link>
@@ -92,6 +93,7 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
               </a>
             )
           )}
+          <DonateButton />
         </div>
         <p>
           Total contests:&nbsp;<b>{contests.length ?? 0}</b>&#8194;|&#8194;Pending:&nbsp;<b>{pendingContests}</b>

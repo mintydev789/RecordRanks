@@ -7,6 +7,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
 import BestAndAverage from "~/app/components/BestAndAverage";
 import CreatorDetails from "~/app/components/CreatorDetails.tsx";
+import DonateButton from "~/app/components/DonateButton.tsx";
 import Form from "~/app/components/form/Form.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
 import FormDateInput from "~/app/components/form/FormDateInput.tsx";
@@ -229,9 +230,12 @@ function ResultsSubmissionForm({
               admins to have a competitor profile created for you. If you have any questions or suggestions, feel free
               to send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.
             </p>
-            <button type="button" className="btn btn-success btn-sm" onClick={() => setShowRules(!showRules)}>
-              {showRules ? "Hide rules" : "Show rules"}
-            </button>
+            <div className="d-flex flex-wrap gap-3">
+              <button type="button" className="btn btn-success btn-sm" onClick={() => setShowRules(!showRules)}>
+                {showRules ? "Hide rules" : "Show rules"}
+              </button>
+              <DonateButton />
+            </div>
             {showRules && (
               <div className="lh-lg mt-4">
                 <Rules />

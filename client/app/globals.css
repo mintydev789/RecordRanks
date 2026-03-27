@@ -104,6 +104,51 @@ body[data-bs-theme="light"] {
   visibility: visible;
 }
 
+.rr-kofi-button {
+  padding: 0.25rem 0.7rem;
+  font-family:
+    "Quicksand",
+    Helvetica,
+    Century Gothic,
+    sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #72a4f2;
+  border: none;
+  border-radius: 7px;
+
+  &:hover {
+    background: #6997e0;
+  }
+
+  &:active {
+    background: #5e86c7;
+  }
+}
+
+.rr-kofi-close-button {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: #f9f9f9;
+  border: none;
+  border-radius: 50%;
+
+  &:hover {
+    background: #e6e6e6;
+  }
+
+  &:active {
+    background: #d4d4d4;
+  }
+}
+
 /* Override Bootstrap's styling for the outline of a focused invalid input to make it easier to distinguish from
    other invalid inputs near it that are NOT focused (this only increases the alpha number in the rgba function) */
 .form-control.is-invalid:focus {

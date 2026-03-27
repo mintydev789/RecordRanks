@@ -6,7 +6,7 @@ RecordRanks can be deployed on any Linux server and runs as a web application, w
 
 ## Support the project
 
-Deni Mintsaev is the main developer of RecordRanks, and all contributions go directly towards the development of the project. You can support the project on Ko-Fi:
+Deni Mintsaev is the main developer of RecordRanks, and all contributions go directly towards the development of the project. You can support the project on Ko-fi:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S11WPJA3)
 
