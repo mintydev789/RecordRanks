@@ -9,7 +9,9 @@
     check: 'npx @biomejs/biome check',
     test: 'vitest run',
     'test:watch': 'vitest watch',
-    // BEFORE RUNNING DRIZZLE OR BETTER AUTH COMMANDS, COMMENT OUT ALL "server-only" IMPORTS!
+    'server-only-off': 'find "./" -type f -name "*.ts" -exec sed -i "s/^import \\\"server-only\\\";$/\\/\\/ import \\\"server-only\\\";/" {} +',
+    'server-only-on': 'find "./" -type f -name "*.ts" -exec sed -i "s/^\\/\\/ import \\\"server-only\\\";$/import \\\"server-only\\\";/" {} +',
+    // WHEN RUNNING DRIZZLE OR BETTER AUTH COMMANDS, USE THE TWO SCRIPTS ABOVE TO DISABLE AND THEN ENABLE "server-only" IMPORTS!
     'db:migrate': 'drizzle-kit migrate',
     'db:generate': 'drizzle-kit generate',
     'auth:migrate': 'npx auth migrate --config server/auth.ts',
