@@ -228,10 +228,9 @@ This project uses Next JS as a full-stack web application and self-hosted Supaba
 
 1. Create a `.env` file: `cp .env.example .env` (skip this step if you already have a `.env` file; **DO NOT** use the example `.env` in production!)
 2. Start Supabase: `docker compose -f docker-compose.supabase.yml up -d`
-3. `cd client`
-4. Install dependencies: `pnpm install` (skip this step if `package.json5` hasn't changed since last time)
-5. Run DB migrations using the script (skip this step if there are no new migrations since last time)
-6. Start Next JS: `pnpm dev`
+3. Apply DB migrations: `./bin/apply-db-migrations.sh` (skip this step if there are no new migrations since last time)
+4. `cd client`
+5. Start Next JS: `pnpm dev`
 
 Note that Next JS accesses the variables in `.env` through the `client/.env` symlink, which means that it won't be able to detect changes made to the source file. If you change any values in `.env`, simply restart `pnpm dev`.
 

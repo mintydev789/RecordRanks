@@ -456,7 +456,7 @@ function ContestForm({
     }
   };
 
-  const onDeleteContest = async () => {
+  const onRemoveContest = async () => {
     if (confirm(`Are you sure you would like to remove ${contest!.name}?`)) {
       const res = await removeContest({ competitionId });
 
@@ -545,7 +545,7 @@ function ContestForm({
                         </Button>
                       )}
                       <Button
-                        onClick={onDeleteContest}
+                        onClick={onRemoveContest}
                         isLoading={isDeleting}
                         disabled={isPending || contest.participants > 0}
                         className="btn-danger"
