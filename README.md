@@ -201,26 +201,12 @@ For debugging you can look at the history of cron job runs in Integrations -> Cr
 
 The export files can be imported with Supabase, but keep in mind that they don't include the data for some internal columns. The import process for each table is as follows:
 
-1. Go to "SQL Editor" and run these queries to remove all entries from the table and temporarily remove the constraint on the `id` column:
-
-```sql
-DELETE FROM record_ranks.<table>;
--- Note that this query also affects tables that have references to this table because of CASCADE
-ALTER TABLE record_ranks.<table> DROP CONSTRAINT <table>_pkey CASCADE;
-ALTER TABLE record_ranks.<table> ALTER COLUMN id DROP IDENTITY IF EXISTS;
-```
-
+1. Go to "SQL Editor" and run the "Public exports pre-import helper" snippet (THIS DELETES DATA).
 2. Go to "Table Editor" and select schema `record_ranks`.
 3. Click "Insert" -> "Import data from CSV" -> select the CSV file -> "Import data".
-4. Run these queries to add back the constraint for the `id` column:
+4. Go to "SQL Editor" and run the "Public exports post-import helper" snippet.
 
-```sql
-ALTER TABLE record_ranks.<table> ADD CONSTRAINT <table>_pkey PRIMARY KEY (id);
-ALTER TABLE record_ranks.<table> ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
-ALTER SEQUENCE record_ranks.<table>_id_seq RESTART WITH <ID of the last entry + 1>;
-```
-
-Note that, due to limitations with the CSV format, empty string values are represented as `__EMPTY_STRING__`. You can (and should) safely change those values to `""` (empty string).
+Note: due to limitations with the CSV format, empty string values are represented as `__EMPTY_STRING__`. You can (and should) safely change those values to `""` (empty string), if you find any.
 
 ## Scripts
 
