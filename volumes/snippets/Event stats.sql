@@ -12,10 +12,70 @@ with stats as (
       select count(distinct contests.competition_id) from record_ranks.rounds
       inner join record_ranks.contests
         on contests.competition_id = rounds.competition_id
+      inner join record_ranks.regions
+        on regions.code = contests.region_code
+      where event_id = events.event_id
+        and super_region_code = 'EUROPE'
+        and (contests.state = 'finished' or contests.state = 'published')
+    ) as europe,
+    (
+      select count(distinct contests.competition_id) from record_ranks.rounds
+      inner join record_ranks.contests
+        on contests.competition_id = rounds.competition_id
+      inner join record_ranks.regions
+        on regions.code = contests.region_code
+      where event_id = events.event_id
+        and super_region_code = 'ASIA'
+        and (contests.state = 'finished' or contests.state = 'published')
+    ) as asia,
+    (
+      select count(distinct contests.competition_id) from record_ranks.rounds
+      inner join record_ranks.contests
+        on contests.competition_id = rounds.competition_id
+      inner join record_ranks.regions
+        on regions.code = contests.region_code
+      where event_id = events.event_id
+        and super_region_code = 'NORTH_AMERICA'
+        and (contests.state = 'finished' or contests.state = 'published')
+    ) as north_america,
+    (
+      select count(distinct contests.competition_id) from record_ranks.rounds
+      inner join record_ranks.contests
+        on contests.competition_id = rounds.competition_id
+      inner join record_ranks.regions
+        on regions.code = contests.region_code
+      where event_id = events.event_id
+        and super_region_code = 'SOUTH_AMERICA'
+        and (contests.state = 'finished' or contests.state = 'published')
+    ) as south_america,
+    (
+      select count(distinct contests.competition_id) from record_ranks.rounds
+      inner join record_ranks.contests
+        on contests.competition_id = rounds.competition_id
+      inner join record_ranks.regions
+        on regions.code = contests.region_code
+      where event_id = events.event_id
+        and super_region_code = 'AFRICA'
+        and (contests.state = 'finished' or contests.state = 'published')
+    ) as africa,
+    (
+      select count(distinct contests.competition_id) from record_ranks.rounds
+      inner join record_ranks.contests
+        on contests.competition_id = rounds.competition_id
+      inner join record_ranks.regions
+        on regions.code = contests.region_code
+      where event_id = events.event_id
+        and super_region_code = 'OCEANIA'
+        and (contests.state = 'finished' or contests.state = 'published')
+    ) as oceania,
+    (
+      select count(distinct contests.competition_id) from record_ranks.rounds
+      inner join record_ranks.contests
+        on contests.competition_id = rounds.competition_id
       where event_id = events.event_id
         and contests.type = 'wca-comp'
         and (contests.state = 'finished' or contests.state = 'published')
-    ) as times_held_wca,
+    ) as wca_comps,
     (
       select count(distinct contests.competition_id) from record_ranks.rounds
       inner join record_ranks.contests
@@ -23,7 +83,7 @@ with stats as (
       where event_id = events.event_id
         and contests.type = 'comp'
         and (contests.state = 'finished' or contests.state = 'published')
-    ) as times_held_competitions,
+    ) as unoff_comps,
     (
       select count(distinct contests.competition_id) from record_ranks.rounds
       inner join record_ranks.contests
@@ -31,7 +91,7 @@ with stats as (
       where event_id = events.event_id
         and contests.type = 'meetup'
         and (contests.state = 'finished' or contests.state = 'published')
-    ) as times_held_meetups
+    ) as meetups
   from record_ranks.events
 )
 select * from stats
