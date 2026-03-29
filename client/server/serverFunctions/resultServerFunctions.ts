@@ -3,16 +3,16 @@
 import { addDays, differenceInDays, format } from "date-fns";
 import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import z from "zod";
-import { ContinentRecordType, Continents, Countries, getSuperRegion } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
+import { ContinentRecordType, Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import {
   ContinentalRecordTypes,
-  type ContinentCode,
   type EventWrPair,
   type RecordCategory,
   RecordCategoryValues,
   type RecordType,
+  type SuperRegionCode,
 } from "~/helpers/types.ts";
 import {
   compareAvgs,
@@ -333,19 +333,11 @@ export const deleteContestResultSF = actionClient
 
       logMessage("RR0015", `Deleting contest result: ${JSON.stringify(result)}`);
 
-      const contestPromise = db.query.contests.findFirst({ where: { competitionId: result.competitionId! } });
-      const eventPromise = db.query.events.findFirst({ where: { eventId: result.eventId } });
-      const roundPromise = db.query.rounds.findFirst({ where: { id: result.roundId! } });
-      const roundResultsPromise = db.query.results.findMany({
-        where: { roundId: result.roundId! },
-        orderBy: { ranking: "asc" },
-      });
-
       const [contest, event, round, roundResults] = await Promise.all([
-        contestPromise,
-        eventPromise,
-        roundPromise,
-        roundResultsPromise,
+        db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
+        db.query.events.findFirst({ where: { eventId: result.eventId } }),
+        db.query.rounds.findFirst({ where: { id: result.roundId! } }),
+        db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
       ]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
@@ -563,7 +555,7 @@ async function getRecordResult(
   },
 ): Promise<SelectResult | undefined> {
   const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
-  const isCrRecordType = ContinentalRecordTypes.includes(recordType);
+  const isCrRecordType = ContinentalRecordTypes.includes(recordType as any);
   const baseConditions = [
     eq(table.eventId, event.eventId),
     eq(table.recordCategory, recordCategory),
@@ -592,9 +584,11 @@ async function getRecordResult(
 
   const recordTypes: RecordType[] = ["WR"];
   if (recordType === "NR") {
-    const region = Countries.find((c) => c.code === regionCode)!;
-    const superRegion = Continents.find((c) => c.code === region.superRegionCode)!;
-    recordTypes.push(...[superRegion.recordTypeId, recordType]);
+    const { superRegionRecordType } = (await (tx ?? db).query.regions.findFirst({
+      columns: { superRegionRecordType: true },
+      where: { code: regionCode },
+    }))!;
+    recordTypes.push(superRegionRecordType, recordType);
   } else if (isCrRecordType) {
     recordTypes.push(recordType);
   }
@@ -622,15 +616,15 @@ async function setResultRecordsAndRegions(
   recordConfigs: RecordConfigResponse[], // must be of the same category
   participants: SelectPerson[],
 ) {
-  const firstParticipantRegion = participants[0].regionCode;
-  const isSameRegionParticipants = participants.every((p) => p.regionCode === firstParticipantRegion);
-  const firstParticipantSuperRegion = getSuperRegion(participants[0].regionCode);
-  const isSameSuperRegionParticipants =
-    isSameRegionParticipants ||
-    participants.slice(1).every((p) => getSuperRegion(p.regionCode) === firstParticipantSuperRegion);
+  const regions = await db.query.regions.findMany({ where: { code: { in: participants.map((p) => p.regionCode) } } });
+  if (regions.length === 0) throw new Error("Participants' regions not found");
 
-  if (isSameRegionParticipants) result.regionCode = firstParticipantRegion;
-  if (isSameSuperRegionParticipants) result.superRegionCode = firstParticipantSuperRegion;
+  const isSameRegionParticipants = new Set(regions.map((r) => r.code)).size === 1;
+  const isSameSuperRegionParticipants =
+    isSameRegionParticipants || new Set(regions.map((r) => r.superRegionCode)).size === 1;
+
+  if (isSameRegionParticipants) result.regionCode = regions[0].code;
+  if (isSameSuperRegionParticipants) result.superRegionCode = regions[0].superRegionCode;
 
   await setResultRecords(result, event, recordConfigs);
 }
@@ -676,7 +670,7 @@ async function setResultRecord(
       (result.regionCode && result.regionCode !== wrResult?.regionCode))
   ) {
     // Set CR
-    const crType = ContinentRecordType[result.superRegionCode as ContinentCode];
+    const crType = ContinentRecordType[result.superRegionCode as SuperRegionCode];
     const crResult = await getRecordResult(event, bestOrAverage, crType, category, {
       excludeResultId,
       recordsUpTo: result.date,
@@ -758,6 +752,7 @@ async function setFutureRecords(
         ON ${table.id} = results_with_record_times.id
         WHERE (${table[recordField]} IS NULL OR ${table[recordField]} <> 'WR')
           AND ${table[bestOrAverage]} = results_with_record_times.curr_record`)
+      // PGLite returns results with { rows: [] }, but Postgres just returns [], hence the different mapping
       .then((val: any) => (process.env.VITEST ? val.rows : val).map(({ id }: any) => id));
 
     const newWrResults = await tx
@@ -774,7 +769,7 @@ async function setFutureRecords(
 
   // Set CRs
   if (deletedResult.superRegionCode && deletedResult[recordField] !== "NR") {
-    const crType = ContinentRecordType[deletedResult.superRegionCode as ContinentCode];
+    const crType = ContinentRecordType[deletedResult.superRegionCode as SuperRegionCode];
     const prevCrResult = await getRecordResult(event, bestOrAverage, crType, category, { tx, recordsUpTo });
 
     const newCrIds = await tx
@@ -802,6 +797,7 @@ async function setFutureRecords(
         ON ${table.id} = results_with_record_times.id
         WHERE (${table[recordField]} IS NULL OR ${table[recordField]} = 'NR')
           AND ${table[bestOrAverage]} = results_with_record_times.curr_record`)
+      // PGLite returns results with { rows: [] }, but Postgres just returns [], hence the different mapping
       .then((val: any) => (process.env.VITEST ? val.rows : val).map(({ id }: any) => id));
 
     const newCrResults = await tx
@@ -862,10 +858,9 @@ async function setFutureRecords(
 
     for (const nr of newNrResults) {
       const date = format(nr.date, "d MMM yyyy");
-      const country = Countries.find((c) => c.code === nr.regionCode)!.name;
       logMessage(
         "RR0025",
-        `New ${type} NR (${country}) for event ${deletedResult.eventId}: ${nr[bestOrAverage]} (${date})`,
+        `New ${type} NR (region code ${nr.regionCode}) for event ${deletedResult.eventId}: ${nr[bestOrAverage]} (${date})`,
       );
     }
   }
@@ -880,7 +875,7 @@ async function cancelFutureRecords(
   const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
   const type = bestOrAverage === "best" ? "single" : "average";
   const { category } = recordConfigs[0];
-  const crType = result.superRegionCode ? ContinentRecordType[result.superRegionCode as ContinentCode] : undefined;
+  const crType = result.superRegionCode ? ContinentRecordType[result.superRegionCode as SuperRegionCode] : undefined;
   const crLabel = recordConfigs.find((rc) => rc.recordTypeId === crType)?.label;
   const nrLabel = recordConfigs.find((rc) => rc.recordTypeId === "NR")!.label;
   const baseConditions = [
@@ -939,7 +934,7 @@ async function cancelFutureRecords(
       .from(table)
       .where(and(...baseConditions, eq(table[recordField], "WR"), isNotNull(table.superRegionCode)));
     for (const r of wrResultsToBeChangedToCr) {
-      const resultCrType = ContinentRecordType[r.superRegionCode as ContinentCode];
+      const resultCrType = ContinentRecordType[r.superRegionCode as SuperRegionCode];
       const resultCrLabel = recordConfigs.find((rc) => rc.recordTypeId === resultCrType)!.label;
       await tx
         .update(table)
@@ -950,7 +945,7 @@ async function cancelFutureRecords(
       const message = `CHANGED ${r.eventId} ${type} ${wrLabel} to ${resultCrLabel}: ${r[bestOrAverage]} (country code ${r.regionCode})`;
       logMessage("RR0026", message);
     }
-  } else if (ContinentalRecordTypes.includes(result[recordField]!)) {
+  } else if (ContinentalRecordTypes.includes(result[recordField] as any)) {
     const cancelledCrNrResults = await tx
       .update(table)
       .set({ [recordField]: null })

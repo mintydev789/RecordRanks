@@ -5,6 +5,7 @@ import { roundTypes } from "~/helpers/roundTypes.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import EventTitle from "./EventTitle.tsx";
@@ -17,10 +18,11 @@ type Props = {
   results: ResultResponse[];
   persons: PersonResponse[];
   recordConfigs: RecordConfigResponse[];
+  regions: RegionResponse[];
   onDeleteResult?: (resultId: number) => void;
 };
 
-function EventResultsTable({ event, rounds, results, persons, recordConfigs, onDeleteResult }: Props) {
+function EventResultsTable({ event, rounds, results, persons, recordConfigs, regions, onDeleteResult }: Props) {
   // Display finals by default
   const [currRound, setCurrRound] = useState(rounds.at(-1)!);
 
@@ -57,6 +59,7 @@ function EventResultsTable({ event, rounds, results, persons, recordConfigs, onD
         results={roundResults}
         persons={persons}
         recordConfigs={recordConfigs}
+        regions={regions}
         onDeleteResult={onDeleteResult}
       />
     </div>

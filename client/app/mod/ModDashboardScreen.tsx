@@ -7,8 +7,8 @@ import { useAction } from "next-safe-action/hooks";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { use, useContext, useState } from "react";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
-import Country from "~/app/components/Country.tsx";
 import DonateButton from "~/app/components/DonateButton.tsx";
+import Region from "~/app/components/Region.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
@@ -18,15 +18,17 @@ import { MainContext } from "~/helpers/contexts.ts";
 import { getActionError, getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import type { ModDashboardFiltersDto } from "~/helpers/validators/ModDashboardFilters.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { getModContestsSF } from "~/server/serverFunctions/contestServerFunctions.ts";
 import ContestControls from "./ContestControls.tsx";
 
 type Props = {
   modContestsPromise: ReturnType<typeof getModContestsSF>;
+  regions: RegionResponse[];
   isAdminView: boolean;
 };
 
-function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
+function ModDashboardScreen({ modContestsPromise, regions, isAdminView }: Props) {
   const res = use(modContestsPromise);
   if (!res.data) return <LoadingError loadingEntity="contests" />;
 
@@ -113,8 +115,9 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
         )}
 
         <ModFilters
-          onChangeFilters={fetchContests}
           initOrganizerPerson={res.data.organizerPerson}
+          regions={regions}
+          onChangeFilters={fetchContests}
           isAdminView={isAdminView}
           disabled={isPendingContests}
         />
@@ -156,7 +159,7 @@ function ModDashboardScreen({ modContestsPromise, isAdminView }: Props) {
                         {contest.city}
                       </span>
                       <span className="me-1">,</span>
-                      <Country countryIso2={contest.regionCode} swapPositions shorten />
+                      <Region regionCode={contest.regionCode} regions={regions} swapPositions shorten />
                     </div>
                   </td>
                   <td>

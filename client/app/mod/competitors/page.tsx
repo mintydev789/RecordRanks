@@ -11,13 +11,18 @@ import {
   type SelectPerson,
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
 
 async function CompetitorsPage() {
   const { user } = await authorizeUser({ permissions: { persons: ["create", "update", "delete"] } });
-  const { success: canApprovePersons } = await auth.api.userHasPermission({
-    body: { userId: user.id, permissions: { persons: ["approve"] } },
-  });
+
+  const [{ success: canApprovePersons }, regions] = await Promise.all([
+    auth.api.userHasPermission({
+      body: { userId: user.id, permissions: { persons: ["approve"] } },
+    }),
+    db.select(regionsPublicCols).from(regionsTable),
+  ]);
 
   let persons: SelectPerson[] | PersonResponse[] | undefined;
   let users: Creator[] | undefined;
@@ -44,7 +49,7 @@ async function CompetitorsPage() {
     <section>
       <h2 className="mb-4 text-center">Competitors</h2>
 
-      <ManageCompetitorsScreen persons={persons} users={users} />
+      <ManageCompetitorsScreen persons={persons} regions={regions} users={users} />
     </section>
   );
 }

@@ -6,16 +6,20 @@ import { C } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
 import ManageUsersScreen from "./ManageUsersScreen.tsx";
 
 async function ManageUsersPage() {
   await authorizeUser({ permissions: { user: ["list"] } });
 
-  const res = await auth.api.listUsers({
-    query: { sortBy: "createdAt", sortDirection: "desc", limit: C.maxUsers },
-    headers: await headers(),
-  });
+  const [res, regions] = await Promise.all([
+    auth.api.listUsers({
+      query: { sortBy: "createdAt", sortDirection: "desc", limit: C.maxUsers },
+      headers: await headers(),
+    }),
+    db.select(regionsPublicCols).from(regionsTable),
+  ]);
 
   if (!res.users) return <LoadingError loadingEntity="users" />;
 
@@ -30,7 +34,7 @@ async function ManageUsersPage() {
 
       <ToastMessages className="mx-2" />
 
-      <ManageUsersScreen users={users} userPersons={persons} />
+      <ManageUsersScreen users={users} userPersons={persons} regions={regions} />
     </section>
   );
 }

@@ -13,7 +13,7 @@ import RoundResultsTable from "~/app/components/RoundResultsTable.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import EventImportantInfo from "~/app/mod/competition/EventImportantInfo";
+import EventImportantInfo from "~/app/mod/competition/EventImportantInfo.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
@@ -32,6 +32,7 @@ import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import { openRoundSF } from "~/server/serverFunctions/contestServerFunctions.ts";
@@ -51,6 +52,7 @@ type Props = {
   results: ResultResponse[];
   persons: PersonResponse[];
   recordConfigs: RecordConfigResponse[];
+  regions: RegionResponse[];
 };
 
 function DataEntryScreen({
@@ -61,6 +63,7 @@ function DataEntryScreen({
   results: initResults,
   persons: initPersons,
   recordConfigs,
+  regions,
 }: Props) {
   const pathname = usePathname();
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
@@ -303,6 +306,7 @@ function DataEntryScreen({
               onSelectPerson={onSelectPerson}
               persons={selectedPersons}
               setPersons={setSelectedPersons}
+              regions={regions}
               nextFocusTargetId="attempt_1"
               addNewPersonMode="default"
               redirectToOnAddPerson={`${pathname}?eventId=${eventId}`}
@@ -369,6 +373,7 @@ function DataEntryScreen({
               results={sortedResults}
               persons={persons}
               recordConfigs={recordConfigs}
+              regions={regions}
               onEditResult={round.open ? onEditResult : undefined}
               onDeleteResult={round.open ? onDeleteResult : undefined}
               disableEditAndDelete={resultUnderEdit !== null}

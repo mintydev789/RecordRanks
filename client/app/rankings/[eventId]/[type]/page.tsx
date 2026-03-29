@@ -12,6 +12,7 @@ import { roundFormats } from "~/helpers/roundFormats";
 import type { RecordCategory } from "~/helpers/types";
 import { db } from "~/server/db/provider";
 import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { getRankings } from "~/server/serverOnlyFunctions";
 
 const eventsWith3x3 = [
@@ -81,7 +82,10 @@ async function RankingsPage({ params, searchParams }: Props) {
   const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ show, region, topN } as any, (val) => !val));
   const urlSearchParamsWithoutTopN = new URLSearchParams(omitBy({ show, category, region } as any, (val) => !val));
 
-  const events = await db.select(eventsPublicCols).from(table).orderBy(table.rank);
+  const [events, regions] = await Promise.all([
+    db.select(eventsPublicCols).from(table).orderBy(table.rank),
+    db.select(regionsPublicCols).from(regionsTable),
+  ]);
 
   const visibleEvents = events.filter((e) => e.category !== "removed" && !e.hidden);
   const event = events.find((e) => e.eventId === eventId);
@@ -125,7 +129,7 @@ async function RankingsPage({ params, searchParams }: Props) {
 
         {/* Similar code to the records page */}
         <div className="d-flex mb-4 flex-wrap gap-3">
-          <RegionSelect />
+          <RegionSelect regions={regions} />
 
           <div className="d-flex flex-wrap gap-3">
             <div>
@@ -284,7 +288,7 @@ async function RankingsPage({ params, searchParams }: Props) {
       ) : undefined}
 
       <Suspense fallback={<Loading />}>
-        <RankingsTable rankingsPromise={rankingsPromise} event={event} type={type} show={show} />
+        <RankingsTable rankingsPromise={rankingsPromise} event={event} regions={regions} type={type} show={show} />
       </Suspense>
     </div>
   );

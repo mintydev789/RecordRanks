@@ -1,13 +1,13 @@
 import z from "zod";
-import { CountryCodes } from "~/helpers/Countries";
-import { WcaPersonValidator } from "~/helpers/validators/wca/WcaPerson";
+import { RegionCodeValidator } from "~/helpers/validators/Validators.ts";
+import { WcaPersonValidator } from "~/helpers/validators/wca/WcaPerson.ts";
 
 export const WcaCompetitionValidator = z.object({
   id: z.string().nonempty(),
   name: z.string().nonempty(),
   short_name: z.string().nonempty(),
   city: z.string().nonempty(),
-  country_iso2: z.enum(CountryCodes),
+  country_iso2: RegionCodeValidator,
   venue: z.string(),
   venue_address: z.string(),
   latitude_degrees: z.number().min(-90).max(90),

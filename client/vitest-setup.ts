@@ -1,11 +1,12 @@
 import { eq, sql } from "drizzle-orm";
 import pino from "pino";
 import { afterEach, beforeAll, vi } from "vitest";
-import { apply as applyDbSchema, db } from "~/__mocks__/dbProvider.ts";
+import { apply as applyDbSchema, mockDb as db } from "~/__mocks__/dbProvider.ts";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { personsStub } from "~/__mocks__/stubs/personsStub.ts";
 import { recordConfigsStub } from "~/__mocks__/stubs/recordConfigsStub.ts";
+import { regionsStub } from "~/__mocks__/stubs/regionsStub.ts";
 import { resultsStub } from "~/__mocks__/stubs/resultsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
 import { testUsers } from "~/instrumentation.ts";
@@ -15,6 +16,7 @@ import { contestsTable } from "~/server/db/schema/contests.ts";
 import { eventsTable } from "~/server/db/schema/events.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
 import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
+import { regionsTable } from "~/server/db/schema/regions.ts";
 import { resultsTable } from "~/server/db/schema/results.ts";
 import { roundsTable } from "~/server/db/schema/rounds.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
@@ -31,6 +33,7 @@ beforeAll(async () => {
   await Promise.all([
     db.insert(recordConfigsTable).values(recordConfigsStub),
     db.insert(eventsTable).values(eventsStub),
+    db.insert(regionsTable).values(regionsStub),
   ]);
 
   // Mostly copied from instrumentation.ts

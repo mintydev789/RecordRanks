@@ -2,6 +2,7 @@ import { inArray } from "drizzle-orm";
 import Markdown from "react-markdown";
 import { db } from "~/server/db/provider.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import type { FullResult } from "~/server/db/schema/results.ts";
 import { authorizeUser, getRecordConfigs, getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 import ManageResultsScreen from "./ManageResultsScreen.tsx";
@@ -9,13 +10,14 @@ import ManageResultsScreen from "./ManageResultsScreen.tsx";
 async function ManageResultsPage() {
   await authorizeUser({ permissions: { videoBasedResults: ["update", "approve", "delete"] } });
 
-  const [results, recordConfigs, instructions] = await Promise.all([
+  const [results, recordConfigs, regions, instructions] = await Promise.all([
     db.query.results.findMany({
       with: { event: true },
       where: { competitionId: { isNull: true } },
       orderBy: { createdAt: "desc" },
     }),
     getRecordConfigs("video-based-results"),
+    db.select(regionsPublicCols).from(regionsTable),
     getSettingFromDb({ key: "video-based-results-instructions" }),
   ]);
 
@@ -39,7 +41,7 @@ async function ManageResultsPage() {
         </div>
       </div>
 
-      <ManageResultsScreen results={results as FullResult[]} recordConfigs={recordConfigs} />
+      <ManageResultsScreen results={results as FullResult[]} recordConfigs={recordConfigs} regions={regions} />
     </section>
   );
 }

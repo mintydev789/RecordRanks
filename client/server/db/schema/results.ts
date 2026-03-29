@@ -1,8 +1,9 @@
 import "server-only";
 import { sql } from "drizzle-orm";
-import { bigint, boolean, check, integer, jsonb, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, integer, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { getColumns } from "drizzle-orm/utils";
 import { recordCategoryEnum, recordTypeEnum } from "~/server/db/schema/record-configs.ts";
+import { regionsTable } from "~/server/db/schema/regions.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 import { tableTimestamps } from "../dbUtils.ts";
 import { usersTable } from "./auth-schema.ts";
@@ -27,8 +28,9 @@ export const resultsTable = rrSchema.table(
     date: timestamp().notNull(),
     approved: boolean().default(false).notNull(),
     personIds: integer().array().notNull(),
-    regionCode: text(), // only set if participants are from the same region (e.g. country)
-    superRegionCode: text(), // only set if participants are from the same super-region (e.g. continent)
+    // These two are only set if participants are from the same region/super-region
+    regionCode: varchar({ length: 2 }).references(() => regionsTable.code, { onUpdate: "cascade" }),
+    superRegionCode: text(),
     attempts: jsonb().$type<Attempt>().array().notNull(),
     best: bigint({ mode: "number" }).notNull(),
     average: bigint({ mode: "number" }).notNull(),

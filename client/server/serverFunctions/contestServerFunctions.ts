@@ -25,6 +25,7 @@ import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
+import { type RegionResponse, regionsPublicCols, regionsTable, type SelectRegion } from "~/server/db/schema/regions.ts";
 import { type ResultResponse, resultsPublicCols, resultsTable, type SelectResult } from "~/server/db/schema/results.ts";
 import { type RoundResponse, roundsPublicCols, roundsTable, type SelectRound } from "~/server/db/schema/rounds.ts";
 import {
@@ -71,8 +72,9 @@ export const getContestSF = actionClient
     results: ResultResponse[];
     persons: PersonResponse[];
     recordConfigs: RecordConfigResponse[];
+    regions: RegionResponse[];
   } | null>(async ({ parsedInput: { competitionId, eventId } }) => {
-    const [contest, rounds] = await Promise.all([
+    const [contest, rounds, regions] = await Promise.all([
       db.query.contests.findFirst({
         columns: {
           competitionId: true,
@@ -92,8 +94,9 @@ export const getContestSF = actionClient
         .from(roundsTable)
         .where(eq(roundsTable.competitionId, competitionId))
         .orderBy(roundsTable.roundNumber),
+      db.select(regionsPublicCols).from(regionsTable),
     ]);
-    if (!contest || !rounds) return null;
+    if (!contest) return null;
 
     const eventIds = Array.from(new Set(rounds.map((r) => r.eventId)));
 
@@ -105,7 +108,8 @@ export const getContestSF = actionClient
         .orderBy(eventsTable.rank),
       getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions"),
     ]);
-    if (!events || !recordConfigs) return null;
+    if (eventId && !events.some((e) => e.eventId === eventId))
+      throw new RrActionError(`Event with ID ${eventId} not found`);
 
     const eventIdOrFirst = eventId ?? events[0].eventId;
 
@@ -126,6 +130,7 @@ export const getContestSF = actionClient
       results,
       persons,
       recordConfigs,
+      regions,
     };
   });
 
@@ -242,7 +247,7 @@ export const createContestSF = actionClient
         body: { userId: user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
       });
 
-      await validateAndCleanUpContest(newContestDto, rounds, user.personId!, canApprove);
+      const { region } = await validateAndCleanUpContest(newContestDto, rounds, user.personId!, canApprove);
 
       const creatorPerson = await db.query.persons.findFirst({
         columns: { name: true },
@@ -270,6 +275,7 @@ export const createContestSF = actionClient
       sendContestSubmittedEmail(
         organizerUsers.map((u) => u.email),
         createdContest,
+        region.name,
         creatorPerson.name,
       );
     },
@@ -742,13 +748,18 @@ async function validateAndCleanUpContest(
   rounds: RoundDto[],
   userPersonId: number,
   canApprove: boolean,
-) {
+): Promise<{ region: SelectRegion }> {
   if (contest.type === "wca-comp" && !IS_CUBING_CONTESTS_INSTANCE)
     throw new RrActionError("WCA contest type is disabled");
 
-  const events = await db.query.events.findMany({
-    columns: { eventId: true, name: true, category: true, format: true },
-  });
+  const [events, region] = await Promise.all([
+    db.query.events.findMany({
+      columns: { eventId: true, name: true, category: true, format: true },
+    }),
+    db.query.regions.findFirst({ where: { code: contest.regionCode } }),
+  ]);
+
+  if (!region) throw new RrActionError(`Invalid region code: ${contest.regionCode}`);
 
   // There's also a check for only admins being allowed to select removed events below
   if (!canApprove) {
@@ -880,6 +891,8 @@ async function validateAndCleanUpContest(
       }
     }
   }
+
+  return { region };
 }
 
 async function createRounds(tx: DbTransactionType, rounds: RoundDto[]) {

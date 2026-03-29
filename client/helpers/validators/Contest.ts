@@ -1,11 +1,10 @@
 import { getTimezoneOffset } from "date-fns-tz";
 import z from "zod";
-import { CountryCodes } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
 import type { Activity } from "~/helpers/types/Schedule.ts";
 import { ContestTypeValues } from "~/helpers/types.ts";
 import { getDateOnly } from "~/helpers/utilityFunctions.ts";
-import { ColorValidator } from "~/helpers/validators/Validators.ts";
+import { ColorValidator, RegionCodeValidator } from "~/helpers/validators/Validators.ts";
 
 const ActivityValidator = z.lazy((): any =>
   z
@@ -92,7 +91,7 @@ const duplicateIdsCheck = (val: any[]) => val.length === new Set(val.map((v) => 
 const VenueValidator = z.strictObject({
   id: z.int().min(1),
   name: z.string().nonempty(),
-  countryIso2: z.enum(CountryCodes),
+  countryIso2: RegionCodeValidator,
   latitudeMicrodegrees,
   longitudeMicrodegrees,
   timezone: z.string().nonempty(),
@@ -128,7 +127,7 @@ export const ContestValidator = z
       .regex(/.* [0-9]{4}$/, { error: "The short name must have the year at the end, separated by a space" }),
     type: z.enum(ContestTypeValues),
     city: z.string().nonempty(),
-    regionCode: z.enum(CountryCodes, { error: "Please select a country" }),
+    regionCode: RegionCodeValidator,
     venue: z.string().nonempty(),
     address: z.string().nonempty(),
     latitudeMicrodegrees,

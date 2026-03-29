@@ -48,7 +48,7 @@ export type RecordCategory = (typeof RecordCategoryValues)[number];
 
 export const RecordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"] as const;
 export type RecordType = (typeof RecordTypeValues)[number];
-export const ContinentalRecordTypes: RecordType[] = ["ER", "NAR", "SAR", "AsR", "AfR", "OcR"] as const;
+export const ContinentalRecordTypes = ["ER", "NAR", "SAR", "AsR", "AfR", "OcR"] as const satisfies RecordType[];
 
 export const ContestTypeValues = ["meetup", "wca-comp", "comp"] as const;
 export type ContestType = (typeof ContestTypeValues)[number];
@@ -56,7 +56,8 @@ export type ContestType = (typeof ContestTypeValues)[number];
 export const ContestStateValues = ["created", "approved", "ongoing", "finished", "published", "removed"] as const;
 export type ContestState = (typeof ContestStateValues)[number];
 
-export type ContinentCode = "AFRICA" | "ASIA" | "EUROPE" | "NORTH_AMERICA" | "OCEANIA" | "SOUTH_AMERICA";
+export const SuperRegionCodeValues = ["AFRICA", "ASIA", "EUROPE", "NORTH_AMERICA", "OCEANIA", "SOUTH_AMERICA"] as const;
+export type SuperRegionCode = (typeof SuperRegionCodeValues)[number];
 
 export type EventWrPair = {
   eventId: string;

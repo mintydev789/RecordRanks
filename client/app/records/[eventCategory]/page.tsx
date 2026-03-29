@@ -9,6 +9,8 @@ import RecordsTable from "~/app/records/[eventCategory]/RecordsTable.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import type { RecordCategory } from "~/helpers/types.ts";
+import { db } from "~/server/db/provider.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { getRecords } from "~/server/serverOnlyFunctions.ts";
 
 export const metadata = {
@@ -34,6 +36,8 @@ type Props = {
 async function RecordsPage({ params, searchParams }: Props) {
   const { eventCategory } = await params;
   const { category, region } = await searchParams;
+
+  const regions = await db.select(regionsPublicCols).from(regionsTable);
 
   const urlSearchParams = new URLSearchParams(omitBy({ category, region } as any, (val) => !val));
   const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ region } as any, (val) => !val));
@@ -63,7 +67,7 @@ async function RecordsPage({ params, searchParams }: Props) {
 
       {/* Similar code to the rankings page */}
       <div className="d-flex flex-wrap gap-3 px-2">
-        <RegionSelect />
+        <RegionSelect regions={regions} />
 
         <div>
           <h5>Category</h5>
@@ -107,7 +111,7 @@ async function RecordsPage({ params, searchParams }: Props) {
       )}
 
       <Suspense fallback={<Loading />}>
-        <RecordsTable recordsDataPromise={recordsDataPromise} />
+        <RecordsTable recordsDataPromise={recordsDataPromise} regions={regions} />
       </Suspense>
     </div>
   );

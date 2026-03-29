@@ -11,6 +11,7 @@ import { MainContext } from "~/helpers/contexts.ts";
 import type { InputPerson } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { getOrCreatePersonByWcaIdSF, getPersonsByNameSF } from "~/server/serverFunctions/personServerFunctions.ts";
 import FormTextInput from "./FormTextInput.tsx";
 
@@ -24,6 +25,7 @@ type Props = {
   personNames: string[];
   setPersonNames: (val: string[]) => void;
   onSelectPerson?: (val: PersonResponse) => void;
+  regions: RegionResponse[];
   infiniteInputs?: boolean;
   nextFocusTargetId?: string;
   disabled?: boolean;
@@ -40,6 +42,7 @@ function FormPersonInputs({
   personNames,
   setPersonNames,
   onSelectPerson,
+  regions,
   infiniteInputs,
   nextFocusTargetId,
   disabled,
@@ -248,7 +251,7 @@ function FormPersonInputs({
                       onMouseDown={() => selectPerson(inputIndex, matchIndex)}
                     >
                       {person !== null ? (
-                        <Competitor person={person} showWcaId showLocalizedName noLink />
+                        <Competitor person={person} regions={regions} showWcaId showLocalizedName noLink />
                       ) : (
                         "(add new person)"
                       )}

@@ -16,14 +16,16 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import type { InputPerson } from "~/helpers/types.ts";
 import { getFormattedDate, shortenEventName } from "~/helpers/utilityFunctions.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { FullResult } from "~/server/db/schema/results.ts";
 
 type Props = {
   results: FullResult[];
   recordConfigs: RecordConfigResponse[];
+  regions: RegionResponse[];
 };
 
-function ManageResultsScreen({ results, recordConfigs }: Props) {
+function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
   const parentRef = useRef<Element>(null);
 
   const [persons, setPersons] = useState<InputPerson[]>([null]);
@@ -72,6 +74,7 @@ function ManageResultsScreen({ results, recordConfigs }: Props) {
             setPersons={setPersons}
             personNames={personNames}
             setPersonNames={setPersonNames}
+            regions={regions}
             disabled={results.length === 0}
             addNewPersonMode="disabled"
             display="one-line"
@@ -115,7 +118,7 @@ function ManageResultsScreen({ results, recordConfigs }: Props) {
                     <td>{result.event ? shortenEventName(result.event.name) : "EVENT NOT FOUND"}</td>
                     <td>
                       {result.persons.length > 0 ? (
-                        <Competitors persons={result.persons} vertical />
+                        <Competitors persons={result.persons} regions={regions} vertical />
                       ) : (
                         "COMPETITOR(S) NOT FOUND"
                       )}

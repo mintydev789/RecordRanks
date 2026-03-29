@@ -5,7 +5,6 @@ import { loadEnvConfig } from "@next/env";
 import Handlebars from "handlebars";
 import nodemailer from "nodemailer";
 import type Mail from "nodemailer/lib/mailer/index";
-import { Countries } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
 import { videoBasedFormats } from "~/helpers/roundFormats.ts";
 import { getFormattedTime, getIsUrgent } from "~/helpers/utilityFunctions.ts";
@@ -221,7 +220,12 @@ export function sendRolesChangedEmail(
   });
 }
 
-export function sendContestSubmittedEmail(recipients: string[], contest: SelectContest, creator: string) {
+export function sendContestSubmittedEmail(
+  recipients: string[],
+  contest: SelectContest,
+  regionName: string,
+  creator: string,
+) {
   const urgent = getIsUrgent(new Date(contest.startDate));
 
   send({
@@ -235,7 +239,7 @@ export function sendContestSubmittedEmail(recipients: string[], contest: SelectC
       contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
       creator,
       startDate: contest.startDate.toDateString(),
-      location: `${contest.city}, ${Countries.find((c) => c.code === contest.regionCode)?.name ?? "NOT FOUND"}`,
+      location: `${contest.city}, ${regionName}`,
       urgent,
     },
     callback: async (html) => {

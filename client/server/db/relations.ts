@@ -14,6 +14,7 @@ import { contestsTable as contests } from "./schema/contests.ts";
 import { eventsTable as events } from "./schema/events.ts";
 import { personsTable as persons } from "./schema/persons.ts";
 import { recordConfigsTable as recordConfigs } from "./schema/record-configs.ts";
+import { regionsTable as regions } from "./schema/regions.ts";
 import { resultsTable as results } from "./schema/results.ts";
 import { roundsTable as rounds } from "./schema/rounds.ts";
 
@@ -29,6 +30,7 @@ export const relations = defineRelations(
     rounds,
     results,
     persons,
+    regions,
     recordConfigs,
     collectiveSolutions,
     posts,
@@ -63,6 +65,11 @@ export const relations = defineRelations(
     // RecordRanks relations
     events: {},
     contests: {
+      region: r.one.regions({
+        from: r.contests.regionCode,
+        to: r.regions.code,
+        optional: false,
+      }),
       rounds: r.many.rounds(),
       // Relevant issue: https://github.com/drizzle-team/drizzle-orm/issues/4988
       // organizers: r.many.persons({
@@ -110,6 +117,10 @@ export const relations = defineRelations(
       //   to: r.persons.id,
       //   where: { id: { in: r.results.personIds } },
       // }),
+      region: r.one.regions({
+        from: r.results.regionCode,
+        to: r.regions.code,
+      }),
       contest: r.one.contests({
         from: r.results.competitionId,
         to: r.contests.competitionId,
@@ -124,11 +135,17 @@ export const relations = defineRelations(
       }),
     },
     persons: {
+      region: r.one.regions({
+        from: r.persons.regionCode,
+        to: r.regions.code,
+        optional: false,
+      }),
       creator: r.one.users({
         from: r.persons.createdBy,
         to: r.users.id,
       }),
     },
+    regions: {},
     recordConfigs: {},
     collectiveSolutions: {
       event: r.one.events({

@@ -5,7 +5,7 @@ import Markdown from "react-markdown";
 import ContestLayout from "~/app/competitions/[id]/ContestLayout.tsx";
 import Competitor from "~/app/components/Competitor.tsx";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
-import Country from "~/app/components/Country.tsx";
+import Region from "~/app/components/Region.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
@@ -15,6 +15,7 @@ import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { getUserHasAccessToContest } from "~/server/serverOnlyFunctions";
 
 type Props = {
@@ -25,7 +26,11 @@ async function ContestDetailsPage({ params }: Props) {
   const { id } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
 
-  const [contest] = await db.select(contestsPublicCols).from(table).where(eq(table.competitionId, id));
+  const [[contest], regions] = await Promise.all([
+    db.select(contestsPublicCols).from(table).where(eq(table.competitionId, id)).limit(1),
+    db.select(regionsPublicCols).from(regionsTable),
+  ]);
+
   if (!contest) return <LoadingError loadingEntity="contest" />;
 
   const hasAccessToContest = session && (await getUserHasAccessToContest(session.user, contest));
@@ -72,7 +77,7 @@ async function ContestDetailsPage({ params }: Props) {
             <p className="mb-2">Date:&#8194;{formattedDate}</p>
             {formattedTime && <p className="mb-2">Starts at:&#8194;{formattedTime}</p>}
             <p className="mb-2">
-              City:&#8194;{contest.city}, <Country countryIso2={contest.regionCode} swapPositions />
+              City:&#8194;{contest.city}, <Region regionCode={contest.regionCode} regions={regions} swapPositions />
             </p>
             {/* Venue and address may be undefined for some old WCA competitions */}
             {contest.venue && <p className="mb-2">Venue:&#8194;{contest.venue}</p>}
@@ -88,7 +93,7 @@ async function ContestDetailsPage({ params }: Props) {
               {organizers.map((org, index) => (
                 <span key={org.id} className="d-flex-inline">
                   {index !== 0 && <span className="me-1">,</span>}
-                  <Competitor person={org} noFlag />
+                  <Competitor person={org} regions={regions} noFlag />
                 </span>
               ))}
             </p>

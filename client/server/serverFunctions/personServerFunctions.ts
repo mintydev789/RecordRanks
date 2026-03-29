@@ -2,12 +2,11 @@
 
 import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { CountryCodes } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
 import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
 import { fetchWcaPerson, getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
-import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
+import { RegionCodeValidator, WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import {
@@ -54,7 +53,7 @@ export const getOrCreatePersonSF = actionClient
   .inputSchema(
     z.strictObject({
       name: z.string(),
-      regionCode: z.enum(CountryCodes),
+      regionCode: RegionCodeValidator,
     }),
   )
   .action<GetOrCreatePersonObject>(async ({ parsedInput: { name, regionCode } }) => {
@@ -69,7 +68,7 @@ export const getOrCreatePersonSF = actionClient
     if (persons.length === 1) return { person: persons[0], isNew: false };
 
     const res = await createPersonSF({
-      newPersonDto: { name, localizedName: null, regionCode: regionCode, wcaId: null },
+      newPersonDto: { name, localizedName: null, regionCode, wcaId: null },
     });
     if (!res.data) throw new Error(res.serverError?.message || C.unknownErrorMsg);
 
@@ -297,6 +296,9 @@ async function validatePerson(
   } = {},
 ) {
   const excludeCondition = excludeId ? ne(table.id, excludeId) : undefined;
+
+  const region = await db.query.regions.findFirst({ where: { code: newPersonDto.regionCode } });
+  if (!region) throw new RrActionError(`Invalid region code: ${newPersonDto.regionCode}`);
 
   if (newPersonDto.wcaId) {
     const [sameWcaIdPerson] = await db

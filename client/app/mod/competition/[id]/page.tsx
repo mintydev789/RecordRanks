@@ -19,7 +19,7 @@ async function DataEntryPage({ params, searchParams }: Props) {
 
   if (!res.data) return <LoadingError loadingEntity="contest results" />;
 
-  const { contest, events, rounds, results, persons, recordConfigs } = res.data;
+  const { contest, events, rounds, results, persons, recordConfigs, regions } = res.data;
   const eventIdOrFirst = eventId ?? events[0].eventId;
 
   if (!getUserHasAccessToContest(user, contest))
@@ -35,6 +35,7 @@ async function DataEntryPage({ params, searchParams }: Props) {
       results={results}
       persons={persons}
       recordConfigs={recordConfigs}
+      regions={regions}
     />
   );
 }

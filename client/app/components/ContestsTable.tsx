@@ -5,11 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { use } from "react";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
-import Country from "~/app/components/Country.tsx";
+import Region from "~/app/components/Region.tsx";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import type { ContestType } from "~/helpers/types.ts";
 import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
 type Props = {
   contestsPromise: Promise<
@@ -18,9 +19,10 @@ type Props = {
       "competitionId" | "shortName" | "type" | "city" | "regionCode" | "startDate" | "endDate" | "participants"
     >[]
   >;
+  regions: RegionResponse[];
 };
 
-function ContestsTable({ contestsPromise }: Props) {
+function ContestsTable({ contestsPromise, regions }: Props) {
   const contests = use(contestsPromise);
 
   const getShapeIcon = (type: ContestType) => (type === "comp" ? faSquare : type === "meetup" ? faDiamond : faCircle);
@@ -60,7 +62,7 @@ function ContestsTable({ contestsPromise }: Props) {
                 <div className="d-flex justify-content-between gap-3">
                   <div className="ms-2">
                     <span>
-                      {contest.city}, <Country countryIso2={contest.regionCode} swapPositions shorten />
+                      {contest.city}, <Region regionCode={contest.regionCode} regions={regions} swapPositions shorten />
                     </span>
                   </div>
                   <div className="flex-shrink-0 text-end">
@@ -104,7 +106,7 @@ function ContestsTable({ contestsPromise }: Props) {
                   </Link>
                 </td>
                 <td>
-                  {contest.city}, <Country countryIso2={contest.regionCode} swapPositions />
+                  {contest.city}, <Region regionCode={contest.regionCode} regions={regions} swapPositions />
                 </td>
                 <td>
                   <ContestTypeBadge type={contest.type} />

@@ -2,33 +2,37 @@
 
 import { faCaretDown, faCaretRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Link from "next/link";
 import { useState } from "react";
 import Competitor from "~/app/components/Competitor.tsx";
 import Competitors from "~/app/components/Competitors.tsx";
-import ContestName from "~/app/components/ContestName.tsx";
-import Country from "~/app/components/Country.tsx";
 import RankingLinks from "~/app/components/RankingLinks.tsx";
+import Region from "~/app/components/Region.tsx";
 import Solves from "~/app/components/Solves.tsx";
-import type { Ranking, RecordRanking } from "~/helpers/types/Rankings";
+import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import { getFormattedDate, getFormattedTime } from "~/helpers/utilityFunctions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
-type RankingProps = {
+type BaseProps = {
+  event: Pick<EventResponse, "name" | "category" | "format">;
+  regions: RegionResponse[];
+};
+
+type RankingProps = BaseProps & {
   type: "single-ranking" | "average-ranking";
   ranking: Ranking;
   isTiedRanking: boolean;
-  event: Pick<EventResponse, "name" | "category" | "format">;
   showAllTeammates: boolean;
   showTeamColumn: boolean;
   showDetailsColumn: boolean;
   showOnlyPersonWithId?: never;
 };
 
-type RecordProps = {
+type RecordProps = BaseProps & {
   type: "single-record" | "average-record";
   ranking: RecordRanking;
   isTiedRanking?: boolean;
-  event: Pick<EventResponse, "name" | "category" | "format">;
   showAllTeammates?: never;
   showTeamColumn?: never;
   showDetailsColumn?: never;
@@ -37,9 +41,10 @@ type RecordProps = {
 
 function RankingRow({
   type,
+  ranking,
   isTiedRanking,
   event,
-  ranking,
+  regions,
   showAllTeammates = false,
   showTeamColumn = false,
   showDetailsColumn = false,
@@ -73,18 +78,28 @@ function RankingRow({
         {!showOnlyPersonWithId && <span className={isTiedRanking ? "text-secondary" : ""}>{firstColumnValue}</span>}
       </td>
       <td>
-        <Competitors persons={personsToDisplay} noFlag={!showAllTeammates} />
+        <Competitors persons={personsToDisplay} regions={regions} noFlag={!showAllTeammates} />
       </td>
       <td>{!showOnlyPersonWithId && getFormattedTime(ranking.result, { event, showMultiPoints: !isRecordRow })}</td>
       {!showAllTeammates && (
         <td>
-          <Country countryIso2={personsToDisplay[0].regionCode} shorten />
+          <Region regionCode={personsToDisplay[0].regionCode} regions={regions} shorten />
         </td>
       )}
       <td>{!showOnlyPersonWithId && getFormattedDate(ranking.date)}</td>
       <td>
         {!showOnlyPersonWithId &&
-          (ranking.contest ? <ContestName contest={ranking.contest} /> : <RankingLinks ranking={ranking} />)}
+          (ranking.contest ? (
+            <span className="d-flex gap-2 align-items-center">
+              <Region regionCode={ranking.contest.regionCode} regions={regions} noText />
+
+              <Link href={`/competitions/${ranking.contest.competitionId}`} prefetch={false}>
+                {ranking.contest.shortName}
+              </Link>
+            </span>
+          ) : (
+            <RankingLinks ranking={ranking} />
+          ))}
       </td>
       {showTeamColumn && (
         <td>
@@ -103,7 +118,7 @@ function RankingRow({
               </span>
             </span>
 
-            {teamExpanded && ranking.persons.map((p) => <Competitor key={p.id} person={p} />)}
+            {teamExpanded && ranking.persons.map((p) => <Competitor key={p.id} person={p} regions={regions} />)}
           </div>
         </td>
       )}

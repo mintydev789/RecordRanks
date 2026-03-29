@@ -6,9 +6,10 @@ import EventButtons from "~/app/components/EventButtons.tsx";
 import RegionSelect from "~/app/components/RegionSelect.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import { Continents, Countries } from "~/helpers/Countries.ts";
+import { type SuperRegionCode, SuperRegionCodeValues } from "~/helpers/types.ts";
 import { db } from "~/server/db/provider.ts";
 import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 
 export const metadata = {
   title: `All contests | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
@@ -31,13 +32,14 @@ type Props = {
 async function ContestsPage({ searchParams }: Props) {
   const { eventId, region } = await searchParams;
 
-  const filterBySuperRegion = !!region && Continents.some((c) => region === c.code);
-  const regionCodes = filterBySuperRegion && Countries.filter((c) => c.superRegionCode === region).map((c) => c.code);
-  const events = await db
-    .select(eventsPublicCols)
-    .from(eventsTable)
-    .where(and(ne(eventsTable.category, "removed"), eq(eventsTable.hidden, false)))
-    .orderBy(eventsTable.rank);
+  const [events, regions] = await Promise.all([
+    db
+      .select(eventsPublicCols)
+      .from(eventsTable)
+      .where(and(ne(eventsTable.category, "removed"), eq(eventsTable.hidden, false)))
+      .orderBy(eventsTable.rank),
+    db.select(regionsPublicCols).from(regionsTable),
+  ]);
 
   const contestsPromise = db.query.contests.findMany({
     columns: {
@@ -50,11 +52,19 @@ async function ContestsPage({ searchParams }: Props) {
       endDate: true,
       participants: true,
     },
-    with: eventId ? { rounds: { columns: { eventId: true } } } : undefined,
+    with: {
+      region: region ? { columns: { code: true, superRegionCode: true } } : undefined,
+      rounds: eventId ? { columns: { eventId: true } } : undefined,
+    },
     where: {
       state: { notIn: ["created", "removed"] },
+      // Filter by continent or by country
+      region: SuperRegionCodeValues.includes(region as any)
+        ? { superRegionCode: region as SuperRegionCode }
+        : region
+          ? { code: region }
+          : undefined,
       rounds: eventId ? { eventId } : undefined,
-      regionCode: regionCodes ? { in: regionCodes } : region,
     },
     orderBy: { startDate: "desc" },
   });
@@ -72,12 +82,12 @@ async function ContestsPage({ searchParams }: Props) {
           <div className="mb-3 px-2">
             <EventButtons key={eventId} eventId={eventId} events={events} forPage="competitions" />
             <div style={{ maxWidth: "24rem" }}>
-              <RegionSelect />
+              <RegionSelect regions={regions} />
             </div>
           </div>
 
           <Suspense fallback={<Loading />}>
-            <ContestsTable contestsPromise={contestsPromise} />
+            <ContestsTable contestsPromise={contestsPromise} regions={regions} />
           </Suspense>
         </>
       )}

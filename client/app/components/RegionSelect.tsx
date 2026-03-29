@@ -2,15 +2,20 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { useQueryState } from "nuqs";
-import FormCountrySelect from "~/app/components/form/FormCountrySelect.tsx";
+import FormRegionSelect from "~/app/components/form/FormRegionSelect.tsx";
 import { C } from "~/helpers/constants.ts";
+import type { SelectRegion } from "~/server/db/schema/regions.ts";
 
-function RegionSelect() {
+type Props = {
+  regions: Pick<SelectRegion, "code" | "name">[];
+};
+
+function RegionSelect({ regions }: Props) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [region, setRegion] = useQueryState("region", { defaultValue: C.notSelectedOption });
 
-  const onChangeCountryIso2 = (newRegion: string | typeof C.notSelectedOption) => {
+  const onChangeRegionCode = (newRegion: string | typeof C.notSelectedOption) => {
     if (newRegion !== region) {
       setRegion(newRegion);
 
@@ -22,7 +27,7 @@ function RegionSelect() {
     }
   };
 
-  return <FormCountrySelect countryIso2={region} setCountryIso2={onChangeCountryIso2} continentOptions />;
+  return <FormRegionSelect regionCode={region} setRegionCode={onChangeRegionCode} regions={regions} continentOptions />;
 }
 
 export default RegionSelect;

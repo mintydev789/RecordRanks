@@ -15,6 +15,7 @@ import { MainContext } from "~/helpers/contexts.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { rolesObject } from "~/server/permissions.ts";
 import { getOrCreatePersonByWcaIdSF, syncPersonByWcaIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
 import { logUserDeletedSF } from "~/server/serverFunctions/serverFunctions.ts";
@@ -32,9 +33,10 @@ type Account = {
 
 type Props = {
   initPerson: PersonResponse | undefined;
+  regions: RegionResponse[];
 };
 
-function UserSettingsScreen({ initPerson }: Props) {
+function UserSettingsScreen({ initPerson, regions }: Props) {
   const router = useRouter();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
   const { data: session, isPending: isPendingSession } = authClient.useSession();
@@ -261,7 +263,7 @@ function UserSettingsScreen({ initPerson }: Props) {
         <div className="d-flex flex-wrap gap-2">
           <span>Your competitor profile:</span>
           <div className="d-flex gap-2">
-            <Competitor person={person} showLocalizedName />
+            <Competitor person={person} regions={regions} showLocalizedName />
             <span>
               (CC ID: <strong>{person.id}</strong>)
             </span>

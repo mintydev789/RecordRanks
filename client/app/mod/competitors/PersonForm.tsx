@@ -7,7 +7,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import CreatorDetails from "~/app/components/CreatorDetails.tsx";
 import Form from "~/app/components/form/Form.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
-import FormCountrySelect from "~/app/components/form/FormCountrySelect.tsx";
+import FormRegionSelect from "~/app/components/form/FormRegionSelect.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
@@ -15,6 +15,7 @@ import type { Creator } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonDto } from "~/helpers/validators/Person.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import {
   createPersonSF,
   getOrCreatePersonByWcaIdSF,
@@ -25,11 +26,12 @@ type Props = {
   personUnderEdit: PersonResponse | undefined;
   creator: Creator | undefined;
   creatorPerson: PersonResponse | undefined;
+  regions: RegionResponse[];
   onSubmit: (person: PersonResponse, { isNew }: { isNew: boolean }) => void;
   onCancel: (() => void) | undefined;
 };
 
-function PersonForm({ personUnderEdit, creator, creatorPerson, onSubmit, onCancel }: Props) {
+function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit, onCancel }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
@@ -179,6 +181,7 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, onSubmit, onCance
         <CreatorDetails
           creator={creator}
           person={creatorPerson}
+          regions={regions}
           createdExternally={(personUnderEdit as any).createdExternally}
         />
       )}
@@ -217,9 +220,10 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, onSubmit, onCance
         disabled={isPending || hasWcaId}
         className="mb-3"
       />
-      <FormCountrySelect
-        countryIso2={regionCode}
-        setCountryIso2={setRegionCode}
+      <FormRegionSelect
+        regionCode={regionCode}
+        setRegionCode={setRegionCode}
+        regions={regions}
         nextFocusTargetId="form_submit_button"
         disabled={isPending || hasWcaId}
       />

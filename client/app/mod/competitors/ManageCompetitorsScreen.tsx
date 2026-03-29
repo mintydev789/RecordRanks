@@ -7,11 +7,11 @@ import { useSearchParams } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useContext, useMemo, useRef, useState } from "react";
 import Competitor from "~/app/components/Competitor.tsx";
-import Country from "~/app/components/Country.tsx";
 import CreatorDetails from "~/app/components/CreatorDetails.tsx";
 import FiltersContainer from "~/app/components/FiltersContainer.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
+import Region from "~/app/components/Region.tsx";
 import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
@@ -21,6 +21,7 @@ import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { Creator, ListPageMode } from "~/helpers/types.ts";
 import { getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse, SelectPerson } from "~/server/db/schema/persons.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { approvePersonSF, deletePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
 import PersonForm from "./PersonForm.tsx";
 
@@ -32,10 +33,11 @@ const approvedFilterOptions: MultiChoiceOption[] = [
 
 type Props = {
   persons: (SelectPerson | PersonResponse)[];
+  regions: RegionResponse[];
   users?: Creator[]; // only returned to admins
 };
 
-function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
+function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props) {
   const searchParams = useSearchParams();
   const { changeSuccessMessage, changeErrorMessages, resetMessages } = useContext(MainContext);
   const { data: session } = authClient.useSession();
@@ -167,6 +169,7 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
           personUnderEdit={personUnderEdit}
           creator={creator}
           creatorPerson={creator ? persons.find((p) => p.id === creator.personId) : undefined}
+          regions={regions}
           onSubmit={updateCompetitors}
           onCancel={mode !== "add-once" ? cancel : undefined}
         />
@@ -235,12 +238,12 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
                       >
                         <td>{person.id}</td>
                         <td>
-                          <Competitor person={person} noFlag />
+                          <Competitor person={person} regions={regions} noFlag />
                         </td>
                         <td>{person.localizedName}</td>
                         <td>{person.wcaId}</td>
                         <td>
-                          <Country countryIso2={person.regionCode} shorten />
+                          <Region regionCode={person.regionCode} regions={regions} shorten />
                         </td>
                         {users && (
                           <td>
@@ -251,6 +254,7 @@ function ManageCompetitorsScreen({ persons: initPersons, users }: Props) {
                                   ? persons.find((p) => p.id === personCreator.personId)
                                   : undefined
                               }
+                              regions={regions}
                               createdExternally={!!(person as SelectPerson).createdExternally}
                               isCurrentUser={(person as SelectPerson).createdBy === session?.user.id}
                               small

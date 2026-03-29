@@ -4,8 +4,8 @@ import { camelCase } from "lodash";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import z from "zod";
-import { Continents, Countries } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
+import { Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import type { Ranking, RecordsData } from "~/helpers/types/Rankings.ts";
 import {
@@ -173,15 +173,18 @@ export async function getRecords(
     orderBy: { rank: "asc" },
   });
 
-  let recordTypes: RecordType[] = ["WR"];
+  const recordTypes: RecordType[] = ["WR"];
   const continent = Continents.find((c) => c.code === region);
 
   if (region) {
     if (continent) {
       recordTypes.push(continent.recordTypeId);
     } else {
-      const country = Countries.find((c) => c.code === region)!;
-      recordTypes = ["WR", Continents.find((con) => con.code === country.superRegionCode)!.recordTypeId, "NR"];
+      const { superRegionRecordType } = (await db.query.regions.findFirst({
+        columns: { superRegionRecordType: true },
+        where: { code: region },
+      }))!;
+      recordTypes.push(superRegionRecordType, "NR");
     }
   }
 
@@ -588,7 +591,7 @@ export async function getSettingFromDb({
 }): Promise<string | null> {
   const setting = await db.query.settings.findFirst({ columns: { value: true }, where: { key } });
 
-  if (!setting || !setting.value) {
+  if (!setting?.value) {
     if (optional) return null;
     throw new Error("Setting not found");
   }

@@ -12,9 +12,9 @@ import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ColorSquare from "~/app/components/UI/ColorSquare.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import { Continents } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { Continents } from "~/helpers/continents.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import {
   type ListPageMode,

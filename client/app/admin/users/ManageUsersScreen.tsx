@@ -18,15 +18,17 @@ import { MainContext } from "~/helpers/contexts.ts";
 import type { InputPerson } from "~/helpers/types.ts";
 import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { type Role, rolesObject } from "~/server/permissions.ts";
 import { updateUserSF } from "~/server/serverFunctions/serverFunctions.ts";
 
 type Props = {
   users: (typeof authClient.$Infer.Session.user)[];
   userPersons: PersonResponse[];
+  regions: RegionResponse[];
 };
 
-function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: Props) {
+function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, regions }: Props) {
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateUserSF);
@@ -129,6 +131,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
             setPersons={setPersons}
             personNames={personNames}
             setPersonNames={setPersonNames}
+            regions={regions}
             disabled={isUpdating}
             addNewPersonMode="default"
           />
@@ -187,7 +190,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons }: P
                       <ActiveInactiveIcon isActive={user.emailVerified} />
                     </div>
                   </td>
-                  <td>{person && <Competitor person={person} noFlag />}</td>
+                  <td>{person && <Competitor person={person} regions={regions} noFlag />}</td>
                   <td>{roles}</td>
                   <td>
                     <Button onClick={() => onEditUser(user)} className="btn-xs" title="Edit" ariaLabel="Edit">

@@ -25,6 +25,7 @@ import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/he
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { Attempt, SelectResult } from "~/server/db/schema/results.ts";
 import {
   createVideoBasedResultSF,
@@ -36,6 +37,7 @@ import Rules from "./video-based-results-rules.mdx";
 type Props = {
   events: EventResponse[];
   recordConfigs: RecordConfigResponse[];
+  regions: RegionResponse[];
   result?: SelectResult; // only defined when editing an existing result (assumes elevated privileges)
   participants?: PersonResponse[];
   creator?: Creator | undefined;
@@ -46,6 +48,7 @@ type Props = {
 function ResultsSubmissionForm({
   events,
   recordConfigs,
+  regions,
   result,
   participants: initParticipants,
   creator,
@@ -250,6 +253,7 @@ function ResultsSubmissionForm({
           <CreatorDetails
             creator={creator}
             person={creatorPerson}
+            regions={regions}
             createdExternally={Boolean(result.createdExternally)}
           />
         )}
@@ -273,6 +277,7 @@ function ResultsSubmissionForm({
           setPersonNames={setPersonNames}
           persons={participants}
           setPersons={setParticipants}
+          regions={regions}
           nextFocusTargetId={event.format !== "multi" ? "attempt_1" : "attempt_1_solved"}
           redirectToOnAddPerson={pathname}
           addNewPersonMode={isVideoBasedResultReviewer ? "default" : "disabled"}

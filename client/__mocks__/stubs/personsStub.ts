@@ -70,6 +70,10 @@ export const personsStub: (InsertPerson & { id: number })[] = [
     name: "Kaya Khumalo",
     regionCode: "ZA", // South Africa
   },
+  {
+    name: "Gennaro López",
+    regionCode: "UY", // Uruguay
+  },
 ].map((p, index) => ({ ...p, id: index + 1, approved: true }));
 // The id is set just for testing purposes; it's left out when seeding the mock DB
 
@@ -90,3 +94,4 @@ export const caPersonMattBaker = personsStub.find((p) => p.name === "Matt Baker"
 export const caPersonBobStarmer = personsStub.find((p) => p.name === "Bob Starmer")!;
 export const caPersonBrianStevenson = personsStub.find((p) => p.name === "Brian Stevenson")!;
 export const zaPersonKayaKhumalo = personsStub.find((p) => p.name === "Kaya Khumalo")!;
+export const uyPersonGennaroLopez = personsStub.find((p) => p.name === "Gennaro López")!;

@@ -10,7 +10,6 @@ import type { auth as authType } from "~/server/auth.ts";
 import type { db as dbType } from "~/server/db/provider.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { settingsTable } from "~/server/db/schema/settings.ts";
-import { Countries } from "./helpers/Countries.ts";
 import { C } from "./helpers/constants.ts";
 import { RecordTypeValues } from "./helpers/types.ts";
 import type { InsertContest } from "./server/db/schema/contests.ts";
@@ -335,7 +334,7 @@ export async function register() {
         if (sameCompInCc) console.log(`EE competition with ID ${eeComp.id} is already in the CC DB, checking...`);
         else console.log(`New competition from EE DB: ${eeComp.id}`);
         const eeCountry = eeCountriesDump.find((c) => c.id === eeComp.country_id);
-        if (!eeCountry || !Countries.some((c) => c.code === eeCountry.iso2))
+        if (!eeCountry || !(await db.query.regions.findFirst({ where: { code: eeCountry.iso2 } })))
           throw new Error(`Country not found: ${eeComp.country_id}`);
         const eeDumpOrganizers = eeOrganizersDump.filter((o) => o.competition_id === eeComp.id);
 
@@ -461,7 +460,7 @@ export async function register() {
     //   console.log("Setting result records...");
 
     //   const recordMapper = (result: SelectResult, event: Pick<SelectEvent, "format" | "category">) => {
-    //     const country = Countries.find((c) => c.code === result.regionCode);
+    //     const region = await db.query.regions.findFirst({ where: { code: result.regionCode }});
     //     const continent = Continents.find((c) => c.code === result.superRegionCode);
     //     const getRecordLabel = (key: "regionalSingleRecord" | "regionalAverageRecord") =>
     //       result.recordCategory === "competitions"
@@ -475,7 +474,7 @@ export async function register() {
     //       date: result.date.toDateString(),
     //     };
 
-    //     if (country) (temp as any).regionCode = country.name;
+    //     if (region) (temp as any).regionCode = region.name;
     //     if (continent) (temp as any).superRegionCode = continent.name;
 
     //     if (result.regionalSingleRecord) {
@@ -581,7 +580,7 @@ export async function register() {
 
     //           const newNrIds = [];
 
-    //           for (const code of Countries.map((c) => c.code)) {
+    //           for (const { code } of await db.query.regions.findMany()) {
     //             const nrIdsForCountry = await tx.execute(sql`
     //               WITH day_min_times AS (
     //                 SELECT ${resultsTable.id}, ${resultsTable.date}, ${resultsTable[bestOrAverage]},

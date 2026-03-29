@@ -1,20 +1,23 @@
 "use client";
 
 import FormInputLabel from "~/app/components/form/FormInputLabel.tsx";
-import { Continents, Countries } from "~/helpers/Countries.ts";
 import { C } from "~/helpers/constants.ts";
+import { Continents } from "~/helpers/continents.ts";
+import type { SelectRegion } from "~/server/db/schema/regions.ts";
 
 type Props = {
-  countryIso2: string | typeof C.notSelectedOption;
-  setCountryIso2: (value: string | typeof C.notSelectedOption) => void;
+  regionCode: string | typeof C.notSelectedOption;
+  setRegionCode: (value: string | typeof C.notSelectedOption) => void;
+  regions: Pick<SelectRegion, "code" | "name">[];
   nextFocusTargetId?: string;
   continentOptions?: boolean;
   disabled?: boolean;
 };
 
-function FormCountrySelect({
-  countryIso2,
-  setCountryIso2,
+function FormRegionSelect({
+  regionCode,
+  setRegionCode,
+  regions,
   nextFocusTargetId,
   continentOptions = false,
   disabled = false,
@@ -28,12 +31,12 @@ function FormCountrySelect({
 
   return (
     <div className="fs-5">
-      <FormInputLabel text={continentOptions ? "Region" : "Country"} inputId="country_iso_2" />
+      <FormInputLabel text="Region" inputId="region_code" />
 
       <select
-        id="country_iso_2"
-        value={countryIso2}
-        onChange={(e) => setCountryIso2(e.target.value)}
+        id="region_code"
+        value={regionCode}
+        onChange={(e) => setRegionCode(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
         className="form-select mt-2"
@@ -48,12 +51,12 @@ function FormCountrySelect({
             ))}
           </>
         ) : (
-          <option value={C.notSelectedOption}>Select country</option>
+          <option value={C.notSelectedOption}>Select region</option>
         )}
 
-        {Countries.map((c) => (
-          <option key={c.code} value={c.code}>
-            {c.name}
+        {regions.map((r) => (
+          <option key={r.code} value={r.code}>
+            {r.name}
           </option>
         ))}
       </select>
@@ -61,4 +64,4 @@ function FormCountrySelect({
   );
 }
 
-export default FormCountrySelect;
+export default FormRegionSelect;

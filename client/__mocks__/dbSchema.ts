@@ -8,6 +8,7 @@ export * from "~/server/db/schema/events.ts";
 export * from "~/server/db/schema/persons.ts";
 export * from "~/server/db/schema/posts.ts";
 export * from "~/server/db/schema/record-configs.ts";
+export * from "~/server/db/schema/regions.ts";
 export * from "~/server/db/schema/results.ts";
 export * from "~/server/db/schema/rounds.ts";
 export * from "~/server/db/schema/schema.ts";

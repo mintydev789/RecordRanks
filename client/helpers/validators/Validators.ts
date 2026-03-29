@@ -6,3 +6,5 @@ export const WcaIdValidator = z.string().uppercase().length(10).regex(C.wcaIdReg
 export const ColorValidator = z.string().regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/);
 
 export const RoundNumberValidator = z.int().min(1).max(C.maxRounds);
+
+export const RegionCodeValidator = z.string().min(2, { error: "Invalid country" }).max(2, { error: "Invalid country" });

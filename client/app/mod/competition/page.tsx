@@ -8,6 +8,7 @@ import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { resultsTable } from "~/server/db/schema/results.ts";
 import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
 import { authorizeUser, getUserHasAccessToContest } from "~/server/serverOnlyFunctions.ts";
@@ -31,9 +32,12 @@ async function CreateEditContestPage({ searchParams }: Props) {
     permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
 
-  const { success: canApprove } = await auth.api.userHasPermission({
-    body: { userId: session.user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
-  });
+  const [{ success: canApprove }, regions] = await Promise.all([
+    auth.api.userHasPermission({
+      body: { userId: session.user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
+    }),
+    db.select(regionsPublicCols).from(regionsTable),
+  ]);
 
   const mode = editId ? "edit" : copyId ? "copy" : "new";
   const competitionId = editId ?? copyId;
@@ -108,6 +112,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
           events={events}
           rounds={rounds}
           totalResultsByRound={totalResultsByRound}
+          regions={regions}
           mode={mode}
           contest={contest}
           organizers={organizers}

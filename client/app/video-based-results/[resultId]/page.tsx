@@ -5,6 +5,7 @@ import ResultsSubmissionForm from "~/app/video-based-results/ResultsSubmissionFo
 import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
+import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverOnlyFunctions.ts";
 
 type Props = {
@@ -15,9 +16,10 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
   const { resultId } = z.strictObject({ resultId: z.string().transform((val) => Number(val)) }).parse(await params);
   await authorizeUser({ permissions: { videoBasedResults: ["update", "approve", "delete"] } });
 
-  const [events, recordConfigs, result] = await Promise.all([
+  const [events, recordConfigs, regions, result] = await Promise.all([
     getVideoBasedEvents(),
     getRecordConfigs("video-based-results"),
+    db.select(regionsPublicCols).from(regionsTable),
     db.query.results.findFirst({ where: { id: resultId } }),
   ]);
 
@@ -38,6 +40,7 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
       <ResultsSubmissionForm
         events={events}
         recordConfigs={recordConfigs}
+        regions={regions}
         result={result}
         participants={participants}
         creator={creator}

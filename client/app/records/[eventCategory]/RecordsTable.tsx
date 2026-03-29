@@ -11,12 +11,14 @@ import RankingRow from "~/app/components/RankingRow.tsx";
 import Solves from "~/app/components/Solves.tsx";
 import type { RecordRanking, RecordsData } from "~/helpers/types/Rankings.tsx";
 import { getFormattedDate, getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
 type Props = {
   recordsDataPromise: Promise<RecordsData>;
+  regions: RegionResponse[];
 };
 
-function RecordsTable({ recordsDataPromise }: Props) {
+function RecordsTable({ recordsDataPromise, regions }: Props) {
   const recordsData = use(recordsDataPromise);
 
   const searchParams = useSearchParams();
@@ -87,7 +89,7 @@ function RecordsTable({ recordsDataPromise }: Props) {
                           <span>{getFormattedDate(record.date)}</span>
                         )}
                       </div>
-                      <Competitors persons={record.persons} vertical />
+                      <Competitors persons={record.persons} regions={regions} vertical />
                       {record.type === "average" && <Solves event={event} attempts={record.attempts} />}
                       {!record.contest && <RankingLinks ranking={record} />}
                     </li>
@@ -122,6 +124,7 @@ function RecordsTable({ recordsDataPromise }: Props) {
                             type={record.type === "average" ? "average-record" : "single-record"}
                             ranking={record}
                             event={event}
+                            regions={regions}
                             showOnlyPersonWithId={i === 0 ? undefined : i}
                           />
                         )),

@@ -1,5 +1,6 @@
 import ContestLayout from "~/app/competitions/[id]/ContestLayout.tsx";
-import ContestResults from "~/app/components/ContestResults.tsx";
+import EventButtons from "~/app/components/EventButtons.tsx";
+import EventResultsTable from "~/app/components/EventResultsTable.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { getContestSF } from "~/server/serverFunctions/contestServerFunctions.ts";
 
@@ -16,17 +17,21 @@ async function ContestResultsPage({ params, searchParams }: Props) {
 
   if (!res.data) return <LoadingError loadingEntity="contest results" />;
 
-  const { contest, events, rounds, results, persons, recordConfigs } = res.data;
+  const { contest, events, rounds, results, persons, recordConfigs, regions } = res.data;
+  const event = eventId ? events.find((e) => e.eventId === eventId)! : events[0];
 
   return (
     <ContestLayout contest={contest} activeTab="results">
-      <ContestResults
-        eventId={eventId ?? events[0].eventId}
-        events={events}
+      <div className="px-1">
+        <EventButtons eventId={event.eventId} events={events} forPage="results" />
+      </div>
+      <EventResultsTable
+        event={event}
         rounds={rounds}
         results={results}
         persons={persons}
         recordConfigs={recordConfigs}
+        regions={regions}
       />
     </ContestLayout>
   );

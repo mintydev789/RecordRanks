@@ -11,11 +11,11 @@ import z from "zod";
 import CreatorDetails from "~/app/components/CreatorDetails.tsx";
 import Form from "~/app/components/form/Form.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
-import FormCountrySelect from "~/app/components/form/FormCountrySelect.tsx";
 import FormDatePicker from "~/app/components/form/FormDatePicker.tsx";
 import FormNumberInput from "~/app/components/form/FormNumberInput.tsx";
 import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
 import FormRadio from "~/app/components/form/FormRadio.tsx";
+import FormRegionSelect from "~/app/components/form/FormRegionSelect.tsx";
 import FormTextArea from "~/app/components/form/FormTextArea.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
@@ -44,6 +44,7 @@ import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import {
   createAccessTokenSF,
@@ -65,6 +66,7 @@ type Props = {
   events: EventResponse[];
   rounds: RoundResponse[] | undefined;
   totalResultsByRound: { roundId: number; totalResults: number }[] | undefined;
+  regions: RegionResponse[];
   mode: "new" | "edit" | "copy";
   contest: SelectContest | undefined;
   organizers: PersonResponse[] | undefined;
@@ -77,6 +79,7 @@ function ContestForm({
   events,
   rounds: initRounds = [],
   totalResultsByRound,
+  regions,
   mode,
   contest,
   organizers: initOrganizers = [],
@@ -477,7 +480,7 @@ function ContestForm({
         isLoading={isCreating || isUpdating}
         disableControls={isPending || disabled || disabledIfContestPublished || disabledIfNotUnderstood}
       >
-        {mode === "edit" && isAdmin && <CreatorDetails creator={creator} person={creatorPerson} />}
+        {mode === "edit" && isAdmin && <CreatorDetails creator={creator} person={creatorPerson} regions={regions} />}
 
         <Tabs
           tabs={tabs}
@@ -654,9 +657,10 @@ function ContestForm({
                     />
                   </div>
                   <div className="col-12 col-md-6 mb-3">
-                    <FormCountrySelect
-                      countryIso2={regionCode}
-                      setCountryIso2={setRegionCode}
+                    <FormRegionSelect
+                      regionCode={regionCode}
+                      setRegionCode={setRegionCode}
+                      regions={regions}
                       disabled={mode === "edit" || disabledIfDetailsImported}
                     />
                   </div>
@@ -753,6 +757,7 @@ function ContestForm({
                     setPersonNames={setOrganizerNames}
                     persons={organizers}
                     setPersons={setOrganizers}
+                    regions={regions}
                     infiniteInputs
                     nextFocusTargetId="contact"
                     disabled={(disabledIfContestApproved && !isAdmin) || disabledIfContestPublished}

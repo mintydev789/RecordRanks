@@ -17,7 +17,7 @@ const client = new PGlite();
 // This uses some of the same options from drizzle.config.ts
 // pushSchema doesn't respect the casing parameter yet. See https://github.com/drizzle-team/drizzle-orm/pull/5018
 // const db = drizzle({ client, schema, relations, casing: "snake_case" });
-export const db = drizzle({ client, schema, relations });
+export const mockDb = drizzle({ client, schema, relations });
 
 // Apply schema to db
-export const { apply } = await pushSchema(schema, db as any);
+export const { apply } = await pushSchema(schema, mockDb as any);

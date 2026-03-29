@@ -1,6 +1,6 @@
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
-import { Countries } from "~/helpers/Countries.ts";
+import { regionsStub } from "~/__mocks__/stubs/regionsStub.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
 import { getBestAndAverage } from "~/helpers/utilityFunctions.ts";
@@ -24,6 +24,7 @@ import {
   personsStub,
   usPersonJayScott,
   usPersonJohnDoe,
+  uyPersonGennaroLopez,
   zaPersonKayaKhumalo,
 } from "./personsStub.ts";
 import {
@@ -83,7 +84,7 @@ function generateRandom444bfResults(): InsertResult[] {
         date,
         personIds: [personId],
         regionCode,
-        superRegionCode: Countries.find((c) => c.code === regionCode)!.superRegionCode,
+        superRegionCode: regionsStub.find((c) => c.code === regionCode)!.superRegionCode,
         attempts,
         best,
         average,
@@ -588,30 +589,31 @@ export const resultsStub: InsertResult[] = [
     ranking: 1,
   },
   getContestResult(testComp2026_222_r1, {
-    personIds: [1],
-    regionCode: "IRRELEVANT",
+    personIds: [uyPersonGennaroLopez.id], // irrelevant
+    regionCode: uyPersonGennaroLopez.regionCode, // irrelevant
     attempts: [{ result: 100 }, { result: 101 }, { result: 102 }],
     regionalSingleRecord: "WR",
     ranking: 1,
   }),
   getContestResult(testComp2026_333bf_r1, {
-    personIds: [1],
-    regionCode: "IRRELEVANT",
+    personIds: [uyPersonGennaroLopez.id], // irrelevant
+    regionCode: uyPersonGennaroLopez.regionCode, // irrelevant
     attempts: [{ result: -1 }, { result: 2000 }, { result: -1 }],
     regionalSingleRecord: "WR",
     ranking: 1,
   }),
   getContestResult(testMeetupJan2023_444bf_r1, {
-    personIds: [1],
-    regionCode: "IRRELEVANT",
+    personIds: [uyPersonGennaroLopez.id], // irrelevant
+    regionCode: uyPersonGennaroLopez.regionCode, // irrelevant
     attempts: [{ result: 7000 }, { result: 7100 }, { result: 7200 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
     ranking: 1,
   }),
+  // These are also WRs, since the ones above are from a different category (meetups)
   getContestResult(testComp2026_444bf_r1, {
-    personIds: [1],
-    regionCode: "IRRELEVANT",
+    personIds: [uyPersonGennaroLopez.id], // irrelevant
+    regionCode: uyPersonGennaroLopez.regionCode, // irrelevant
     attempts: [{ result: 7500 }, { result: 7600 }, { result: 7700 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",

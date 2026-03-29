@@ -14,18 +14,20 @@ import { ContestStateValues, type InputPerson } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { ModDashboardFiltersDto } from "~/helpers/validators/ModDashboardFilters.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { getPersonByIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
 
 const stateValues = [...ContestStateValues, "pending", C.notSelectedOption] as const;
 
 type Props = {
-  onChangeFilters: (newFilters: ModDashboardFiltersDto) => void;
   initOrganizerPerson: PersonResponse | undefined;
+  regions: RegionResponse[];
+  onChangeFilters: (newFilters: ModDashboardFiltersDto) => void;
   isAdminView: boolean;
   disabled: boolean;
 };
 
-function ModFilters({ onChangeFilters, initOrganizerPerson, isAdminView, disabled }: Props) {
+function ModFilters({ initOrganizerPerson, regions, onChangeFilters, isAdminView, disabled }: Props) {
   const { changeErrorMessages } = useContext(MainContext);
 
   const { executeAsync: getPersonById, isPending: isGettingPerson } = useAction(getPersonByIdSF);
@@ -84,6 +86,7 @@ function ModFilters({ onChangeFilters, initOrganizerPerson, isAdminView, disable
         personNames={personNames}
         setPersonNames={setPersonNames}
         onSelectPerson={(val) => selectPerson(val.id)}
+        regions={regions}
         disabled={disabled || isGettingPerson}
         addNewPersonMode="disabled"
         display="one-line"
