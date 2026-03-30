@@ -107,12 +107,4 @@ export const auth = betterAuth({
       },
     },
   },
-  account: {
-    accountLinking: {
-      enabled: true,
-      disableImplicitLinking: true,
-      allowDifferentEmails: false,
-      // updateUserInfoOnLink: true, // this doesn't work https://github.com/better-auth/better-auth/issues/8742
-    },
-  },
 });

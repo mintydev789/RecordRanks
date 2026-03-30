@@ -41,29 +41,27 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
   const { data: session, isPending: isPendingSession } = authClient.useSession();
 
-  const [status, setStatus] = useQueryState(
-    "status",
-    parseAsStringLiteral(["signup-success", "link-success", "email-change-success"]),
-  );
+  const [status, setStatus] = useQueryState("status", parseAsStringLiteral(["signup-success", "email-change-success"]));
   const [person, setPerson] = useState(initPerson);
   const [accounts, setAccounts] = useState<Account[]>();
   const [newEmail, setNewEmail] = useState("");
   const [wcaProfileLinkStatus, setWcaProfileLinkStatus] = useState<"disabled" | "enabled" | "pending" | "linked">(
     "disabled",
   );
-  const [isPendingWcaLink, startWcaLinkTransition] = useTransition();
   const [isInitiatingEmailChange, startEmailChange] = useTransition();
   const [isDeleting, startDeleteAccountTransition] = useTransition();
 
-  const hasLinkedWcaAccount = !!accounts?.some((a) => a.providerId === C.wcaOAuthProviderId);
+  const showLinkWcaProfileButton =
+    HAS_WCA_AUTH &&
+    !["disabled", "linked"].includes(wcaProfileLinkStatus) &&
+    accounts!.some((a) => a.providerId === C.wcaOAuthProviderId);
   const roles = session
     ? session.user
         .role!.split(",")
         .map((role) => (rolesObject as any)[role])
         .join(", ")
     : "";
-  const isPending =
-    isPendingSession || wcaProfileLinkStatus === "pending" || isPendingWcaLink || isInitiatingEmailChange || isDeleting;
+  const isPending = isPendingSession || wcaProfileLinkStatus === "pending" || isInitiatingEmailChange || isDeleting;
 
   useEffect(() => {
     if (session && !accounts) {
@@ -79,24 +77,15 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
           if (status === "email-change-success") changeSuccessMessage("Your email has been changed successfully");
 
           if (HAS_WCA_AUTH) {
-            if (status === "link-success") {
-              if (!data.some((a) => a.providerId === C.wcaOAuthProviderId)) {
-                changeErrorMessages(["An error has occurred while linking your WCA account"]);
-              } else {
-                changeSuccessMessage(
-                  "Your WCA account has been linked successfully! Linking your WCA competitor profile...",
-                );
-
-                setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
-                setTimeout(() => linkWcaProfile(data), 2000);
-              }
-            } else if (status === "signup-success") {
+            if (status === "signup-success") {
               changeSuccessMessage(
                 "Your account has been created successfully! Linking your WCA competitor profile...",
               );
 
               setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
               setTimeout(() => linkWcaProfile(data), 2000);
+            } else if (session.user.personId) {
+              setWcaProfileLinkStatus("linked");
             } else if (data.find((a) => a.providerId === C.wcaOAuthProviderId)) {
               setWcaProfileLinkStatus("enabled");
             }
@@ -111,19 +100,6 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   useEffect(() => {
     if (!isPending && !session) router.push("/login");
   }, [isPending, session]);
-
-  const linkWcaAccount = () => {
-    resetMessages();
-    startWcaLinkTransition(async () => {
-      const { error } = await authClient.oauth2.link({
-        providerId: C.wcaOAuthProviderId,
-        callbackURL: "/user/settings?status=link-success",
-        // errorCallbackURL: "/oauth-error", // this is currently broken in Better Auth; see next.config.ts
-      });
-
-      if (error) changeErrorMessages([error.message || error.statusText]);
-    });
-  };
 
   const linkWcaProfile = async (accs: Account[] = accounts!) => {
     setWcaProfileLinkStatus("pending");
@@ -272,32 +248,19 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
       ) : (
         <p>There is no competitor profile tied to your account.</p>
       )}
-      {HAS_WCA_AUTH &&
-        (!hasLinkedWcaAccount ? (
-          <Button
-            onClick={() => linkWcaAccount()}
-            isLoading={isPendingWcaLink}
-            disabled={isPending}
-            className="d-block mt-3 px-4"
-          >
-            <div className="d-flex gap-2 align-items-center">
-              <Image src="/wca_logo.svg" height={30} width={30} alt="WCA Logo" />
-              Link WCA account
-            </div>
-          </Button>
-        ) : !["disabled", "linked"].includes(wcaProfileLinkStatus) ? (
-          <Button
-            onClick={() => linkWcaProfile()}
-            isLoading={wcaProfileLinkStatus === "pending"}
-            disabled={isPending}
-            className="btn-success d-block mt-3 px-4"
-          >
-            <div className="d-flex gap-2 align-items-center">
-              <Image src="/wca_logo.svg" height={30} width={30} alt="WCA Logo" />
-              {person ? "Sync WCA profile" : "Link WCA profile"}
-            </div>
-          </Button>
-        ) : undefined)}
+      {showLinkWcaProfileButton && (
+        <Button
+          onClick={() => linkWcaProfile()}
+          isLoading={wcaProfileLinkStatus === "pending"}
+          disabled={isPending}
+          className="btn-success d-block mt-3 px-4"
+        >
+          <div className="d-flex gap-2 align-items-center">
+            <Image src="/wca_logo.svg" height={30} width={30} alt="WCA Logo" />
+            {person ? "Sync WCA profile" : "Link WCA profile"}
+          </div>
+        </Button>
+      )}
 
       <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-4">
         Delete Account
