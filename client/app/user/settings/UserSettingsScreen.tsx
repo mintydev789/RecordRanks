@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useContext, useEffect, useState, useTransition } from "react";
-import z from "zod";
 import Competitor from "~/app/components/Competitor.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput";
 import Button from "~/app/components/UI/Button.tsx";
@@ -13,12 +12,10 @@ import { authClient } from "~/helpers/authClient.ts";
 import { C, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
-import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { rolesObject } from "~/server/permissions.ts";
-import { getOrCreatePersonByWcaIdSF, syncPersonByWcaIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
-import { logUserDeletedSF } from "~/server/serverFunctions/serverFunctions.ts";
+import { linkWcaProfileSF, logUserDeletedSF } from "~/server/serverFunctions/serverFunctions.ts";
 
 // Just a copy of the type of the data property from the return type of authClient.listAccounts()
 type Account = {
@@ -83,9 +80,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
               );
 
               setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
-              setTimeout(() => linkWcaProfile(data), 2000);
-            } else if (session.user.personId) {
-              setWcaProfileLinkStatus("linked");
+              setTimeout(() => linkWcaProfile(), 2000);
             } else if (data.find((a) => a.providerId === C.wcaOAuthProviderId)) {
               setWcaProfileLinkStatus("enabled");
             }
@@ -101,67 +96,22 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
     if (!isPending && !session) router.push("/login");
   }, [isPending, session]);
 
-  const linkWcaProfile = async (accs: Account[] = accounts!) => {
+  const linkWcaProfile = async () => {
     setWcaProfileLinkStatus("pending");
-    const wcaAccount = accs.find((a) => a.providerId === C.wcaOAuthProviderId);
 
-    const { data, error } = await authClient.accountInfo({ query: { accountId: wcaAccount!.accountId } });
+    const res = await linkWcaProfileSF();
 
-    if (error) {
-      changeErrorMessages([error.message || error.statusText]);
+    if (res.serverError || res.validationErrors) {
+      changeErrorMessages([getActionError(res)]);
       setWcaProfileLinkStatus("enabled");
     } else {
-      // This doesn't include the full schema of the user information the WCA returns
-      const parsed = z
-        .object({
-          preferred_username: WcaIdValidator, // if the WCA user has no WCA ID, this will throw a validation error
-          name: z.string().nonempty(),
-          image: z.url().optional(),
-        })
-        .safeParse(data.data);
-
-      if (!parsed.success) {
-        changeErrorMessages([z.prettifyError(parsed.error)]);
-        setWcaProfileLinkStatus("enabled");
-      } else {
-        const { preferred_username: wcaId, name, image } = parsed.data;
-        const res = session!.user.personId
-          ? await syncPersonByWcaIdSF({ wcaId })
-          : await getOrCreatePersonByWcaIdSF({ wcaId });
-
-        if (res.serverError || res.validationErrors) {
-          changeErrorMessages([getActionError(res)]);
-          setWcaProfileLinkStatus("enabled");
-        } else if (session!.user.personId && session!.user.personId !== res.data!.person.id) {
-          changeErrorMessages([
-            "Couldn't update user data, because there is already a different competitor linked to this user. Please contact the admin team.",
-          ]);
-          setWcaProfileLinkStatus("disabled");
-        } else {
-          const credentialAccount = accs.find((a) => a.providerId === "credential");
-
-          // Set the person ID. If the user already has an email + password account, set the name and image link too.
-          const { error } = await authClient.updateUser(
-            credentialAccount ? { image, name, personId: res.data!.person.id } : { personId: res.data!.person.id },
-          );
-
-          if (error) {
-            changeErrorMessages([
-              error.message || error.statusText,
-              "The error may be due to this competitor already being tied to another user. Please contact the admin team.",
-            ]);
-            setWcaProfileLinkStatus("enabled");
-          } else {
-            changeSuccessMessage(
-              session!.user.personId
-                ? "Successfully synced WCA competitor profile"
-                : "Successfully linked WCA competitor profile",
-            );
-            setWcaProfileLinkStatus("linked");
-            setPerson(res.data!.person);
-          }
-        }
-      }
+      changeSuccessMessage(
+        session!.user.personId
+          ? "Successfully synced WCA competitor profile"
+          : "Successfully linked WCA competitor profile",
+      );
+      setWcaProfileLinkStatus("linked");
+      setPerson(res.data);
     }
   };
 

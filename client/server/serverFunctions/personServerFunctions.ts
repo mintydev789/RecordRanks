@@ -4,7 +4,7 @@ import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { C } from "~/helpers/constants.ts";
 import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
-import { fetchWcaPerson, getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
 import { RegionCodeValidator, WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
@@ -84,36 +84,6 @@ export const getOrCreatePersonByWcaIdSF = actionClient
   )
   .action<GetOrCreatePersonObject>(async ({ parsedInput: { wcaId }, ctx: { session } }) => {
     return await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id });
-  });
-
-export const syncPersonByWcaIdSF = actionClient
-  .metadata({ permissions: null })
-  .inputSchema(
-    z.strictObject({
-      wcaId: WcaIdValidator,
-    }),
-  )
-  .action<GetOrCreatePersonObject>(async ({ parsedInput: { wcaId }, ctx: { session } }) => {
-    if (!session.user.personId) {
-      throw new RrActionError(
-        "You cannot sync a WCA competitor without having a competitor already linked to your account",
-      );
-    }
-
-    const person = await db.query.persons.findFirst({
-      columns: { wcaId: true },
-      where: { id: session.user.personId, wcaId },
-    });
-    if (!person) throw new RrActionError("Person not found");
-
-    const wcaPerson = await fetchWcaPerson(wcaId);
-    if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found in the WCA API`);
-
-    const res = await updatePersonSF({ id: session.user.personId, newPersonDto: wcaPerson });
-
-    if (res.serverError || res.validationErrors) throw new RrActionError(getActionError(res));
-
-    return { person: res.data!, isNew: false };
   });
 
 export const createPersonSF = actionClient

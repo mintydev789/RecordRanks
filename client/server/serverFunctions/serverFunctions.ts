@@ -6,7 +6,9 @@ import { randomScrambleForEvent } from "cubing/scramble";
 import { and, eq, ne } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
+import { C } from "~/helpers/constants.ts";
 import { nxnMoves } from "~/helpers/types/NxNMove.ts";
+import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
@@ -19,7 +21,7 @@ import { sendEmail, sendRolesChangedEmail } from "~/server/email/mailer.ts";
 import { Roles } from "~/server/permissions.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { logMessage } from "../serverOnlyFunctions.ts";
+import { getOrCreatePersonByWcaId, logMessage, syncPersonByWcaId } from "../serverOnlyFunctions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})
@@ -129,6 +131,42 @@ export const updateUserSF = actionClient
       return { user: updatedUser, person };
     },
   );
+
+export const linkWcaProfileSF = actionClient
+  .metadata({ permissions: null })
+  .action<PersonResponse>(async ({ ctx: { session } }) => {
+    const wcaAccount = await db.query.accounts.findFirst({
+      columns: { accountId: true },
+      where: { userId: session.user.id, providerId: C.wcaOAuthProviderId },
+    });
+    if (!wcaAccount) throw new RrActionError("Only users using WCA login can link their own WCA competitor profiles");
+
+    const res = await auth.api.accountInfo({ query: { accountId: wcaAccount.accountId }, headers: await headers() });
+    if (!res) throw new RrActionError("Unable to retrieve account information from the WCA");
+
+    const parsed = z
+      // This doesn't include the full schema of the user information the WCA returns
+      .object({
+        preferred_username: WcaIdValidator, // if the WCA user has no WCA ID, this will throw a validation error
+      })
+      .safeParse(res.data);
+    if (!parsed.success) throw new RrActionError(z.prettifyError(parsed.error));
+
+    const wcaId = parsed.data.preferred_username;
+    const person = session.user.personId
+      ? await syncPersonByWcaId(wcaId, session.user.personId)
+      : (await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id })).person;
+
+    try {
+      await db.update(usersTable).set({ personId: person.id }).where(eq(usersTable.id, session.user.id));
+    } catch {
+      throw new RrActionError(
+        "Error while linking competitor profile. This competitor may already be tied to another user. Please contact the admin team.",
+      );
+    }
+
+    return person;
+  });
 
 export const getCurrentCollectiveCubingSolutionSF = actionClient
   .metadata({})

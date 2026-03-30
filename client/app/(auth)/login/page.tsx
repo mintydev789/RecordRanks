@@ -20,8 +20,8 @@ function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isPendingWcaSignIn, setIsPendingWcaSignIn] = useState(false);
   const [isPendingSignIn, startSignInTransition] = useTransition();
-  const [isPendingWcaSignIn, startWcaSignInTransition] = useTransition();
 
   const isPending = isPendingSignIn || isPendingWcaSignIn;
   const redirectUrl = searchParams.get("redirect") || "/";
@@ -59,16 +59,19 @@ function LoginPage() {
     }
   };
 
-  const signInWithWca = () => {
-    startWcaSignInTransition(async () => {
-      const { error } = await authClient.signIn.oauth2({
-        providerId: C.wcaOAuthProviderId,
-        callbackURL: "/user/settings?status=signup-success",
-        // errorCallbackURL: "/oauth-error", // this is currently broken in Better Auth; see next.config.ts
-      });
-
-      if (error) changeErrorMessages([error.message || error.statusText]);
+  const signInWithWca = async () => {
+    setIsPendingWcaSignIn(true);
+    const { error } = await authClient.signIn.oauth2({
+      providerId: C.wcaOAuthProviderId,
+      callbackURL: redirectUrl,
+      newUserCallbackURL: "/user/settings?status=signup-success",
+      // errorCallbackURL: "/oauth-error", // this is currently broken in Better Auth; see next.config.ts
     });
+
+    if (error) {
+      changeErrorMessages([error.message || error.statusText]);
+      setIsPendingWcaSignIn(false);
+    }
   };
 
   return (

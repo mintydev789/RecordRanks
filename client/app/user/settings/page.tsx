@@ -17,7 +17,7 @@ async function UserSettingsPage() {
   ]);
 
   return (
-    <section className="px-2">
+    <section className="px-3">
       <h2 className="mb-4 text-center">Settings</h2>
 
       <ToastMessages className="mb-4" />

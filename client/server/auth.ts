@@ -93,6 +93,7 @@ export const auth = betterAuth({
         type: "number",
         required: false,
         unique: true,
+        input: false,
       },
     },
     changeEmail: {
