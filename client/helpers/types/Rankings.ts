@@ -1,5 +1,4 @@
 import type { ContestResponse } from "~/server/db/schema/contests";
-import type { EventResponse } from "~/server/db/schema/events";
 import type { PersonResponse } from "~/server/db/schema/persons";
 import type { Attempt } from "~/server/db/schema/results";
 
@@ -21,11 +20,8 @@ export type RecordRanking = Omit<Ranking, "ranking" | "memo"> & {
   type: "single" | "average" | "single-and-avg";
 };
 
-export type RecordsData = {
-  events: Pick<EventResponse, "eventId" | "name" | "category" | "format" | "removedWca" | "description">[];
-  records: (Omit<RecordRanking, "result"> & {
-    eventId: string;
-    best: number;
-    average: number;
-  })[];
+export type RecordDetails = Omit<RecordRanking, "result"> & {
+  eventId: string;
+  best: number;
+  average: number;
 };

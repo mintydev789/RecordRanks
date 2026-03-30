@@ -9,133 +9,137 @@ import EventTitle from "~/app/components/EventTitle.tsx";
 import RankingLinks from "~/app/components/RankingLinks.tsx";
 import RankingRow from "~/app/components/RankingRow.tsx";
 import Solves from "~/app/components/Solves.tsx";
-import type { RecordRanking, RecordsData } from "~/helpers/types/Rankings.tsx";
+import type { RecordDetails, RecordRanking } from "~/helpers/types/Rankings.tsx";
 import { getFormattedDate, getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
 type Props = {
-  recordsDataPromise: Promise<RecordsData>;
+  recordsPromise: Promise<RecordDetails[]>;
+  events: Pick<EventResponse, "eventId" | "name" | "category" | "format" | "removedWca" | "description">[];
   regions: RegionResponse[];
 };
 
-function RecordsTable({ recordsDataPromise, regions }: Props) {
-  const recordsData = use(recordsDataPromise);
+function RecordsTable({ recordsPromise, events, regions }: Props) {
+  const records = use(recordsPromise);
 
   const searchParams = useSearchParams();
 
   return (
     <div className="mt-4">
-      {recordsData.records.length === 0 ? (
+      {records.length === 0 ? (
         <p className="fs-5 mx-2">No records have been set yet</p>
       ) : (
-        recordsData.events.map((event) => {
-          const eventRecords: RecordRanking[] = [];
-          let hasComp = false;
-          let hasLink = false;
+        events
+          .filter((e) => records.some((r) => r.eventId === e.eventId))
+          .map((event) => {
+            const eventRecords: RecordRanking[] = [];
+            let hasComp = false;
+            let hasLink = false;
 
-          const getCurrentTiedRecords = (type: "single" | "average") => {
-            let currentRecordResult: number | undefined;
+            const getCurrentTiedRecords = (type: "single" | "average") => {
+              let currentRecordResult: number | undefined;
 
-            for (const record of recordsData.records) {
-              if (record.eventId === event.eventId && (record.type === "single-and-avg" || record.type === type)) {
-                const result = type === "single" ? record.best : record.average;
-                if (!currentRecordResult) currentRecordResult = result;
-                else if (result > currentRecordResult) break;
+              for (const record of records) {
+                if (record.eventId === event.eventId && (record.type === "single-and-avg" || record.type === type)) {
+                  const result = type === "single" ? record.best : record.average;
+                  if (!currentRecordResult) currentRecordResult = result;
+                  else if (result > currentRecordResult) break;
 
-                eventRecords.push({
-                  ...omit(record, ["best", "average"]),
-                  rankingId: record.rankingId.replace(/_.*$/, `_${type}`),
-                  type,
-                  result,
-                });
+                  eventRecords.push({
+                    ...omit(record, ["best", "average"]),
+                    rankingId: record.rankingId.replace(/_.*$/, `_${type}`),
+                    type,
+                    result,
+                  });
 
-                if (record.contest) hasComp = true;
-                if (record.videoLink || record.discussionLink) hasLink = true;
+                  if (record.contest) hasComp = true;
+                  if (record.videoLink || record.discussionLink) hasLink = true;
+                }
               }
-            }
-          };
+            };
 
-          getCurrentTiedRecords("single");
-          getCurrentTiedRecords("average");
+            getCurrentTiedRecords("single");
+            getCurrentTiedRecords("average");
 
-          return (
-            <div key={event.eventId} className="mb-3">
-              <EventTitle
-                event={event}
-                showIcon
-                linkToRankings={searchParams.size > 0 ? `?${searchParams}` : true}
-                showDescription
-              />
+            return (
+              <div key={event.eventId} className="mb-3">
+                <EventTitle
+                  event={event}
+                  showIcon
+                  linkToRankings={searchParams.size > 0 ? `?${searchParams}` : true}
+                  showDescription
+                />
 
-              {/* MOBILE VIEW */}
-              <div className="d-lg-none mt-2 mb-4 border-bottom border-top">
-                <ul className="list-group list-group-flush">
-                  {eventRecords.map((record) => (
-                    <li
-                      key={record.rankingId}
-                      className="d-flex flex-column list-group-item list-group-item-secondary gap-2 py-3"
-                    >
-                      <div className="d-flex justify-content-between">
-                        <span>
-                          <b>{getFormattedTime(record.result, { event })}</b>
-                          &#8194;
-                          {record.type === "single" ? "Single" : record.attempts.length === 3 ? "Mean" : "Average"}
-                        </span>
-                        {record.contest ? (
-                          <Link href={`/competitions/${record.contest.competitionId}`} prefetch={false}>
-                            {getFormattedDate(record.date)}
-                          </Link>
-                        ) : (
-                          <span>{getFormattedDate(record.date)}</span>
+                {/* MOBILE VIEW */}
+                <div className="d-lg-none mt-2 mb-4 border-bottom border-top">
+                  <ul className="list-group list-group-flush">
+                    {eventRecords.map((record) => (
+                      <li
+                        key={record.rankingId}
+                        className="d-flex flex-column list-group-item list-group-item-secondary gap-2 py-3"
+                      >
+                        <div className="d-flex justify-content-between">
+                          <span>
+                            <b>{getFormattedTime(record.result, { event })}</b>
+                            &#8194;
+                            {record.type === "single" ? "Single" : record.attempts.length === 3 ? "Mean" : "Average"}
+                          </span>
+                          {record.contest ? (
+                            <Link href={`/competitions/${record.contest.competitionId}`} prefetch={false}>
+                              {getFormattedDate(record.date)}
+                            </Link>
+                          ) : (
+                            <span>{getFormattedDate(record.date)}</span>
+                          )}
+                        </div>
+                        <Competitors persons={record.persons} regions={regions} vertical />
+                        {record.type === "average" && <Solves event={event} attempts={record.attempts} />}
+                        {!record.contest && <RankingLinks ranking={record} />}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* DESKTOP VIEW */}
+                <div className="d-none d-lg-block">
+                  <div className="table-responsive flex-grow-1">
+                    <table className="table-hover table-responsive table text-nowrap">
+                      <thead>
+                        <tr>
+                          <th>Type</th>
+                          <th>Name</th>
+                          <th>Result</th>
+                          <th>Representing</th>
+                          <th>Date</th>
+                          <th>
+                            {hasComp ? "Contest" : ""}
+                            {hasComp && hasLink ? " / " : ""}
+                            {hasLink ? "Links" : ""}
+                          </th>
+                          <th>Solves</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {eventRecords.map((record) =>
+                          record.persons.map((person, i) => (
+                            <RankingRow
+                              key={`${record.rankingId}_${person.id}`}
+                              type={record.type === "average" ? "average-record" : "single-record"}
+                              ranking={record}
+                              event={event}
+                              regions={regions}
+                              showOnlyPersonWithId={i === 0 ? undefined : i}
+                            />
+                          )),
                         )}
-                      </div>
-                      <Competitors persons={record.persons} regions={regions} vertical />
-                      {record.type === "average" && <Solves event={event} attempts={record.attempts} />}
-                      {!record.contest && <RankingLinks ranking={record} />}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* DESKTOP VIEW */}
-              <div className="d-none d-lg-block">
-                <div className="table-responsive flex-grow-1">
-                  <table className="table-hover table-responsive table text-nowrap">
-                    <thead>
-                      <tr>
-                        <th>Type</th>
-                        <th>Name</th>
-                        <th>Result</th>
-                        <th>Representing</th>
-                        <th>Date</th>
-                        <th>
-                          {hasComp ? "Contest" : ""}
-                          {hasComp && hasLink ? " / " : ""}
-                          {hasLink ? "Links" : ""}
-                        </th>
-                        <th>Solves</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {eventRecords.map((record) =>
-                        record.persons.map((person, i) => (
-                          <RankingRow
-                            key={`${record.rankingId}_${person.id}`}
-                            type={record.type === "average" ? "average-record" : "single-record"}
-                            ranking={record}
-                            event={event}
-                            regions={regions}
-                            showOnlyPersonWithId={i === 0 ? undefined : i}
-                          />
-                        )),
-                      )}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })
+            );
+          })
       )}
     </div>
   );

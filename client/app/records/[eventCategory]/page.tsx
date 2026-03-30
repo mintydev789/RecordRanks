@@ -37,23 +37,33 @@ async function RecordsPage({ params, searchParams }: Props) {
   const { eventCategory } = await params;
   const { category, region } = await searchParams;
 
-  const regions = await db.select(regionsPublicCols).from(regionsTable);
-
   const urlSearchParams = new URLSearchParams(omitBy({ category, region } as any, (val) => !val));
   const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ region } as any, (val) => !val));
 
   const recordCategory = category ?? (eventCategory === "extreme-bld" ? "video-based-results" : "competitions");
 
-  const recordsDataPromise = getRecords(eventCategory, recordCategory, region);
+  const recordsPromise = getRecords(eventCategory, recordCategory, region);
+
+  const [events, regions] = await Promise.all([
+    db.query.events.findMany({
+      columns: { eventId: true, name: true, category: true, format: true, removedWca: true, description: true },
+      where: { hidden: false },
+      orderBy: { rank: "asc" },
+    }),
+    db.select(regionsPublicCols).from(regionsTable),
+  ]);
 
   const selectedCat = eventCategories.find((ec) => ec.value === eventCategory)!;
-  const tabs: NavigationItem[] = eventCategories.map((cat) => ({
-    title: cat.title,
-    shortTitle: cat.shortTitle,
-    value: cat.value,
-    route: `/records/${cat.value}?${urlSearchParams}`,
-    hidden: cat.value === "removed",
-  }));
+  const tabs: NavigationItem[] = eventCategories
+    // Only show categories that have at least one event
+    .filter((ec) => events.some((e) => e.category === ec.value))
+    .map((ec) => ({
+      title: ec.title,
+      shortTitle: ec.shortTitle,
+      value: ec.value,
+      route: `/records/${ec.value}?${urlSearchParams}`,
+      hidden: ec.value === "removed",
+    }));
 
   return (
     <div>
@@ -111,7 +121,11 @@ async function RecordsPage({ params, searchParams }: Props) {
       )}
 
       <Suspense fallback={<Loading />}>
-        <RecordsTable recordsDataPromise={recordsDataPromise} regions={regions} />
+        <RecordsTable
+          recordsPromise={recordsPromise}
+          events={events.filter((e) => e.category === eventCategory)}
+          regions={regions}
+        />
       </Suspense>
     </div>
   );

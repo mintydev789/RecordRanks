@@ -6,8 +6,6 @@ import EventIcon from "~/app/components/EventIcon.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 
-const filteredCategories = eventCategories.filter((ec) => ec.value !== "removed");
-
 type Props = {
   eventId: string | undefined;
   events: EventResponse[];
@@ -19,6 +17,10 @@ function EventButtons({ eventId, events, forPage }: Props) {
   const { id, type } = useParams();
   const searchParams = useSearchParams();
 
+  const filteredCategories = eventCategories.filter(
+    (ec) => ec.value !== "removed" && events.some((e) => e.category === ec.value && !e.hidden),
+  );
+
   const [selectedCat, setSelectedCat] = useState(
     filteredCategories.find((ec) => events.find((e) => e.eventId === eventId)?.category === ec.value) ??
       filteredCategories.at(0)!,
@@ -27,9 +29,9 @@ function EventButtons({ eventId, events, forPage }: Props) {
   // If hideCategories = true, just show all events that were passed in
   const filteredEvents = useMemo<EventResponse[]>(
     () =>
-      !["rankings", "competitions"].includes(forPage)
-        ? events
-        : events.filter((e) => !e.hidden && e.category === selectedCat.value),
+      ["rankings", "competitions"].includes(forPage)
+        ? events.filter((e) => !e.hidden && e.category === selectedCat.value)
+        : events,
     [events, selectedCat, forPage],
   );
 

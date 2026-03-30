@@ -7,7 +7,7 @@ import z from "zod";
 import { C } from "~/helpers/constants.ts";
 import { Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
-import type { Ranking, RecordsData } from "~/helpers/types/Rankings.ts";
+import type { Ranking, RecordDetails } from "~/helpers/types/Rankings.ts";
 import {
   type GetOrCreatePersonObject,
   type RecordCategory,
@@ -160,7 +160,7 @@ export async function getRecords(
   eventCategory: string,
   recordCategory: RecordCategory,
   region?: string,
-): Promise<RecordsData> {
+): Promise<RecordDetails[]> {
   z.strictObject({
     eventCategory: z.string().nonempty(),
     recordCategory: z.enum(RecordCategoryValues),
@@ -168,9 +168,8 @@ export async function getRecords(
   }).parse({ eventCategory, recordCategory, region });
 
   const events = await db.query.events.findMany({
-    columns: { eventId: true, name: true, category: true, format: true, removedWca: true, description: true },
+    columns: { eventId: true },
     where: { hidden: false, category: eventCategory },
-    orderBy: { rank: "asc" },
   });
 
   const recordTypes: RecordType[] = ["WR"];
@@ -223,30 +222,27 @@ export async function getRecords(
     )
     .orderBy(desc(resultsTable.date));
 
-  return {
-    events: events.filter((e) => records.some((r) => r.eventId === e.eventId)),
-    records: records.map((r) => {
-      const type = recordTypes.includes(r.result.regionalSingleRecord as any)
-        ? recordTypes.includes(r.result.regionalAverageRecord as any)
-          ? "single-and-avg"
-          : "single"
-        : "average";
+  return records.map((r) => {
+    const type = recordTypes.includes(r.result.regionalSingleRecord as any)
+      ? recordTypes.includes(r.result.regionalAverageRecord as any)
+        ? "single-and-avg"
+        : "single"
+      : "average";
 
-      return {
-        rankingId: `${r.result.id}_${type}`,
-        type,
-        eventId: r.eventId,
-        date: r.result.date,
-        persons: r.persons as Pick<PersonResponse, "id" | "name" | "localizedName" | "regionCode" | "wcaId">[],
-        best: r.result.best,
-        average: r.result.average,
-        attempts: r.result.attempts,
-        contest: r.contest,
-        videoLink: r.result.videoLink,
-        discussionLink: r.result.discussionLink,
-      };
-    }),
-  };
+    return {
+      rankingId: `${r.result.id}_${type}`,
+      type,
+      eventId: r.eventId,
+      date: r.result.date,
+      persons: r.persons as Pick<PersonResponse, "id" | "name" | "localizedName" | "regionCode" | "wcaId">[],
+      best: r.result.best,
+      average: r.result.average,
+      attempts: r.result.attempts,
+      contest: r.contest,
+      videoLink: r.result.videoLink,
+      discussionLink: r.result.discussionLink,
+    };
+  });
 }
 
 export async function getRankings(
