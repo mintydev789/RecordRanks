@@ -6,7 +6,6 @@ import { randomScrambleForEvent } from "cubing/scramble";
 import { and, eq, ne } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { C } from "~/helpers/constants.ts";
 import { nxnMoves } from "~/helpers/types/NxNMove.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
@@ -137,7 +136,7 @@ export const linkWcaProfileSF = actionClient
   .action<PersonResponse>(async ({ ctx: { session } }) => {
     const wcaAccount = await db.query.accounts.findFirst({
       columns: { accountId: true },
-      where: { userId: session.user.id, providerId: C.wcaOAuthProviderId },
+      where: { userId: session.user.id, providerId: "wca" },
     });
     if (!wcaAccount) throw new RrActionError("Only users using WCA login can link their own WCA competitor profiles");
 

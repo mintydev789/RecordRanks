@@ -13,7 +13,7 @@ async function OauthErrorPage({ searchParams }: Props) {
   let message = errorMessage;
   if (error === "account_not_linked" && !message) {
     message =
-      "This might be because you already have an email + password account. If you want, you can log in, delete your email + password account, and then sign up again.";
+      "This could be because you already have an account that uses a different login method. You can delete your existing account and then sign up again using a different login method.";
   }
 
   return (

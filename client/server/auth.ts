@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin as adminPlugin, genericOAuth, username } from "better-auth/plugins";
-import { C, HAS_CREDENTIAL_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   accountsTable as accounts,
@@ -48,7 +48,7 @@ export const auth = betterAuth({
       config: [
         HAS_WCA_AUTH
           ? {
-              providerId: C.wcaOAuthProviderId,
+              providerId: "wca",
               clientId: process.env.WCA_OAUTH_CLIENT_ID!,
               clientSecret: process.env.WCA_OAUTH_SECRET,
               discoveryUrl: "https://www.worldcubeassociation.org/.well-known/openid-configuration",
@@ -60,6 +60,15 @@ export const auth = betterAuth({
       ].filter((provider) => provider !== undefined),
     }),
   ],
+  socialProviders: {
+    google: HAS_GOOGLE_AUTH
+      ? {
+          prompt: "select_account",
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        }
+      : undefined,
+  },
   emailAndPassword: {
     enabled: HAS_CREDENTIAL_AUTH,
     autoSignIn: false,
@@ -106,6 +115,11 @@ export const auth = betterAuth({
 
         sendAccountDeletedEmail(user.email);
       },
+    },
+  },
+  account: {
+    accountLinking: {
+      enabled: false,
     },
   },
 });

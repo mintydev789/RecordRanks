@@ -9,7 +9,7 @@ import FormTextInput from "~/app/components/form/FormTextInput";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { authClient } from "~/helpers/authClient.ts";
-import { C, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
@@ -51,7 +51,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   const showLinkWcaProfileButton =
     HAS_WCA_AUTH &&
     !["disabled", "linked"].includes(wcaProfileLinkStatus) &&
-    accounts!.some((a) => a.providerId === C.wcaOAuthProviderId);
+    accounts!.some((a) => a.providerId === "wca");
   const roles = session
     ? session.user
         .role!.split(",")
@@ -81,7 +81,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
 
               setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
               setTimeout(() => linkWcaProfile(), 2000);
-            } else if (data.find((a) => a.providerId === C.wcaOAuthProviderId)) {
+            } else if (data.find((a) => a.providerId === "wca")) {
               setWcaProfileLinkStatus("enabled");
             }
           }

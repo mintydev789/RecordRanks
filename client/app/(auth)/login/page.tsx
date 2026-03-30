@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState, useTransition } from "react";
 import { z } from "zod";
+import SignInWithGoogleButton from "~/app/(auth)/login/SignInWithGoogleButton.tsx";
 import Form from "~/app/components/form/Form.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import { authClient } from "~/helpers/authClient.ts";
-import { C, HAS_CREDENTIAL_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { LoginFormValidator } from "~/helpers/validators/Auth.ts";
 
@@ -21,9 +22,10 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isPendingWcaSignIn, setIsPendingWcaSignIn] = useState(false);
+  const [isPendingGoogleSignIn, setIsPendingGoogleSignIn] = useState(false);
   const [isPendingSignIn, startSignInTransition] = useTransition();
 
-  const isPending = isPendingSignIn || isPendingWcaSignIn;
+  const isPending = isPendingSignIn || isPendingWcaSignIn || isPendingGoogleSignIn;
   const redirectUrl = searchParams.get("redirect") || "/";
 
   useEffect(() => {
@@ -62,7 +64,7 @@ function LoginPage() {
   const signInWithWca = async () => {
     setIsPendingWcaSignIn(true);
     const { error } = await authClient.signIn.oauth2({
-      providerId: C.wcaOAuthProviderId,
+      providerId: "wca",
       callbackURL: redirectUrl,
       newUserCallbackURL: "/user/settings?status=signup-success",
       // errorCallbackURL: "/oauth-error", // this is currently broken in Better Auth; see next.config.ts
@@ -71,6 +73,19 @@ function LoginPage() {
     if (error) {
       changeErrorMessages([error.message || error.statusText]);
       setIsPendingWcaSignIn(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setIsPendingGoogleSignIn(true);
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: redirectUrl,
+    });
+
+    if (error) {
+      changeErrorMessages([error.message || error.statusText]);
+      setIsPendingGoogleSignIn(false);
     }
   };
 
@@ -109,19 +124,22 @@ function LoginPage() {
       <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
         {HAS_CREDENTIAL_AUTH && <Link href="/register">Sign up using email</Link>}
 
-        {HAS_WCA_AUTH && (
-          <Button
-            onClick={signInWithWca}
-            disabled={isPending}
-            isLoading={isPendingWcaSignIn}
-            className="d-block mt-3 px-4"
-          >
-            <div className="d-flex gap-2 align-items-center">
-              <Image src="/wca_logo.svg" height={30} width={30} alt="WCA" />
-              WCA
-            </div>
-          </Button>
-        )}
+        <div className="d-flex mt-4 gap-3 align-items-center">
+          {HAS_WCA_AUTH && (
+            <Button
+              onClick={signInWithWca}
+              disabled={isPending}
+              isLoading={isPendingWcaSignIn}
+              className="d-block px-4"
+            >
+              <div className="d-flex gap-2 align-items-center">
+                <Image src="/wca_logo.svg" height={30} width={30} alt="WCA" />
+                Sign in with WCA
+              </div>
+            </Button>
+          )}
+          {HAS_GOOGLE_AUTH && <SignInWithGoogleButton onClick={signInWithGoogle} disabled={isPending} />}
+        </div>
       </div>
     </section>
   );

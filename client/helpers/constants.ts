@@ -27,7 +27,6 @@ export const C = {
   maxUsers: 5000,
   wcaApiBaseUrl: "https://api.worldcubeassociation.org",
   wcaV0ApiBaseUrl: "https://www.worldcubeassociation.org/api/v0",
-  wcaOAuthProviderId: "wca",
   wcaIdRegex: /[0-9]{4}[A-Z]{4}[0-9]{2}/,
   wcaIdRegexLoose: /[0-9]{4}[a-zA-Z]{4}[0-9]{2}/, // allows lowercase letters too
   navigationKeys: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"],
@@ -46,5 +45,8 @@ export const C = {
 } as const;
 
 export const IS_CUBING_CONTESTS_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === `https://${C.cubingContestsHostname}`;
-export const HAS_CREDENTIAL_AUTH = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",").includes("credential");
-export const HAS_WCA_AUTH = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",").includes(C.wcaOAuthProviderId);
+
+const providers = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",");
+export const HAS_CREDENTIAL_AUTH = providers.includes("credential");
+export const HAS_WCA_AUTH = providers.includes("wca");
+export const HAS_GOOGLE_AUTH = providers.includes("google");
