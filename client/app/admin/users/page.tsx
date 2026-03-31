@@ -13,11 +13,12 @@ import ManageUsersScreen from "./ManageUsersScreen.tsx";
 async function ManageUsersPage() {
   await authorizeUser({ permissions: { user: ["list"] } });
 
-  const [res, regions] = await Promise.all([
+  const [res, accounts, regions] = await Promise.all([
     auth.api.listUsers({
       query: { sortBy: "createdAt", sortDirection: "desc", limit: C.maxUsers },
       headers: await headers(),
     }),
+    db.query.accounts.findMany({ columns: { userId: true, providerId: true } }),
     db.select(regionsPublicCols).from(regionsTable),
   ]);
 
@@ -28,13 +29,18 @@ async function ManageUsersPage() {
   const personIds = Array.from(new Set(users.filter((u) => u.personId).map((u) => u.personId!)));
   const persons = await db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, personIds));
 
+  const usersWithProviderIds = users.map((u) => ({
+    ...u,
+    providerId: accounts.find((a) => a.userId === u.id)!.providerId,
+  }));
+
   return (
     <section>
       <h2 className="mb-4 text-center">Users</h2>
 
       <ToastMessages className="mx-2" />
 
-      <ManageUsersScreen users={users} userPersons={persons} regions={regions} />
+      <ManageUsersScreen users={usersWithProviderIds} userPersons={persons} regions={regions} />
     </section>
   );
 }

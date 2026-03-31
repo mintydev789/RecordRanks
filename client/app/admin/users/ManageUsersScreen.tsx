@@ -23,7 +23,7 @@ import { type Role, rolesObject } from "~/server/permissions.ts";
 import { updateUserSF } from "~/server/serverFunctions/serverFunctions.ts";
 
 type Props = {
-  users: (typeof authClient.$Infer.Session.user)[];
+  users: (typeof authClient.$Infer.Session.user & { providerId: string })[];
   userPersons: PersonResponse[];
   regions: RegionResponse[];
 };
@@ -76,7 +76,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
       resetMessages();
       setUserId(undefined);
       setName("");
-      setUsers(users.map((u) => (u.id === userId ? res.data!.user : u)));
+      setUsers(users.map((u) => (u.id === userId ? { ...res.data!.user, providerId: u.providerId } : u)));
       const { person } = res.data!;
       if (person && !userPersons.some((p) => p.id === person.id)) setUserPersons([...userPersons, person]);
     }
@@ -167,6 +167,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
               <th scope="col">#</th>
               <th scope="col">Name</th>
               <th scope="col">Email</th>
+              <th scope="col">Provider ID</th>
               <th scope="col">Competitor</th>
               <th scope="col">Roles</th>
               <th scope="col">Actions</th>
@@ -190,6 +191,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
                       <ActiveInactiveIcon isActive={user.emailVerified} />
                     </div>
                   </td>
+                  <td>{user.providerId}</td>
                   <td>{person && <Competitor person={person} regions={regions} noFlag />}</td>
                   <td>{roles}</td>
                   <td>
