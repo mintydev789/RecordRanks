@@ -66,21 +66,21 @@ function ModDashboardScreen({ modContestsPromise, regions, isAdminView }: Props)
 
         <div className="d-flex fs-5 column-gap-2 column-gap-xl-3 row-gap-2 mt-4 mb-3 flex-wrap">
           <Link href="/mod/competition" prefetch={false} className="btn btn-success btn-sm btn-lg-md">
-            Create new contest
+            Create new contest ✨
           </Link>
           <Link href="/mod/competitors" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
-            Manage competitors
+            Manage competitors ✨
           </Link>
           {isAdminView ? (
             <>
               <Link href="/admin/users" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
-                Manage users
+                Manage users ✨
               </Link>
               <Link href="/admin/events" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
-                Configure events
+                Configure events ✨
               </Link>
               <Link href="/admin/records-configuration" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
-                Configure records
+                Configure records ✨
               </Link>
             </>
           ) : (

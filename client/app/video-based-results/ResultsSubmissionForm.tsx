@@ -235,7 +235,7 @@ function ResultsSubmissionForm({
             </p>
             <div className="d-flex flex-wrap gap-3">
               <button type="button" className="btn btn-success btn-sm" onClick={() => setShowRules(!showRules)}>
-                {showRules ? "Hide rules" : "Show rules"}
+                {showRules ? "Hide rules" : "Show rules"} ✨
               </button>
               <DonateButton />
             </div>

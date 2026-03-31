@@ -78,7 +78,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
           title="Edit"
           aria-label="Edit"
         >
-          <FontAwesomeIcon icon={faPencil} />
+          <FontAwesomeIcon icon={faPencil} /> ✨
         </Link>
       )}
       {contest.type !== "wca-comp" && (
@@ -89,7 +89,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
           title="Clone"
           aria-label="Clone"
         >
-          <FontAwesomeIcon icon={faCopy} />
+          <FontAwesomeIcon icon={faCopy} /> ✨
         </Link>
       )}
       {(["approved", "ongoing"].includes(contest.state) || (isAdmin && contest.state === "finished")) && (
@@ -98,7 +98,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
           prefetch={false}
           className={`btn btn-success ${smallButtons ? "btn-xs" : ""}`}
         >
-          Results
+          Results ✨
         </Link>
       )}
       {contest.state === "created" && isAdmin && (

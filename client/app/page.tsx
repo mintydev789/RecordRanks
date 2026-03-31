@@ -36,16 +36,16 @@ async function HomePage() {
 
       <div className="d-flex justify-content-center fs-5 my-4 flex-column flex-md-row gap-3 gap-lg-4 align-items-center">
         <Link href="/about" prefetch={false} className="rr-homepage-link btn btn-primary">
-          About Us
+          About Us ✨
         </Link>
         <Link href="/competitions" prefetch={false} className="rr-homepage-link btn btn-primary">
-          See All Contests
+          See All Contests ✨
         </Link>
         <Link href="/records" prefetch={false} className="rr-homepage-link btn btn-primary">
-          See Current Records
+          See Current Records ✨
         </Link>
         <Link href="/rankings" prefetch={false} className="rr-homepage-link btn btn-primary">
-          See Rankings
+          See Rankings ✨
         </Link>
       </div>
 
@@ -73,7 +73,7 @@ async function HomePage() {
             </strong>
           </p>
           <Link href="/moderator-instructions" prefetch={false} className="btn btn-secondary mt-">
-            Moderator Instructions
+            Moderator Instructions ✨
           </Link>
         </>
       )}

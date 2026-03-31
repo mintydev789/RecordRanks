@@ -90,7 +90,7 @@ async function RecordsPage({ params, searchParams }: Props) {
               prefetch={false}
               className={`btn btn-primary ${recordCategory === "competitions" ? "active" : ""}`}
             >
-              Competitions
+              Competitions ✨
             </Link>
             <Link
               href={`/records/${eventCategory}/?${
@@ -99,7 +99,7 @@ async function RecordsPage({ params, searchParams }: Props) {
               prefetch={false}
               className={`btn btn-primary ${recordCategory === "meetups" ? "active" : ""}`}
             >
-              Meetups
+              Meetups ✨
             </Link>
             <Link
               href={`/records/${eventCategory}?${
@@ -108,7 +108,7 @@ async function RecordsPage({ params, searchParams }: Props) {
               prefetch={false}
               className={`btn btn-primary ${recordCategory === "video-based-results" ? "active" : ""}`}
             >
-              Video-based
+              Video-based ✨
             </Link>
           </div>
         </div>
@@ -116,7 +116,7 @@ async function RecordsPage({ params, searchParams }: Props) {
 
       {eventCategory === "extremebld" && (
         <Link href="/video-based-results/submit" prefetch={false} className="btn btn-success btn ms-2">
-          Submit a result
+          Submit a result ✨
         </Link>
       )}
 

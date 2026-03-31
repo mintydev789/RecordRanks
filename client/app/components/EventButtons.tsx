@@ -69,7 +69,7 @@ function EventButtons({ eventId, events, forPage }: Props) {
                 onClick={() => setSelectedCat(cat)}
               >
                 <span className="d-none d-md-inline">{cat.title}</span>
-                <span className="d-inline d-md-none">{cat.shortTitle || cat.title}</span>
+                <span className="d-inline d-md-none">{cat.shortTitle || cat.title}</span> ✨
               </button>
             ))}
           </div>

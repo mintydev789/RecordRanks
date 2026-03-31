@@ -36,7 +36,10 @@ function Button({
       title={title}
       aria-label={ariaLabel}
     >
-      <span style={loading ? { opacity: 0 } : {}}>{children}</span>
+      <span className="d-flex align-items-center" style={loading ? { opacity: 0 } : {}}>
+        {children}
+        <span className="ms-1">✨</span>
+      </span>
       <div
         className={`${
           loading ? "" : "d-none"
