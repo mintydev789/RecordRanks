@@ -75,7 +75,7 @@ beforeEach(async () => {
   await reseedTestData();
 });
 
-describe("updateUserSF", () => {
+describe("updateUserSF", async () => {
   it("updates user's person ID", async () => {
     const notYetTakenPersonId = 5;
     const user = (await db.query.users.findFirst({ where: { username: "user" } }))!;

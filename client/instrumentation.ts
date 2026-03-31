@@ -151,13 +151,13 @@ export async function register() {
             );
           }
 
-          const { role, emailVerified, ...body } = testUser;
+          const { role, emailVerified, personId, ...body } = testUser;
           await auth.api.signUpEmail({ body });
 
           // Set emailVerified and personId
           const [user] = await db
             .update(usersTable)
-            .set({ emailVerified, personId: testUser.personId })
+            .set({ emailVerified, personId })
             .where(eq(usersTable.email, testUser.email))
             .returning();
 
