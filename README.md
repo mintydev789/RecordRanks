@@ -69,34 +69,7 @@ To set up a production `.env` file, follow these steps:
 
 ### Icon
 
-RecordRanks does not have a default icon available, so before you publish your Docker image, you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the navbar). These files are gitignored in this repo, but they get included in the Docker image when you build it.
-
-To create a `favicon.ico` file from an `icon.svg` file, use the following commands from the root directory of the repo (`inkscape` and `imagemagick` required):
-
-```sh
-inkscape -w 16 -h 16 -o 16.png icon.svg
-inkscape -w 32 -h 32 -o 32.png icon.svg
-inkscape -w 48 -h 48 -o 48.png icon.svg
-
-magick 16.png 32.png 48.png client/app/favicon.ico
-rm 16.png 32.png 48.png
-
-identify client/app/favicon.ico
-```
-
-You should see an output like this after the last command:
-
-```sh
-favicon.ico[0] ICO 16x16 16x16+0+0 8-bit sRGB 0.000u 0:00.000
-favicon.ico[1] ICO 32x32 32x32+0+0 8-bit sRGB 0.000u 0:00.005
-favicon.ico[2] ICO 48x48 48x48+0+0 8-bit sRGB 15086B 0.000u 0:00.005
-```
-
-To create a `favicon.png` file from an `icon.svg` file, use the following command:
-
-```sh
-inkscape -w 256 -h 256 -o client/public/favicon.png icon.svg
-```
+RecordRanks does not have a default icon available, so before you publish your Docker image, you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the navbar). Use the dedicated script to generate both files (see the Scripts section). These files are gitignored in this repo, but they get included in the Docker image when you build it.
 
 ### Creating the Docker image
 
@@ -212,15 +185,16 @@ Note: due to limitations with the CSV format, empty string values are represente
 
 There are several custom scripts located in the `bin` directory. These should be executed from the root of the project with `./bin/<script>`.
 
-| Script                   | Description                                                                                                      |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `start-prod.sh`          | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                        |
-| `test-prod.sh`           | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
-| `apply-db-migrations.sh` | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running.      |
-| `supabase-reset.sh`      | Reset Supabase (remove containers and delete DB data and storage).                                               |
-| `release-new-version.sh` | Release new version of RecordRanks (pushes to Codeberg).                                                         |
-| `release-new-image.sh`   | Create Docker image for the Next JS app and publish it.                                                          |
-| `create-full-backup.sh`  | Create encrypted backup of the Supabase database and storage.                                                    |
+| Script                          | Description                                                                                                      |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `start-prod.sh`                 | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                        |
+| `test-prod.sh`                  | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
+| `apply-db-migrations.sh`        | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running.      |
+| `supabase-reset.sh`             | Reset Supabase (remove containers and delete DB data and storage).                                               |
+| `convert-svg-to-ico-and-png.sh` | Convert SVG file with your icon to an ICO file and a PNG file. The first argument is the path to the SVG file.   |
+| `release-new-version.sh`        | Release new version of RecordRanks (pushes to Codeberg).                                                         |
+| `release-new-image.sh`          | Create Docker image for the Next JS app and publish it.                                                          |
+| `create-full-backup.sh`         | Create encrypted backup of the Supabase database and storage.                                                    |
 
 ## Development
 
