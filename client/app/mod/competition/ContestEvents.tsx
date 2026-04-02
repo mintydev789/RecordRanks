@@ -274,7 +274,7 @@ function ContestEvents({
                       title=""
                       options={roundFormatOptions}
                       selected={round.format}
-                      setSelected={(val) => changeRoundFormat(round.eventId, round.roundNumber, val)}
+                      setSelected={(val) => changeRoundFormat(round.eventId, round.roundNumber, val as any)}
                       disabled={totalRoundResults > 0}
                     />
                   </div>
@@ -339,8 +339,8 @@ function ContestEvents({
                       title=""
                       options={cutoffAttemptsOptions}
                       selected={round.cutoffNumberOfAttempts ?? 2}
-                      setSelected={(val: number) =>
-                        changeRoundCutoffNumberOfAttempts(round.eventId, round.roundNumber, val)
+                      setSelected={(val) =>
+                        changeRoundCutoffNumberOfAttempts(round.eventId, round.roundNumber, val as any)
                       }
                       disabled={!round.cutoffNumberOfAttempts || totalRoundResults > 0}
                     />

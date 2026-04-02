@@ -203,7 +203,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
                 title="Default format"
                 options={getRoundFormatOptions(roundFormats)}
                 selected={defaultRoundFormat}
-                setSelected={setDefaultRoundFormat}
+                setSelected={setDefaultRoundFormat as any}
                 disabled={mode === "edit" || isPending}
               />
               <p className="fs-6 mt-2 text-secondary">The ranked average format is {rankedAverageFormat.label}</p>

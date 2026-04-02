@@ -153,7 +153,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
                 title="Record Category"
                 options={recordCategoryOptions}
                 selected={category}
-                setSelected={setCategory}
+                setSelected={setCategory as any}
                 disabled={isPending}
               />
             </div>
@@ -162,7 +162,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
                 title="Record Type"
                 options={recordTypeOptions}
                 selected={recordTypeId}
-                setSelected={changeRecordTypeId}
+                setSelected={changeRecordTypeId as any}
                 disabled={isPending}
               />
             </div>

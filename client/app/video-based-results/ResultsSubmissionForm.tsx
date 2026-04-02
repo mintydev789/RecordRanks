@@ -267,7 +267,7 @@ function ResultsSubmissionForm({
           title="Format"
           options={getRoundFormatOptions(videoBasedFormats)}
           selected={roundFormat.value}
-          setSelected={(val: RoundFormat) => changeRoundFormat(val)}
+          setSelected={(val) => changeRoundFormat(val as RoundFormat)}
           disabled={result !== undefined}
           className="mb-3"
         />

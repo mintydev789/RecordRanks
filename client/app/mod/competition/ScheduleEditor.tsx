@@ -177,7 +177,7 @@ function ScheduleEditor({ rooms, setRooms, venueTimeZone, startDate, contestType
                 title="Color"
                 options={colorOptions}
                 selected={roomColor}
-                setSelected={setRoomColor}
+                setSelected={setRoomColor as any}
                 disabled={disabled}
               />
             </div>
@@ -197,7 +197,7 @@ function ScheduleEditor({ rooms, setRooms, venueTimeZone, startDate, contestType
               title="Room"
               options={roomOptions}
               selected={selectedRoom}
-              setSelected={setSelectedRoom}
+              setSelected={setSelectedRoom as any}
               disabled={disabled || rooms.length === 0 || activityUnderEdit !== null}
             />
           </div>
@@ -206,7 +206,7 @@ function ScheduleEditor({ rooms, setRooms, venueTimeZone, startDate, contestType
               title="Activity"
               options={activityOptions}
               selected={activityCode}
-              setSelected={setActivityCode}
+              setSelected={setActivityCode as any}
               disabled={disabled || !selectedRoom}
             />
           </div>

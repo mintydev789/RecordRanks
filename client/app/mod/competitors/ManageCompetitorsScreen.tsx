@@ -193,7 +193,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                 title="Status"
                 options={approvedFilterOptions}
                 selected={approvedFilter}
-                setSelected={setApprovedFilter}
+                setSelected={setApprovedFilter as any}
                 oneLine
                 style={{ maxWidth: "15rem" }}
               />

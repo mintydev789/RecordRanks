@@ -295,7 +295,7 @@ function DataEntryScreen({
               title="Round"
               options={roundOptions}
               selected={round.roundTypeId}
-              setSelected={(val: RoundType) => updateRound(rounds.find((r) => r.roundTypeId === val)!)}
+              setSelected={(val) => updateRound(rounds.find((r) => r.roundTypeId === val)!)}
               disabled={resultUnderEdit !== null || isPending}
               className="mb-3"
             />
