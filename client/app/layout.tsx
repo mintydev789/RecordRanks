@@ -1,7 +1,7 @@
 import "bootstrap/dist/css/bootstrap.css";
 import "~/app/globals.css";
 import { Quicksand, Roboto } from "next/font/google";
-import MainLayout from "~/app/components/UI/MainLayout.tsx";
+import Providers from "~/app/components/Providers.tsx";
 // Prevent server-side rendering bug with FA icons, where the icons flash as very large before full page load
 import "@fortawesome/fontawesome-svg-core/styles.css";
 // Prevent FA from adding its CSS since we did it manually above
@@ -30,7 +30,7 @@ type Props = {
 export default function RootLayout({ children }: Props) {
   return (
     <html lang="en" className={`${quicksand.className} ${roboto.className}`}>
-      <MainLayout>{children}</MainLayout>
+      <Providers>{children}</Providers>
     </html>
   );
 }

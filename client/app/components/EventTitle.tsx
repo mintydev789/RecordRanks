@@ -4,7 +4,7 @@ import type { EventResponse } from "~/server/db/schema/events.ts";
 import EventIcon from "./EventIcon.tsx";
 
 type Props = {
-  event: Pick<EventResponse, "eventId" | "name" | "category" | "removedWca" | "description">;
+  event: Pick<EventResponse, "eventId" | "name" | "category" | "description">;
   showIcon?: boolean;
   showDescription?: boolean;
   linkToRankings?: true | string; // if this is a string, it'll be used as the query string for the URL

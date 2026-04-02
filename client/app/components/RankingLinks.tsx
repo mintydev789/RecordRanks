@@ -1,5 +1,5 @@
 import { C } from "~/helpers/constants.ts";
-import type { Ranking, RecordRanking } from "~/helpers/types/Rankings";
+import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 
 type Props = {
   ranking: Ranking | RecordRanking;

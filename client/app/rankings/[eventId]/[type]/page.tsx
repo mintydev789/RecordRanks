@@ -38,6 +38,7 @@ const eventsWith3x3 = [
   "333_doubles",
   "333_one_side",
   "333_supersolve",
+  "333_bets",
   "333_cube_mile",
   "333bf_2_person_relay",
   "333bf_3_person_relay",
@@ -118,14 +119,18 @@ async function RankingsPage({ params, searchParams }: Props) {
               : "other";
 
   return (
-    <div>
+    <section>
       <h2 className="mb-3 text-center">Rankings</h2>
 
       <AffiliateLink type={affiliateLinkType} />
 
       <div className="mb-3 px-2">
         <h4>Event</h4>
-        <EventButtons eventId={eventId} events={visibleEvents} forPage="rankings" />
+        <EventButtons
+          events={visibleEvents}
+          eventIdOverride={eventId}
+          pathTemplate={`/rankings/__EVENT_ID__/${type}`}
+        />
 
         {/* Similar code to the records page */}
         <div className="d-flex mb-4 flex-wrap gap-3">
@@ -149,21 +154,21 @@ async function RankingsPage({ params, searchParams }: Props) {
                   prefetch={false}
                   className={`btn btn-primary ${type === "single" ? "active" : ""}`}
                 >
-                  Single ✨
+                  Single
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/average?${urlSearchParams}`}
                   prefetch={false}
                   className={`btn btn-primary ${type === "average" ? "active" : ""}`}
                 >
-                  {roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"} ✨
+                  {roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"}
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/all-avg-formats?${urlSearchParams}`}
                   prefetch={false}
                   className={`btn btn-primary ${type === "all-avg-formats" ? "active" : ""}`}
                 >
-                  All Avgs ✨
+                  All Avgs
                 </Link>
               </div>
             </div>
@@ -177,7 +182,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   prefetch={false}
                   className={`btn btn-primary ${!show ? "active" : ""}`}
                 >
-                  Top Persons ✨
+                  Top Persons
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/${type}?${
@@ -186,7 +191,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   prefetch={false}
                   className={`btn btn-primary ${show ? "active" : ""}`}
                 >
-                  Top Results ✨
+                  Top Results
                 </Link>
               </div>
             </div>
@@ -200,7 +205,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   prefetch={false}
                   className={`btn btn-primary ${!topN || topN === "100" ? "active" : ""}`}
                 >
-                  100 ✨
+                  100
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/${type}?${
@@ -209,7 +214,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   prefetch={false}
                   className={`btn btn-primary ${topN === "1000" ? "active" : ""}`}
                 >
-                  1000 ✨
+                  1000
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/${type}?${
@@ -218,7 +223,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   prefetch={false}
                   className={`btn btn-primary ${topN === "10000" ? "active" : ""}`}
                 >
-                  10000 ✨
+                  10000
                 </Link>
               </div>
             </div>
@@ -232,36 +237,36 @@ async function RankingsPage({ params, searchParams }: Props) {
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=competitions`}
                   prefetch={false}
-                  className={`btn btn-primary text-nowrap ${recordCategory === "competitions" ? "active" : ""}`}
+                  className={`btn btn-primary ${recordCategory === "competitions" ? "active" : ""}`}
                 >
-                  Competitions ✨
+                  Competitions
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=meetups`}
                   prefetch={false}
-                  className={`btn btn-primary text-nowrap ${recordCategory === "meetups" ? "active" : ""}`}
+                  className={`btn btn-primary ${recordCategory === "meetups" ? "active" : ""}`}
                 >
-                  Meetups ✨
+                  Meetups
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=video-based-results`}
                   prefetch={false}
-                  className={`btn btn-primary text-nowrap ${recordCategory === "video-based-results" ? "active" : ""}`}
+                  className={`btn btn-primary ${recordCategory === "video-based-results" ? "active" : ""}`}
                 >
-                  Video-based ✨
+                  Video-based
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=all`}
                   prefetch={false}
-                  className={`btn btn-primary text-nowrap ${recordCategory === "all" ? "active" : ""}`}
+                  className={`btn btn-primary ${recordCategory === "all" ? "active" : ""}`}
                 >
-                  All ✨
+                  All
                 </Link>
               </div>
             </div>
@@ -274,7 +279,7 @@ async function RankingsPage({ params, searchParams }: Props) {
             prefetch={false}
             className="btn btn-success btn-sm"
           >
-            Submit a result ✨
+            Submit a result
           </Link>
         )}
       </div>
@@ -290,7 +295,7 @@ async function RankingsPage({ params, searchParams }: Props) {
       <Suspense fallback={<Loading />}>
         <RankingsTable rankingsPromise={rankingsPromise} event={event} regions={regions} type={type} show={show} />
       </Suspense>
-    </div>
+    </section>
   );
 }
 

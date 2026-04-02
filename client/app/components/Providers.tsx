@@ -3,15 +3,17 @@
 import { usePathname } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { useEffect, useState } from "react";
+import { SWRConfig } from "swr";
 import Footer from "~/app/components/UI/Footer.tsx";
 import Navbar from "~/app/components/UI/Navbar.tsx";
 import { MainContext, type Theme } from "~/helpers/contexts.ts";
+import { getActionError } from "~/helpers/utilityFunctions.ts";
 
 type Props = {
   children: React.ReactNode;
 };
 
-function MainLayout({ children }: Props) {
+function Providers({ children }: Props) {
   const pathname = usePathname();
 
   const [theme, setTheme] = useState<Theme>("dark");
@@ -57,25 +59,38 @@ function MainLayout({ children }: Props) {
 
   return (
     <body data-bs-theme={theme} className="min-vh-100 d-flex flex-column" style={{ overflowX: "hidden" }}>
-      <NuqsAdapter>
-        <MainContext.Provider
-          value={{
-            theme,
-            setTheme: changeTheme,
-            errorMessages,
-            changeErrorMessages,
-            successMessage,
-            changeSuccessMessage,
-            resetMessages,
-          }}
-        >
-          <Navbar />
-          <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
-          <Footer />
-        </MainContext.Provider>
-      </NuqsAdapter>
+      <SWRConfig
+        value={{
+          strictServerPrefetchWarning: true,
+          revalidateOnMount: false,
+          revalidateOnFocus: false,
+          revalidateOnReconnect: false,
+          shouldRetryOnError: false,
+          onSuccess: (res) => {
+            if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+          },
+        }}
+      >
+        <NuqsAdapter>
+          <MainContext.Provider
+            value={{
+              theme,
+              setTheme: changeTheme,
+              errorMessages,
+              changeErrorMessages,
+              successMessage,
+              changeSuccessMessage,
+              resetMessages,
+            }}
+          >
+            <Navbar />
+            <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
+            <Footer />
+          </MainContext.Provider>
+        </NuqsAdapter>
+      </SWRConfig>
     </body>
   );
 }
 
-export default MainLayout;
+export default Providers;

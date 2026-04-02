@@ -1,14 +1,16 @@
 import omitBy from "lodash/omitBy";
 import Link from "next/link";
 import { Suspense } from "react";
+import z from "zod";
 import AffiliateLink from "~/app/components/AffiliateLink.tsx";
+import EventButtons from "~/app/components/EventButtons.tsx";
 import RegionSelect from "~/app/components/RegionSelect.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
 import RecordsTable from "~/app/records/[eventCategory]/RecordsTable.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
-import type { RecordCategory } from "~/helpers/types.ts";
+import { RecordCategoryValues } from "~/helpers/types.ts";
 import { db } from "~/server/db/provider.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { getRecords } from "~/server/serverOnlyFunctions.ts";
@@ -24,29 +26,34 @@ export const metadata = {
   },
 };
 
+const ParamsValidator = z.strictObject({
+  eventCategory: z.string().nonempty(),
+});
+const SearchParamsValidator = z.strictObject({
+  category: z.enum(RecordCategoryValues).nullable().optional(),
+  eventId: z.string().nullable().optional(),
+  region: z.string().nullable().optional(),
+});
+
 type Props = {
-  params: Promise<{ eventCategory: string }>;
-  // Keep in mind that the rankings links on the records page also pass the search params along, so they have to match
-  searchParams: Promise<{
-    category?: RecordCategory;
-    region?: string;
-  }>;
+  params: Promise<z.infer<typeof ParamsValidator>>;
+  searchParams: Promise<z.infer<typeof SearchParamsValidator>>;
 };
 
 async function RecordsPage({ params, searchParams }: Props) {
-  const { eventCategory } = await params;
-  const { category, region } = await searchParams;
+  const { eventCategory } = ParamsValidator.parse(await params);
+  const { category, eventId, region } = SearchParamsValidator.parse(await searchParams);
 
-  const urlSearchParams = new URLSearchParams(omitBy({ category, region } as any, (val) => !val));
-  const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ region } as any, (val) => !val));
+  const urlSearchParams = new URLSearchParams(omitBy({ category, eventId, region } as any, (val) => !val));
+  const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ eventId, region } as any, (val) => !val));
 
   const recordCategory = category ?? (eventCategory === "extreme-bld" ? "video-based-results" : "competitions");
 
-  const recordsPromise = getRecords(eventCategory, recordCategory, region);
+  const recordsPromise = getRecords(eventCategory, recordCategory, eventId ?? undefined, region ?? undefined);
 
   const [events, regions] = await Promise.all([
     db.query.events.findMany({
-      columns: { eventId: true, name: true, category: true, format: true, removedWca: true, description: true },
+      columns: { eventId: true, name: true, category: true, format: true, hidden: true, description: true },
       where: { hidden: false },
       orderBy: { rank: "asc" },
     }),
@@ -64,59 +71,65 @@ async function RecordsPage({ params, searchParams }: Props) {
       route: `/records/${ec.value}?${urlSearchParams}`,
       hidden: ec.value === "removed",
     }));
+  const selectedCatEvents = events.filter((e) => e.category === eventCategory);
 
   return (
-    <div>
+    <section>
       <h2 className="mb-4 text-center">Records</h2>
 
       <AffiliateLink type={eventCategory === "unofficial" ? "fto" : eventCategory === "wca" ? "wca" : "other"} />
 
       <Tabs tabs={tabs} activeTab={eventCategory} forServerSidePage />
 
-      {selectedCat.description && <p className="mx-2">{selectedCat.description}</p>}
+      <div className="px-2">
+        {selectedCat.description && <p>{selectedCat.description}</p>}
 
-      {/* Similar code to the rankings page */}
-      <div className="d-flex flex-wrap gap-3 px-2">
-        <RegionSelect regions={regions} />
+        <h4>Event</h4>
+        <EventButtons events={selectedCatEvents} resetOnSameEventClick showAllEvents />
 
-        <div>
-          <h5>Category</h5>
-          {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
-          <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
-            <Link
-              href={`/records/${eventCategory}?${
-                urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-              }category=competitions`}
-              prefetch={false}
-              className={`btn btn-primary ${recordCategory === "competitions" ? "active" : ""}`}
-            >
-              Competitions ✨
-            </Link>
-            <Link
-              href={`/records/${eventCategory}/?${
-                urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-              }category=meetups`}
-              prefetch={false}
-              className={`btn btn-primary ${recordCategory === "meetups" ? "active" : ""}`}
-            >
-              Meetups ✨
-            </Link>
-            <Link
-              href={`/records/${eventCategory}?${
-                urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-              }category=video-based-results`}
-              prefetch={false}
-              className={`btn btn-primary ${recordCategory === "video-based-results" ? "active" : ""}`}
-            >
-              Video-based ✨
-            </Link>
+        {/* Similar code to the rankings page */}
+        <div className="d-flex flex-wrap gap-3">
+          <RegionSelect regions={regions} />
+
+          <div>
+            <h5>Category</h5>
+            {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
+            <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
+              <Link
+                href={`/records/${eventCategory}?${
+                  urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                }category=competitions`}
+                prefetch={false}
+                className={`btn btn-primary ${recordCategory === "competitions" ? "active" : ""}`}
+              >
+                Competitions
+              </Link>
+              <Link
+                href={`/records/${eventCategory}/?${
+                  urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                }category=meetups`}
+                prefetch={false}
+                className={`btn btn-primary ${recordCategory === "meetups" ? "active" : ""}`}
+              >
+                Meetups
+              </Link>
+              <Link
+                href={`/records/${eventCategory}?${
+                  urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                }category=video-based-results`}
+                prefetch={false}
+                className={`btn btn-primary ${recordCategory === "video-based-results" ? "active" : ""}`}
+              >
+                Video-based
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {eventCategory === "extremebld" && (
         <Link href="/video-based-results/submit" prefetch={false} className="btn btn-success btn ms-2">
-          Submit a result ✨
+          Submit a result
         </Link>
       )}
 
@@ -127,7 +140,7 @@ async function RecordsPage({ params, searchParams }: Props) {
           regions={regions}
         />
       </Suspense>
-    </div>
+    </section>
   );
 }
 

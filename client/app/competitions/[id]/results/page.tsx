@@ -23,7 +23,7 @@ async function ContestResultsPage({ params, searchParams }: Props) {
   return (
     <ContestLayout contest={contest} activeTab="results">
       <div className="px-1">
-        <EventButtons eventId={event.eventId} events={events} forPage="results" />
+        <EventButtons events={events} eventIdOverride={event.eventId} showAllEvents />
       </div>
       <EventResultsTable
         event={event}

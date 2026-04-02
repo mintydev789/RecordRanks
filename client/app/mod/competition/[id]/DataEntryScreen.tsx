@@ -290,7 +290,7 @@ function DataEntryScreen({
       <div className="row mb-4">
         <div className="col-lg-3 mb-4">
           <div>
-            <EventButtons eventId={eventId} events={events} forPage="data-entry" />
+            <EventButtons events={events} eventIdOverride={eventId} showAllEvents />
             <FormSelect
               title="Round"
               options={roundOptions}

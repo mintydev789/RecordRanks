@@ -27,7 +27,7 @@ function BlogPostCard({ post }: Props) {
         )}
 
         <Link href={`/posts/${post.postId}`} prefetch={false} className="btn btn-primary">
-          Read more ✨
+          Read more
         </Link>
       </div>
     </div>

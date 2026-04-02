@@ -1,4 +1,4 @@
-export type OptionValueType = string | number;
+export type OptionValueType = string | number | null; // null means not selected
 
 export type MultiChoiceOption<T = OptionValueType> = {
   label: string;

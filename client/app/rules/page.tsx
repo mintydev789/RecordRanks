@@ -15,7 +15,6 @@ async function RulesPage() {
     name: true,
     category: true,
     defaultRoundFormat: true,
-    removedWca: true,
     description: true,
     rule: true,
   } as const;

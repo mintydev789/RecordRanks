@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import RankingRow from "~/app/components/RankingRow.tsx";
+import RankingRow from "~/app/rankings/[eventId]/[type]/RankingRow.tsx";
 import type { Ranking } from "~/helpers/types/Rankings.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
@@ -46,7 +46,7 @@ function RankingsTable({ rankingsPromise, event, regions, type, show }: Props) {
           {rankings.map((ranking, i) => (
             <RankingRow
               key={ranking.rankingId}
-              type={type === "single" ? "single-ranking" : "average-ranking"}
+              type={type === "single" ? "single" : "average"}
               ranking={ranking}
               isTiedRanking={ranking.ranking !== i + 1}
               event={event}

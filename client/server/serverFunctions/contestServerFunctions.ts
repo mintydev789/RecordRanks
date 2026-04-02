@@ -5,6 +5,7 @@ import { toZonedTime } from "date-fns-tz";
 import { and, arrayContains, desc, eq, gte, inArray, lt, notInArray, or } from "drizzle-orm";
 import { find as findTimezone } from "geo-tz";
 import z from "zod";
+import { ModDashboardFiltersValidator } from "~/app/mod/ModDashboardFilters.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
@@ -18,7 +19,6 @@ import {
 } from "~/helpers/utilityFunctions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
-import { ModDashboardFiltersValidator } from "~/helpers/validators/ModDashboardFilters.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";
 import { auth } from "~/server/auth.ts";
 import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";

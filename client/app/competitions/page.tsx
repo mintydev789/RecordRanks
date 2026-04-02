@@ -80,7 +80,7 @@ async function ContestsPage({ searchParams }: Props) {
       ) : (
         <>
           <div className="mb-3 px-2">
-            <EventButtons key={eventId} eventId={eventId} events={events} forPage="competitions" />
+            <EventButtons events={events} resetOnSameEventClick />
             <div style={{ maxWidth: "24rem" }}>
               <RegionSelect regions={regions} />
             </div>

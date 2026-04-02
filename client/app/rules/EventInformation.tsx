@@ -4,10 +4,7 @@ import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 
 type Props = {
-  event: Pick<
-    SelectEvent,
-    "eventId" | "name" | "category" | "defaultRoundFormat" | "removedWca" | "description" | "rule"
-  >;
+  event: Pick<SelectEvent, "eventId" | "name" | "category" | "defaultRoundFormat" | "description" | "rule">;
 };
 
 function EventInformation({ event }: Props) {

@@ -5,16 +5,14 @@ type Props = {
   title?: string;
   options: MultiChoiceOption[];
   selected: OptionValueType;
-  setSelected: (val: any) => void;
+  setSelected: (val: OptionValueType) => void;
   disabled?: boolean;
   oneLine?: boolean;
 } & React.HTMLAttributes<HTMLElement>;
 
 function FormSelect({ id, title, options, selected, setSelected, disabled, oneLine, className = "", style }: Props) {
-  let inputId = "select";
-
-  if (id) inputId = id;
-  else if (title) inputId = `${title.toLowerCase().replaceAll(" ", "_")}_select`;
+  const value = selected === null ? "" : selected;
+  const inputId = id || (title ? `${title.toLowerCase().replaceAll(" ", "_")}_select` : "select");
 
   return (
     <div className={`fs-5 ${oneLine ? "d-flex gap-3 align-items-center" : ""} ${className}`} style={style}>
@@ -22,15 +20,15 @@ function FormSelect({ id, title, options, selected, setSelected, disabled, oneLi
 
       <select
         id={inputId}
-        value={selected}
-        onChange={(e) => setSelected(typeof selected === "string" ? e.target.value : Number(e.target.value))}
+        value={value}
+        onChange={(e) => setSelected(typeof value === "string" ? e.target.value || null : Number(e.target.value))}
         disabled={disabled}
         className={`form-select ${oneLine || !title ? "" : "mt-2"}`}
       >
         {options
           .filter((o) => !o.disabled)
-          .map((option: MultiChoiceOption) => (
-            <option key={option.value} value={option.value}>
+          .map((option) => (
+            <option key={option.value} value={option.value ?? ""}>
               {option.label}
             </option>
           ))}

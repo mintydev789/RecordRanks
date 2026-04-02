@@ -1,6 +1,6 @@
-import type { ContestResponse } from "~/server/db/schema/contests";
-import type { PersonResponse } from "~/server/db/schema/persons";
-import type { Attempt } from "~/server/db/schema/results";
+import type { ContestResponse } from "~/server/db/schema/contests.ts";
+import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { Attempt } from "~/server/db/schema/results.ts";
 
 export type Ranking = {
   rankingId: string;
@@ -16,11 +16,8 @@ export type Ranking = {
   discussionLink: string | null; // only set for video-based results
 };
 
-export type RecordRanking = Omit<Ranking, "ranking" | "memo"> & {
+export type RecordRanking = Omit<Ranking, "ranking" | "personId" | "memo" | "result"> & {
   type: "single" | "average" | "single-and-avg";
-};
-
-export type RecordDetails = Omit<RecordRanking, "result"> & {
   eventId: string;
   best: number;
   average: number;

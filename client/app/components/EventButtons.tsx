@@ -1,63 +1,56 @@
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryState } from "nuqs";
 import { useMemo, useState } from "react";
 import EventIcon from "~/app/components/EventIcon.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 
 type Props = {
-  eventId: string | undefined;
-  events: EventResponse[];
-  forPage: "results" | "rankings" | "competitions" | "data-entry";
+  events: Pick<EventResponse, "eventId" | "name" | "category" | "hidden">[];
+  eventIdOverride?: string;
+  pathTemplate?: string; // should include __EVENT_ID__ that gets replaced by the new value
+  showAllEvents?: boolean;
+  resetOnSameEventClick?: boolean;
 };
 
-function EventButtons({ eventId, events, forPage }: Props) {
+function EventButtons({ events, eventIdOverride, pathTemplate, showAllEvents, resetOnSameEventClick }: Props) {
   const router = useRouter();
-  const { id, type } = useParams();
   const searchParams = useSearchParams();
+
+  const [eventId, setEventId] = useQueryState("eventId", { shallow: false });
 
   const filteredCategories = eventCategories.filter(
     (ec) => ec.value !== "removed" && events.some((e) => e.category === ec.value && !e.hidden),
   );
+  const currEventId = eventIdOverride ?? eventId;
 
   const [selectedCat, setSelectedCat] = useState(
-    filteredCategories.find((ec) => events.find((e) => e.eventId === eventId)?.category === ec.value) ??
+    filteredCategories.find((ec) => events.find((e) => e.eventId === currEventId)?.category === ec.value) ??
       filteredCategories.at(0)!,
   );
 
-  // If hideCategories = true, just show all events that were passed in
-  const filteredEvents = useMemo<EventResponse[]>(
-    () =>
-      ["rankings", "competitions"].includes(forPage)
-        ? events.filter((e) => !e.hidden && e.category === selectedCat.value)
-        : events,
-    [events, selectedCat, forPage],
+  const filteredEvents = useMemo(
+    () => (showAllEvents ? events : events.filter((e) => !e.hidden && e.category === selectedCat.value)),
+    [events, selectedCat, showAllEvents],
   );
 
   const handleEventClick = (newEventId: string) => {
-    if (forPage === "results") {
-      router.replace(`/competitions/${id}/results?eventId=${newEventId}`);
-    } else if (forPage === "rankings") {
-      let queryString = "";
-      searchParams.forEach((value, key) => {
-        queryString += `${queryString ? "&" : "?"}${key}=${value}`;
-      });
-      router.push(`/rankings/${newEventId}/${type}${queryString}`);
-    } else if (forPage === "competitions") {
-      if (searchParams.get("eventId") === newEventId) router.replace("/competitions");
-      else router.replace(`/competitions?eventId=${newEventId}`);
-    } else if (forPage === "data-entry") {
-      router.replace(`/mod/competition/${id}?eventId=${newEventId}`);
-    } else {
-      throw new Error(`Unrecognized page type: ${forPage}`);
+    if (pathTemplate) {
+      const urlSearchParams = new URLSearchParams(searchParams);
+      router.push(`${pathTemplate.replace("__EVENT_ID__", newEventId)}?${urlSearchParams}`);
+    } else if (newEventId !== currEventId) {
+      setEventId(newEventId);
+    } else if (resetOnSameEventClick) {
+      setEventId(null);
     }
   };
 
   return (
     <div>
       {/* Event categories */}
-      {["rankings", "competitions"].includes(forPage) && (
+      {!showAllEvents && (
         <>
           {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
           <div className="btn-group btn-group-sm mt-2 mb-3" role="group">
@@ -69,7 +62,7 @@ function EventButtons({ eventId, events, forPage }: Props) {
                 onClick={() => setSelectedCat(cat)}
               >
                 <span className="d-none d-md-inline">{cat.title}</span>
-                <span className="d-inline d-md-none">{cat.shortTitle || cat.title}</span> ✨
+                <span className="d-inline d-md-none">{cat.shortTitle || cat.title}</span>
               </button>
             ))}
           </div>
@@ -78,13 +71,14 @@ function EventButtons({ eventId, events, forPage }: Props) {
         </>
       )}
 
+      {/* Events */}
       <div className="d-flex fs-3 mb-3 flex-wrap">
         {filteredEvents.map((event) => (
           <EventIcon
             key={event.eventId}
             event={event}
             onClick={() => handleEventClick(event.eventId)}
-            isActive={event.eventId === eventId}
+            isActive={event.eventId === currEventId}
           />
         ))}
       </div>

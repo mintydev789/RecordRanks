@@ -1,48 +1,37 @@
 "use client";
 
 import { useAction } from "next-safe-action/hooks";
-import { parseAsInteger, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useContext, useState } from "react";
 import FiltersContainer from "~/app/components/FiltersContainer.tsx";
 import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
-import FormSelect from "~/app/components/form/FormSelect";
+import FormSelect from "~/app/components/form/FormSelect.tsx";
 import Button from "~/app/components/UI/Button.tsx";
-import { C } from "~/helpers/constants.ts";
+import { type ModDashboardStateFilterValue, useModDashboardQueryState } from "~/app/mod/ModDashboardFilters.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
-import { ContestStateValues, type InputPerson } from "~/helpers/types.ts";
+import type { InputPerson } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
-import type { ModDashboardFiltersDto } from "~/helpers/validators/ModDashboardFilters.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { getPersonByIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
 
-const stateValues = [...ContestStateValues, "pending", C.notSelectedOption] as const;
-
 type Props = {
   initOrganizerPerson: PersonResponse | undefined;
   regions: RegionResponse[];
-  onChangeFilters: (newFilters: ModDashboardFiltersDto) => void;
   isAdminView: boolean;
   disabled: boolean;
 };
 
-function ModFilters({ initOrganizerPerson, regions, onChangeFilters, isAdminView, disabled }: Props) {
+function ModFilters({ initOrganizerPerson, regions, isAdminView, disabled }: Props) {
   const { changeErrorMessages } = useContext(MainContext);
 
   const { executeAsync: getPersonById, isPending: isGettingPerson } = useAction(getPersonByIdSF);
-  const [{ organizerPersonId, state }, setFilters] = useQueryStates(
-    {
-      organizerPersonId: parseAsInteger,
-      state: parseAsStringLiteral(stateValues).withDefault(C.notSelectedOption),
-    },
-    { history: "replace" },
-  );
+  const [{ organizerPersonId, state }, setFilters] = useModDashboardQueryState();
   const [persons, setPersons] = useState<InputPerson[]>([initOrganizerPerson ?? null]);
   const [personNames, setPersonNames] = useState([initOrganizerPerson?.name ?? ""]);
 
-  const stateOptions: MultiChoiceOption<(typeof stateValues)[number]>[] = [
-    { value: C.notSelectedOption, label: "Any" },
+  const stateOptions: MultiChoiceOption<ModDashboardStateFilterValue | null>[] = [
+    { value: null, label: "Any" },
     { value: "pending", label: "Pending", disabled: !isAdminView },
     { value: "created", label: isAdminView ? "Created" : "Pending approval" },
     { value: "approved", label: "Approved" },
@@ -61,20 +50,13 @@ function ModFilters({ initOrganizerPerson, regions, onChangeFilters, isAdminView
       setPersons([res.data!]);
       setPersonNames([res.data!.name]);
       setFilters({ organizerPersonId: newPersonId });
-      onChangeFilters({ organizerPersonId: newPersonId, state: state === C.notSelectedOption ? null : state });
     }
-  };
-
-  const selectState = (newState: (typeof stateValues)[number]) => {
-    setFilters({ state: newState });
-    onChangeFilters({ organizerPersonId, state: newState === C.notSelectedOption ? null : newState });
   };
 
   const resetFilters = () => {
     setPersons([null]);
     setPersonNames([""]);
-    setFilters({ organizerPersonId: null, state: C.notSelectedOption });
-    onChangeFilters({ organizerPersonId: null, state: null });
+    setFilters({ organizerPersonId: null, state: null });
   };
 
   return (
@@ -95,11 +77,10 @@ function ModFilters({ initOrganizerPerson, regions, onChangeFilters, isAdminView
         title="State"
         options={stateOptions}
         selected={state}
-        setSelected={selectState}
-        disabled={disabled}
+        setSelected={(val) => setFilters({ state: val as ModDashboardStateFilterValue })}
         oneLine
       />
-      {(organizerPersonId || state !== C.notSelectedOption) && (
+      {(organizerPersonId || state) && (
         <Button onClick={resetFilters} className="btn-secondary btn-md">
           Reset
         </Button>

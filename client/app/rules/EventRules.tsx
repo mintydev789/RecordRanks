@@ -7,14 +7,8 @@ import type { SelectEvent } from "~/server/db/schema/events.ts";
 type Props = {
   eventRulesPromise: Promise<
     [
-      Pick<
-        SelectEvent,
-        "eventId" | "name" | "category" | "defaultRoundFormat" | "removedWca" | "description" | "rule"
-      >[],
-      Pick<
-        SelectEvent,
-        "eventId" | "name" | "category" | "defaultRoundFormat" | "removedWca" | "description" | "rule"
-      >[],
+      Pick<SelectEvent, "eventId" | "name" | "category" | "defaultRoundFormat" | "description" | "rule">[],
+      Pick<SelectEvent, "eventId" | "name" | "category" | "defaultRoundFormat" | "description" | "rule">[],
     ]
   >;
 };

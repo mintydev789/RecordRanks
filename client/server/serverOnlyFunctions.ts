@@ -7,7 +7,7 @@ import z from "zod";
 import { C } from "~/helpers/constants.ts";
 import { Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
-import type { Ranking, RecordDetails } from "~/helpers/types/Rankings.ts";
+import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import {
   type GetOrCreatePersonObject,
   type RecordCategory,
@@ -161,17 +161,12 @@ const personsArrayJsonSql = sql`
 export async function getRecords(
   eventCategory: string,
   recordCategory: RecordCategory,
+  eventId?: string,
   region?: string,
-): Promise<RecordDetails[]> {
-  z.strictObject({
-    eventCategory: z.string().nonempty(),
-    recordCategory: z.enum(RecordCategoryValues),
-    region: z.string().optional(),
-  }).parse({ eventCategory, recordCategory, region });
-
+): Promise<RecordRanking[]> {
   const events = await db.query.events.findMany({
     columns: { eventId: true },
-    where: { hidden: false, category: eventCategory },
+    where: { eventId, hidden: false, category: eventCategory },
   });
 
   const recordTypes: RecordType[] = ["WR"];
@@ -611,7 +606,7 @@ export async function getSettingFromDb({
 
   if (!setting?.value) {
     if (optional) return null;
-    throw new Error("Setting not found");
+    throw new Error(`Setting "${key}" ${setting ? "has no value" : "not found"}`);
   }
 
   return setting.value;

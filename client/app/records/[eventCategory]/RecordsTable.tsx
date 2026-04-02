@@ -1,29 +1,24 @@
 "use client";
 
-import omit from "lodash/omit";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useQueryState } from "nuqs";
 import { use } from "react";
-import Competitors from "~/app/components/Competitors.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
-import RankingLinks from "~/app/components/RankingLinks.tsx";
-import RankingRow from "~/app/components/RankingRow.tsx";
-import Solves from "~/app/components/Solves.tsx";
-import type { RecordDetails, RecordRanking } from "~/helpers/types/Rankings.tsx";
-import { getFormattedDate, getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import RecordRow from "~/app/records/[eventCategory]/RecordRow.tsx";
+import type { RecordRanking } from "~/helpers/types/Rankings.tsx";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
 type Props = {
-  recordsPromise: Promise<RecordDetails[]>;
-  events: Pick<EventResponse, "eventId" | "name" | "category" | "format" | "removedWca" | "description">[];
+  recordsPromise: Promise<RecordRanking[]>;
+  events: Pick<EventResponse, "eventId" | "name" | "category" | "format" | "description">[];
   regions: RegionResponse[];
 };
 
 function RecordsTable({ recordsPromise, events, regions }: Props) {
   const records = use(recordsPromise);
 
-  const searchParams = useSearchParams();
+  const [category] = useQueryState("category");
+  const [eventId] = useQueryState("eventId");
 
   return (
     <div className="mt-4">
@@ -33,9 +28,9 @@ function RecordsTable({ recordsPromise, events, regions }: Props) {
         events
           .filter((e) => records.some((r) => r.eventId === e.eventId))
           .map((event) => {
-            const eventRecords: RecordRanking[] = [];
-            let hasComp = false;
-            let hasLink = false;
+            let eventRecords: RecordRanking[] = [];
+            // If we're filtering by a specific event, we want to display the whole record history for the event
+            const mixedRecords = !!eventId;
 
             const getCurrentTiedRecords = (type: "single" | "average") => {
               let currentRecordResult: number | undefined;
@@ -47,95 +42,70 @@ function RecordsTable({ recordsPromise, events, regions }: Props) {
                   else if (result > currentRecordResult) break;
 
                   eventRecords.push({
-                    ...omit(record, ["best", "average"]),
+                    ...record,
                     rankingId: record.rankingId.replace(/_.*$/, `_${type}`),
                     type,
-                    result,
                   });
-
-                  if (record.contest) hasComp = true;
-                  if (record.videoLink || record.discussionLink) hasLink = true;
                 }
               }
             };
 
-            getCurrentTiedRecords("single");
-            getCurrentTiedRecords("average");
+            if (mixedRecords) {
+              eventRecords = records;
+            } else {
+              getCurrentTiedRecords("single");
+              getCurrentTiedRecords("average");
+            }
 
             return (
               <div key={event.eventId} className="mb-3">
                 <EventTitle
                   event={event}
                   showIcon
-                  linkToRankings={searchParams.size > 0 ? `?${searchParams}` : true}
+                  linkToRankings={category ? `?category=${category}` : true}
                   showDescription
                 />
 
-                {/* MOBILE VIEW */}
-                <div className="d-lg-none mt-2 mb-4 border-bottom border-top">
-                  <ul className="list-group list-group-flush">
-                    {eventRecords.map((record) => (
-                      <li
-                        key={record.rankingId}
-                        className="d-flex flex-column list-group-item list-group-item-secondary gap-2 py-3"
-                      >
-                        <div className="d-flex justify-content-between">
-                          <span>
-                            <b>{getFormattedTime(record.result, { event })}</b>
-                            &#8194;
-                            {record.type === "single" ? "Single" : record.attempts.length === 3 ? "Mean" : "Average"}
-                          </span>
-                          {record.contest ? (
-                            <Link href={`/competitions/${record.contest.competitionId}`} prefetch={false}>
-                              {getFormattedDate(record.date)}
-                            </Link>
-                          ) : (
-                            <span>{getFormattedDate(record.date)}</span>
-                          )}
-                        </div>
-                        <Competitors persons={record.persons} regions={regions} vertical />
-                        {record.type === "average" && <Solves event={event} attempts={record.attempts} />}
-                        {!record.contest && <RankingLinks ranking={record} />}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* DESKTOP VIEW */}
-                <div className="d-none d-lg-block">
-                  <div className="table-responsive flex-grow-1">
-                    <table className="table-hover table-responsive table text-nowrap">
-                      <thead>
-                        <tr>
-                          <th>Type</th>
-                          <th>Name</th>
-                          <th>Result</th>
-                          <th>Representing</th>
-                          <th>Date</th>
-                          <th>
-                            {hasComp ? "Contest" : ""}
-                            {hasComp && hasLink ? " / " : ""}
-                            {hasLink ? "Links" : ""}
-                          </th>
-                          <th>Solves</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {eventRecords.map((record) =>
+                <div className="table-responsive flex-grow-1">
+                  <table className="table-hover table-responsive table text-nowrap">
+                    <thead>
+                      <tr>
+                        <th>{mixedRecords ? "Date" : "Type"}</th>
+                        <th>Name</th>
+                        <th>{mixedRecords ? "Best" : "Result"}</th>
+                        {mixedRecords && <th>Average</th>}
+                        {!mixedRecords && <th>Representing</th>}
+                        {!mixedRecords && <th>Date</th>}
+                        <th>{category === "video-based-results" ? "Link" : "Contest"}</th>
+                        <th>Solves</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eventRecords.map((record) =>
+                        mixedRecords ? (
+                          <RecordRow
+                            key={record.rankingId}
+                            type={record.type}
+                            record={record}
+                            event={event}
+                            regions={regions}
+                            mixedRecords
+                          />
+                        ) : (
                           record.persons.map((person, i) => (
-                            <RankingRow
+                            <RecordRow
                               key={`${record.rankingId}_${person.id}`}
-                              type={record.type === "average" ? "average-record" : "single-record"}
-                              ranking={record}
+                              type={record.type}
+                              record={record}
                               event={event}
                               regions={regions}
-                              showOnlyPersonWithId={i === 0 ? undefined : i}
+                              showOnlyPersonWithId={i}
                             />
-                          )),
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          ))
+                        ),
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             );
