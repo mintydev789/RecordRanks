@@ -18,7 +18,7 @@ import { MainContext } from "~/helpers/contexts.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
-import type { EventWrPair, InputPerson, RoundFormat, RoundType } from "~/helpers/types.ts";
+import type { EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import {
   getActionError,
   getBlankCompetitors,

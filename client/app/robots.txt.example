@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow: /video-based-results/
+Disallow: /admin/
+Disallow: /mod/
+Disallow: /user/
+Disallow: /register/
+Disallow: /login/
+Disallow: /forgot-password/
+Disallow: /reset-password/

@@ -71,6 +71,10 @@ To set up a production `.env` file, follow these steps:
 
 RecordRanks does not have a default icon available, so before you publish your Docker image, you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the navbar). Use the dedicated script to generate both files (see the Scripts section). These files are gitignored in this repo, but they get included in the Docker image when you build it.
 
+### `robots.txt` file
+
+There is an example `robots.txt` at `client/app/robots.txt.example`. You can copy that file to `client/app/robots.txt` and edit it to define a list of paths you would like to prevent web crawlers from indexing. Learn more about this [here](https://www.robotstxt.org/robotstxt.html).
+
 ### Creating the Docker image
 
 Once you have a [Dockerhub](https://hub.docker.com/) account, you can publish your Docker image using the script (see the Scripts section).
