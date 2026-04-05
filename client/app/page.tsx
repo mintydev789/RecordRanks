@@ -12,6 +12,10 @@ import DonateSection from "./components/DonateSection.tsx";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: `Home | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
+};
+
 async function HomePage() {
   const description = await getSettingFromDb({ key: "home-page-description", optional: true });
 

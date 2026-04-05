@@ -13,7 +13,6 @@ import FormSelect from "~/app/components/form/FormSelect.tsx";
 import FormTextArea from "~/app/components/form/FormTextArea.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
-import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import { eventCategoryOptions, eventFormatOptions } from "~/helpers/multipleChoiceOptions.ts";
@@ -151,8 +150,6 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
 
   return (
     <>
-      <ToastMessages className="mx-2" />
-
       {mode === "view" ? (
         <Button onClick={onAddEvent} className="btn-success btn-sm mx-2">
           Create Event
@@ -226,26 +223,19 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
             setSelected={setFormat}
             disabled={mode === "edit" || isPending}
           />
-          <div className="mb-4">
-            <FormRadio
-              title="Event category"
-              options={eventCategoryOptions}
-              selected={category}
-              setSelected={setCategory}
-              disabled={isPending}
-            />
-          </div>
-          <h5 className="mb-4">Options</h5>
+          <FormRadio
+            title="Event category"
+            options={eventCategoryOptions}
+            selected={category}
+            setSelected={setCategory}
+            disabled={isPending}
+            className="mb-3"
+          />
+          <h5 className="mb-3">Options</h5>
           <FormCheckbox
             title="Allow video-based results"
             selected={submissionsAllowed}
             setSelected={setSubmissionsAllowed}
-            disabled={isPending}
-          />
-          <FormCheckbox
-            title="Formerly WCA event"
-            selected={removedWca}
-            setSelected={setRemovedWca}
             disabled={isPending}
           />
           <FormCheckbox
@@ -285,7 +275,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
         </Form>
       )}
 
-      <div className="table-responsive my-4">
+      <div className="table-responsive my-3">
         <table className="table-hover table text-nowrap">
           <thead>
             <tr>

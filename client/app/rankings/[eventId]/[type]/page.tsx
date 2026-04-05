@@ -49,13 +49,10 @@ const eventsWith3x3 = [
 
 // TO-DO: MAKE THIS DYNAMICALLY INCLUDE THE EVENT, IF POSSIBLE!!!!!
 export const metadata = {
-  title: `Rankings | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
-  description: "Rankings for unofficial Rubik's Cube competitions and speedcuber meetups.",
-  keywords:
-    "rankings rubik's rubiks cube contest contests competition competitions meetup meetups speedcubing speed cubing puzzle",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
+  title: "Rankings",
+  description: process.env.METADATA_RANKINGS_DESCRIPTION,
   openGraph: {
-    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/cubing_contests_4.jpg`],
+    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/rankings.jpg`],
   },
 };
 

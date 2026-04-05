@@ -6,6 +6,11 @@ import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Exports",
+  description: process.env.METADATA_EXPORTS_DESCRIPTION,
+};
+
 async function ExportPage() {
   if (process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP === "0")
     return <p className="fs-4 mx-3 mt-5 text-center">Public exports are disabled</p>;

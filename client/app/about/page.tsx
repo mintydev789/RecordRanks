@@ -4,6 +4,11 @@ import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "About",
+  description: process.env.METADATA_ABOUT_DESCRIPTION,
+};
+
 async function AboutPage() {
   const content = await getSettingFromDb({ key: "about-page-content", optional: true });
 

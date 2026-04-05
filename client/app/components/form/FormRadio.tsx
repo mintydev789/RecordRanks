@@ -9,7 +9,7 @@ type Props = {
   disabled?: boolean;
   oneLine?: boolean;
   small?: boolean;
-};
+} & React.HTMLAttributes<HTMLDivElement>;
 
 function FormRadio({
   id,
@@ -20,10 +20,11 @@ function FormRadio({
   disabled = false,
   oneLine = false,
   small = false,
+  className,
 }: Props) {
   return (
     <div
-      className={`${oneLine ? "d-flex flex-wrap gap-3 gap-md-5 align-items-center" : ""}  ${small ? "fs-6" : "fs-5"}`}
+      className={`${oneLine ? "d-flex flex-wrap gap-3 gap-md-5 align-items-center" : ""} ${small ? "fs-6" : "fs-5"} ${className}`}
     >
       <h5 className={`${oneLine ? "m-0" : ""}  ${small ? "fs-6" : "fs-5"}`}>{title}</h5>
 

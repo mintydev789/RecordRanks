@@ -18,7 +18,7 @@ import { MainContext } from "~/helpers/contexts.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
-import type { EventWrPair, InputPerson, RoundFormat, RoundType } from "~/helpers/types.ts";
+import type { EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import {
   getActionError,
   getBlankCompetitors,
@@ -246,21 +246,28 @@ function DataEntryScreen({
   };
 
   const submitMockResult = async () => {
-    let firstUnusedPersonId =
-      persons.length === 0 ? 1 : persons.reduce((acc, person) => (!acc || person.id > acc.id ? person : acc)).id + 1;
+    let firstUnusedPersonId = 1;
     const resultPersons: PersonResponse[] = [];
     for (let i = 0; i < currEvent.participants; i++) {
       while (resultPersons.length === i) {
-        if (firstUnusedPersonId > 25) throw new Error("Unable to find an unused person ID");
-        const res = await getPersonById({ id: firstUnusedPersonId });
-        if (res.serverError || res.validationErrors) firstUnusedPersonId++;
-        else resultPersons.push(res.data!);
+        if (firstUnusedPersonId > 50) throw new Error("Unable to find an unused person ID");
+        if (results.some((r) => r.personIds.includes(firstUnusedPersonId))) {
+          firstUnusedPersonId++;
+        } else {
+          const res = await getPersonById({ id: firstUnusedPersonId });
+          if (res.serverError || res.validationErrors) firstUnusedPersonId++;
+          else resultPersons.push(res.data!);
+        }
       }
       firstUnusedPersonId++;
     }
     const attempts: Attempt[] = [];
-    for (let i = 0; i < (round.cutoffNumberOfAttempts ?? roundFormat.attempts); i++)
-      attempts.push({ result: Math.round(Math.random() * 30_00) + 30_00 });
+    const skillRange = round.timeLimitCentiseconds! * 0.1 + Math.random() ** 2 * round.timeLimitCentiseconds! * 0.9;
+    for (let i = 0; i < roundFormat.attempts; i++) {
+      attempts.push({ result: Math.round(skillRange * 0.8 + Math.random() * skillRange * 0.2) });
+      if (i + 1 === round.cutoffNumberOfAttempts && attempts.every((a) => a.result >= round.cutoffAttemptResult!))
+        break;
+    }
 
     const newResultDto: ResultDto = {
       eventId,

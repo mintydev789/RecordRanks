@@ -12,23 +12,19 @@ Deni Mintsaev is the main developer of RecordRanks, and all contributions go dir
 
 ## Screenshots
 
-Below are some screenshots from one of the RecordRanks instances: [Cubing Contests](https://cubingcontests.com/) (the first ever instance).
+Below are some screenshots from one of the RecordRanks instances: [Cubing Contests](https://cubingcontests.com/) (a lot of this is mock data). This was the first instance of RecordRanks.
 
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_1.jpg" width="500"/>
+<img src="https://codeberg.org/mintydev/RecordRanks/raw/branch/main/client/public/screenshots/contest_results.jpg" width="500"/>
 
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_2.jpg" width="500"/>
+<img src="https://codeberg.org/mintydev/RecordRanks/raw/branch/main/client/public/screenshots/records.jpg" width="500"/>
 
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_3.jpg" width="500"/>
+<img src="https://codeberg.org/mintydev/RecordRanks/raw/branch/main/client/public/screenshots/rankings.jpg" width="500"/>
 
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_4.jpg" width="500"/>
+<img src="https://codeberg.org/mintydev/RecordRanks/raw/branch/main/client/public/screenshots/mod_dashboard.jpg" width="500"/>
 
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_5.jpg" width="500"/>
+<img src="https://codeberg.org/mintydev/RecordRanks/raw/branch/main/client/public/screenshots/data_entry.jpg" width="500"/>
 
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_6.jpg" width="500"/>
-
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_7.jpg" width="500"/>
-
-<img src="https://supabase.cubingcontests.com/storage/v1/object/public/public_bucket/assets/screenshots/cubing_contests_8.jpg" width="500"/>
+<img src="https://codeberg.org/mintydev/RecordRanks/raw/branch/main/client/public/screenshots/competitors.jpg" width="500"/>
 
 ## Deployment
 
@@ -57,9 +53,10 @@ To set up a production `.env` file, follow these steps:
 6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
 7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
 8. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use, and set the other relevant auth-related variables\*.
-9. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
-10. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
-11. Set `NEXT_PUBLIC_EXPORTS_TO_KEEP` to the number of public exports you'd like to be kept when new ones are generated.
+9. Set the `METADATA_...` values for SEO.
+10. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
+11. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
+12. Set `NEXT_PUBLIC_EXPORTS_TO_KEEP` to the number of public exports you'd like to be kept when new ones are generated.
 
 \* Note: for [WCA OAuth](https://www.worldcubeassociation.org/oauth/applications) you will have to set these values when you set it up in your WCA OAuth settings:
 
@@ -70,6 +67,10 @@ To set up a production `.env` file, follow these steps:
 ### Icon
 
 RecordRanks does not have a default icon available, so before you publish your Docker image, you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the navbar). Use the dedicated script to generate both files (see the Scripts section). These files are gitignored in this repo, but they get included in the Docker image when you build it.
+
+### `robots.txt` file
+
+There is an example `robots.txt` at `client/app/robots.txt.example`. You can copy that file to `client/app/robots.txt` and edit it to define a list of paths you would like to prevent web crawlers from indexing. Learn more about this [here](https://www.robotstxt.org/robotstxt.html).
 
 ### Creating the Docker image
 
@@ -220,7 +221,7 @@ To stop Supabase, use this command: `docker compose -f docker-compose.supabase.y
 
 ### Mock data
 
-If your DB is empty, the backend will fill the events table with the data from `eventsStub.ts`. It will also seed some test users (you can see the details in `client/instrumentation.ts` -> `testUsers`) and some test persons.
+If your DB is empty, the backend will fill the events table with the data from `eventsStub.ts`. It will also seed some test data from `client/helpers/test-data`. This includes users `admin`, `mod` and `user`, all with the password `rr`.
 
 ### Accessing DB container directly
 

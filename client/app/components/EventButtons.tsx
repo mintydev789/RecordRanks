@@ -53,7 +53,7 @@ function EventButtons({ events, eventIdOverride, pathTemplate, showAllEvents, re
       {!showAllEvents && (
         <>
           {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
-          <div className="btn-group btn-group-sm mt-2 mb-3" role="group">
+          <div className="btn-group btn-group-sm my-2" role="group">
             {filteredCategories.map((cat) => (
               <button
                 key={cat.value}
@@ -67,7 +67,7 @@ function EventButtons({ events, eventIdOverride, pathTemplate, showAllEvents, re
             ))}
           </div>
 
-          {selectedCat?.description && <p>{selectedCat.description}</p>}
+          {selectedCat?.description && <p className="mb-2">{selectedCat.description}</p>}
         </>
       )}
 

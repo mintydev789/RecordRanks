@@ -1,6 +1,6 @@
 import { getTimezoneOffset } from "date-fns-tz";
 import z from "zod";
-import { C } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import type { Activity } from "~/helpers/types/Schedule.ts";
 import { ContestTypeValues } from "~/helpers/types.ts";
 import { getDateOnly } from "~/helpers/utilityFunctions.ts";
@@ -149,20 +149,25 @@ export const ContestValidator = z
   })
   .superRefine((val, ctx) => {
     for (const key of ["competitionId", "name", "shortName"]) {
-      if (val.type !== "wca-comp" && (/championship/i.test((val as any)[key]) || /national/i.test((val as any)[key]))) {
-        ctx.addIssue({
-          code: "custom",
-          message: 'The name must not contain "championship" or "national"',
-          input: (val as any)[key],
-        });
-      }
+      if (IS_CUBING_CONTESTS_INSTANCE) {
+        if (
+          val.type !== "wca-comp" &&
+          (/championship/i.test((val as any)[key]) || /national/i.test((val as any)[key]))
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: 'The name must not contain "championship" or "national"',
+            input: (val as any)[key],
+          });
+        }
 
-      if (val.type === "meetup" && /open/i.test((val as any)[key])) {
-        ctx.addIssue({
-          code: "custom",
-          message: 'The name must not contain "open" (only applies to meetups)',
-          input: (val as any)[key],
-        });
+        if (val.type === "meetup" && /open/i.test((val as any)[key])) {
+          ctx.addIssue({
+            code: "custom",
+            message: 'The name must not contain "open" (only applies to meetups)',
+            input: (val as any)[key],
+          });
+        }
       }
     }
 
