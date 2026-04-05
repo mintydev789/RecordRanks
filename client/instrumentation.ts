@@ -1,59 +1,28 @@
 import type fsType from "node:fs";
-// import type { writeFile as writeFileType } from "node:fs/promises";
 import { eq } from "drizzle-orm";
+import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
+import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
 import { defaultSettings } from "~/helpers/defaultSettings.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
+import { testPersons } from "~/helpers/test-data/testPersons.ts";
+import { testPosts } from "~/helpers/test-data/testPosts.ts";
+import { testUsers } from "~/helpers/test-data/testUsers.ts";
 import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utilityFunctions.ts";
 import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition.ts";
 import type { auth as authType } from "~/server/auth.ts";
 import type { db as dbType } from "~/server/db/provider.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
+import { postsTable } from "~/server/db/schema/posts.ts";
+import { roundsTable } from "~/server/db/schema/rounds.ts";
 import { settingsTable } from "~/server/db/schema/settings.ts";
 import { C } from "./helpers/constants.ts";
 import { RecordTypeValues } from "./helpers/types.ts";
-import type { InsertContest } from "./server/db/schema/contests.ts";
+import { contestsTable, type InsertContest } from "./server/db/schema/contests.ts";
 import { eventsTable } from "./server/db/schema/events.ts";
 import { type PersonResponse, personsTable } from "./server/db/schema/persons.ts";
 import { recordConfigsTable } from "./server/db/schema/record-configs.ts";
 import type { SelectResult } from "./server/db/schema/results.ts";
-
-// Used in tests too
-export const testUsers = [
-  {
-    email: "admin@example.com",
-    username: "admin",
-    name: "admin",
-    password: "Temporary_good_password123", // replaced with "rr" below
-    personId: 1,
-    role: "admin",
-    emailVerified: true,
-  },
-  {
-    email: "mod@example.com",
-    username: "mod",
-    name: "mod",
-    password: "Temporary_good_password123", // replaced with "rr" below
-    personId: 2,
-    role: "mod",
-    emailVerified: true,
-  },
-  {
-    email: "user@example.com",
-    username: "user",
-    name: "user",
-    password: "Temporary_good_password123", // replaced with "rr" below
-    personId: 3,
-    emailVerified: true,
-  },
-  {
-    email: "new_user@example.com",
-    username: "new_user",
-    name: "new_user",
-    password: "Temporary_good_password123", // replaced with "rr" below
-    emailVerified: false,
-  },
-];
 
 // This is the scrypt password hash for the password "rr" and BETTER_AUTH_SECRET = "secret_thats_long_enough_to_be_accepted_by_better_auth".
 // This is only used for testing locally during development.
@@ -120,21 +89,32 @@ export async function register() {
 
       if ((await db.select().from(personsTable)).length === 0) {
         console.log("Seeding test persons...");
-
-        await db.insert(personsTable).values([
-          { name: "Test Admin", regionCode: "CH", approved: true },
-          { name: "Test Moderator", localizedName: "Localized Name", regionCode: "NR", approved: true },
-          { name: "Test User", regionCode: "SG", approved: true },
-          { name: "Test New User", regionCode: "UY", approved: true },
-          { name: "Test Person 5", regionCode: "SE" },
-          { name: "Test Person 6", regionCode: "GB" },
-          { name: "Test Person 7", regionCode: "US" },
-          { name: "Test Person 8", regionCode: "CA" },
-          { name: "Test Person 9", regionCode: "CN" },
-          { name: "Test Person 10", regionCode: "GB" },
-        ]);
-
+        await db.insert(personsTable).values(testPersons);
         console.log("Finished seeding test persons");
+      }
+
+      if ((await db.select().from(eventsTable)).length === 0) {
+        console.log("Seeding test events...");
+        await db.insert(eventsTable).values(eventsStub);
+        console.log("Finished seeding test events");
+      }
+
+      if ((await db.select().from(contestsTable)).length === 0) {
+        console.log("Seeding test contests...");
+        await db.insert(contestsTable).values(contestsStub);
+        console.log("Finished seeding test contests");
+      }
+
+      if ((await db.select().from(roundsTable)).length === 0) {
+        console.log("Seeding test rounds...");
+        await db.insert(roundsTable).values(roundsStub.map(({ id, ...r }) => r));
+        console.log("Finished seeding test rounds");
+      }
+
+      if ((await db.select().from(postsTable)).length === 0) {
+        console.log("Seeding test posts...");
+        await db.insert(postsTable).values(testPosts);
+        console.log("Finished seeding test posts");
       }
 
       for (const testUser of testUsers) {
@@ -168,14 +148,6 @@ export async function register() {
 
           console.log(`Seeded test user: ${testUser.username}`);
         }
-      }
-
-      if ((await db.select().from(eventsTable)).length === 0) {
-        console.log("Seeding test events...");
-
-        await db.insert(eventsTable).values(eventsStub);
-
-        console.log("Finished seeding test events");
       }
     }
 

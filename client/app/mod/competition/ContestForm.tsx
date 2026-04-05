@@ -24,7 +24,7 @@ import Tabs from "~/app/components/UI/Tabs.tsx";
 import Tooltip from "~/app/components/UI/Tooltip.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
-import { C } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import type { Room, Schedule } from "~/helpers/types/Schedule.ts";
@@ -131,8 +131,8 @@ function ContestForm({
   // Schedule stuff
   const [rooms, setRooms] = useState<Room[]>(contest?.schedule?.venues[0].rooms ?? []);
   const [timezone, setTimezone] = useState(contest?.schedule?.venues[0].timezone ?? contest?.timezone ?? "Etc/GMT");
+  const [isCompPhotosUnderstood, setIsCompPhotosUnderstood] = useState(mode === "edit" || !IS_CUBING_CONTESTS_INSTANCE);
   const [isTimelinessUnderstood, setIsTimelinessUnderstood] = useState(mode === "edit");
-  const [isCompPhotosUnderstood, setIsCompPhotosUnderstood] = useState(mode === "edit");
 
   const updateTimeZone = useCallback(
     debounce(async (lat: number, long: number) => {
@@ -491,33 +491,25 @@ function ContestForm({
 
         {activeTab === "details" && (
           <>
-            {mode === "new" && (
-              <>
-                {process.env.NODE_ENV !== "production" && (
-                  <div className="d-flex my-3 flex-wrap gap-3">
-                    <Button
-                      onClick={() => fillWithMockData()}
-                      isLoading={isGettingPerson}
-                      disabled={type !== undefined}
-                      className="btn-secondary"
-                    >
-                      Set Mock Competition
-                    </Button>
-                    <Button
-                      onClick={() => fillWithMockData("meetup")}
-                      isLoading={isGettingPerson}
-                      disabled={type !== undefined}
-                      className="btn-secondary"
-                    >
-                      Set Mock Meetup
-                    </Button>
-                  </div>
-                )}
-
-                <p className="fs-6 fw-bold fst-italic mb-4 text-info">
-                  Come back here after the contest gets approved to generate the scorecards!
-                </p>
-              </>
+            {mode === "new" && process.env.NODE_ENV !== "production" && (
+              <div className="d-flex my-3 flex-wrap gap-3">
+                <Button
+                  onClick={() => fillWithMockData()}
+                  isLoading={isGettingPerson}
+                  disabled={type !== undefined}
+                  className="btn-secondary"
+                >
+                  Set Mock Competition
+                </Button>
+                <Button
+                  onClick={() => fillWithMockData("meetup")}
+                  isLoading={isGettingPerson}
+                  disabled={type !== undefined}
+                  className="btn-secondary"
+                >
+                  Set Mock Meetup
+                </Button>
+              </div>
             )}
             {mode === "edit" && contest && (
               <>
@@ -836,7 +828,7 @@ function ContestForm({
 
         {!disabled && mode !== "edit" && (
           <>
-            {type === "comp" && (
+            {type === "comp" && IS_CUBING_CONTESTS_INSTANCE && (
               <>
                 <p className="fs-6 mt-4">
                   This is an unofficial competition, which means that you must provide at least two photos of the setup

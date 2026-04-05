@@ -209,12 +209,12 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
               <table className="table-hover table text-nowrap">
                 <thead>
                   <tr>
-                    <th scope="col">CC ID</th>
+                    <th scope="col">ID</th>
                     <th scope="col">Name</th>
                     <th scope="col">Localized Name</th>
                     <th scope="col">WCA ID</th>
                     <th scope="col">Country</th>
-                    {isAdmin && <th scope="col">Created by</th>}
+                    {users && <th scope="col">Created by</th>}
                     <th scope="col">Approved</th>
                     <th scope="col">Actions</th>
                   </tr>
@@ -224,9 +224,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                     if (filteredPersons.length === 0) return undefined;
                     const person = filteredPersons[virtualItem.index];
                     const personCreator =
-                      users && (person as SelectPerson).createdBy
-                        ? users.find((u) => u.id === (person as SelectPerson).createdBy)
-                        : undefined;
+                      users && "createdBy" in person ? users.find((u) => u.id === person.createdBy) : undefined;
 
                     return (
                       <tr

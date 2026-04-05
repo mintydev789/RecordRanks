@@ -16,7 +16,12 @@ export const RoundValidator = z
     cutoffAttemptResult: z.int().min(1).nullable(),
     cutoffNumberOfAttempts: z.int().min(1).nullable(),
     proceedType: z.enum(RoundProceedValues).nullable(),
-    proceedValue: z.int().nullable(),
+    proceedValue: z
+      .int()
+      .min(C.minProceedNumber, {
+        error: `A round cannot allow fewer than ${C.minProceedNumber} competitors to proceed to the next round`,
+      })
+      .nullable(),
     open: z.boolean().optional(), // not needed when creating new round
   })
   .superRefine((val, ctx) => {
@@ -39,14 +44,6 @@ export const RoundValidator = z
       ctx.addIssue({
         code: "custom",
         message: "Non-final rounds must have the parameters for proceeding to the next round set",
-      });
-    }
-
-    if (val.proceedType === "number" && val.proceedValue && val.proceedValue < C.minProceedNumber) {
-      ctx.addIssue({
-        code: "custom",
-        message: `A round cannot allow fewer than ${C.minProceedNumber} competitors to proceed to the next round`,
-        input: val.proceedValue,
       });
     }
 

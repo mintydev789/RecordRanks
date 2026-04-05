@@ -21,10 +21,10 @@ export const contestsTable = rrSchema.table(
     name: text().notNull(),
     shortName: varchar({ length: C.maxContestShortName }).notNull(),
     type: contestTypeEnum().notNull(),
-    city: text().notNull(),
     regionCode: varchar({ length: 2 })
       .references(() => regionsTable.code, { onUpdate: "cascade" })
       .notNull(),
+    city: text().notNull(),
     venue: text().notNull(),
     address: text().notNull(),
     latitudeMicrodegrees: integer().notNull(),

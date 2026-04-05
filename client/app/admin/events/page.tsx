@@ -1,3 +1,4 @@
+import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { db } from "~/server/db/provider.ts";
 import { eventsTable as table } from "~/server/db/schema/events.ts";
 import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
@@ -11,6 +12,8 @@ async function ConfigureEventsPage() {
   return (
     <section>
       <h2 className="mb-4 text-center">Events</h2>
+
+      <ToastMessages className="mx-2" />
 
       <ConfigureEventsScreen events={events} />
     </section>

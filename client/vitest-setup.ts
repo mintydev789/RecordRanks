@@ -9,7 +9,7 @@ import { recordConfigsStub } from "~/__mocks__/stubs/recordConfigsStub.ts";
 import { regionsStub } from "~/__mocks__/stubs/regionsStub.ts";
 import { resultsStub } from "~/__mocks__/stubs/resultsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
-import { testUsers } from "~/instrumentation.ts";
+import { testUsers } from "~/helpers/test-data/testUsers.ts";
 import { auth } from "~/server/auth.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";

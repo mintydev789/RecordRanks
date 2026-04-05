@@ -224,7 +224,7 @@ To stop Supabase, use this command: `docker compose -f docker-compose.supabase.y
 
 ### Mock data
 
-If your DB is empty, the backend will fill the events table with the data from `eventsStub.ts`. It will also seed some test users (you can see the details in `client/instrumentation.ts` -> `testUsers`) and some test persons.
+If your DB is empty, the backend will fill the events table with the data from `eventsStub.ts`. It will also seed some test data from `client/helpers/test-data`. This includes users `admin`, `mod` and `user`, all with the password `rr`.
 
 ### Accessing DB container directly
 
