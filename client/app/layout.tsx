@@ -13,13 +13,15 @@ const quicksand = Quicksand();
 const roboto = Roboto();
 
 export const metadata = {
-  title: process.env.NEXT_PUBLIC_PROJECT_NAME,
-  description: "The best place for hosting unofficial Rubik's Cube competitions and speedcuber meetups.",
-  keywords:
-    "rubik's rubiks cube contest contests competition competitions meetup meetups speedcubing speed cubing puzzle",
+  title: {
+    template: `%s | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
+    default: process.env.NEXT_PUBLIC_PROJECT_NAME,
+  },
+  description: process.env.METADATA_DESCRIPTION,
+  keywords: process.env.METADATA_KEYWORDS,
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
   openGraph: {
-    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/cubing_contests_1.jpg`],
+    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/contest_results.jpg`],
   },
 };
 

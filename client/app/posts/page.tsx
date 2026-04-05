@@ -8,6 +8,14 @@ import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Blog",
+  description: process.env.METADATA_POSTS_DESCRIPTION,
+  openGraph: {
+    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/blog.jpg`],
+  },
+};
+
 async function PostsPage() {
   const posts = await db
     .select({ ...postsPublicCols, authorName: personsTable.name })

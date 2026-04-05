@@ -7,6 +7,11 @@ import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Rules",
+  description: process.env.METADATA_RULES_DESCRIPTION,
+};
+
 async function RulesPage() {
   const content = await getSettingFromDb({ key: "rules-page-content" });
 

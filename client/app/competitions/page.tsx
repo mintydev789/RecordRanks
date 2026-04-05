@@ -12,13 +12,10 @@ import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 
 export const metadata = {
-  title: `All contests | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
-  description: "List of unofficial Rubik's Cube competitions and speedcuber meetups.",
-  keywords:
-    "rubik's rubiks cube contest contests competition competitions meetup meetups speedcubing speed cubing puzzle",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
+  title: "Contests",
+  description: process.env.METADATA_CONTESTS_DESCRIPTION,
   openGraph: {
-    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/cubing_contests_2.jpg`],
+    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/contests.jpg`],
   },
 };
 

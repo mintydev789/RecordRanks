@@ -12,21 +12,21 @@ export const testPosts: InsertPost[] = [
     postId: "test-post2",
     title: "Announcing the Next Monthly Speedrunning Tournament",
     content:
-      "Mark your calendars! The next Monthly Speedrunning Tournament is just around the corner. This is your chance to compete against the best in the community, set new records, and earn bragging rights. Don’t miss out—sign up today and show off your skills!",
+      "Mark your calendars! The next Monthly Speedrunning Tournament is just around the corner. This is your chance to compete against the best in the community, set new records, and earn bragging rights. Don't miss out—sign up today and show off your skills!",
     date: new Date("2025-12-17T19:15:14.000Z"),
   },
   {
     postId: "test-post3",
     title: "How to Submit Your Speedrun for Verification",
     content:
-      "Submitting your speedrun for verification is easier than ever! Follow our step-by-step guide to ensure your run is properly recorded and submitted. Whether you're aiming for a world record or just sharing your personal best, we’ve got you covered.",
+      "Submitting your speedrun for verification is easier than ever! Follow our step-by-step guide to ensure your run is properly recorded and submitted. Whether you're aiming for a world record or just sharing your personal best, we've got you covered.",
     date: new Date("2025-12-29T19:16:39.000Z"),
   },
   {
     postId: "test-post4",
     title: "Celebrating the Latest World Records",
     content:
-      "The Super Mario Bros. Speedrunning Community is thrilled to announce the latest world records! These incredible feats of skill and precision push the boundaries of what’s possible in speedrunning. Check out the full leaderboards and see who’s at the top!",
+      "The Super Mario Bros. Speedrunning Community is thrilled to announce the latest world records! These incredible feats of skill and precision push the boundaries of what's possible in speedrunning. Check out the full leaderboards and see who's at the top!",
     date: new Date("2026-01-07T19:23:37.000Z"),
   },
   {
@@ -40,7 +40,7 @@ export const testPosts: InsertPost[] = [
     postId: "test-post6",
     title: "Community Spotlight: Meet the Top Speedrunners",
     content:
-      "Ever wondered who the fastest speedrunners in the community are? In this edition of Community Spotlight, we’re highlighting the top players and their incredible achievements. Get to know the faces behind the records and learn their secrets to success.",
+      "Ever wondered who the fastest speedrunners in the community are? In this edition of Community Spotlight, we're highlighting the top players and their incredible achievements. Get to know the faces behind the records and learn their secrets to success.",
     date: new Date("2026-02-20T19:27:15.000Z"),
   },
   {
