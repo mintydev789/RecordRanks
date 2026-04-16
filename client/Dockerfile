@@ -60,7 +60,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # This caches the .next/cache directory across builds, but it also prevents
 # .next/cache/fetch-cache from being included in the final image, meaning
 # cached fetch responses from the build won't be available at runtime.
-RUN --mount=type=cache,target=/app/.next/cache pnpm run build
+# RUN --mount=type=cache,target=/app/.next/cache pnpm run build
+RUN pnpm run build
 
 # ============================================
 # Stage 3: Run Next.js application
