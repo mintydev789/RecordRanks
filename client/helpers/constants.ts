@@ -1,5 +1,6 @@
 export const C = {
   cubingContestsHostname: "cubingcontests.com",
+  recordRanksLink: "https://recordranks.com/",
   sourceCodeLink: "https://codeberg.org/mintydev/RecordRanks",
   rrDonationLink: "https://ko-fi.com/mintydev",
   discordServerLink: "https://discord.gg/7rRMQA8jnU",

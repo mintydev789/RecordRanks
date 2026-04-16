@@ -96,6 +96,14 @@ body[data-bs-theme="light"] {
   color: var(--bs-btn-active-bg);
 }
 
+.rr-button:hover {
+  opacity: 80%;
+}
+
+.rr-button:active {
+  opacity: 60%;
+}
+
 .rr-tooltip .rr-tooltip-text {
   visibility: hidden;
 }
@@ -105,6 +113,8 @@ body[data-bs-theme="light"] {
 }
 
 .rr-kofi-button {
+  display: block;
+  width: max-content;
   padding: 0.25rem 0.7rem;
   font-family:
     "Quicksand",
