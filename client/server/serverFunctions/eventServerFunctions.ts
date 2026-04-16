@@ -115,11 +115,5 @@ export const updateEventSF = actionClient
         .returning();
     });
 
-    sendEmail(
-      process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
-      "Important: Event updated",
-      `Event ${event.name} has been updated:\n\n${JSON.stringify(event, null, 2)}`,
-    );
-
     return updatedEvent;
   });
