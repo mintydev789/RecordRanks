@@ -57,4 +57,18 @@ export const testPosts: InsertPost[] = [
       "Join us for our next Community Meetup and hang out with fellow speedrunners! Whether you're here to compete, learn, or just chat, these events are a great way to connect with the community. Check out the schedule and mark your calendar!",
     date: new Date("2026-04-05T15:59:22.345Z"),
   },
+  {
+    postId: "test-post9",
+    title: "Incredible Performance at San Diego Invitational!",
+    content:
+      "Last week, the most prestigious speedrunning competition took place in San Diego. This time, we saw performance unlike ever before!",
+    date: new Date("2026-04-09T00:00:00.000Z"),
+  },
+  {
+    postId: "test-post10",
+    title: "Reserve Your Spot at Our Next Bootcamp",
+    content:
+      "Interested in boosting your speedrunning skills? Don't miss your chance to reserve a spot at our next bootcamp, where some of the best speedrunners in the World will share their expertise with those of you aspiring to one day beat them at their own game!",
+    date: new Date("2026-04-14T13:00:00.00Z"),
+  },
 ];

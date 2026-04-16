@@ -19,7 +19,7 @@ if [ -f "$ico_file_path" ]; then
   exit 3
 fi
 
-if [ -f png_file_path ]; then
+if [ -f "$png_file_path" ]; then
   echo "Error: there is already a PNG file at $png_file_path"
   exit 4
 fi

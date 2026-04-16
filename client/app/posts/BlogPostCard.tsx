@@ -10,7 +10,7 @@ type Props = {
 
 function BlogPostCard({ post }: Props) {
   return (
-    <div className="card">
+    <div className="card h-100">
       <div className="card-body">
         <h5 className="card-title">{post.title}</h5>
 

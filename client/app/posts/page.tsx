@@ -26,7 +26,7 @@ async function PostsPage() {
 
   return (
     <section>
-      <h2 className="mb-4 text-center">Blog Posts</h2>
+      <h2 className="mb-4 text-center">Blog</h2>
 
       <AffiliateLink type="other" />
 
@@ -35,7 +35,7 @@ async function PostsPage() {
       ) : (
         <div className="row mx-0 mt-4 mb-2">
           {posts.map((post) => (
-            <div key={post.id} className="col-md-6 mb-3">
+            <div key={post.id} className="col-md-6 mb-4">
               <BlogPostCard post={post} />
             </div>
           ))}

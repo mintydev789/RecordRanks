@@ -61,7 +61,7 @@ export function logMessage(
       console.error("Error while sending log to Supabase Analytics:", err);
     }
 
-    if (sendErrorLogEmail) {
+    if (code === "RR5000" && sendErrorLogEmail) {
       getSettingFromDb({ key: "error-logs-contact-email", optional: true })
         .then((contactEmail) => {
           if (contactEmail) sendErrorEmail(contactEmail, code, message);
