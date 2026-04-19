@@ -20,7 +20,7 @@ import { sendEmail, sendRolesChangedEmail } from "~/server/email/mailer.ts";
 import { Roles } from "~/server/permissions.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { getOrCreatePersonByWcaId, logMessage, syncPersonByWcaId } from "../serverOnlyFunctions.ts";
+import { getOrCreatePersonByWcaId, getSettingFromDb, logMessage, syncPersonByWcaId } from "../serverOnlyFunctions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})
@@ -166,6 +166,10 @@ export const linkWcaProfileSF = actionClient
 
     return person;
   });
+
+export const getModInstructionsSF = actionClient.metadata({}).action<string | null>(async () => {
+  return await getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });
+});
 
 export const getCurrentCollectiveCubingSolutionSF = actionClient
   .metadata({})

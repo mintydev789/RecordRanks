@@ -6,7 +6,6 @@ import Link from "next/link";
 import useSWR from "swr";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Region from "~/app/components/Region.tsx";
-import Loading from "~/app/components/UI/Loading.tsx";
 import { useModDashboardQueryState } from "~/app/mod/ModDashboardFilters.ts";
 import ModFilters from "~/app/mod/ModFilters.tsx";
 import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
@@ -21,7 +20,9 @@ type Props = {
 
 function ModDashboardScreen({ regions, isAdminView }: Props) {
   const [filters] = useModDashboardQueryState();
-  const { data, isLoading, isValidating, mutate } = useSWR(["mod", filters], () => getModContestsSF(filters));
+  const { data, isLoading, isValidating, mutate } = useSWR(["mod", filters], () => getModContestsSF(filters), {
+    revalidateOnMount: false,
+  });
 
   const contests = data?.data?.contests;
   const isPending = isLoading || isValidating;
@@ -46,9 +47,7 @@ function ModDashboardScreen({ regions, isAdminView }: Props) {
         </p>
       </div>
 
-      {isPending ? (
-        <Loading />
-      ) : !contests || contests.length === 0 ? (
+      {!contests || contests.length === 0 ? (
         <p className="fs-5 px-2">No contests found</p>
       ) : (
         <div className="table-responsive mb-5">

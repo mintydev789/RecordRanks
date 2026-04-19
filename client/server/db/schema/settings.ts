@@ -15,7 +15,9 @@ export type SettingKey =
   | "home-page-description"
   | "about-page-content"
   | "rules-page-content"
+  | "moderator-instructions-page-content"
   | "video-based-results-instructions"
+  | "user-request-instructions"
   | "public-exports-readme"
 
   // features

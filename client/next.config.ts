@@ -26,11 +26,6 @@ const nextConfig: NextConfig = withMDX({
         destination: "/rankings/fto/single",
         permanent: true,
       },
-      {
-        source: "/moderator-instructions",
-        destination: "/moderator-instructions/wca",
-        permanent: true,
-      },
     ]);
   },
   // Enables streaming (https://nextjs.org/docs/app/guides/self-hosting#streaming-and-suspense)

@@ -5,17 +5,25 @@ import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useContext, useEffect, useState, useTransition } from "react";
 import Competitor from "~/app/components/Competitor.tsx";
-import FormTextInput from "~/app/components/form/FormTextInput";
+import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
+import Tabs from "~/app/components/UI/Tabs.tsx";
+import UserRequestTab from "~/app/user/settings/UserRequestTab.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { rolesObject } from "~/server/permissions.ts";
 import { linkWcaProfileSF, logUserDeletedSF } from "~/server/serverFunctions/serverFunctions.ts";
+
+const tabs = [
+  { title: "Account", value: "account" },
+  { title: "User Request", value: "user-request" },
+] as const satisfies NavigationItem[];
 
 // Just a copy of the type of the data property from the return type of authClient.listAccounts()
 type Account = {
@@ -31,13 +39,15 @@ type Account = {
 type Props = {
   initPerson: PersonResponse | undefined;
   regions: RegionResponse[];
+  userRequestInstructions: string | null;
 };
 
-function UserSettingsScreen({ initPerson, regions }: Props) {
+function UserSettingsScreen({ initPerson, regions, userRequestInstructions }: Props) {
   const router = useRouter();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
   const { data: session, isPending: isPendingSession } = authClient.useSession();
 
+  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["value"]>("account");
   const [status, setStatus] = useQueryState("status", parseAsStringLiteral(["signup-success", "email-change-success"]));
   const [person, setPerson] = useState(initPerson);
   const [accounts, setAccounts] = useState<Account[]>();
@@ -153,72 +163,82 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
 
   return (
     <>
-      {session.user.name !== session.user.username && (
-        <p className="mb-2">
-          Name: <b>{session.user.name}</b>
-        </p>
-      )}
-      {session.user.image && (
-        <img
-          src={session.user.image}
-          alt={session.user.name}
-          style={{ maxWidth: "min(90%, 400px)", marginTop: "0.8rem", marginBottom: "2rem" }}
-        />
-      )}
-      {session.user.username && (
-        <p className="mb-3">
-          Username: <b>{session.user.username}</b>
-        </p>
-      )}
-      <p className="mb-2">
-        Email address: <b>{session.user.email}</b>
-      </p>
-      <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
-        <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
-        <Button onClick={() => initiateEmailChange()} isLoading={isInitiatingEmailChange} disabled={isPending}>
-          Change email
-        </Button>
-      </div>
-      {session.user.role && (
-        <p className="mt-3">
-          Your role: <strong>{roles}</strong>.
-        </p>
+      <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab as any} />
+
+      {activeTab === "account" && (
+        <>
+          {session.user.name !== session.user.username && (
+            <p className="mb-2">
+              Name: <b>{session.user.name}</b>
+            </p>
+          )}
+          {session.user.image && (
+            <img
+              src={session.user.image}
+              alt={session.user.name}
+              style={{ maxWidth: "min(90%, 400px)", marginTop: "0.8rem", marginBottom: "2rem" }}
+            />
+          )}
+          {session.user.username && (
+            <p className="mb-3">
+              Username: <b>{session.user.username}</b>
+            </p>
+          )}
+          <p className="mb-2">
+            Email address: <b>{session.user.email}</b>
+          </p>
+          <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
+            <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
+            <Button onClick={() => initiateEmailChange()} isLoading={isInitiatingEmailChange} disabled={isPending}>
+              Change email
+            </Button>
+          </div>
+          {session.user.role && (
+            <p className="mt-3">
+              Your role: <strong>{roles}</strong>.
+            </p>
+          )}
+
+          {person ? (
+            <div className="d-flex flex-wrap gap-2">
+              <span>Your competitor profile:</span>
+              <div className="d-flex gap-2">
+                <Competitor person={person} regions={regions} showLocalizedName />
+                <span>
+                  (CC ID: <strong>{person.id}</strong>)
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p>There is no competitor profile tied to your account.</p>
+          )}
+          {showLinkWcaProfileButton && (
+            <Button
+              onClick={() => linkWcaProfile()}
+              isLoading={wcaProfileLinkStatus === "pending"}
+              disabled={isPending}
+              className="btn-success d-block mt-3 px-4"
+            >
+              <div className="d-flex gap-2 align-items-center">
+                <Image src="/wca_logo.svg" height={30} width={30} alt="WCA Logo" />
+                {person ? "Sync WCA profile" : "Link WCA profile"}
+              </div>
+            </Button>
+          )}
+
+          <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-4">
+            Delete Account
+          </Button>
+          <p className="mt-2" style={{ fontSize: "0.85rem" }}>
+            This deletes all of your account data, but does not affect your competitor data, even if your competitor
+            profile is tied to your account.
+          </p>
+        </>
       )}
 
-      {person ? (
-        <div className="d-flex flex-wrap gap-2">
-          <span>Your competitor profile:</span>
-          <div className="d-flex gap-2">
-            <Competitor person={person} regions={regions} showLocalizedName />
-            <span>
-              (CC ID: <strong>{person.id}</strong>)
-            </span>
-          </div>
-        </div>
-      ) : (
-        <p>There is no competitor profile tied to your account.</p>
+      {activeTab === "user-request" && (
+        <UserRequestTab userRequestInstructions={userRequestInstructions} regions={regions} />
       )}
-      {showLinkWcaProfileButton && (
-        <Button
-          onClick={() => linkWcaProfile()}
-          isLoading={wcaProfileLinkStatus === "pending"}
-          disabled={isPending}
-          className="btn-success d-block mt-3 px-4"
-        >
-          <div className="d-flex gap-2 align-items-center">
-            <Image src="/wca_logo.svg" height={30} width={30} alt="WCA Logo" />
-            {person ? "Sync WCA profile" : "Link WCA profile"}
-          </div>
-        </Button>
-      )}
-
-      <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-4">
-        Delete Account
-      </Button>
-      <p className="mt-2" style={{ fontSize: "0.85rem" }}>
-        This deletes all of your account data, but does not affect your competitor data, even if your competitor profile
-        is tied to your account.
-      </p>
     </>
   );
 }

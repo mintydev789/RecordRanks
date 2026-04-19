@@ -5,4 +5,5 @@ export type NavigationItem = {
   route?: string;
   getIsActive?: (pathname: string) => boolean;
   hidden?: boolean;
+  disabled?: boolean;
 };

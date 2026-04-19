@@ -282,6 +282,7 @@ function ResultsSubmissionForm({
           redirectToOnAddPerson={pathname}
           addNewPersonMode={isVideoBasedResultReviewer ? "default" : "disabled"}
           disabled={result !== undefined}
+          display="grid"
           showWcaId
         />
         {attempts.map((attempt: Attempt, i: number) => (

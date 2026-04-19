@@ -26,12 +26,12 @@ type Props = {
   setPersonNames: (val: string[]) => void;
   onSelectPerson?: (val: PersonResponse) => void;
   regions: RegionResponse[];
+  addNewPersonMode: "default" | "from-new-tab" | "disabled"; // must be disabled for unauthorized users
+  display: "basic" | "grid" | "one-line";
   infiniteInputs?: boolean;
   nextFocusTargetId?: string;
   disabled?: boolean;
-  addNewPersonMode: "default" | "from-new-tab" | "disabled"; // must be disabled for unauthorized users
   redirectToOnAddPerson?: string;
-  display?: "basic" | "grid" | "one-line";
   showWcaId?: boolean;
 };
 
@@ -43,12 +43,12 @@ function FormPersonInputs({
   setPersonNames,
   onSelectPerson,
   regions,
-  infiniteInputs,
+  addNewPersonMode,
+  display,
+  infiniteInputs = false,
   nextFocusTargetId,
   disabled,
-  addNewPersonMode,
   redirectToOnAddPerson = "",
-  display = "grid",
   showWcaId = false,
 }: Props) {
   const router = useRouter();

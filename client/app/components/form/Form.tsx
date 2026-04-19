@@ -5,43 +5,50 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 
 type Props = {
   children: React.ReactNode;
-  buttonText?: string;
   hideToasts?: boolean;
-  disableControls?: boolean;
-  hideSubmitButton?: boolean;
   isLoading?: boolean;
-  onSubmit?: () => void;
+  disableControls?: boolean;
   onCancel?: () => void;
-};
+} & (
+  | {
+      buttonText?: string;
+      hideSubmitButton?: never;
+      onSubmit: () => void;
+    }
+  | {
+      buttonText?: never;
+      hideSubmitButton: true;
+      onSubmit?: never;
+    }
+) &
+  React.HTMLAttributes<HTMLFormElement>;
 
 function Form({
   children,
   buttonText = "Submit",
-  hideToasts,
-  disableControls,
+  hideToasts = false,
   hideSubmitButton,
-  isLoading,
+  isLoading = false,
+  disableControls = false,
   onSubmit,
   onCancel,
+  className,
 }: Props) {
-  const showSubmitButton = !hideSubmitButton && buttonText;
-  if (showSubmitButton && !onSubmit) throw new Error("onSubmit cannot be undefined unless the submit button is hidden");
-
   const controlsDisabled = disableControls || isLoading;
 
   return (
     <form
-      className="fs-5 container mx-auto my-4 px-3"
-      style={{ maxWidth: "var(--rr-md-width)" }}
       onSubmit={(e) => e.preventDefault()}
+      className={`fs-5 container mx-auto my-4 px-3 ${className}`}
+      style={{ maxWidth: "var(--rr-md-width)" }}
     >
       {!hideToasts && <ToastMessages />}
 
       {children}
 
-      {(showSubmitButton || onCancel) && (
+      {(!hideSubmitButton || onCancel) && (
         <div className="d-flex mt-4 gap-3">
-          {showSubmitButton && (
+          {!hideSubmitButton && (
             <Button
               id="form_submit_button"
               type="submit"

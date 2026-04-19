@@ -6,15 +6,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { authClient } from "~/helpers/authClient.ts";
-import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { C } from "~/helpers/constants.ts";
 import { getHasRole } from "~/helpers/utilityFunctions.ts";
+import { getModInstructionsSF } from "~/server/serverFunctions/serverFunctions.ts";
 
-function NavbarItems() {
+function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
 
+  const { data: moderatorInstructions } = useSWR(["mod-instructions"], () => getModInstructionsSF());
   const [expanded, setExpanded] = useState(false);
   const [resultsExpanded, setResultsExpanded] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
@@ -183,13 +186,13 @@ function NavbarItems() {
                     Blog
                   </Link>
                 </li>
-                {IS_CUBING_CONTESTS_INSTANCE && (
+                {moderatorInstructions && (
                   <li>
                     <Link
                       href="/moderator-instructions"
                       onClick={collapseAll}
                       prefetch={false}
-                      className={`nav-link ${/^\/moderator-instructions/.test(pathname) ? "active" : ""}`}
+                      className={`nav-link ${pathname === "/moderator-instructions" ? "active" : ""}`}
                     >
                       Moderator instructions
                     </Link>
@@ -290,4 +293,4 @@ function NavbarItems() {
   );
 }
 
-export default NavbarItems;
+export default Navbar;

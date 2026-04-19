@@ -151,7 +151,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
           Create Event
         </Button>
       ) : (
-        <Form buttonText="Submit" onSubmit={handleSubmit} hideToasts onCancel={cancel} isLoading={isPending}>
+        <Form onSubmit={handleSubmit} hideToasts onCancel={cancel} isLoading={isPending}>
           <FormTextInput
             id="event_name"
             title="Event name"

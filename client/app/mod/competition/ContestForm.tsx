@@ -166,11 +166,6 @@ function ContestForm({
     [timezone, startTime, rooms, type],
   );
 
-  const tabs = [
-    { title: "Details", value: "details" },
-    { title: "Events", value: "events", hidden: !type },
-    { title: "Schedule", value: "schedule", hidden: !type || !getIsCompType(type) },
-  ];
   const isAdmin = getHasRole("admin", session.user.role);
   const modDashboardUrl = isAdmin ? "/mod?state=pending" : "/mod";
   const isPending =
@@ -189,6 +184,16 @@ function ContestForm({
   const disabledIfDetailsImported = !isAdmin && detailsImported;
   const urgent = isValid(startDate) && getIsUrgent(startDate!);
   const disabledIfNotUnderstood = !isTimelinessUnderstood && urgent;
+  const tabs = [
+    { title: "Details", value: "details", disabled: isPending },
+    { title: "Events", value: "events", hidden: !type, disabled: isPending },
+    {
+      title: "Schedule",
+      value: "schedule",
+      hidden: !type || !getIsCompType(type),
+      disabled: isPending || !isValid(startDate),
+    },
+  ];
 
   const handleSubmit = async () => {
     const selectedOrganizers = organizers.filter((o: InputPerson) => o !== null);
@@ -482,12 +487,7 @@ function ContestForm({
       >
         {mode === "edit" && isAdmin && <CreatorDetails creator={creator} person={creatorPerson} regions={regions} />}
 
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          setActiveTab={changeActiveTab}
-          disabledTabs={isPending ? tabs.map((t) => t.value) : isValid(startDate) ? [] : ["schedule"]}
-        />
+        <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={changeActiveTab} />
 
         {activeTab === "details" && (
           <>
@@ -754,6 +754,7 @@ function ContestForm({
                     nextFocusTargetId="contact"
                     disabled={(disabledIfContestApproved && !isAdmin) || disabledIfContestPublished}
                     addNewPersonMode="from-new-tab"
+                    display="grid"
                   />
                 </div>
                 <FormTextInput

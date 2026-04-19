@@ -134,6 +134,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
             regions={regions}
             disabled={isUpdating}
             addNewPersonMode="default"
+            display="grid"
           />
           <h5 className="mt-3 mb-3">Roles</h5>
           <FormCheckbox title={rolesObject.user} selected={isUser} setSelected={setIsUser} disabled={isUpdating} />
