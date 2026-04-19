@@ -188,7 +188,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
                   <td>
                     <div className="d-flex gap-2 align-items-center">
                       {user.email}
-                      <ActiveInactiveIcon isActive={user.emailVerified} />
+                      {user.providerId === "credential" && <ActiveInactiveIcon isActive={user.emailVerified} />}
                     </div>
                   </td>
                   <td>{user.providerId}</td>
