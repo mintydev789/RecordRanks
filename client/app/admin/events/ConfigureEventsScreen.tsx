@@ -1,6 +1,6 @@
 "use client";
 
-import { faBrain, faCopy, faEyeSlash, faPencil, faVideo, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faBrain, faCopy, faEyeSlash, faPencil, faVideo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useAction } from "next-safe-action/hooks";
 import { useContext, useState } from "react";
@@ -45,7 +45,6 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
   const [defaultRoundFormat, setDefaultRoundFormat] = useState<RoundFormat>("a");
   const [participants, setParticipants] = useState<number | undefined>(1);
   const [submissionsAllowed, setSubmissionsAllowed] = useState(false);
-  const [removedWca, setRemovedWca] = useState(false);
   const [hasMemo, setHasMemo] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [description, setDescription] = useState("");
@@ -70,7 +69,6 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
         defaultRoundFormat,
         participants: participants as number,
         submissionsAllowed,
-        removedWca,
         hasMemo,
         hidden,
         description: description || null,
@@ -112,7 +110,6 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
     setDefaultRoundFormat("a");
     setParticipants(1);
     setSubmissionsAllowed(false);
-    setRemovedWca(false);
     setHasMemo(false);
     setHidden(false);
     setDescription("");
@@ -135,7 +132,6 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
     setDefaultRoundFormat(event.defaultRoundFormat);
     setParticipants(event.participants);
     setSubmissionsAllowed(event.submissionsAllowed);
-    setRemovedWca(event.removedWca);
     setHasMemo(event.hasMemo);
     setHidden(event.hidden);
     setDescription(event.description ?? "");
@@ -330,11 +326,6 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
                     {event.submissionsAllowed && (
                       <span title="Allow video-based results">
                         <FontAwesomeIcon icon={faVideo} />
-                      </span>
-                    )}
-                    {event.removedWca && (
-                      <span title="Formerly WCA event">
-                        <FontAwesomeIcon icon={faXmark} />
                       </span>
                     )}
                     {event.hasMemo && (

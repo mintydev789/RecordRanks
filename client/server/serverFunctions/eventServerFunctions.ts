@@ -104,7 +104,6 @@ export const updateEventSF = actionClient
           rank: newEventDto.rank,
           category: newEventDto.category,
           submissionsAllowed: newEventDto.submissionsAllowed,
-          removedWca: newEventDto.removedWca,
           hasMemo: newEventDto.hasMemo,
           hidden: newEventDto.hidden,
           description: newEventDto.description,

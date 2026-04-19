@@ -19,7 +19,6 @@ export const eventsTable = rrSchema.table("events", {
   defaultRoundFormat: roundFormatEnum().notNull(),
   participants: integer().notNull(),
   submissionsAllowed: boolean().notNull(),
-  removedWca: boolean().notNull(),
   hasMemo: boolean().notNull(),
   hidden: boolean().notNull(),
   description: text(),
