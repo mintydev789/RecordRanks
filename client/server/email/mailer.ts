@@ -9,6 +9,7 @@ import { C } from "~/helpers/constants.ts";
 import { videoBasedFormats } from "~/helpers/roundFormats.ts";
 import { getFormattedTime, getIsUrgent } from "~/helpers/utilityFunctions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
+import type { SelectPerson } from "~/server/db/schema/persons.ts";
 import { type LogCode, LogCodes } from "~/server/logger.ts";
 import { rolesObject } from "~/server/permissions.ts";
 import { logMessage } from "~/server/serverOnlyFunctions.ts";
@@ -406,6 +407,36 @@ export function sendVideoBasedResultApprovedEmail(to: string, event: SelectEvent
         from: resultsEmail,
         to,
         subject: `Result approved`,
+        html,
+      });
+    },
+  });
+}
+
+export function sendUserRequestSubmittedEmail(
+  to: string,
+  name: string,
+  requestedPerson: Pick<SelectPerson, "id" | "name"> | undefined,
+  requestedRole: string | null,
+  comment: string | null,
+) {
+  send({
+    templateFileName: "user-request-submitted.hbs",
+    context: {
+      projectName,
+      name,
+      requestedPersonId: requestedPerson?.id ?? "",
+      requestedPersonName: requestedPerson?.name ?? "",
+      requestedRole: requestedRole ?? "",
+      comment: comment ?? "",
+    },
+    callback: async (html) => {
+      await transporter.sendMail({
+        from: noReplyEmail,
+        replyTo: adminEmail,
+        to,
+        bcc: adminEmail,
+        subject: "User request submitted",
         html,
       });
     },

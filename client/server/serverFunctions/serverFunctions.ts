@@ -3,24 +3,19 @@
 import { Alg } from "cubing/alg";
 import { cube2x2x2 } from "cubing/puzzles";
 import { randomScrambleForEvent } from "cubing/scramble";
-import { and, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { nxnMoves } from "~/helpers/types/NxNMove.ts";
-import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import {
   type CurrentCollectiveSolution,
   collectiveSolutionsPublicCols,
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
-import { sendEmail, sendRolesChangedEmail } from "~/server/email/mailer.ts";
-import { Roles } from "~/server/permissions.ts";
-import { type PersonResponse, personsPublicCols, personsTable } from "../db/schema/persons.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { getOrCreatePersonByWcaId, getSettingFromDb, logMessage, syncPersonByWcaId } from "../serverOnlyFunctions.ts";
+import { getSettingFromDb, logMessage } from "../serverOnlyFunctions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})
@@ -42,129 +37,6 @@ export const logErrorSF = actionClient
   )
   .action(async ({ parsedInput: { errorMessage } }) => {
     logMessage("RR5000", errorMessage, { sendErrorLogEmail: true });
-  });
-
-export const logUserDeletedSF = actionClient
-  .metadata({ permissions: null })
-  .inputSchema(
-    z.strictObject({
-      id: z.string().nonempty(),
-    }),
-  )
-  .action(async ({ parsedInput: { id } }) => {
-    logMessage("RR0034", `Deleting user with ID ${id}`);
-  });
-
-export const sendDebugEmailSF = actionClient
-  .metadata({ permissions: { adminDashboard: ["view"] } })
-  .inputSchema(z.strictObject({ emailAddress: z.email() }))
-  .action(async ({ parsedInput: { emailAddress } }) => {
-    sendEmail(emailAddress, "Debug email", "This is a debug email for testing. You can safely ignore this.");
-  });
-
-export const updateUserSF = actionClient
-  .metadata({ permissions: { user: ["set-role"] } })
-  .inputSchema(
-    z.strictObject({
-      id: z.string(),
-      personId: z.int().min(1).nullable().default(null),
-      roles: z.enum(Roles).array(),
-    }),
-  )
-  .action<{ user: typeof auth.$Infer.Session.user; person?: PersonResponse }>(
-    async ({ parsedInput: { id, personId, roles } }) => {
-      logMessage("RR0033", `Updating user with ID ${id} (new person ID: ${personId}; new roles: ${roles.join(", ")})`);
-
-      const [hdrs, user, credentialAccount] = await Promise.all([
-        headers(),
-        db.query.users.findFirst({ where: { id } }),
-        db.query.accounts.findFirst({ columns: { id: true }, where: { userId: id, providerId: "credential" } }),
-      ]);
-      if (!user) throw new RrActionError("User not found");
-      if (credentialAccount && !user.emailVerified)
-        throw new RrActionError("This user hasn't verified their email address yet");
-
-      let person: PersonResponse | undefined;
-      if (personId) {
-        if (personId !== user.personId) {
-          const [samePersonUser] = await db
-            .select({ id: usersTable.id })
-            .from(usersTable)
-            .where(and(ne(usersTable.id, user.id), eq(usersTable.personId, personId)))
-            .limit(1);
-          if (samePersonUser) throw new RrActionError("The selected person is already tied to another user");
-        }
-
-        person = (
-          await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, personId)).limit(1)
-        ).at(0);
-        if (!person) throw new RrActionError(`Person with ID ${personId} not found`);
-      } else if (roles.some((role) => role !== "user")) {
-        throw new RrActionError("Privileged users must have a person tied to their account");
-      }
-
-      const rolesAreDifferent = user.role!.split(",").sort().join(",") !== roles.sort().join(",");
-      if (rolesAreDifferent) {
-        await auth.api.setRole({ body: { userId: user.id, role: roles }, headers: hdrs });
-
-        const { success: canAccessModDashboard } = await auth.api.userHasPermission({
-          body: { userId: user.id, permissions: { modDashboard: ["view"] } },
-        });
-
-        sendRolesChangedEmail(user.email, roles, { canAccessModDashboard });
-
-        if (roles.includes("admin")) {
-          sendEmail(
-            process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
-            "Important: New admin user",
-            `User ${user.name}${person ? ` (competitor ${person.name})` : ""} has been given the admin role.`,
-          );
-        }
-      }
-
-      const [updatedUser] = await db.update(usersTable).set({ personId }).where(eq(usersTable.id, user.id)).returning();
-
-      // Log out user to avoid stale session data
-      await auth.api.revokeUserSessions({ body: { userId: user.id }, headers: hdrs });
-
-      return { user: updatedUser, person };
-    },
-  );
-
-export const linkWcaProfileSF = actionClient
-  .metadata({ permissions: null })
-  .action<PersonResponse>(async ({ ctx: { session } }) => {
-    const wcaAccount = await db.query.accounts.findFirst({
-      columns: { accountId: true },
-      where: { userId: session.user.id, providerId: "wca" },
-    });
-    if (!wcaAccount) throw new RrActionError("Only users using WCA login can link their own WCA competitor profiles");
-
-    const res = await auth.api.accountInfo({ query: { accountId: wcaAccount.accountId }, headers: await headers() });
-    if (!res) throw new RrActionError("Unable to retrieve account information from the WCA");
-
-    const parsed = z
-      // This doesn't include the full schema of the user information the WCA returns
-      .object({
-        preferred_username: WcaIdValidator, // if the WCA user has no WCA ID, this will throw a validation error
-      })
-      .safeParse(res.data);
-    if (!parsed.success) throw new RrActionError(z.prettifyError(parsed.error));
-
-    const wcaId = parsed.data.preferred_username;
-    const person = session.user.personId
-      ? await syncPersonByWcaId(wcaId, session.user.personId)
-      : (await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id })).person;
-
-    try {
-      await db.update(usersTable).set({ personId: person.id }).where(eq(usersTable.id, session.user.id));
-    } catch {
-      throw new RrActionError(
-        "Error while linking competitor profile. This competitor may already be tied to another user. Please contact the admin team.",
-      );
-    }
-
-    return person;
   });
 
 export const getModInstructionsSF = actionClient.metadata({}).action<string | null>(async () => {
@@ -261,9 +133,8 @@ export const makeCollectiveCubingMoveSF = actionClient
         );
       }
 
-      if (ongoingSolution.solution !== lastSeenSolution) {
+      if (ongoingSolution.solution !== lastSeenSolution)
         throw new RrActionError("The state of the cube has changed before your move", { data: ongoingSolution });
-      }
 
       const solution = new Alg(ongoingSolution.solution).concat(move);
       const state = (await getIsSolved(new Alg(ongoingSolution.scramble).concat(solution))) ? "solved" : "ongoing";

@@ -720,7 +720,7 @@ export const createAccessTokenSF = actionClient
         session: { user },
       },
     }) => {
-      logMessage("RR0037", `Creating access token for contest with ID ${competitionId}`);
+      logMessage("RR0040", `Creating access token for contest with ID ${competitionId}`);
 
       const contest = await db.query.contests.findFirst({
         columns: { competitionId: true, state: true, organizerIds: true, createdBy: true },

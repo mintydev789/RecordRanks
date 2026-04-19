@@ -17,6 +17,7 @@ import { recordConfigsTable as recordConfigs } from "./schema/record-configs.ts"
 import { regionsTable as regions } from "./schema/regions.ts";
 import { resultsTable as results } from "./schema/results.ts";
 import { roundsTable as rounds } from "./schema/rounds.ts";
+import { userRequestsTable as userRequests } from "./schema/user-requests.ts";
 
 export const relations = defineRelations(
   {
@@ -24,6 +25,7 @@ export const relations = defineRelations(
     sessions,
     accounts,
     verifications,
+    userRequests,
     events,
     contests,
     accessTokens,
@@ -63,6 +65,17 @@ export const relations = defineRelations(
     verifications: {},
 
     // RecordRanks relations
+    userRequests: {
+      user: r.one.users({
+        from: r.userRequests.userId,
+        to: r.users.id,
+        optional: false,
+      }),
+      requestedPerson: r.one.persons({
+        from: r.userRequests.requestedPersonId,
+        to: r.persons.id,
+      }),
+    },
     events: {},
     contests: {
       region: r.one.regions({

@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import { getHasRole } from "~/helpers/utilityFunctions.ts";
@@ -16,6 +16,7 @@ function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
+  const { mutate } = useSWRConfig();
 
   const { data: moderatorInstructions } = useSWR(["mod-instructions"], () => getModInstructionsSF());
   const [expanded, setExpanded] = useState(false);
@@ -38,6 +39,13 @@ function Navbar() {
   }, [session]);
 
   const logOut = async () => {
+    // Clear the SWR cache
+    mutate(
+      () => true, // update all keys
+      undefined, // set cache data to undefined
+      { revalidate: false },
+    );
+
     collapseAll();
     await authClient.signOut();
     router.push("/");

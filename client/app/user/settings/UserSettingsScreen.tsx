@@ -18,7 +18,7 @@ import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { rolesObject } from "~/server/permissions.ts";
-import { linkWcaProfileSF, logUserDeletedSF } from "~/server/serverFunctions/serverFunctions.ts";
+import { linkWcaProfileSF, logUserDeletedSF } from "~/server/serverFunctions/user-server-functions.ts";
 
 const tabs = [
   { title: "Account", value: "account" },
@@ -39,10 +39,9 @@ type Account = {
 type Props = {
   initPerson: PersonResponse | undefined;
   regions: RegionResponse[];
-  userRequestInstructions: string | null;
 };
 
-function UserSettingsScreen({ initPerson, regions, userRequestInstructions }: Props) {
+function UserSettingsScreen({ initPerson, regions }: Props) {
   const router = useRouter();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
   const { data: session, isPending: isPendingSession } = authClient.useSession();
@@ -236,9 +235,7 @@ function UserSettingsScreen({ initPerson, regions, userRequestInstructions }: Pr
         </>
       )}
 
-      {activeTab === "user-request" && (
-        <UserRequestTab userRequestInstructions={userRequestInstructions} regions={regions} />
-      )}
+      {activeTab === "user-request" && <UserRequestTab regions={regions} />}
     </>
   );
 }

@@ -68,7 +68,8 @@ If you see any errors, correct them before submitting. If you see anything that 
   {
     key: "user-request-instructions",
     group: "page-contents",
-    value: "",
+    value:
+      "Here you can send a request to the admin team to ask for a competitor profile to be tied to your account, ask for a role, or anything else.",
     description: "Instructions shown in the user request tab on the user settings page (Markdown supported)",
   },
   {

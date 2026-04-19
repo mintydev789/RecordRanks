@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { SWRConfig } from "swr";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
@@ -9,12 +10,11 @@ import UserSettingsScreen from "./UserSettingsScreen.tsx";
 async function UserSettingsPage() {
   const { user } = await authorizeUser();
 
-  const [[person], regions, userRequestInstructions] = await Promise.all([
+  const [[person], regions] = await Promise.all([
     user.personId
       ? await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, user.personId)).limit(1)
       : [],
     db.select(regionsPublicCols).from(regionsTable),
-    getSettingFromDb({ key: "user-request-instructions", optional: true }),
   ]);
 
   return (
@@ -23,7 +23,16 @@ async function UserSettingsPage() {
 
       <ToastMessages className="mb-4" />
 
-      <UserSettingsScreen initPerson={person} regions={regions} userRequestInstructions={userRequestInstructions} />
+      <SWRConfig
+        value={{
+          fallback: {
+            "user-request": db.query.userRequests.findFirst({ where: { userId: user.id } }),
+            "user-request-instructions": getSettingFromDb({ key: "user-request-instructions" }),
+          },
+        }}
+      >
+        <UserSettingsScreen initPerson={person} regions={regions} />
+      </SWRConfig>
     </section>
   );
 }
