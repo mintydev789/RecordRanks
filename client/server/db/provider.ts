@@ -18,6 +18,8 @@ export const db =
           // ssl: "verify-full",
           // Uncomment this if using Supabase "Transaction" pool mode (see https://orm.drizzle.team/docs/connect-supabase)
           prepare: false,
+          connect_timeout: 30,
+          idle_timeout: 30,
         },
         casing: "snake_case",
         relations,
