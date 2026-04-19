@@ -53,7 +53,7 @@ To set up a production `.env` file, follow these steps:
 6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
 7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
 8. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use, and set the other relevant auth-related variables\*.
-9. Set the `METADATA_...` values for SEO.
+9. Optionally, set the `METADATA_...` values for SEO and the `ANALYTICS_...` values for analytics.
 10. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
 11. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
 12. Set `NEXT_PUBLIC_EXPORTS_TO_KEEP` to the number of public exports you'd like to be kept when new ones are generated.

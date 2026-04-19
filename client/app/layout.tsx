@@ -6,6 +6,7 @@ import Providers from "~/app/components/Providers.tsx";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 // Prevent FA from adding its CSS since we did it manually above
 import { config } from "@fortawesome/fontawesome-svg-core";
+import Script from "next/script";
 
 config.autoAddCss = false;
 
@@ -18,7 +19,6 @@ export const metadata = {
     default: process.env.NEXT_PUBLIC_PROJECT_NAME,
   },
   description: process.env.METADATA_DESCRIPTION,
-  keywords: process.env.METADATA_KEYWORDS,
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL!),
   openGraph: {
     images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/contest_results.jpg`],
@@ -32,6 +32,13 @@ type Props = {
 export default function RootLayout({ children }: Props) {
   return (
     <html lang="en" className={`${quicksand.className} ${roboto.className}`}>
+      <head>
+        {process.env.ANALYTICS_SCRIPT_SRC && <Script src={process.env.ANALYTICS_SCRIPT_SRC} />}
+        {process.env.ANALYTICS_SCRIPT_CONTENT && (
+          <script dangerouslySetInnerHTML={{ __html: process.env.ANALYTICS_SCRIPT_CONTENT }} />
+        )}
+      </head>
+
       <Providers>{children}</Providers>
     </html>
   );

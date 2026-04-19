@@ -1,3 +1,6 @@
+ignoredBuiltDependencies:
+  - prisma
+
 onlyBuiltDependencies:
   - esbuild
   - sharp
