@@ -13,7 +13,7 @@ import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { InputPerson } from "~/helpers/types.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getHasRole } from "~/helpers/utilityFunctions.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { SelectUserRequest } from "~/server/db/schema/user-requests.ts";
 import { getPersonByIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
@@ -42,6 +42,7 @@ function UserRequestTab({ regions }: Props) {
     { value: null, label: "Not selected" },
     { value: "mod", label: "Moderator" },
   ] as const satisfies MultiChoiceOption[];
+  const isAdmin = getHasRole("admin", session?.user.role);
   const isPending = isCreating || isDeleting;
 
   // Get requested person on initial page load
@@ -96,7 +97,13 @@ function UserRequestTab({ regions }: Props) {
     <>
       <Markdown>{userRequestInstructions}</Markdown>
 
-      <Form onSubmit={handleSubmit} isLoading={isCreating} disableControls={isPending} hideToasts className="my-5">
+      <Form
+        onSubmit={handleSubmit}
+        isLoading={isCreating}
+        disableControls={isPending || isAdmin}
+        hideToasts
+        className="my-5"
+      >
         <div className="row mb-2">
           <div className="col">
             <FormPersonInputs
@@ -123,7 +130,7 @@ function UserRequestTab({ regions }: Props) {
             />
           </div>
         </div>
-        <FormTextArea title="Comment" value={comment} setValue={setComment} disabled={isPending} rows={5} />
+        <FormTextArea title="Comment" value={comment} setValue={setComment} disabled={isPending || isAdmin} rows={5} />
       </Form>
 
       {userRequest && (
@@ -136,6 +143,9 @@ function UserRequestTab({ regions }: Props) {
             Delete Request
           </Button>
         </>
+      )}
+      {isAdmin && (
+        <p className="fw-bold text-center text-danger">You cannot submit user requests, because you are an admin</p>
       )}
     </>
   );
