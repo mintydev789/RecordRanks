@@ -204,7 +204,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
               <div className="d-flex gap-2">
                 <Competitor person={person} regions={regions} showLocalizedName />
                 <span>
-                  (CC ID: <strong>{person.id}</strong>)
+                  (ID: <strong>{person.id}</strong>)
                 </span>
               </div>
             </div>

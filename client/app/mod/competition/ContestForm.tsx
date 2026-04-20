@@ -70,7 +70,7 @@ type Props = {
   mode: "new" | "edit" | "copy";
   contest: SelectContest | undefined;
   organizers: PersonResponse[] | undefined;
-  creator: Creator | undefined;
+  creator: Creator | null | undefined; // null means the user has been deleted
   creatorPerson: PersonResponse | undefined;
   session: typeof authClient.$Infer.Session;
 };
@@ -485,7 +485,9 @@ function ContestForm({
         isLoading={isCreating || isUpdating}
         disableControls={isPending || disabled || disabledIfContestPublished || disabledIfNotUnderstood}
       >
-        {mode === "edit" && isAdmin && <CreatorDetails creator={creator} person={creatorPerson} regions={regions} />}
+        {mode === "edit" && isAdmin && creator !== undefined && (
+          <CreatorDetails creator={creator} person={creatorPerson} regions={regions} />
+        )}
 
         <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={changeActiveTab} />
 

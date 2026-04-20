@@ -2,7 +2,7 @@ import { integer, text } from "drizzle-orm/pg-core";
 import "server-only";
 import { tableTimestamps } from "~/server/db/dbUtils.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
-import { personsTable } from "~/server/db/schema/persons.ts";
+import { type PersonResponse, personsTable } from "~/server/db/schema/persons.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 
 export const userRequestsTable = rrSchema.table("user_requests", {
@@ -19,3 +19,7 @@ export const userRequestsTable = rrSchema.table("user_requests", {
 
 export type InsertUserRequest = typeof userRequestsTable.$inferInsert;
 export type SelectUserRequest = typeof userRequestsTable.$inferSelect;
+
+export type FullUserRequest = SelectUserRequest & {
+  requestedPerson: PersonResponse | null;
+};

@@ -60,7 +60,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
 
     let totalResultsByRound: { roundId: number; totalResults: number }[] | undefined;
     let organizers: PersonResponse[] | undefined;
-    let creator: Creator | undefined;
+    let creator: Creator | null | undefined;
     let creatorPerson: PersonResponse | undefined;
 
     if (contest) {
@@ -95,7 +95,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
       ]);
       totalResultsByRound = totalResultsByRoundRes;
       organizers = organizersRes;
-      creator = creatorRes?.[0];
+      creator = creatorRes?.[0] ?? null;
 
       if (creator?.personId) {
         creatorPerson = (

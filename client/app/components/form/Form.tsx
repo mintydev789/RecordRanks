@@ -12,7 +12,7 @@ type Props = {
 } & (
   | {
       buttonText?: string;
-      hideSubmitButton?: never;
+      hideSubmitButton?: boolean;
       onSubmit: () => void;
     }
   | {
@@ -27,7 +27,7 @@ function Form({
   children,
   buttonText = "Submit",
   hideToasts = false,
-  hideSubmitButton,
+  hideSubmitButton = false,
   isLoading = false,
   disableControls = false,
   onSubmit,

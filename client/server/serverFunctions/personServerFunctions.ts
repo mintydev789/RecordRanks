@@ -87,7 +87,8 @@ export const getOrCreatePersonByWcaIdSF = actionClient
   });
 
 export const createPersonSF = actionClient
-  .metadata({ permissions: { persons: ["create"] } })
+  // Permissions checked below
+  .metadata({ permissions: null })
   .inputSchema(
     z.strictObject({
       newPersonDto: PersonValidator,
@@ -106,9 +107,27 @@ export const createPersonSF = actionClient
       const { name, wcaId } = newPersonDto;
       logMessage("RR0019", `Creating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
-      const { success: canApprove } = await auth.api.userHasPermission({
-        body: { userId: user.id, permissions: { persons: ["approve"] } },
-      });
+      const [{ success: canCreate }, { success: canApprove }] = await Promise.all([
+        auth.api.userHasPermission({ body: { userId: user.id, permissions: { persons: ["create"] } } }),
+        auth.api.userHasPermission({ body: { userId: user.id, permissions: { persons: ["approve"] } } }),
+      ]);
+
+      // Regular users are only allowed to create one person without a WCA ID (when requesting a competitor profile)
+      if (!canCreate) {
+        if (user.personId) {
+          throw new RrActionError("You already have a competitor profile tied to your account");
+        } else {
+          const existingProfile = await db.query.persons.findFirst({
+            columns: { id: true },
+            where: { createdBy: user.id, wcaId: { isNull: true } },
+          });
+          if (existingProfile) {
+            throw new RrActionError(
+              `You have already created a competitor profile (ID ${existingProfile.id}). Edit that profile instead of creating a new one.`,
+            );
+          }
+        }
+      }
 
       await validatePerson(newPersonDto, { ignoreDuplicate, canApprove });
 
@@ -125,7 +144,7 @@ export const updatePersonSF = actionClient
     z.strictObject({
       id: z.int(),
       newPersonDto: PersonValidator,
-      ignoreDuplicate: z.boolean().default(false),
+      ignoreDuplicate: z.boolean().default(false), // this is only relevant when the user has the approve permission (see validatePerson())
     }),
   )
   .action<PersonResponse | SelectPerson>(
@@ -133,21 +152,20 @@ export const updatePersonSF = actionClient
       const { name, wcaId } = newPersonDto;
       logMessage("RR0020", `Updating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
-      const [canUpdate, canApprove] = await Promise.all([
-        auth.api
-          .userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["update"] } } })
-          .then((res) => res.success),
-        auth.api
-          .userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } })
-          .then((res) => res.success),
+      const [{ success: canUpdate }, { success: canApprove }] = await Promise.all([
+        auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["update"] } } }),
+        auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } }),
       ]);
 
       const person = await db.query.persons.findFirst({ where: { id } });
       if (!person) throw new RrActionError("Person with the provided ID not found");
-      const canUpdateOwnPerson = id === session.user.personId && person.wcaId && newPersonDto.wcaId;
+      const canUpdateOwnWcaPerson = id === session.user.personId && person.wcaId && newPersonDto.wcaId;
       const canUpdateOwnCreatedPerson = canUpdate && person.createdBy === session.user.id && !person.approved;
-      if (!canApprove && !canUpdateOwnPerson && !canUpdateOwnCreatedPerson)
-        throw new RrActionError("You do not have access to update this person");
+      // This logic is consistent with getUserRequestDetails() and deletePersonSF()
+      const canUpdateOwnRequestedPerson =
+        person.createdBy === session.user.id && !person.approved && !person.wcaId && !newPersonDto.wcaId;
+      if (!canApprove && !canUpdateOwnWcaPerson && !canUpdateOwnCreatedPerson && !canUpdateOwnRequestedPerson)
+        throw new RrActionError("You are unauthorized to update this person");
       if (person.wcaId && newPersonDto.wcaId && person.wcaId !== newPersonDto.wcaId)
         throw new RrActionError("Changing a person's WCA ID is not allowed");
 
@@ -162,7 +180,7 @@ export const updatePersonSF = actionClient
       // TO-DO: WE MAY HAVE TO DO SOMETHING ABOUT PAST RECORDS SET BY THE COMPETITOR WHO IS CHANGING THEIR COUNTRY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (person.regionCode !== personDto.regionCode) {
         throw new RrActionError(
-          "Changing a person's country is not currently supported. Please contact the development team.",
+          "Changing a person's country is not currently supported. Please contact the admin team.",
         );
       }
 
@@ -175,7 +193,8 @@ export const updatePersonSF = actionClient
   );
 
 export const deletePersonSF = actionClient
-  .metadata({ permissions: { persons: ["delete"] } })
+  // Permissions checked below
+  .metadata({ permissions: null })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -184,13 +203,19 @@ export const deletePersonSF = actionClient
   .action(async ({ parsedInput: { id }, ctx: { session } }) => {
     logMessage("RR0021", `Deleting person with ID ${id}`);
 
-    const { success: canApprove } = await auth.api.userHasPermission({
-      body: { userId: session.user.id, permissions: { persons: ["approve"] } },
-    });
+    const [{ success: canDelete }, { success: canApprove }] = await Promise.all([
+      auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["delete"] } } }),
+      auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } }),
+    ]);
 
     const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
     if (!person) throw new RrActionError("Person with the provided ID not found");
-    if (!canApprove && person.approved) throw new RrActionError("You may not delete an approved person");
+    const canDeleteAnyPerson = canDelete && canApprove;
+    const canDeleteOwnCreatedPerson = canDelete && person.createdBy === session.user.id && !person.approved;
+    // This logic is consistent with updatePersonSF()
+    const canDeleteOwnRequestedPerson = person.createdBy === session.user.id && !person.approved && !person.wcaId;
+    if (!canDeleteAnyPerson && !canDeleteOwnCreatedPerson && !canDeleteOwnRequestedPerson)
+      throw new RrActionError("You are unauthorized to delete this person");
 
     const user = await db.query.users.findFirst({ where: { personId: person.id } });
     if (user) {
@@ -247,7 +272,7 @@ export const approvePersonSF = actionClient
       );
     }
 
-    logMessage("RR0022", `Approving person ${person.name} (CC ID: ${person.id})`);
+    logMessage("RR0022", `Approving person ${person.name} (ID: ${person.id})`);
 
     const [approvedPerson] = await db.update(table).set({ approved: true }).where(eq(table.id, id)).returning();
     return approvedPerson;
@@ -278,7 +303,7 @@ async function validatePerson(
       .limit(1);
 
     if (sameWcaIdPerson) throw new RrActionError("A person with the same WCA ID already exists in the CC database");
-  } else if (!ignoreDuplicate || !canApprove) {
+  } else if (!canApprove || !ignoreDuplicate) {
     const [duplicatePerson] = await db
       .select()
       .from(table)

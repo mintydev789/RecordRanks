@@ -12,7 +12,11 @@ import type { InputPerson } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { getOrCreatePersonByWcaIdSF, getPersonsByNameSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import {
+  getOrCreatePersonByWcaIdSF,
+  getPersonByIdSF,
+  getPersonsByNameSF,
+} from "~/server/serverFunctions/personServerFunctions.ts";
 import FormTextInput from "./FormTextInput.tsx";
 
 const personInputTooltip =
@@ -58,6 +62,7 @@ function FormPersonInputs({
   const defaultMatchedPersons: (PersonResponse | null)[] = addNewPersonMode !== "disabled" ? [null] : [];
 
   const { executeAsync: getPersonsByName, isPending: isPendingPersonsByName } = useAction(getPersonsByNameSF);
+  const { executeAsync: getPersonById, isPending: isPendingPersonById } = useAction(getPersonByIdSF);
   const { executeAsync: getOrCreateWcaPerson, isPending: isPendingWcaPerson } = useAction(getOrCreatePersonByWcaIdSF);
   const [matchedPersons, setMatchedPersons] = useState<(PersonResponse | null)[]>(defaultMatchedPersons);
   const [personSelection, setPersonSelection] = useState(0);
@@ -65,36 +70,35 @@ function FormPersonInputs({
 
   const getMatchedPersons = useCallback(
     debounce(async (value: string) => {
-      if (!C.wcaIdRegexLoose.test(value)) {
-        resetMessages();
+      resetMessages();
+
+      const number = Number(value);
+      if (!Number.isNaN(number)) {
+        const res = await getPersonById({ id: number });
+
+        if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+        else setMatchedPersons([res.data!]);
+      } else if (!C.wcaIdRegexLoose.test(value)) {
         const res = await getPersonsByName({ name: value });
 
         if (res.serverError || res.validationErrors) {
           changeErrorMessages([getActionError(res)]);
-        } else {
-          resetMessages();
-
-          if (res.data && res.data.length > 0) {
-            const newMatchedPersons = [...res.data, ...defaultMatchedPersons];
-            setMatchedPersons(newMatchedPersons);
-            if (newMatchedPersons.length < personSelection) setPersonSelection(0);
-          }
+        } else if (res.data!.length > 0) {
+          const newMatchedPersons = [...res.data!, ...defaultMatchedPersons];
+          setMatchedPersons(newMatchedPersons);
+          if (newMatchedPersons.length < personSelection) setPersonSelection(0);
         }
       } else {
         const res = await getOrCreateWcaPerson({ wcaId: value.trim().toUpperCase() });
 
-        if (res.serverError || res.validationErrors) {
-          changeErrorMessages([getActionError(res)]);
-        } else {
-          resetMessages();
-          setMatchedPersons([res.data!.person]);
-        }
+        if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+        else setMatchedPersons([res.data!.person]);
       }
     }, C.fetchDebounceTimeout),
     [personSelection],
   );
 
-  const isPending = isPendingPersonsByName || isPendingWcaPerson;
+  const isPending = isPendingPersonsByName || isPendingPersonById || isPendingWcaPerson;
 
   const queryMatchedPersons = (value: string) => {
     setMatchedPersons(defaultMatchedPersons);

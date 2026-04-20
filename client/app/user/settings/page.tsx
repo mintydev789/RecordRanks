@@ -4,7 +4,7 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser, getSettingFromDb, getUserRequestDetails } from "~/server/serverOnlyFunctions.ts";
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
@@ -26,7 +26,7 @@ async function UserSettingsPage() {
       <SWRConfig
         value={{
           fallback: {
-            "user-request": db.query.userRequests.findFirst({ where: { userId: user.id } }),
+            "user-request-details": getUserRequestDetails(user.id),
             "user-request-instructions": getSettingFromDb({ key: "user-request-instructions" }),
           },
         }}

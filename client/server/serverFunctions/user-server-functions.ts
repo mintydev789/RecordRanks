@@ -8,12 +8,17 @@ import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
-import { type SelectUserRequest, userRequestsTable } from "~/server/db/schema/user-requests.ts";
+import { type FullUserRequest, userRequestsTable } from "~/server/db/schema/user-requests.ts";
 import { sendEmail, sendRolesChangedEmail, sendUserRequestSubmittedEmail } from "~/server/email/mailer.ts";
 import { Roles } from "~/server/permissions.ts";
 import { actionClient, RrActionError } from "~/server/safeAction.ts";
 import { deletePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
-import { getOrCreatePersonByWcaId, logMessage, syncPersonByWcaId } from "~/server/serverOnlyFunctions.ts";
+import {
+  getOrCreatePersonByWcaId,
+  getUserRequestDetails,
+  logMessage,
+  syncPersonByWcaId,
+} from "~/server/serverOnlyFunctions.ts";
 
 export const sendDebugEmailSF = actionClient
   .metadata({ permissions: { adminDashboard: ["view"] } })
@@ -147,7 +152,7 @@ export const createUserRequestSF = actionClient
       comment: z.string().nonempty().nullable(),
     }),
   )
-  .action<SelectUserRequest>(
+  .action(
     async ({
       parsedInput: { requestedPersonId, requestedRole, comment },
       ctx: {
@@ -184,19 +189,18 @@ export const createUserRequestSF = actionClient
         }
       }
 
-      const [newUserRequest] = await db
+      await db
         .insert(userRequestsTable)
         .values({ userId: user.id, requestedPersonId, requestedRole, comment })
         .onConflictDoUpdate({
           target: userRequestsTable.userId,
-          set: { requestedRole, comment },
-        })
-        .returning();
+          set: { requestedPersonId, requestedRole, comment },
+        });
 
       // If it's a new request, send an email notification
       if (!userRequest) sendUserRequestSubmittedEmail(user.email, user.name, person, requestedRole, comment);
 
-      return newUserRequest;
+      return (await getUserRequestDetails(user.id)) as { userRequest: FullUserRequest; ownRequestedPersonId?: number };
     },
   );
 
@@ -219,7 +223,9 @@ export const deleteUserRequestSF = actionClient
     if (userRequest.requestedPersonId) {
       try {
         await deletePersonSF({ id: userRequest.requestedPersonId });
-      } catch {}
+      } catch (err) {
+        if (!(err instanceof RrActionError)) throw err;
+      }
     }
 
     await db.delete(userRequestsTable).where(eq(userRequestsTable.id, id));

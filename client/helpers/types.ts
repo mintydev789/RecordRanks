@@ -1,5 +1,6 @@
 import type { authClient } from "~/helpers/authClient.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
+import type { FullUserRequest } from "~/server/db/schema/user-requests.ts";
 
 // WCIF types
 export type {
@@ -69,3 +70,5 @@ export type GetOrCreatePersonObject = {
   person: PersonResponse;
   isNew: boolean;
 };
+
+export type UserRequestDetails = { userRequest: FullUserRequest | null; ownRequestedPersonId?: number };

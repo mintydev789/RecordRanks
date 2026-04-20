@@ -38,12 +38,23 @@ type Props = {
   events: EventResponse[];
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
-  result?: SelectResult; // only defined when editing an existing result (assumes elevated privileges)
-  participants?: PersonResponse[];
-  creator?: Creator | undefined;
-  creatorPerson?: PersonResponse;
   isVideoBasedResultReviewer: boolean;
-};
+} & (
+  | {
+      // When submitting a new result
+      result?: never;
+      participants?: never;
+      creator?: never;
+      creatorPerson?: never;
+    }
+  | {
+      // When editing an existing result (assumes elevated privileges)
+      result: SelectResult;
+      participants: PersonResponse[];
+      creator: Creator | null;
+      creatorPerson: PersonResponse | undefined;
+    }
+);
 
 function ResultsSubmissionForm({
   events,
@@ -248,7 +259,7 @@ function ResultsSubmissionForm({
         )}
       </div>
 
-      <Form hideSubmitButton>
+      <Form hideSubmitButton className="mb-5">
         {result && (
           <CreatorDetails
             creator={creator}
