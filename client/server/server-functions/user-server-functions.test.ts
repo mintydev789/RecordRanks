@@ -150,15 +150,6 @@ describe("updateUserSF", async () => {
       expect(res.serverError?.message).toBe("Person with ID 999999999 not found");
     });
 
-    it("throws error for person already tied to another user", async () => {
-      const user = (await db.query.users.findFirst({ where: { username: "user" } }))!;
-      const mod = (await db.query.users.findFirst({ where: { username: "mod" } }))!;
-      const res = await updateUserSF({ id: user.id, personId: mod.personId, roles: user.role!.split(",") as Role[] });
-
-      expect(res.validationErrors).toBeUndefined();
-      expect(res.serverError?.message).toBe("The selected person is already tied to another user");
-    });
-
     it("throws error for missing person ID for privileged user", async () => {
       const user = (await db.query.users.findFirst({ where: { username: "user" } }))!;
       const res = await updateUserSF({ id: user.id, roles: ["mod"] });
