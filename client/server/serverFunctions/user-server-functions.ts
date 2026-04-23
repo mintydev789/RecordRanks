@@ -6,11 +6,11 @@ import z from "zod";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
+import { usersTable as table } from "~/server/db/schema/auth-schema.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import { type FullUserRequest, userRequestsTable } from "~/server/db/schema/user-requests.ts";
 import { sendEmail, sendRolesChangedEmail, sendUserRequestSubmittedEmail } from "~/server/email/mailer.ts";
-import { Roles } from "~/server/permissions.ts";
+import { type Role, Roles, requestableRoles } from "~/server/permissions.ts";
 import { actionClient, RrActionError } from "~/server/safeAction.ts";
 import { deletePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
 import {
@@ -44,7 +44,7 @@ export const updateUserSF = actionClient
     z.strictObject({
       id: z.string(),
       personId: z.int().min(1).nullable().default(null),
-      roles: z.enum(Roles).array(),
+      roles: z.enum(Roles).array().nonempty(),
     }),
   )
   .action<{ user: typeof auth.$Infer.Session.user; person?: PersonResponse }>(
@@ -62,15 +62,6 @@ export const updateUserSF = actionClient
 
       let person: PersonResponse | undefined;
       if (personId) {
-        if (personId !== user.personId) {
-          const [samePersonUser] = await db
-            .select({ id: usersTable.id })
-            .from(usersTable)
-            .where(and(ne(usersTable.id, user.id), eq(usersTable.personId, personId)))
-            .limit(1);
-          if (samePersonUser) throw new RrActionError("The selected person is already tied to another user");
-        }
-
         person = (
           await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, personId)).limit(1)
         ).at(0);
@@ -80,25 +71,9 @@ export const updateUserSF = actionClient
       }
 
       const rolesAreDifferent = user.role!.split(",").sort().join(",") !== roles.sort().join(",");
-      if (rolesAreDifferent) {
-        await auth.api.setRole({ body: { userId: user.id, role: roles }, headers: hdrs });
+      if (rolesAreDifferent) await changeUserRoles(user, roles, person?.name);
 
-        const { success: canAccessModDashboard } = await auth.api.userHasPermission({
-          body: { userId: user.id, permissions: { modDashboard: ["view"] } },
-        });
-
-        sendRolesChangedEmail(user.email, roles, { canAccessModDashboard });
-
-        if (roles.includes("admin")) {
-          sendEmail(
-            process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
-            "Important: New admin user",
-            `User ${user.name}${person ? ` (competitor ${person.name})` : ""} has been given the admin role.`,
-          );
-        }
-      }
-
-      const [updatedUser] = await db.update(usersTable).set({ personId }).where(eq(usersTable.id, user.id)).returning();
+      const [updatedUser] = await db.update(table).set({ personId }).where(eq(table.id, user.id)).returning();
 
       // Log out user to avoid stale session data
       await auth.api.revokeUserSessions({ body: { userId: user.id }, headers: hdrs });
@@ -133,7 +108,7 @@ export const linkWcaProfileSF = actionClient
       : (await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id })).person;
 
     try {
-      await db.update(usersTable).set({ personId: person.id }).where(eq(usersTable.id, session.user.id));
+      await db.update(table).set({ personId: person.id }).where(eq(table.id, session.user.id));
     } catch {
       throw new RrActionError(
         "Error while linking competitor profile. This competitor may already be tied to another user. Please contact the admin team.",
@@ -143,12 +118,12 @@ export const linkWcaProfileSF = actionClient
     return person;
   });
 
-export const createUserRequestSF = actionClient
+export const createOrUpdateUserRequestSF = actionClient
   .metadata({ permissions: null })
   .inputSchema(
     z.strictObject({
       requestedPersonId: z.int().nullable(),
-      requestedRole: z.enum(["mod"]).nullable(),
+      requestedRole: z.enum(requestableRoles).nullable(),
       comment: z.string().nonempty().nullable(),
     }),
   )
@@ -159,14 +134,21 @@ export const createUserRequestSF = actionClient
         session: { user },
       },
     }) => {
+      if (!requestedPersonId && !requestedRole && !comment)
+        throw new RrActionError("You cannot submit an empty user request");
+      if (requestedRole && !requestedPersonId && !user.personId)
+        throw new RrActionError("To request a role you must also request a competitor profile");
+      if (requestedRole && user.role !== "user")
+        throw new RrActionError(
+          "You already have a role. Please contact the admin team if you would like to change it.",
+        );
+
       const userRequest = await db.query.userRequests.findFirst({ where: { userId: user.id } });
       if (userRequest?.requestedPersonId && requestedPersonId !== userRequest.requestedPersonId) {
         throw new RrActionError(
           "You cannot change your requested person. If you made a mistake before, please delete your request and submit again.",
         );
       }
-      if (!requestedPersonId && !requestedRole && !comment)
-        throw new RrActionError("You cannot submit an empty user request");
 
       logMessage(
         "RR0037",
@@ -175,6 +157,8 @@ export const createUserRequestSF = actionClient
 
       let person: SelectPerson | undefined;
       if (requestedPersonId !== null) {
+        if (user.personId) throw new RrActionError("There is already a competitor profile linked to your account");
+
         person = await db.query.persons.findFirst({ where: { id: requestedPersonId } });
         if (!person) throw new RrActionError(`Person with ID ${requestedPersonId} not found`);
 
@@ -204,19 +188,49 @@ export const createUserRequestSF = actionClient
     },
   );
 
+export const approveUserRequestSF = actionClient
+  .metadata({ permissions: { user: ["list"] } })
+  .inputSchema(z.int())
+  .action(async ({ parsedInput: id }) => {
+    const userRequest = await db.query.userRequests.findFirst({
+      with: {
+        user: { columns: { id: true, name: true, email: true, personId: true } },
+        requestedPerson: { columns: { name: true, approved: true } },
+      },
+      where: { id },
+    });
+    if (!userRequest) throw new RrActionError("User request not found");
+    if (userRequest.requestedPerson?.approved === false)
+      throw new RrActionError("Please review and approve the competitor profile on the manage competitors page first");
+
+    if (userRequest.requestedRole)
+      await changeUserRoles(userRequest.user, [userRequest.requestedRole], userRequest.requestedPerson?.name);
+
+    await db.transaction(async (tx) => {
+      await tx.update(table).set({ personId: userRequest.requestedPersonId }).where(eq(table.id, userRequest.userId));
+
+      await tx.delete(userRequestsTable).where(eq(userRequestsTable.id, id));
+    });
+
+    sendEmail(userRequest.user.email, "User request approved", "Your user request has been approved.");
+  });
+
 export const deleteUserRequestSF = actionClient
   .metadata({ permissions: null })
-  .inputSchema(
-    z.strictObject({
-      id: z.int(),
-    }),
-  )
-  .action(async ({ parsedInput: { id }, ctx: { session } }) => {
+  .inputSchema(z.int())
+  .action(async ({ parsedInput: id, ctx: { session } }) => {
     logMessage("RR0038", `Deleting user request for user with ID ${session.user.id}`);
 
-    const userRequest = await db.query.userRequests.findFirst({ where: { id } });
+    const { success: canManageUserRequests } = await auth.api.userHasPermission({
+      body: { userId: session.user.id, permissions: { user: ["list"] } },
+    });
+
+    const userRequest = await db.query.userRequests.findFirst({
+      with: { user: { columns: { email: true } } },
+      where: { id },
+    });
     if (!userRequest) throw new RrActionError("User request not found");
-    if (userRequest.userId !== session.user.id)
+    if (userRequest.userId !== session.user.id && !canManageUserRequests)
       throw new RrActionError("You are unauthorized to delete this user request");
 
     // Delete competitor profile, if it was simply created by the user and isn't used anywhere else
@@ -229,4 +243,33 @@ export const deleteUserRequestSF = actionClient
     }
 
     await db.delete(userRequestsTable).where(eq(userRequestsTable.id, id));
+
+    if (userRequest.userId !== session.user.id)
+      sendEmail(
+        userRequest.user.email,
+        "User request rejected",
+        "Your user request has been rejected by the admin team.",
+      );
   });
+
+async function changeUserRoles(
+  user: Pick<typeof auth.$Infer.Session.user, "id" | "name" | "email">,
+  roles: Role[],
+  personName: string | undefined,
+) {
+  await auth.api.setRole({ body: { userId: user.id, role: roles }, headers: await headers() });
+
+  const { success: canAccessModDashboard } = await auth.api.userHasPermission({
+    body: { userId: user.id, permissions: { modDashboard: ["view"] } },
+  });
+
+  sendRolesChangedEmail(user.email, roles, { canAccessModDashboard });
+
+  if (roles.includes("admin")) {
+    sendEmail(
+      process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
+      "Important: New admin user",
+      `User ${user.name}${personName ? ` (competitor ${personName})` : ""} has been given the admin role.`,
+    );
+  }
+}

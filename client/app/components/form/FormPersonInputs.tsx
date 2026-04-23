@@ -78,7 +78,12 @@ function FormPersonInputs({
 
         if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
         else setMatchedPersons([res.data!]);
-      } else if (!C.wcaIdRegexLoose.test(value)) {
+      } else if (C.wcaIdRegexLoose.test(value)) {
+        const res = await getOrCreateWcaPerson({ wcaId: value.trim().toUpperCase() });
+
+        if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+        else setMatchedPersons([res.data!.person]);
+      } else {
         const res = await getPersonsByName({ name: value });
 
         if (res.serverError || res.validationErrors) {
@@ -88,11 +93,6 @@ function FormPersonInputs({
           setMatchedPersons(newMatchedPersons);
           if (newMatchedPersons.length < personSelection) setPersonSelection(0);
         }
-      } else {
-        const res = await getOrCreateWcaPerson({ wcaId: value.trim().toUpperCase() });
-
-        if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-        else setMatchedPersons([res.data!.person]);
       }
     }, C.fetchDebounceTimeout),
     [personSelection],
@@ -199,16 +199,13 @@ function FormPersonInputs({
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
 
-      if (personSelection + 1 <= matchedPersons.length - defaultMatchedPersons.length) {
-        setPersonSelection(personSelection + 1);
-      } else {
-        setPersonSelection(0);
-      }
+      if (personSelection + 1 <= matchedPersons.length - 1) setPersonSelection(personSelection + 1);
+      else setPersonSelection(0);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
 
       if (personSelection - 1 >= 0) setPersonSelection(personSelection - 1);
-      else setPersonSelection(matchedPersons.length - defaultMatchedPersons.length);
+      else setPersonSelection(matchedPersons.length - 1);
     } // Disallow entering certain characters
     else if (/[()_/\\[\]]/.test(e.key)) {
       e.preventDefault();

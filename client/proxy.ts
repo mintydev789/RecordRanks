@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { logMessage } from "~/server/serverOnlyFunctions";
+import { logMessage } from "~/server/serverOnlyFunctions.ts";
 
 export function proxy(request: NextRequest) {
   const url = new URL(request.url);

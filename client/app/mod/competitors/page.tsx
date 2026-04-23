@@ -47,7 +47,7 @@ async function CompetitorsPage() {
 
   return (
     <section>
-      <h2 className="mb-4 text-center">Competitors</h2>
+      <h2 className="mb-4 text-center">Manage Competitors</h2>
 
       <ManageCompetitorsScreen persons={persons} regions={regions} users={users as any} />
     </section>

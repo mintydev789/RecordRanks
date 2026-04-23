@@ -254,22 +254,36 @@ export const approvePersonSF = actionClient
     if (!person) throw new RrActionError("Person not found");
     if (person.approved) throw new RrActionError(`${person.name} has already been approved`);
 
-    const result = await db.query.results.findFirst({ where: { personIds: { arrayContains: [id] } } });
+    const result = await db.query.results.findFirst({
+      columns: { id: true },
+      where: { personIds: { arrayContains: [id] } },
+    });
     if (!result) {
-      const organizedContest = await db.query.contests.findFirst({ where: { organizerIds: { arrayContains: [id] } } });
+      const organizedContest = await db.query.contests.findFirst({
+        columns: { id: true },
+        where: { organizerIds: { arrayContains: [id] } },
+      });
       if (!organizedContest) {
-        throw new RrActionError(
-          `${person.name} has no results and hasn't organized any contests. They could have been added by accident.`,
-        );
+        const userRequest = await db.query.userRequests.findFirst({
+          columns: { id: true },
+          where: { requestedPersonId: id },
+        });
+        if (!userRequest) {
+          throw new RrActionError(
+            `${person.name} has no results, hasn't organized any contests and hasn't been requested as a competitor profile by a user. They could have been added by accident.`,
+          );
+        }
       }
     }
 
-    const matchedPersonWcaId = await getPersonExactMatchWcaId(person, ignoredWcaMatches);
-    if (matchedPersonWcaId) {
-      throw new RrActionError(
-        `${person.name} has an exact name and country match with the WCA competitor with WCA ID ${matchedPersonWcaId}. If that is the same person, edit their profile, adding the WCA ID. If it's a different person, simply approve them again to confirm.`,
-        { data: { wcaMatches: [...ignoredWcaMatches, matchedPersonWcaId] } },
-      );
+    if (!person.wcaId) {
+      const matchedPersonWcaId = await getPersonExactMatchWcaId(person, ignoredWcaMatches);
+      if (matchedPersonWcaId) {
+        throw new RrActionError(
+          `${person.name} has an exact name and country match with the WCA competitor with WCA ID ${matchedPersonWcaId}. If that is the same person, edit their profile, adding the WCA ID. If it's a different person, simply approve them again to confirm.`,
+          { data: { wcaMatches: [...ignoredWcaMatches, matchedPersonWcaId] } },
+        );
+      }
     }
 
     logMessage("RR0022", `Approving person ${person.name} (ID: ${person.id})`);

@@ -536,7 +536,7 @@ export async function getOrCreatePersonByWcaId(
 
   const [createdPerson] = await db
     .insert(personsTable)
-    .values({ ...wcaPerson, createdBy: creatorUserId, createdExternally })
+    .values({ ...wcaPerson, approved: true, createdBy: creatorUserId, createdExternally })
     .returning(personsPublicCols);
 
   return { person: createdPerson, isNew: true };

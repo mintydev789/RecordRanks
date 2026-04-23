@@ -185,7 +185,9 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
               return (
                 <tr key={user.id}>
                   <td>{index + 1}</td>
-                  <td>{user.name}</td>
+                  <td className="text-truncate" style={{ maxWidth: "20rem" }}>
+                    {user.name}
+                  </td>
                   <td>
                     <div className="d-flex gap-2 align-items-center">
                       {user.email}

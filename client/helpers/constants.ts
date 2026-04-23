@@ -4,7 +4,7 @@ export const C = {
   sourceCodeLink: "https://codeberg.org/mintydev/RecordRanks",
   rrDonationLink: "https://ko-fi.com/mintydev",
   discordServerLink: "https://discord.gg/7rRMQA8jnU",
-  fetchDebounceTimeout: 600, // the timeout in ms between doing repetitive fetch requests that need to be limited
+  fetchDebounceTimeout: 750, // the timeout in ms between doing repetitive fetch requests that need to be limited
   maxRounds: 4,
   minResultsForThreeMoreRounds: 100,
   minResultsForTwoMoreRounds: 16,

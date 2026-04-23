@@ -18,7 +18,8 @@ import type { InputPerson, UserRequestDetails } from "~/helpers/types.ts";
 import { getActionError, getHasRole } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { createUserRequestSF, deleteUserRequestSF } from "~/server/serverFunctions/user-server-functions.ts";
+import { requestableRoles, rolesObject } from "~/server/permissions.ts";
+import { createOrUpdateUserRequestSF, deleteUserRequestSF } from "~/server/serverFunctions/user-server-functions.ts";
 
 type Props = {
   regions: RegionResponse[];
@@ -28,7 +29,7 @@ function UserRequestTab({ regions }: Props) {
   const { data: session } = authClient.useSession();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
-  const { executeAsync: createUserRequest, isPending: isCreating } = useAction(createUserRequestSF);
+  const { executeAsync: createOrUpdateUserRequest, isPending: isCreating } = useAction(createOrUpdateUserRequestSF);
   const { executeAsync: deleteUserRequest, isPending: isDeleting } = useAction(deleteUserRequestSF);
   const { data: userRequestDetails, mutate } = useSWR<UserRequestDetails>("user-request-details");
   const userRequest = userRequestDetails?.userRequest;
@@ -43,7 +44,7 @@ function UserRequestTab({ regions }: Props) {
 
   const roleOptions = [
     { value: null, label: "Not selected" },
-    { value: "mod", label: "Moderator" },
+    ...requestableRoles.map((r) => ({ value: r, label: rolesObject[r] })),
   ] as const satisfies MultiChoiceOption[];
   const isAdmin = getHasRole("admin", session?.user.role);
   const isPending = isCreating || isDeleting;
@@ -53,7 +54,7 @@ function UserRequestTab({ regions }: Props) {
       changeErrorMessages(["Please enter or clear the competitor profile"]);
     } else {
       resetMessages();
-      const res = await createUserRequest({
+      const res = await createOrUpdateUserRequest({
         requestedPersonId: persons[0]?.id ?? null,
         requestedRole,
         comment: comment || null,
@@ -70,7 +71,7 @@ function UserRequestTab({ regions }: Props) {
 
   const onDelete = async () => {
     resetMessages();
-    const res = await deleteUserRequest({ id: userRequest!.id });
+    const res = await deleteUserRequest(userRequest!.id);
 
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
@@ -166,6 +167,10 @@ function UserRequestTab({ regions }: Props) {
       )}
 
       <Modal ref={dialogRef} title={persons[0] ? "Edit Person" : "Create New Person"}>
+        <p className="fw-bold mb-1 text-danger">
+          If you have a WCA ID, please close this window and simply enter it into the main input.
+        </p>
+        <p>Only use this for submitting a new competitor profile without a WCA ID.</p>
         <PersonForm
           key={persons[0]?.id}
           personUnderEdit={persons[0] ?? undefined}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { logErrorSF } from "~/server/serverFunctions/serverFunctions";
+import { logErrorSF } from "~/server/serverFunctions/serverFunctions.ts";
 
 type Props = {
   error: Error & { digest?: string };

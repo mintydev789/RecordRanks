@@ -46,8 +46,8 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
   const { data: session, isPending: isPendingSession } = authClient.useSession();
 
-  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["value"]>("account");
   const [status, setStatus] = useQueryState("status", parseAsStringLiteral(["signup-success", "email-change-success"]));
+  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["value"]>("account");
   const [person, setPerson] = useState(initPerson);
   const [accounts, setAccounts] = useState<Account[]>();
   const [newEmail, setNewEmail] = useState("");
