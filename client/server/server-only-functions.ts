@@ -37,7 +37,7 @@ import type { FullUserRequest } from "~/server/db/schema/user-requests.ts";
 import { sendErrorEmail } from "~/server/email/mailer.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
 import { RrActionError } from "~/server/safeAction.ts";
-import { updatePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { updatePersonSF } from "~/server/server-functions/person-server-functions.ts";
 import { getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
 import { auth } from "./auth.ts";
 import type { RrPermissions } from "./permissions.ts";

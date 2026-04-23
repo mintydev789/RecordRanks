@@ -7,7 +7,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { getActionError } from "~/helpers/utilityFunctions";
-import { sendDebugEmailSF } from "~/server/serverFunctions/user-server-functions.ts";
+import { sendDebugEmailSF } from "~/server/server-functions/user-server-functions.ts";
 
 function DebugScreen() {
   const { changeErrorMessages, resetMessages } = useContext(MainContext);

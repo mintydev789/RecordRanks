@@ -21,7 +21,7 @@ import type { EventFormat, ListPageMode, RoundFormat } from "~/helpers/types.ts"
 import { getActionError, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
 import type { EventDto } from "~/helpers/validators/Event.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
-import { createEventSF, updateEventSF } from "~/server/serverFunctions/eventServerFunctions.ts";
+import { createEventSF, updateEventSF } from "~/server/server-functions/event-server-functions.ts";
 
 type Props = {
   events: SelectEvent[];

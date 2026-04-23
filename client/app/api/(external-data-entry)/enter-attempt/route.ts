@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 // import { type EnterAttemptPayloadDto, EnterAttemptPayloadValidator } from "~/helpers/validators/EnterAttemptPayload";
 // import { db } from "~/server/db/provider";
 // import type { Attempt } from "~/server/db/schema/results";
-// import { createContestResultSF, updateContestResultSF } from "~/server/serverFunctions/resultServerFunctions";
+// import { createContestResultSF, updateContestResultSF } from "~/server/server-functions/result-server-functions";
 // import { getPersonsForExternalDeviceDataEntry } from "~/server/serverUtilityFunctions";
 
 export async function POST(_req: NextRequest) {

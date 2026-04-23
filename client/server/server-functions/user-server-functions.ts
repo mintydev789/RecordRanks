@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import z from "zod";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
@@ -12,13 +12,13 @@ import { type FullUserRequest, userRequestsTable } from "~/server/db/schema/user
 import { sendEmail, sendRolesChangedEmail, sendUserRequestSubmittedEmail } from "~/server/email/mailer.ts";
 import { type Role, Roles, requestableRoles } from "~/server/permissions.ts";
 import { actionClient, RrActionError } from "~/server/safeAction.ts";
-import { deletePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { deletePersonSF } from "~/server/server-functions/person-server-functions.ts";
 import {
   getOrCreatePersonByWcaId,
   getUserRequestDetails,
   logMessage,
   syncPersonByWcaId,
-} from "~/server/serverOnlyFunctions.ts";
+} from "~/server/server-only-functions.ts";
 
 export const sendDebugEmailSF = actionClient
   .metadata({ permissions: { adminDashboard: ["view"] } })

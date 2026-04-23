@@ -20,7 +20,7 @@ import {
   createPersonSF,
   getOrCreatePersonByWcaIdSF,
   updatePersonSF,
-} from "~/server/serverFunctions/personServerFunctions.ts";
+} from "~/server/server-functions/person-server-functions.ts";
 
 type Props = {
   personUnderEdit: PersonResponse | undefined; // undefined means we're creating a new person

@@ -15,7 +15,7 @@ import {
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { getSettingFromDb, logMessage } from "../serverOnlyFunctions.ts";
+import { getSettingFromDb, logMessage } from "../server-only-functions.ts";
 
 export const logAffiliateLinkClickSF = actionClient
   .metadata({})

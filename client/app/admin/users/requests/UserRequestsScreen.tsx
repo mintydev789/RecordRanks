@@ -12,7 +12,7 @@ import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { FullUserRequest } from "~/server/db/schema/user-requests.ts";
 import { rolesObject } from "~/server/permissions.ts";
-import { approveUserRequestSF, deleteUserRequestSF } from "~/server/serverFunctions/user-server-functions.ts";
+import { approveUserRequestSF, deleteUserRequestSF } from "~/server/server-functions/user-server-functions.ts";
 
 type Props = {
   userRequests: FullUserRequest[];

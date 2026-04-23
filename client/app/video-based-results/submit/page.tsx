@@ -2,7 +2,7 @@ import ResultsSubmissionForm from "~/app/video-based-results/ResultsSubmissionFo
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/server-only-functions.ts";
 
 async function SubmitResultsPage() {
   const { user } = await authorizeUser({ permissions: { videoBasedResults: ["create"] } });

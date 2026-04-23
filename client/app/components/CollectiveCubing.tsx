@@ -14,7 +14,7 @@ import {
   getCurrentCollectiveCubingSolutionSF,
   makeCollectiveCubingMoveSF,
   startNewCollectiveCubingSolutionSF,
-} from "~/server/serverFunctions/serverFunctions.ts";
+} from "~/server/server-functions/server-functions.ts";
 
 export function getIsWebglSupported(): boolean {
   try {

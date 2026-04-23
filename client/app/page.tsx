@@ -7,7 +7,7 @@ import CollectiveCubing from "~/app/components/CollectiveCubing.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { db } from "~/server/db/provider.ts";
 import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
-import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { getSettingFromDb } from "~/server/server-only-functions.ts";
 import DonateSection from "./components/DonateSection.tsx";
 
 export const dynamic = "force-dynamic";

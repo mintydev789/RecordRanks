@@ -20,7 +20,7 @@ import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utili
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { type Role, rolesObject } from "~/server/permissions.ts";
-import { updateUserSF } from "~/server/serverFunctions/user-server-functions.ts";
+import { updateUserSF } from "~/server/server-functions/user-server-functions.ts";
 
 type Props = {
   users: (typeof authClient.$Infer.Session.user & { providerId: string })[];

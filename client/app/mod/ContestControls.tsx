@@ -10,7 +10,11 @@ import Button from "~/app/components/UI/Button.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { getActionError } from "~/helpers/utilityFunctions";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
-import { approveContestSF, finishContestSF, publishContestSF } from "~/server/serverFunctions/contestServerFunctions";
+import {
+  approveContestSF,
+  finishContestSF,
+  publishContestSF,
+} from "~/server/server-functions/contest-server-functions.ts";
 
 type ModDashboardProps = {
   forPage: "mod-dashboard";

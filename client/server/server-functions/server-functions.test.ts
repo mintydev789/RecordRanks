@@ -10,7 +10,7 @@ import {
   user as userRole,
   videoBasedResultReviewer as videoBasedResultReviewerRole,
 } from "~/server/permissions.ts";
-import { updateUserSF } from "~/server/serverFunctions/user-server-functions.ts";
+import { updateUserSF } from "~/server/server-functions/user-server-functions.ts";
 import { reseedTestData } from "~/vitest-setup.ts";
 
 const { revokeUserSessionsSpy, sendEmailSpy, sendRolesChangedEmailSpy } = vi.hoisted(() => ({

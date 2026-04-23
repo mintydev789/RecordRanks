@@ -13,7 +13,7 @@ import type { RecordCategory } from "~/helpers/types";
 import { db } from "~/server/db/provider";
 import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { getRankings } from "~/server/serverOnlyFunctions.ts";
+import { getRankings } from "~/server/server-only-functions.ts";
 
 const eventsWith3x3 = [
   "333",

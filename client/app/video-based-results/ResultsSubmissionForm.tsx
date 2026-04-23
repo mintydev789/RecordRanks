@@ -31,7 +31,7 @@ import {
   createVideoBasedResultSF,
   getWrPairUpToDateSF,
   updateVideoBasedResultSF,
-} from "~/server/serverFunctions/resultServerFunctions.ts";
+} from "~/server/server-functions/result-server-functions.ts";
 import Rules from "./video-based-results-rules.mdx";
 
 type Props = {

@@ -11,7 +11,7 @@ import { type PersonResponse, personsPublicCols, personsTable } from "~/server/d
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { resultsTable } from "~/server/db/schema/results.ts";
 import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
-import { authorizeUser, getUserHasAccessToContest } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser, getUserHasAccessToContest } from "~/server/server-only-functions.ts";
 import ContestForm from "./ContestForm.tsx";
 
 type Props = {

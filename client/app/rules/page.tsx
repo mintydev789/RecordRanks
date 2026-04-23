@@ -3,7 +3,7 @@ import Markdown from "react-markdown";
 import Loading from "~/app/components/UI/Loading.tsx";
 import EventRules from "~/app/rules/EventRules.tsx";
 import { db } from "~/server/db/provider.ts";
-import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { getSettingFromDb } from "~/server/server-only-functions.ts";
 
 export const dynamic = "force-dynamic";
 

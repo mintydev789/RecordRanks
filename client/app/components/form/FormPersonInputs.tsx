@@ -16,7 +16,7 @@ import {
   getOrCreatePersonByWcaIdSF,
   getPersonByIdSF,
   getPersonsByNameSF,
-} from "~/server/serverFunctions/personServerFunctions.ts";
+} from "~/server/server-functions/person-server-functions.ts";
 import FormTextInput from "./FormTextInput.tsx";
 
 const personInputTooltip =

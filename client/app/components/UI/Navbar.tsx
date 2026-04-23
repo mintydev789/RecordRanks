@@ -10,7 +10,7 @@ import useSWR, { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import { getHasRole } from "~/helpers/utilityFunctions.ts";
-import { getModInstructionsSF } from "~/server/serverFunctions/serverFunctions.ts";
+import { getModInstructionsSF } from "~/server/server-functions/server-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();

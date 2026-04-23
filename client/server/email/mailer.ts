@@ -12,7 +12,7 @@ import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { SelectPerson } from "~/server/db/schema/persons.ts";
 import { type LogCode, LogCodes } from "~/server/logger.ts";
 import { rolesObject } from "~/server/permissions.ts";
-import { logMessage } from "~/server/serverOnlyFunctions.ts";
+import { logMessage } from "~/server/server-only-functions.ts";
 import type { SelectEvent } from "../db/schema/events.ts";
 import type { ResultResponse } from "../db/schema/results.ts";
 

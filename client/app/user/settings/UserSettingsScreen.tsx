@@ -18,7 +18,7 @@ import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { rolesObject } from "~/server/permissions.ts";
-import { linkWcaProfileSF, logUserDeletedSF } from "~/server/serverFunctions/user-server-functions.ts";
+import { linkWcaProfileSF, logUserDeletedSF } from "~/server/server-functions/user-server-functions.ts";
 
 const tabs = [
   { title: "Account", value: "account" },

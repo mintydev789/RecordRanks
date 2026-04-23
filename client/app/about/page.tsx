@@ -1,6 +1,6 @@
 import Markdown from "react-markdown";
 import DonateSection from "~/app/components/DonateSection.tsx";
-import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { getSettingFromDb } from "~/server/server-only-functions.ts";
 
 export const dynamic = "force-dynamic";
 

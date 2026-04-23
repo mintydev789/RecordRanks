@@ -12,7 +12,7 @@ import {
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function CompetitorsPage() {
   const { user } = await authorizeUser({ permissions: { persons: ["create", "update", "delete"] } });

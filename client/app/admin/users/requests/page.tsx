@@ -3,7 +3,7 @@ import { tabs } from "~/app/admin/users/tabs.ts";
 import Tabs from "~/app/components/UI/Tabs.tsx";
 import { db } from "~/server/db/provider.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function UserRequestsPage() {
   await authorizeUser({ permissions: { user: ["list"] } });

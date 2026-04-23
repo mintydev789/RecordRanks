@@ -10,7 +10,7 @@ import { useModDashboardQueryState } from "~/app/mod/ModDashboardFilters.ts";
 import ModFilters from "~/app/mod/ModFilters.tsx";
 import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { getModContestsSF } from "~/server/serverFunctions/contestServerFunctions.ts";
+import { getModContestsSF } from "~/server/server-functions/contest-server-functions.ts";
 import ContestControls from "./ContestControls.tsx";
 
 type Props = {

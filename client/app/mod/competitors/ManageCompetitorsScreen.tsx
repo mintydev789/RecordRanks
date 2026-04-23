@@ -22,7 +22,7 @@ import type { Creator, ListPageMode } from "~/helpers/types.ts";
 import { getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse, SelectPerson } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { approvePersonSF, deletePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { approvePersonSF, deletePersonSF } from "~/server/server-functions/person-server-functions.ts";
 import PersonForm from "./PersonForm.tsx";
 
 const approvedFilterOptions: MultiChoiceOption[] = [

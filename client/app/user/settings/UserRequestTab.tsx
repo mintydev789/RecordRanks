@@ -19,7 +19,7 @@ import { getActionError, getHasRole } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { requestableRoles, rolesObject } from "~/server/permissions.ts";
-import { createOrUpdateUserRequestSF, deleteUserRequestSF } from "~/server/serverFunctions/user-server-functions.ts";
+import { createOrUpdateUserRequestSF, deleteUserRequestSF } from "~/server/server-functions/user-server-functions.ts";
 
 type Props = {
   regions: RegionResponse[];

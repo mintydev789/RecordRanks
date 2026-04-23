@@ -1,7 +1,7 @@
 "use client";
 
 import { IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants";
-import { logAffiliateLinkClickSF } from "~/server/serverFunctions/serverFunctions.ts";
+import { logAffiliateLinkClickSF } from "~/server/server-functions/server-functions.ts";
 
 const height = 192 / 2;
 const width = 1920 / 2;

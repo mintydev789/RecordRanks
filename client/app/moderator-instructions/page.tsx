@@ -1,5 +1,5 @@
 import Markdown from "react-markdown";
-import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { getSettingFromDb } from "~/server/server-only-functions.ts";
 
 async function ModeratorInstructionsPage() {
   const content = await getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });

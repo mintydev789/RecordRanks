@@ -53,12 +53,12 @@ import {
   removeContestSF,
   unfinishContestSF,
   updateContestSF,
-} from "~/server/serverFunctions/contestServerFunctions.ts";
+} from "~/server/server-functions/contest-server-functions.ts";
 import {
   getOrCreatePersonByWcaIdSF,
   getOrCreatePersonSF,
   getPersonByIdSF,
-} from "~/server/serverFunctions/personServerFunctions.ts";
+} from "~/server/server-functions/person-server-functions.ts";
 import ContestEvents from "./ContestEvents.tsx";
 import ScheduleEditor from "./ScheduleEditor.tsx";
 

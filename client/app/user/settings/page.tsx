@@ -4,7 +4,7 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getSettingFromDb, getUserRequestDetails } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser, getSettingFromDb, getUserRequestDetails } from "~/server/server-only-functions.ts";
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {

@@ -13,7 +13,7 @@ import type { InputPerson } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { getPersonByIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { getPersonByIdSF } from "~/server/server-functions/person-server-functions.ts";
 
 type Props = {
   initOrganizerPerson: PersonResponse | undefined;

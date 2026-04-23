@@ -33,7 +33,7 @@ import {
   getWrPairUpToDateSF,
   updateContestResultSF,
   updateVideoBasedResultSF,
-} from "~/server/serverFunctions/resultServerFunctions.ts";
+} from "~/server/server-functions/result-server-functions.ts";
 import { reseedTestData } from "~/vitest-setup";
 
 const date = new Date(2026, 0, 1);

@@ -13,7 +13,7 @@ import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
 import { db } from "~/server/db/provider.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { getRecords } from "~/server/serverOnlyFunctions.ts";
+import { getRecords } from "~/server/server-only-functions.ts";
 
 export const metadata = {
   title: "Records",
