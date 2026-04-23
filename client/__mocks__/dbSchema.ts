@@ -13,3 +13,4 @@ export * from "~/server/db/schema/results.ts";
 export * from "~/server/db/schema/rounds.ts";
 export * from "~/server/db/schema/schema.ts";
 export * from "~/server/db/schema/settings.ts";
+export * from "~/server/db/schema/user-requests.ts";

@@ -12,7 +12,11 @@ import type { InputPerson } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { getOrCreatePersonByWcaIdSF, getPersonsByNameSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import {
+  getOrCreatePersonByWcaIdSF,
+  getPersonByIdSF,
+  getPersonsByNameSF,
+} from "~/server/server-functions/person-server-functions.ts";
 import FormTextInput from "./FormTextInput.tsx";
 
 const personInputTooltip =
@@ -26,12 +30,12 @@ type Props = {
   setPersonNames: (val: string[]) => void;
   onSelectPerson?: (val: PersonResponse) => void;
   regions: RegionResponse[];
+  addNewPersonMode: "default" | "from-new-tab" | "disabled"; // must be disabled for unauthorized users
+  display: "basic" | "grid" | "one-line";
   infiniteInputs?: boolean;
   nextFocusTargetId?: string;
   disabled?: boolean;
-  addNewPersonMode: "default" | "from-new-tab" | "disabled"; // must be disabled for unauthorized users
   redirectToOnAddPerson?: string;
-  display?: "basic" | "grid" | "one-line";
   showWcaId?: boolean;
 };
 
@@ -43,12 +47,12 @@ function FormPersonInputs({
   setPersonNames,
   onSelectPerson,
   regions,
-  infiniteInputs,
+  addNewPersonMode,
+  display,
+  infiniteInputs = false,
   nextFocusTargetId,
   disabled,
-  addNewPersonMode,
   redirectToOnAddPerson = "",
-  display = "grid",
   showWcaId = false,
 }: Props) {
   const router = useRouter();
@@ -58,6 +62,7 @@ function FormPersonInputs({
   const defaultMatchedPersons: (PersonResponse | null)[] = addNewPersonMode !== "disabled" ? [null] : [];
 
   const { executeAsync: getPersonsByName, isPending: isPendingPersonsByName } = useAction(getPersonsByNameSF);
+  const { executeAsync: getPersonById, isPending: isPendingPersonById } = useAction(getPersonByIdSF);
   const { executeAsync: getOrCreateWcaPerson, isPending: isPendingWcaPerson } = useAction(getOrCreatePersonByWcaIdSF);
   const [matchedPersons, setMatchedPersons] = useState<(PersonResponse | null)[]>(defaultMatchedPersons);
   const [personSelection, setPersonSelection] = useState(0);
@@ -65,36 +70,35 @@ function FormPersonInputs({
 
   const getMatchedPersons = useCallback(
     debounce(async (value: string) => {
-      if (!C.wcaIdRegexLoose.test(value)) {
-        resetMessages();
+      resetMessages();
+
+      const number = Number(value);
+      if (!Number.isNaN(number)) {
+        const res = await getPersonById({ id: number });
+
+        if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+        else setMatchedPersons([res.data!]);
+      } else if (C.wcaIdRegexLoose.test(value)) {
+        const res = await getOrCreateWcaPerson({ wcaId: value.trim().toUpperCase() });
+
+        if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+        else setMatchedPersons([res.data!.person]);
+      } else {
         const res = await getPersonsByName({ name: value });
 
         if (res.serverError || res.validationErrors) {
           changeErrorMessages([getActionError(res)]);
-        } else {
-          resetMessages();
-
-          if (res.data && res.data.length > 0) {
-            const newMatchedPersons = [...res.data, ...defaultMatchedPersons];
-            setMatchedPersons(newMatchedPersons);
-            if (newMatchedPersons.length < personSelection) setPersonSelection(0);
-          }
-        }
-      } else {
-        const res = await getOrCreateWcaPerson({ wcaId: value.trim().toUpperCase() });
-
-        if (res.serverError || res.validationErrors) {
-          changeErrorMessages([getActionError(res)]);
-        } else {
-          resetMessages();
-          setMatchedPersons([res.data!.person]);
+        } else if (res.data!.length > 0) {
+          const newMatchedPersons = [...res.data!, ...defaultMatchedPersons];
+          setMatchedPersons(newMatchedPersons);
+          if (newMatchedPersons.length < personSelection) setPersonSelection(0);
         }
       }
     }, C.fetchDebounceTimeout),
     [personSelection],
   );
 
-  const isPending = isPendingPersonsByName || isPendingWcaPerson;
+  const isPending = isPendingPersonsByName || isPendingPersonById || isPendingWcaPerson;
 
   const queryMatchedPersons = (value: string) => {
     setMatchedPersons(defaultMatchedPersons);
@@ -195,16 +199,13 @@ function FormPersonInputs({
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
 
-      if (personSelection + 1 <= matchedPersons.length - defaultMatchedPersons.length) {
-        setPersonSelection(personSelection + 1);
-      } else {
-        setPersonSelection(0);
-      }
+      if (personSelection + 1 <= matchedPersons.length - 1) setPersonSelection(personSelection + 1);
+      else setPersonSelection(0);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
 
       if (personSelection - 1 >= 0) setPersonSelection(personSelection - 1);
-      else setPersonSelection(matchedPersons.length - defaultMatchedPersons.length);
+      else setPersonSelection(matchedPersons.length - 1);
     } // Disallow entering certain characters
     else if (/[()_/\\[\]]/.test(e.key)) {
       e.preventDefault();

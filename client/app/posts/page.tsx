@@ -1,12 +1,11 @@
 import { desc, eq } from "drizzle-orm";
+import { connection } from "next/server";
 import AffiliateLink from "~/app/components/AffiliateLink.tsx";
 import BlogPostCard from "~/app/posts/BlogPostCard.tsx";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
 import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
-
-export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Blog",
@@ -17,6 +16,8 @@ export const metadata = {
 };
 
 async function PostsPage() {
+  await connection();
+
   const posts = await db
     .select({ ...postsPublicCols, authorName: personsTable.name })
     .from(postsTable)

@@ -1,8 +1,0 @@
-/* hl = highlight */
-b.hl {
-  padding: 0 0.3rem;
-  color: black;
-  white-space: nowrap;
-  background-color: #eee;
-  border-radius: 0.3rem;
-}

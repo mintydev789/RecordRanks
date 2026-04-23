@@ -76,8 +76,10 @@ export const LogCodes = {
   RR0034: "delete user",
   RR0035: "send user deletion verification email",
   RR0036: "send user deleted email",
+  RR0037: "create user request",
+  RR0038: "delete user request",
   // Access Tokens
-  RR0037: "create access token",
+  RR0040: "create access token",
 
   // Error codes
   RR5000: "unknown error",

@@ -4,7 +4,7 @@ import { db } from "~/server/db/provider.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import type { FullResult } from "~/server/db/schema/results.ts";
-import { authorizeUser, getRecordConfigs, getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser, getRecordConfigs, getSettingFromDb } from "~/server/server-only-functions.ts";
 import ManageResultsScreen from "./ManageResultsScreen.tsx";
 
 async function ManageResultsPage() {

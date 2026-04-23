@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
+import { SWRConfig } from "swr";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser, getSettingFromDb, getUserRequestDetails } from "~/server/server-only-functions.ts";
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
@@ -22,7 +23,16 @@ async function UserSettingsPage() {
 
       <ToastMessages className="mb-4" />
 
-      <UserSettingsScreen initPerson={person} regions={regions} />
+      <SWRConfig
+        value={{
+          fallback: {
+            "user-request-details": getUserRequestDetails(user.id),
+            "user-request-instructions": getSettingFromDb({ key: "user-request-instructions" }),
+          },
+        }}
+      >
+        <UserSettingsScreen initPerson={person} regions={regions} />
+      </SWRConfig>
     </section>
   );
 }

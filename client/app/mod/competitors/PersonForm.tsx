@@ -20,18 +20,29 @@ import {
   createPersonSF,
   getOrCreatePersonByWcaIdSF,
   updatePersonSF,
-} from "~/server/serverFunctions/personServerFunctions.ts";
+} from "~/server/server-functions/person-server-functions.ts";
 
 type Props = {
-  personUnderEdit: PersonResponse | undefined;
-  creator: Creator | undefined;
-  creatorPerson: PersonResponse | undefined;
+  personUnderEdit: PersonResponse | undefined; // undefined means we're creating a new person
+  creator?: Creator | null; // null means the user has been deleted
+  creatorPerson?: PersonResponse;
   regions: RegionResponse[];
   onSubmit: (person: PersonResponse, { isNew }: { isNew: boolean }) => void;
-  onCancel: (() => void) | undefined;
+  onSubmitError?: () => void;
+  onCancel?: () => void;
+  wcaIdInputHidden?: boolean;
 };
 
-function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit, onCancel }: Props) {
+function PersonForm({
+  personUnderEdit,
+  creator,
+  creatorPerson,
+  regions,
+  onSubmit,
+  onSubmitError,
+  onCancel,
+  wcaIdInputHidden,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
@@ -40,25 +51,16 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
   const { executeAsync: getOrCreatePersonByWcaId, isPending: isGettingOrCreatingWcaPerson } =
     useAction(getOrCreatePersonByWcaIdSF);
   const { executeAsync: updatePerson, isPending: isUpdating } = useAction(updatePersonSF);
-  const [nextFocusTarget, setNextFocusTarget] = useState("");
   const [name, setName] = useState(personUnderEdit?.name ?? "");
   const [localizedName, setLocalizedName] = useState(personUnderEdit?.localizedName ?? "");
   const [wcaId, setWcaId] = useState(personUnderEdit?.wcaId ?? "");
-  const [hasWcaId, setHasWcaId] = useState<boolean>(personUnderEdit === undefined || !!personUnderEdit.wcaId);
+  const [hasWcaId, setHasWcaId] = useState<boolean>(!wcaIdInputHidden && (!personUnderEdit || !!personUnderEdit.wcaId));
   const [regionCode, setRegionCode] = useState(personUnderEdit?.regionCode ?? C.notSelectedOption);
   // This is set to true when the user is an admin, and they attempted to set a person with a duplicate name/country combination.
   // If the person is submitted again with no changes, the request will be sent with ignoreDuplicate=true.
   const isConfirmation = useRef(false);
 
   const isPending = isCreating || isGettingOrCreatingWcaPerson || isUpdating;
-
-  useEffect(() => {
-    if (nextFocusTarget) {
-      document.getElementById(nextFocusTarget)?.focus();
-      setNextFocusTarget("");
-    }
-    // These dependencies are required so that it focuses AFTER everything has been rerendered
-  }, [nextFocusTarget, name, localizedName, wcaId, hasWcaId, regionCode, isPending]);
 
   useEffect(() => {
     if (isConfirmation.current) isConfirmation.current = false;
@@ -82,6 +84,7 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
     if (res.serverError || res.validationErrors) {
       if (res.serverError?.data?.isDuplicatePerson) isConfirmation.current = true;
       changeErrorMessages([getActionError(res)]);
+      onSubmitError?.();
     } else {
       afterSubmit(res.data!);
     }
@@ -98,9 +101,6 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
     // Redirect if there is a redirect parameter in the URL, otherwise focus the first input
     if (!redirect) {
       onSubmit(newPerson, { isNew: !personUnderEdit });
-
-      if (hasWcaId) setNextFocusTarget("wca_id");
-      else setNextFocusTarget("full_name");
     } else {
       setTimeout(() => router.push(redirect), 2000);
     }
@@ -132,8 +132,6 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
             setLocalizedName(res.data!.person.localizedName ?? "");
             setRegionCode(res.data!.person.regionCode);
           }
-
-          setNextFocusTarget("wca_id");
         } else {
           const res = await updatePerson({
             id: personUnderEdit.id,
@@ -151,13 +149,8 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
     resetMessages();
     setHasWcaId(!noWcaId);
 
-    if (noWcaId) {
-      setWcaId("");
-      setNextFocusTarget("full_name");
-    } else {
-      if (!personUnderEdit) reset();
-      setNextFocusTarget("wca_id");
-    }
+    if (noWcaId) setWcaId("");
+    else if (!personUnderEdit) reset();
   };
 
   const reset = (exceptWcaId = false) => {
@@ -169,7 +162,6 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
 
   return (
     <Form
-      buttonText="Submit"
       onSubmit={handleSubmit}
       onCancel={onCancel}
       hideToasts // they're shown on the page itself
@@ -177,7 +169,7 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
       disableControls={isPending}
       isLoading={isCreating || isUpdating}
     >
-      {personUnderEdit && (
+      {personUnderEdit && creator !== undefined && (
         <CreatorDetails
           creator={creator}
           person={creatorPerson}
@@ -185,29 +177,32 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
           createdExternally={(personUnderEdit as any).createdExternally}
         />
       )}
-      {personUnderEdit && <p>CC ID: {personUnderEdit.id}</p>}
-      <FormTextInput
-        title="WCA ID"
-        id="wca_id"
-        monospace
-        value={wcaId}
-        setValue={changeWcaId}
-        autoFocus
-        disabled={isPending || !hasWcaId}
-        className="mb-2"
-      />
-      <FormCheckbox
-        title="Competitor doesn't have a WCA ID"
-        selected={!hasWcaId}
-        setSelected={changeHasWcaId}
-        disabled={isPending}
-      />
+      {personUnderEdit && <p>ID: {personUnderEdit.id}</p>}
+      {!wcaIdInputHidden && (
+        <>
+          <FormTextInput
+            title="WCA ID"
+            id="wca_id"
+            monospace
+            value={wcaId}
+            setValue={changeWcaId}
+            autoFocus
+            disabled={isPending || !hasWcaId}
+            className="mb-2"
+          />
+          <FormCheckbox
+            title="Competitor doesn't have a WCA ID"
+            selected={!hasWcaId}
+            setSelected={changeHasWcaId}
+            disabled={isPending}
+          />
+        </>
+      )}
       <FormTextInput
         title="Full Name (name, last name)"
         id="full_name"
         value={name}
         setValue={setName}
-        nextFocusTargetId="localized_name"
         disabled={isPending || hasWcaId}
         className="mb-3"
       />
@@ -216,7 +211,6 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
         id="localized_name"
         value={localizedName}
         setValue={setLocalizedName}
-        nextFocusTargetId="country_iso_2"
         disabled={isPending || hasWcaId}
         className="mb-3"
       />
@@ -224,7 +218,6 @@ function PersonForm({ personUnderEdit, creator, creatorPerson, regions, onSubmit
         regionCode={regionCode}
         setRegionCode={setRegionCode}
         regions={regions}
-        nextFocusTargetId="form_submit_button"
         disabled={isPending || hasWcaId}
       />
     </Form>

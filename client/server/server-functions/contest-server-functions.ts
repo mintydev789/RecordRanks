@@ -41,7 +41,7 @@ import {
   getRecordConfigs,
   getUserHasAccessToContest,
   logMessage,
-} from "~/server/serverOnlyFunctions.ts";
+} from "~/server/server-only-functions.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
 import {
   type ContestResponse,
@@ -720,7 +720,7 @@ export const createAccessTokenSF = actionClient
         session: { user },
       },
     }) => {
-      logMessage("RR0037", `Creating access token for contest with ID ${competitionId}`);
+      logMessage("RR0040", `Creating access token for contest with ID ${competitionId}`);
 
       const contest = await db.query.contests.findFirst({
         columns: { competitionId: true, state: true, organizerIds: true, createdBy: true },

@@ -35,14 +35,14 @@ import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts"
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
-import { openRoundSF } from "~/server/serverFunctions/contestServerFunctions.ts";
-import { getPersonByIdSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { openRoundSF } from "~/server/server-functions/contest-server-functions.ts";
+import { getPersonByIdSF } from "~/server/server-functions/person-server-functions.ts";
 import {
   createContestResultSF,
   deleteContestResultSF,
   getWrPairUpToDateSF,
   updateContestResultSF,
-} from "~/server/serverFunctions/resultServerFunctions.ts";
+} from "~/server/server-functions/result-server-functions.ts";
 
 type Props = {
   contest: Pick<SelectContest, "competitionId" | "shortName" | "type" | "startDate" | "schedule">;

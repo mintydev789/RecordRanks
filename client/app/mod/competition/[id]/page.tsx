@@ -1,7 +1,7 @@
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import DataEntryScreen from "~/app/mod/competition/[id]/DataEntryScreen.tsx";
-import { getContestSF } from "~/server/serverFunctions/contestServerFunctions.ts";
-import { authorizeUser, getUserHasAccessToContest } from "~/server/serverOnlyFunctions";
+import { getContestSF } from "~/server/server-functions/contest-server-functions.ts";
+import { authorizeUser, getUserHasAccessToContest } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{ id: string }>;

@@ -4,13 +4,20 @@ import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 type Props = {
   tabs: NavigationItem[];
   activeTab: string; // the value of the currently active tab
-  setActiveTab?: (val: string) => void; // not needed on a client-side-rendered page
-  replace?: boolean;
-  forServerSidePage?: boolean;
-  disabledTabs?: string[];
-};
+} & (
+  | {
+      setActiveTab: (val: string) => void;
+      forServerSidePage?: never;
+      replace?: never;
+    }
+  | {
+      setActiveTab?: never;
+      forServerSidePage: true;
+      replace?: boolean;
+    }
+);
 
-function Tabs({ tabs, activeTab, setActiveTab, replace = false, forServerSidePage = false, disabledTabs = [] }: Props) {
+function Tabs({ tabs, activeTab, setActiveTab, replace = false, forServerSidePage }: Props) {
   return (
     <ul className="nav nav-tabs mb-3">
       {tabs
@@ -21,7 +28,7 @@ function Tabs({ tabs, activeTab, setActiveTab, replace = false, forServerSidePag
               <button
                 type="button"
                 onClick={() => setActiveTab(tab.value)}
-                disabled={disabledTabs.includes(tab.value)}
+                disabled={tab.disabled}
                 className={`nav-link ${activeTab === tab.value ? "active" : ""}`}
               >
                 <span className="d-none d-md-inline">{tab.title}</span>

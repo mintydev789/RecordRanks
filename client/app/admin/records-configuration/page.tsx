@@ -1,6 +1,6 @@
 import { db } from "~/server/db/provider.ts";
 import { recordConfigsPublicCols, recordConfigsTable as table } from "~/server/db/schema/record-configs.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 import ConfigureRecordsScreen from "./ConfigureRecordsScreen.tsx";
 
 async function RecordsConfigurationPage() {

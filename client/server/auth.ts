@@ -18,7 +18,7 @@ import {
   sendVerificationEmail,
 } from "~/server/email/mailer.ts";
 import { ac, admin, mod, user, videoBasedResultReviewer } from "~/server/permissions.ts";
-import { logMessage } from "~/server/serverOnlyFunctions.ts";
+import { logMessage } from "~/server/server-only-functions.ts";
 
 if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
 if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");

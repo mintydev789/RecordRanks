@@ -26,7 +26,10 @@ import {
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { RecordConfigDto } from "~/helpers/validators/RecordConfig.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
-import { createRecordConfigSF, updateRecordConfigSF } from "~/server/serverFunctions/recordConfigServerFunctions.ts";
+import {
+  createRecordConfigSF,
+  updateRecordConfigSF,
+} from "~/server/server-functions/record-config-server-functions.ts";
 
 const recordCategoryOptions: MultiChoiceOption[] = [
   {
@@ -146,7 +149,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
           Create Record Type
         </Button>
       ) : (
-        <Form buttonText="Submit" onSubmit={handleSubmit} onCancel={cancel} hideToasts isLoading={isPending}>
+        <Form onSubmit={handleSubmit} onCancel={cancel} hideToasts isLoading={isPending}>
           <div className="row mb-3">
             <div className="col">
               <FormSelect

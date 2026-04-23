@@ -5,7 +5,7 @@ import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
 type Props = {
-  creator: Creator | undefined;
+  creator: Creator | null; // null means the user has been deleted
   person: PersonResponse | undefined;
   regions: RegionResponse[];
   createdExternally?: boolean;
@@ -31,7 +31,7 @@ function CreatorDetails({
 
   let specialCase: ReactElement | undefined;
   if (createdExternally) specialCase = <span className="text-warning">External device</span>;
-  else if (!creator) specialCase = <span>Deleted user</span>;
+  else if (creator === null) specialCase = <span>Deleted user</span>;
   else if (isCurrentUser) specialCase = <span>Me</span>;
 
   if (specialCase) return small ? specialCase : <div className="mb-3">Created by:&#8194;{specialCase}</div>;

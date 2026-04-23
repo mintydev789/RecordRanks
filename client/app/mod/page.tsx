@@ -9,8 +9,8 @@ import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { getModContestsSF } from "~/server/serverFunctions/contestServerFunctions.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { getModContestsSF } from "~/server/server-functions/contest-server-functions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 import ModDashboardScreen from "./ModDashboardScreen.tsx";
 
 type Props = {

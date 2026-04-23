@@ -22,7 +22,7 @@ import type { Creator, ListPageMode } from "~/helpers/types.ts";
 import { getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse, SelectPerson } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { approvePersonSF, deletePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { approvePersonSF, deletePersonSF } from "~/server/server-functions/person-server-functions.ts";
 import PersonForm from "./PersonForm.tsx";
 
 const approvedFilterOptions: MultiChoiceOption[] = [
@@ -32,10 +32,18 @@ const approvedFilterOptions: MultiChoiceOption[] = [
 ];
 
 type Props = {
-  persons: (SelectPerson | PersonResponse)[];
   regions: RegionResponse[];
-  users?: Creator[]; // only returned to admins
-};
+} & (
+  | {
+      // When requested by an admin
+      persons: SelectPerson[];
+      users: Creator[];
+    }
+  | {
+      persons: PersonResponse[];
+      users?: never;
+    }
+);
 
 function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props) {
   const searchParams = useSearchParams();
@@ -45,7 +53,6 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
   const { executeAsync: deletePerson, isPending: isDeleting } = useAction(deletePersonSF);
   const { executeAsync: approvePerson, isPending: isApproving } = useAction(approvePersonSF);
   const [mode, setMode] = useState<ListPageMode | "add-once">(searchParams.get("redirect") ? "add-once" : "view");
-  // Mods only see public columns (PersonResponse[]), but admins can see all columns (SelectPerson[])
   const [persons, setPersons] = useState<PersonResponse[] | SelectPerson[]>(initPersons);
   const [personUnderEdit, setPersonUnderEdit] = useState<PersonResponse | SelectPerson>();
   const [approvedFilter, setApprovedFilter] = useState<"approved" | "unapproved" | "">("");
@@ -55,7 +62,8 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
   // Only used for admins. Is used to confirm approval of person with exact name and country match with a WCA person.
   const ignoredWcaMatches = useRef<{ personId: number; wcaMatches: string[] }>(undefined);
   const creator = useMemo(
-    () => (personUnderEdit ? users?.find((u) => u.id === (personUnderEdit as SelectPerson).createdBy) : undefined),
+    () =>
+      personUnderEdit ? (users?.find((u) => u.id === (personUnderEdit as SelectPerson).createdBy) ?? null) : undefined,
     [personUnderEdit, users],
   );
   const filteredPersons = useMemo(() => {
@@ -117,7 +125,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
       changeErrorMessages([getActionError(res)]);
     } else {
       setPersons(persons.filter((p) => p.id !== person.id));
-      changeSuccessMessage(`Successfully deleted ${person.name} (CC ID: ${person.id})`);
+      changeSuccessMessage(`Successfully deleted ${person.name} (ID: ${person.id})`);
     }
   };
 
@@ -138,7 +146,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
     } else {
       ignoredWcaMatches.current = undefined;
       setPersons(persons.map((p) => (p.id === person.id ? res.data! : p)));
-      changeSuccessMessage(`Successfully approved ${person.name} (CC ID: ${person.id})`);
+      changeSuccessMessage(`Successfully approved ${person.name} (ID: ${person.id})`);
     }
   };
 
@@ -184,7 +192,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                 value={search}
                 setValue={setSearch}
                 tooltip={
-                  "Search by name, localized name, or CC ID" +
+                  "Search by name, localized name, or ID" +
                   (isAdmin ? ". Admins can also search by the name or username of the creator." : "")
                 }
                 oneLine
@@ -223,8 +231,9 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                   {rowVirtualizer.getVirtualItems().map((virtualItem, index) => {
                     if (filteredPersons.length === 0) return undefined;
                     const person = filteredPersons[virtualItem.index];
-                    const personCreator =
-                      users && "createdBy" in person ? users.find((u) => u.id === person.createdBy) : undefined;
+                    const personCreator = users
+                      ? (users.find((u) => u.id === (person as SelectPerson).createdBy) ?? null)
+                      : undefined;
 
                     return (
                       <tr
@@ -246,7 +255,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                         {users && (
                           <td>
                             <CreatorDetails
-                              creator={personCreator}
+                              creator={personCreator as Creator | null}
                               person={
                                 personCreator?.personId
                                   ? persons.find((p) => p.id === personCreator.personId)

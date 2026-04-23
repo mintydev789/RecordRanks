@@ -12,7 +12,7 @@ import {
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function CompetitorsPage() {
   const { user } = await authorizeUser({ permissions: { persons: ["create", "update", "delete"] } });
@@ -47,9 +47,9 @@ async function CompetitorsPage() {
 
   return (
     <section>
-      <h2 className="mb-4 text-center">Competitors</h2>
+      <h2 className="mb-4 text-center">Manage Competitors</h2>
 
-      <ManageCompetitorsScreen persons={persons} regions={regions} users={users} />
+      <ManageCompetitorsScreen persons={persons} regions={regions} users={users as any} />
     </section>
   );
 }

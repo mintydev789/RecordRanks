@@ -51,7 +51,10 @@ export const user = ac.newRole({
 
 export const rolesObject = {
   user: "User",
-  mod: "Mod",
+  mod: "Moderator",
   videoBasedResultReviewer: "Video-based result reviewer",
   admin: "Admin",
 };
+
+// These roles can be requested by a user by submitting a user request
+export const requestableRoles = ["mod"] as const satisfies Role[];

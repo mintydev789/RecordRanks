@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { testCompMar2023_skewb_r1 } from "~/__mocks__/stubs/roundsStub";
-import { createContestResultSF } from "~/server/serverFunctions/resultServerFunctions";
-import { reseedTestData } from "~/vitest-setup";
+import { testCompMar2023_skewb_r1 } from "~/__mocks__/stubs/roundsStub.ts";
+import { createContestResultSF } from "~/server/server-functions/result-server-functions.ts";
+import { reseedTestData } from "~/vitest-setup.ts";
 
 // THESE TESTS ARE RUN SEQUENTIALLY, WITHOUT THE DB BEING RESET AFTER EACH ONE, SO THE MUTATIONS ARE PERSISTENT!
 describe("setRankingAndProceedsValues", () => {

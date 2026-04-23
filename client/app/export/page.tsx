@@ -1,10 +1,9 @@
+import { connection } from "next/server";
 import Markdown from "react-markdown";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { C } from "~/helpers/constants.ts";
 import { LatestPublicExportDetailsValidator } from "~/helpers/validators/LatestPublicExportDetails.ts";
-import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
-
-export const dynamic = "force-dynamic";
+import { getSettingFromDb } from "~/server/server-only-functions.ts";
 
 export const metadata = {
   title: "Exports",
@@ -12,6 +11,8 @@ export const metadata = {
 };
 
 async function ExportPage() {
+  await connection();
+
   if (process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP === "0")
     return <p className="fs-4 mx-3 mt-5 text-center">Public exports are disabled</p>;
 

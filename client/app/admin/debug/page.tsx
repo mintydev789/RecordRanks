@@ -1,5 +1,5 @@
 import DebugScreen from "~/app/admin/debug/DebugScreen.tsx";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function DebugPage() {
   await authorizeUser({ permissions: { adminDashboard: ["view"] } });

@@ -20,7 +20,7 @@ import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utili
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { type Role, rolesObject } from "~/server/permissions.ts";
-import { updateUserSF } from "~/server/serverFunctions/serverFunctions.ts";
+import { updateUserSF } from "~/server/server-functions/user-server-functions.ts";
 
 type Props = {
   users: (typeof authClient.$Infer.Session.user & { providerId: string })[];
@@ -134,6 +134,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
             regions={regions}
             disabled={isUpdating}
             addNewPersonMode="default"
+            display="grid"
           />
           <h5 className="mt-3 mb-3">Roles</h5>
           <FormCheckbox title={rolesObject.user} selected={isUser} setSelected={setIsUser} disabled={isUpdating} />
@@ -184,11 +185,13 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
               return (
                 <tr key={user.id}>
                   <td>{index + 1}</td>
-                  <td>{user.name}</td>
+                  <td className="text-truncate" style={{ maxWidth: "20rem" }}>
+                    {user.name}
+                  </td>
                   <td>
                     <div className="d-flex gap-2 align-items-center">
                       {user.email}
-                      <ActiveInactiveIcon isActive={user.emailVerified} />
+                      {user.providerId === "credential" && <ActiveInactiveIcon isActive={user.emailVerified} />}
                     </div>
                   </td>
                   <td>{user.providerId}</td>

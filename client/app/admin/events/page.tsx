@@ -1,7 +1,7 @@
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { db } from "~/server/db/provider.ts";
 import { eventsTable as table } from "~/server/db/schema/events.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 import ConfigureEventsScreen from "./ConfigureEventsScreen.tsx";
 
 async function ConfigureEventsPage() {

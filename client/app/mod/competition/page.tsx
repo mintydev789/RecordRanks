@@ -11,7 +11,7 @@ import { type PersonResponse, personsPublicCols, personsTable } from "~/server/d
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { resultsTable } from "~/server/db/schema/results.ts";
 import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
-import { authorizeUser, getUserHasAccessToContest } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser, getUserHasAccessToContest } from "~/server/server-only-functions.ts";
 import ContestForm from "./ContestForm.tsx";
 
 type Props = {
@@ -60,7 +60,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
 
     let totalResultsByRound: { roundId: number; totalResults: number }[] | undefined;
     let organizers: PersonResponse[] | undefined;
-    let creator: Creator | undefined;
+    let creator: Creator | null | undefined;
     let creatorPerson: PersonResponse | undefined;
 
     if (contest) {
@@ -95,7 +95,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
       ]);
       totalResultsByRound = totalResultsByRoundRes;
       organizers = organizersRes;
-      creator = creatorRes?.[0];
+      creator = creatorRes?.[0] ?? null;
 
       if (creator?.personId) {
         creatorPerson = (

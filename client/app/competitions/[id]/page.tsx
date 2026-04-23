@@ -16,7 +16,7 @@ import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { getUserHasAccessToContest } from "~/server/serverOnlyFunctions";
+import { getUserHasAccessToContest } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{ id: string }>;

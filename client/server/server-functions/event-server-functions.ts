@@ -8,7 +8,7 @@ import { contestsTable } from "~/server/db/schema/contests.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 import { eventsTable as table } from "~/server/db/schema/events.ts";
 import { sendEmail } from "~/server/email/mailer.ts";
-import { logMessage } from "~/server/serverOnlyFunctions.ts";
+import { logMessage } from "~/server/server-only-functions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
 
 export const createEventSF = actionClient
@@ -104,7 +104,6 @@ export const updateEventSF = actionClient
           rank: newEventDto.rank,
           category: newEventDto.category,
           submissionsAllowed: newEventDto.submissionsAllowed,
-          removedWca: newEventDto.removedWca,
           hasMemo: newEventDto.hasMemo,
           hidden: newEventDto.hidden,
           description: newEventDto.description,

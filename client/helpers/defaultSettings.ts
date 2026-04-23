@@ -34,6 +34,13 @@ export const defaultSettings: InsertSetting[] = [
     description: "Page content for the rules page (Markdown supported)",
   },
   {
+    key: "moderator-instructions-page-content",
+    group: "page-contents",
+    value: "",
+    description:
+      "Page content for the moderator instructions page. If left empty, that page will be disabled. Markdown is supported.",
+  },
+  {
     key: "video-based-results-instructions",
     group: "page-contents",
     value: `Video-based results can be submitted by any user, but there is a review process involved. Until a video-based result reviewer approves the result, it won't be included in the rankings. The review process works as follows:
@@ -56,7 +63,14 @@ If you see any errors, correct them before submitting. If you see anything that 
 - Reviewers can set "video no longer available" for results that have already been verified, but the video has since been removed. This also works on the submission page.
 - Once a result is approved, record results set on the same day or after are cancelled, if they are worse than the approved result. You will see this on the video-based results page after you approve the new record result. E.g. a \`1:00.41\` 4x4x4 Blindfolded ER set on 19.02.2026 cancels a \`1:01.58\` ER set on 23.02.2026.`,
     description:
-      "These instructions are shown at the top of the video-based results page. Only video-based result reviewers can see this. Markdown is supported.",
+      "Instructions shown at the top of the video-based results page. Only video-based result reviewers can see this. Markdown is supported.",
+  },
+  {
+    key: "user-request-instructions",
+    group: "page-contents",
+    value:
+      "Here you can send a request to the admin team to ask for a competitor profile to be tied to your account, ask for a role, or anything else.",
+    description: "Instructions shown in the user request tab on the user settings page (Markdown supported)",
   },
   {
     key: "public-exports-readme",

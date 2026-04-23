@@ -14,6 +14,7 @@ import {
   RecordCategoryValues,
   type RecordType,
   RecordTypeValues,
+  type UserRequestDetails,
 } from "~/helpers/types.ts";
 import {
   compareAvgs,
@@ -32,10 +33,11 @@ import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/
 import { type ResultResponse, resultsTable } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import type { SettingKey } from "~/server/db/schema/settings.ts";
+import type { FullUserRequest } from "~/server/db/schema/user-requests.ts";
 import { sendErrorEmail } from "~/server/email/mailer.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
 import { RrActionError } from "~/server/safeAction.ts";
-import { updatePersonSF } from "~/server/serverFunctions/personServerFunctions.ts";
+import { updatePersonSF } from "~/server/server-functions/person-server-functions.ts";
 import { getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
 import { auth } from "./auth.ts";
 import type { RrPermissions } from "./permissions.ts";
@@ -534,7 +536,7 @@ export async function getOrCreatePersonByWcaId(
 
   const [createdPerson] = await db
     .insert(personsTable)
-    .values({ ...wcaPerson, createdBy: creatorUserId, createdExternally })
+    .values({ ...wcaPerson, approved: true, createdBy: creatorUserId, createdExternally })
     .returning(personsPublicCols);
 
   return { person: createdPerson, isNew: true };
@@ -610,4 +612,30 @@ export async function getSettingFromDb({
   }
 
   return setting.value;
+}
+
+export async function getUserRequestDetails(userId: string): Promise<UserRequestDetails> {
+  const [fullUserRequest, ownCreatedPersons] = await Promise.all([
+    db.query.userRequests.findFirst({
+      with: {
+        requestedPerson: {
+          columns: { id: true, name: true, localizedName: true, regionCode: true, wcaId: true, approved: true },
+        },
+      },
+      where: { userId: userId },
+    }) satisfies Promise<FullUserRequest | undefined>,
+    db.query.persons.findMany({
+      columns: { id: true },
+      // This logic is consistent with updatePersonSF()
+      where: { createdBy: userId, approved: false, wcaId: { isNull: true } },
+    }),
+  ]);
+
+  if (ownCreatedPersons.length > 1) {
+    throw new RrActionError(
+      "You have somehow created more than one competitor profile. Please contact the admin team to assign your profile.",
+    );
+  }
+
+  return { userRequest: fullUserRequest ?? null, ownRequestedPersonId: ownCreatedPersons.at(0)?.id };
 }

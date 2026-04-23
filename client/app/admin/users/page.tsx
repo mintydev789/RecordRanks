@@ -1,13 +1,14 @@
 import { inArray } from "drizzle-orm";
 import { headers } from "next/headers";
+import { tabs } from "~/app/admin/users/tabs.ts";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
+import Tabs from "~/app/components/UI/Tabs.tsx";
 import { C } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser } from "~/server/serverOnlyFunctions.ts";
+import { authorizeUser } from "~/server/server-only-functions.ts";
 import ManageUsersScreen from "./ManageUsersScreen.tsx";
 
 async function ManageUsersPage() {
@@ -35,13 +36,11 @@ async function ManageUsersPage() {
   }));
 
   return (
-    <section>
-      <h2 className="mb-4 text-center">Users</h2>
-
-      <ToastMessages className="mx-2" />
+    <>
+      <Tabs tabs={tabs} activeTab="users" forServerSidePage />
 
       <ManageUsersScreen users={usersWithProviderIds} userPersons={persons} regions={regions} />
-    </section>
+    </>
   );
 }
 

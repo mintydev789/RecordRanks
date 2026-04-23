@@ -14,7 +14,6 @@ export const EventValidator = z.strictObject({
   defaultRoundFormat: z.enum(RoundFormatValues),
   participants: z.int().min(1).max(20),
   submissionsAllowed: z.boolean(),
-  removedWca: z.boolean(),
   hasMemo: z.boolean(),
   hidden: z.boolean(),
   description: z.string().nullable(),

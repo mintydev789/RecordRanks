@@ -61,8 +61,6 @@ function Providers({ children }: Props) {
     <body data-bs-theme={theme} className="min-vh-100 d-flex flex-column" style={{ overflowX: "hidden" }}>
       <SWRConfig
         value={{
-          strictServerPrefetchWarning: true,
-          revalidateOnMount: false,
           revalidateOnFocus: false,
           revalidateOnReconnect: false,
           shouldRetryOnError: false,

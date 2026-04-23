@@ -68,6 +68,14 @@ To set up a production `.env` file, follow these steps:
 
 RecordRanks does not have a default icon available, so before you publish your Docker image, you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the navbar). Use the dedicated script to generate both files (see the Scripts section). These files are gitignored in this repo, but they get included in the Docker image when you build it.
 
+### Down for maintenance page
+
+Caddy uses the `down-for-maintenance-page.html` file at the root of the repo as the fallback for when the Next JS application is down. This file is git-ignored, as it's supposed to be unique to each RecordRanks instance. Copy the example file on your deployed server and edit it to fit your instance. You can use this command:
+
+```sh
+cp down-for-maintenance-page.html.example down-for-maintenance-page.html
+```
+
 ### `robots.txt` file
 
 There is an example `robots.txt` at `client/app/robots.txt.example`. You can copy that file to `client/app/robots.txt` and edit it to define a list of paths you would like to prevent web crawlers from indexing. Learn more about this [here](https://www.robotstxt.org/robotstxt.html).

@@ -1,5 +1,6 @@
 import { desc } from "drizzle-orm";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import Markdown from "react-markdown";
 import BlogSection from "~/app/components/BlogSection.tsx";
@@ -7,16 +8,16 @@ import CollectiveCubing from "~/app/components/CollectiveCubing.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { db } from "~/server/db/provider.ts";
 import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
-import { getSettingFromDb } from "~/server/serverOnlyFunctions.ts";
+import { getSettingFromDb } from "~/server/server-only-functions.ts";
 import DonateSection from "./components/DonateSection.tsx";
-
-export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: `Home | ${process.env.NEXT_PUBLIC_PROJECT_NAME}`,
 };
 
 async function HomePage() {
+  await connection();
+
   const description = await getSettingFromDb({ key: "home-page-description", optional: true });
 
   const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
