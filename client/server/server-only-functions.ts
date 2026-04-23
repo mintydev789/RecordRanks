@@ -631,7 +631,7 @@ export async function getUserRequestDetails(userId: string): Promise<UserRequest
     }),
   ]);
 
-  if (ownCreatedPersons.length > 1) {
+  if (fullUserRequest && ownCreatedPersons.length > 1) {
     throw new RrActionError(
       "You have somehow created more than one competitor profile. Please contact the admin team to assign your profile.",
     );

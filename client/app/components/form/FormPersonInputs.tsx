@@ -19,8 +19,7 @@ import {
 } from "~/server/server-functions/person-server-functions.ts";
 import FormTextInput from "./FormTextInput.tsx";
 
-const personInputTooltip =
-  "Enter the competitor's name if they are already in the database. If not, enter their full WCA ID to add them.";
+const personInputTooltip = "Enter the competitor's name, ID or WCA ID";
 
 type Props = {
   title: string;
