@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import Markdown from "react-markdown";
 import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError";
-import { getFormattedDate } from "~/helpers/utilityFunctions";
+import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import { db } from "~/server/db/provider";
 import { usersTable } from "~/server/db/schema/auth-schema";
 import { personsTable } from "~/server/db/schema/persons";

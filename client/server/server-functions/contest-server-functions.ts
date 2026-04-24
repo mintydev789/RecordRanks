@@ -6,7 +6,7 @@ import { and, arrayContains, desc, eq, gte, inArray, lt, notInArray, or } from "
 import { find as findTimezone } from "geo-tz";
 import z from "zod";
 import { ModDashboardFiltersValidator } from "~/app/mod/ModDashboardFilters.ts";
-import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { C } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
@@ -39,6 +39,7 @@ import {
   approvePersons,
   getContestParticipantIds,
   getRecordConfigs,
+  getSettingFromDb,
   getUserHasAccessToContest,
   logMessage,
 } from "~/server/server-only-functions.ts";
@@ -749,8 +750,9 @@ async function validateAndCleanUpContest(
   userPersonId: number,
   canApprove: boolean,
 ): Promise<{ region: SelectRegion }> {
-  if (contest.type === "wca-comp" && !IS_CUBING_CONTESTS_INSTANCE)
-    throw new RrActionError("WCA contest type is disabled");
+  const contestTypes = await getSettingFromDb({ key: "contest-types" });
+  if (!contestTypes.split(",").some((ct) => contest.type === ct))
+    throw new RrActionError(`${contest.type} contest type is disabled`);
 
   const [events, region] = await Promise.all([
     db.query.events.findMany({

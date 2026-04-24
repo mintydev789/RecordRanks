@@ -8,7 +8,7 @@ import { useAction } from "next-safe-action/hooks";
 import { useContext } from "react";
 import Button from "~/app/components/UI/Button.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
-import { getActionError } from "~/helpers/utilityFunctions";
+import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import {
   approveContestSF,

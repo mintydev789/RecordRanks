@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
 // import { roundFormats } from "~/helpers/roundFormats";
-// import { getActionError, verifyAccessToken } from "~/helpers/utilityFunctions";
-// import { type EnterAttemptPayloadDto, EnterAttemptPayloadValidator } from "~/helpers/validators/EnterAttemptPayload";
-// import { db } from "~/server/db/provider";
-// import type { Attempt } from "~/server/db/schema/results";
-// import { createContestResultSF, updateContestResultSF } from "~/server/server-functions/result-server-functions";
-// import { getPersonsForExternalDeviceDataEntry } from "~/server/serverUtilityFunctions";
+// import { getActionError, verifyAccessToken } from "~/helpers/utilityFunctions.ts";
+// import { type EnterAttemptPayloadDto, EnterAttemptPayloadValidator } from "~/helpers/validators/EnterAttemptPayload.tsx";
+// import { db } from "~/server/db/provider.ts";
+// import type { Attempt } from "~/server/db/schema/results.ts";
+// import { createContestResultSF, updateContestResultSF } from "~/server/server-functions/result-server-functions.ts";
+// import { getPersonsForExternalDeviceDataEntry } from "~/server/serverUtilityFunctions.ts";
 
 export async function POST(_req: NextRequest) {
   return new Response("NOT IMPLEMENTED", { status: 501 });

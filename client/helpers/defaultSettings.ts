@@ -14,24 +14,25 @@ export const defaultSettings: InsertSetting[] = [
     value: "",
     description: "Contact email address to send notifications about video-based results to",
   },
+
   // page-contents
   {
     key: "home-page-description",
     group: "page-contents",
     value: "",
-    description: "Description of the project for the home page (Markdown supported)",
+    description: "Description of the project for the home page. Markdown is supported.",
   },
   {
     key: "about-page-content",
     group: "page-contents",
     value: "",
-    description: "Page content for the about page (Markdown supported)",
+    description: "Page content for the about page. Markdown is supported.",
   },
   {
     key: "rules-page-content",
     group: "page-contents",
     value: "",
-    description: "Page content for the rules page (Markdown supported)",
+    description: "Page content for the rules page. Markdown is supported.",
   },
   {
     key: "moderator-instructions-page-content",
@@ -39,6 +40,12 @@ export const defaultSettings: InsertSetting[] = [
     value: "",
     description:
       "Page content for the moderator instructions page. If left empty, that page will be disabled. Markdown is supported.",
+  },
+  {
+    key: "moderator-instructions-description",
+    group: "page-contents",
+    value: "",
+    description: "Description for the moderator instructions for the section on the home page. Markdown is supported.",
   },
   {
     key: "video-based-results-instructions",
@@ -70,7 +77,7 @@ If you see any errors, correct them before submitting. If you see anything that 
     group: "page-contents",
     value:
       "Here you can send a request to the admin team to ask for a competitor profile to be tied to your account, ask for a role, or anything else.",
-    description: "Instructions shown in the user request tab on the user settings page (Markdown supported)",
+    description: "Instructions shown in the user request tab on the user settings page. Markdown is supported.",
   },
   {
     key: "public-exports-readme",
@@ -112,14 +119,22 @@ attempted          = solved + missed
 \`\`\`
 `,
     description:
-      "This README is displayed on the public exports page and included as a file in the export archives (Markdown supported)",
+      "This README is displayed on the public exports page and included as a file in the export archives. Markdown is supported.",
   },
+
   // features
+  {
+    key: "contest-types",
+    group: "features",
+    value: "comp",
+    description:
+      'The list of enabled contest types (comma-separated). Values: comp|meetup|online|wca-comp (e.g. "comp,meetup,online").',
+  },
   {
     key: "collective-cubing-enabled",
     group: "features",
     value: "false",
     description:
-      "Whether or not to enable Collective Cubing - the minigame where people solve a 2x2x2 Rubik's Cube one move at a time on the home page (true/false)",
+      "Whether or not to enable Collective Cubing - the minigame where people solve a 2x2x2 Rubik's Cube one move at a time on the home page. Value: true|false.",
   },
 ];
