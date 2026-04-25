@@ -90,6 +90,7 @@ function FormNumberInput({
         onChange={(e) => validateAndChange(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
+        inputMode="numeric"
         className={`form-control mt-2 ${Number.isNaN(value) || invalid ? "is-invalid" : ""}`}
       />
     </div>

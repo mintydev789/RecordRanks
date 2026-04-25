@@ -12,7 +12,6 @@ import FormSelect from "~/app/components/form/FormSelect.tsx";
 import RoundResultsTable from "~/app/components/RoundResultsTable.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
-import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import EventImportantInfo from "~/app/mod/competition/EventImportantInfo.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
@@ -291,120 +290,116 @@ function DataEntryScreen({
   };
 
   return (
-    <div className="px-2">
-      <ToastMessages />
-
-      <div className="row mb-4">
-        <div className="col-lg-3 mb-4">
-          <div>
-            <EventButtons events={events} eventIdOverride={eventId} showAllEvents />
-            <FormSelect
-              title="Round"
-              options={roundOptions}
-              selected={round.roundTypeId}
-              setSelected={(val) => updateRound(rounds.find((r) => r.roundTypeId === val)!)}
-              disabled={resultUnderEdit !== null || isPending}
-              className="mb-3"
-            />
-            <FormPersonInputs
-              title="Competitor"
-              personNames={personNames}
-              setPersonNames={setPersonNames}
-              onSelectPerson={onSelectPerson}
-              persons={selectedPersons}
-              setPersons={setSelectedPersons}
-              regions={regions}
-              nextFocusTargetId="attempt_1"
-              addNewPersonMode="default"
-              redirectToOnAddPerson={`${pathname}?eventId=${eventId}`}
-              disabled={!round.open || resultUnderEdit !== null || isPending}
-              display="basic"
-              showWcaId
-            />
-            {attempts.map((attempt: Attempt, i: number) => (
-              <AttemptInput
-                key={i}
-                attNumber={i + 1}
-                attempt={attempt}
-                setAttempt={(val: Attempt) => changeAttempt(i, val)}
-                event={currEvent}
-                nextFocusTargetId={i + 1 === lastActiveAttempt ? "submit_attempt_button" : undefined}
-                timeLimitCentiseconds={round.timeLimitCentiseconds}
-                disabled={i + 1 > lastActiveAttempt || !round.open || isPending}
-              />
-            ))}
-            {isPendingWrPairs ? (
-              <Loading small dontCenter />
-            ) : (
-              <BestAndAverage
-                event={currEvent}
-                roundFormat={round.format}
-                attempts={attempts}
-                eventWrPair={eventWrPair}
-                recordConfigs={recordConfigs}
-              />
-            )}
-            <div className="d-flex mt-3 flex-wrap gap-3">
-              <Button
-                id="submit_attempt_button"
-                onClick={submitResult}
-                disabled={!round.open || isPending}
-                isLoading={isCreating || isUpdating}
-              >
-                Submit
-              </Button>
-              {process.env.NODE_ENV !== "production" && (
-                <Button
-                  onClick={submitMockResult}
-                  disabled={!round.open || isPending}
-                  isLoading={isCreating}
-                  className="btn-secondary"
-                >
-                  Submit Mock Result
-                </Button>
-              )}
-            </div>
-            <EventImportantInfo importantInfo={currEvent.importantInfo} className="mt-4" />
-          </div>
-        </div>
-
-        <div className="col-lg-9">
-          <h3 className="mt-2 mb-4 text-center">
-            {contest.shortName} &ndash; {shortenEventName(currEvent.name)}
-          </h3>
-
-          {round.open || results.some((r) => r.roundId === round.id) ? (
-            <RoundResultsTable
+    <div className="row mx-0 mb-4 px-0">
+      <div className="col-lg-3 mb-4">
+        <div>
+          <EventButtons events={events} eventIdOverride={eventId} showAllEvents />
+          <FormSelect
+            title="Round"
+            options={roundOptions}
+            selected={round.roundTypeId}
+            setSelected={(val) => updateRound(rounds.find((r) => r.roundTypeId === val)!)}
+            disabled={resultUnderEdit !== null || isPending}
+            className="mb-3"
+          />
+          <FormPersonInputs
+            title="Competitor"
+            personNames={personNames}
+            setPersonNames={setPersonNames}
+            onSelectPerson={onSelectPerson}
+            persons={selectedPersons}
+            setPersons={setSelectedPersons}
+            regions={regions}
+            nextFocusTargetId="attempt_1"
+            addNewPersonMode="default"
+            redirectToOnAddPerson={`${pathname}?eventId=${eventId}`}
+            disabled={!round.open || resultUnderEdit !== null || isPending}
+            display="basic"
+            showWcaId
+          />
+          {attempts.map((attempt: Attempt, i: number) => (
+            <AttemptInput
+              key={i}
+              attNumber={i + 1}
+              attempt={attempt}
+              setAttempt={(val: Attempt) => changeAttempt(i, val)}
               event={currEvent}
-              round={round}
-              results={sortedResults}
-              persons={persons}
-              recordConfigs={recordConfigs}
-              regions={regions}
-              onEditResult={round.open ? onEditResult : undefined}
-              onDeleteResult={round.open ? onDeleteResult : undefined}
-              disableEditAndDelete={resultUnderEdit !== null}
-              loadingId={loadingId}
+              nextFocusTargetId={i + 1 === lastActiveAttempt ? "submit_attempt_button" : undefined}
+              timeLimitCentiseconds={round.timeLimitCentiseconds}
+              disabled={i + 1 > lastActiveAttempt || !round.open || isPending}
             />
+          ))}
+          {isPendingWrPairs ? (
+            <Loading small dontCenter />
           ) : (
-            <div className="mt-5">
-              {isOpenableRound ? (
-                <>
-                  <Button onClick={openNextRound} isLoading={isOpeningRound} className="d-block mx-auto">
-                    Open Round
-                  </Button>
-                  <p className="fst-italic mt-4 text-center text-danger">
-                    Do NOT begin this round before opening it using the button, which checks that the round may be
-                    opened. Also, please mind that manually adding/removing competitors to/from a subsequent round
-                    hasn't been implemented yet.
-                  </p>
-                </>
-              ) : (
-                <p className="fst-italic text-center text-warning">This round cannot be opened yet</p>
-              )}
-            </div>
+            <BestAndAverage
+              event={currEvent}
+              roundFormat={round.format}
+              attempts={attempts}
+              eventWrPair={eventWrPair}
+              recordConfigs={recordConfigs}
+            />
           )}
+          <div className="d-flex mt-3 flex-wrap gap-3">
+            <Button
+              id="submit_attempt_button"
+              onClick={submitResult}
+              disabled={!round.open || isPending}
+              isLoading={isCreating || isUpdating}
+            >
+              Submit
+            </Button>
+            {process.env.NODE_ENV !== "production" && (
+              <Button
+                onClick={submitMockResult}
+                disabled={!round.open || isPending}
+                isLoading={isCreating}
+                className="btn-secondary"
+              >
+                Submit Mock Result
+              </Button>
+            )}
+          </div>
+          <EventImportantInfo importantInfo={currEvent.importantInfo} className="mt-4" />
         </div>
+      </div>
+
+      <div className="col-lg-9">
+        <h3 className="mt-2 mb-4 text-center">
+          {contest.shortName} &ndash; {shortenEventName(currEvent.name)}
+        </h3>
+
+        {round.open || results.some((r) => r.roundId === round.id) ? (
+          <RoundResultsTable
+            event={currEvent}
+            round={round}
+            results={sortedResults}
+            persons={persons}
+            recordConfigs={recordConfigs}
+            regions={regions}
+            onEditResult={round.open ? onEditResult : undefined}
+            onDeleteResult={round.open ? onDeleteResult : undefined}
+            disableEditAndDelete={resultUnderEdit !== null}
+            loadingId={loadingId}
+          />
+        ) : (
+          <div className="mt-5">
+            {isOpenableRound ? (
+              <>
+                <Button onClick={openNextRound} isLoading={isOpeningRound} className="d-block mx-auto">
+                  Open Round
+                </Button>
+                <p className="fst-italic mt-4 text-center text-danger">
+                  Do NOT begin this round before opening it using the button, which checks that the round may be opened.
+                  Also, please mind that manually adding/removing competitors to/from a subsequent round hasn't been
+                  implemented yet.
+                </p>
+              </>
+            ) : (
+              <p className="fst-italic text-center text-warning">This round cannot be opened yet</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

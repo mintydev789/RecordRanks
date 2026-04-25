@@ -14,14 +14,12 @@ type Props = {
   value: string;
   setValue?: (val: any) => void;
   nextFocusTargetId?: string;
-  required?: boolean;
   disabled?: boolean;
   password?: boolean;
   monospace?: boolean;
-  submitOnEnter?: boolean;
   invalid?: boolean;
   oneLine?: boolean;
-};
+} & React.HTMLAttributes<HTMLInputElement>;
 
 function FormTextInput({
   id,
@@ -38,15 +36,14 @@ function FormTextInput({
   onBlur,
   nextFocusTargetId,
   autoFocus,
-  required,
+  inputMode,
   disabled,
-  submitOnEnter,
   password,
   monospace,
   invalid,
   oneLine,
   className = "",
-}: Props & React.HTMLAttributes<HTMLInputElement>) {
+}: Props) {
   if (!id && !title) throw new Error("Neither title nor id are set in FormTextInput");
   if (setValue && onChange) throw new Error("setValue and onChange cannot be used at the same time in FormTextInput");
 
@@ -56,7 +53,7 @@ function FormTextInput({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (!submitOnEnter) e.preventDefault();
+      e.preventDefault();
       if (password) setHidePassword(true);
       if (nextFocusTargetId) document.getElementById(nextFocusTargetId)?.focus();
     }
@@ -82,8 +79,8 @@ function FormTextInput({
           placeholder={placeholder}
           // biome-ignore lint/a11y/noAutofocus: meh
           autoFocus={autoFocus}
+          inputMode={inputMode}
           disabled={disabled}
-          required={required}
           onChange={setValue ? (e) => setValue(e.target.value) : onChange}
           onKeyDown={handleKeyDown}
           onClick={onClick}
