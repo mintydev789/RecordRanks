@@ -36,7 +36,6 @@ function FormTextInput({
   onBlur,
   nextFocusTargetId,
   autoFocus,
-  inputMode,
   disabled,
   password,
   monospace,
@@ -79,7 +78,6 @@ function FormTextInput({
           placeholder={placeholder}
           // biome-ignore lint/a11y/noAutofocus: meh
           autoFocus={autoFocus}
-          inputMode={inputMode}
           disabled={disabled}
           onChange={setValue ? (e) => setValue(e.target.value) : onChange}
           onKeyDown={handleKeyDown}

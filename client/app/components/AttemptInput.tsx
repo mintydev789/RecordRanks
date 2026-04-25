@@ -361,7 +361,6 @@ function AttemptInput({
           onBlur={() => onTimeFocusOut()}
           invalid={isInvalidAttempt}
           disabled={disabled}
-          inputMode="numeric"
           className={attNumber === 0 ? "" : "mb-2"}
         />
       </div>
@@ -379,7 +378,6 @@ function AttemptInput({
             onSelect={resetCursorPosition}
             onBlur={() => onTimeFocusOut(true)}
             disabled={["DNF", "DNS", "Unknown"].includes(formattedAttemptText)}
-            inputMode="numeric"
             invalid={isInvalidAttempt}
           />
         </div>
