@@ -79,13 +79,11 @@ const RoomValidator = z.strictObject({
 const latitudeMicrodegrees = z
   .int()
   .min(-90000000, { error: "The latitude cannot be less than -90 degrees" })
-  .max(90000000, { error: "The latitude cannot be more than 90 degrees" })
-  .refine((val) => val !== 0, { error: "Please enter the venue latitude" });
+  .max(90000000, { error: "The latitude cannot be more than 90 degrees" });
 const longitudeMicrodegrees = z
   .int()
   .min(-180000000, { error: "The longitude cannot be less than -180 degrees" })
-  .max(180000000, { error: "The longitude cannot be more than 180 degrees" })
-  .refine((val) => val !== 0, { error: "Please enter the venue longitude" });
+  .max(180000000, { error: "The longitude cannot be more than 180 degrees" });
 const duplicateIdsCheck = (val: any[]) => val.length === new Set(val.map((v) => v.id)).size;
 
 const VenueValidator = z.strictObject({
@@ -110,12 +108,10 @@ const ScheduleValidator = z.strictObject({
 
 export const ContestValidator = z
   .strictObject({
-    // id: z.int().optional(), // not needed when creating new contest
     competitionId: z
       .string()
       .min(5)
       .regex(/^[a-zA-Z0-9]*$/, { error: "The contest ID must only contain alphanumeric characters" }),
-    // state: z.enum(ContestStateValues).optional(), // not needed when creating new contest
     name: z
       .string()
       .min(10)
@@ -128,8 +124,8 @@ export const ContestValidator = z
     type: z.enum(ContestTypeValues),
     city: z.string().nonempty(),
     regionCode: RegionCodeValidator,
-    venue: z.string().nonempty(),
-    address: z.string().nonempty(),
+    venue: z.string(),
+    address: z.string(),
     latitudeMicrodegrees,
     longitudeMicrodegrees,
     startDate: z.coerce.date(),
@@ -142,10 +138,8 @@ export const ContestValidator = z
       .refine((val) => val.length === new Set(val).size, { error: "List of organizers must not have duplicates" }),
     contact: z.email().nullable(),
     description: z.string().nullable(),
-    competitorLimit: z.int().min(C.minCompetitorLimit).nullable(),
-    // participants: z.int().default(0), // not needed when creating new contest
+    competitorLimit: z.int().min(C.minCompetitorLimit),
     schedule: ScheduleValidator.nullable(),
-    // createdBy: z.string().optional(), // not needed when creating new contest
   })
   .superRefine((val, ctx) => {
     for (const key of ["competitionId", "name", "shortName"]) {
@@ -179,6 +173,13 @@ export const ContestValidator = z
       });
     }
 
+    if (val.type !== "online") {
+      if (!val.venue || !val.address)
+        ctx.addIssue({ code: "custom", message: "Please enter the venue and the address" });
+      if (!val.latitudeMicrodegrees || !val.longitudeMicrodegrees)
+        ctx.addIssue({ code: "custom", message: "Please enter the coordinates of the venue" });
+    }
+
     if (val.type === "meetup") {
       const correctStartDate = getDateOnly(new Date(val.startTime!.getTime() + getTimezoneOffset(val.timezone!)))!;
       if (val.startDate.getTime() !== correctStartDate.getTime()) {
@@ -188,12 +189,6 @@ export const ContestValidator = z
           input: val.startTime,
         });
       }
-    } else if (!val.competitorLimit) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Please enter the competitor limit",
-        input: val.competitorLimit,
-      });
     }
   });
 

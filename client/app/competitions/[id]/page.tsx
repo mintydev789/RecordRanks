@@ -76,13 +76,15 @@ async function ContestDetailsPage({ params }: Props) {
             </div>
             <p className="mb-2">Date:&#8194;{formattedDate}</p>
             {formattedTime && <p className="mb-2">Starts at:&#8194;{formattedTime}</p>}
-            <p className="mb-2">
-              City:&#8194;{contest.city}, <Region regionCode={contest.regionCode} regions={regions} swapPositions />
-            </p>
+            {contest.type !== "online" && (
+              <p className="mb-2">
+                City:&#8194;{contest.city}, <Region regionCode={contest.regionCode} regions={regions} swapPositions />
+              </p>
+            )}
             {/* Venue and address may be undefined for some old WCA competitions */}
             {contest.venue && <p className="mb-2">Venue:&#8194;{contest.venue}</p>}
             {contest.address && <p className="mb-2">Address:&#8194;{contest.address}</p>}
-            <p className="mb-2">Coordinates:&#8194;{getFormattedCoords()}</p>
+            {contest.type !== "online" && <p className="mb-2">Coordinates:&#8194;{getFormattedCoords()}</p>}
             {contest.contact && (
               <p className="mb-2">
                 Contact:&#8194;<span className="fs-6">{contest.contact}</span>

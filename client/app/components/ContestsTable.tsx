@@ -106,7 +106,11 @@ function ContestsTable({ contestsPromise, regions }: Props) {
                   </Link>
                 </td>
                 <td>
-                  {contest.city}, <Region regionCode={contest.regionCode} regions={regions} swapPositions />
+                  {contest.type !== "online" && (
+                    <>
+                      {contest.city}, <Region regionCode={contest.regionCode} regions={regions} swapPositions />
+                    </>
+                  )}
                 </td>
                 <td>
                   <ContestTypeBadge type={contest.type} />

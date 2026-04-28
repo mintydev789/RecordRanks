@@ -3,6 +3,7 @@
 import FormInputLabel from "~/app/components/form/FormInputLabel.tsx";
 import { C } from "~/helpers/constants.ts";
 import { Continents } from "~/helpers/continents.ts";
+import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import type { SelectRegion } from "~/server/db/schema/regions.ts";
 
 type Props = {
@@ -54,11 +55,13 @@ function FormRegionSelect({
           <option value={C.notSelectedOption}>Select region</option>
         )}
 
-        {regions.map((r) => (
-          <option key={r.code} value={r.code}>
-            {r.name}
-          </option>
-        ))}
+        {regions
+          .filter((r) => NonMetaRegionCodeRegex.test(r.code))
+          .map((r) => (
+            <option key={r.code} value={r.code}>
+              {r.name}
+            </option>
+          ))}
       </select>
     </div>
   );

@@ -224,8 +224,8 @@ export function sendRolesChangedEmail(
 export function sendContestSubmittedEmail(
   recipients: string[],
   contest: SelectContest,
-  regionName: string,
   creator: string,
+  regionName: string | undefined,
 ) {
   const urgent = getIsUrgent(new Date(contest.startDate));
 
@@ -235,12 +235,13 @@ export function sendContestSubmittedEmail(
       baseUrl,
       projectName,
       competitionId: contest.competitionId,
-      wcaCompetition: contest.type === "wca-comp",
       contestName: contest.name,
+      contestType: contest.type,
+      wcaCompetition: contest.type === "wca-comp",
       contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
       creator,
       startDate: contest.startDate.toDateString(),
-      location: `${contest.city}, ${regionName}`,
+      location: regionName ? `${contest.city}, ${regionName}` : "",
       urgent,
     },
     callback: async (html) => {

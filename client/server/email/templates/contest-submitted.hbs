@@ -9,13 +9,16 @@
   <body>
     <p>Contest <a href="{{contestUrl}}">{{contestName}}</a> has been submitted and is pending approval by the admin team.</p>
 
+    <p>Contest type: {{contestType}}</p>
     <p>Created by: {{creator}}</p>
     {{#if urgent}}
       <p>Date: {{startDate}} <strong>URGENT!</strong></p>
     {{else}}
       <p>Date: {{startDate}}</p>
     {{/if}}
-    <p>City: {{location}}</p>
+    {{#if location}}
+      <p>City: {{location}}</p>
+    {{/if}}
 
     {{#if wcaCompetition}}
       <p>

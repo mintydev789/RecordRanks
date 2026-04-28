@@ -76,13 +76,15 @@ function ModDashboardScreen({ regions, isAdminView }: Props) {
                     </Link>
                   </td>
                   <td>
-                    <div className="d-flex align-items-center">
-                      <span className="d-inline-block m-0 text-truncate" style={{ maxWidth: "18rem" }}>
-                        {contest.city}
-                      </span>
-                      <span className="me-1">,</span>
-                      <Region regionCode={contest.regionCode} regions={regions} swapPositions shorten />
-                    </div>
+                    {contest.type !== "online" && (
+                      <div className="d-flex align-items-center">
+                        <span className="d-inline-block m-0 text-truncate" style={{ maxWidth: "18rem" }}>
+                          {contest.city}
+                        </span>
+                        <span className="me-1">,</span>
+                        <Region regionCode={contest.regionCode} regions={regions} swapPositions shorten />
+                      </div>
+                    )}
                   </td>
                   <td>
                     <ContestTypeBadge type={contest.type} short />

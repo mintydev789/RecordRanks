@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "bcbcfcf0-19d8-4392-af31-bd1c80e90fb7",
+  "id": "56c3922b-d34e-4aee-89c9-b5f55f1f5295",
   "prevIds": [
     "a0fbb224-850a-43e0-88f9-269ac23b8475"
   ],
@@ -1114,7 +1114,7 @@
     {
       "type": "varchar(2)",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1127,7 +1127,7 @@
     {
       "type": "text",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1140,7 +1140,7 @@
     {
       "type": "text",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1153,7 +1153,7 @@
     {
       "type": "text",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1166,7 +1166,7 @@
     {
       "type": "integer",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1179,7 +1179,7 @@
     {
       "type": "integer",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1283,7 +1283,7 @@
     {
       "type": "integer",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -3522,22 +3522,8 @@
       "entityType": "uniques"
     },
     {
-      "value": "(\"type\" <> 'comp' AND \"type\" <> 'wca-comp')\n        OR (\"region_code\" IS NOT NULL\n          AND \"city\" IS NOT NULL\n          AND \"venue\" IS NOT NULL\n          AND \"address\" IS NOT NULL\n          AND \"latitude_microdegrees\" IS NOT NULL\n          AND \"longitude_microdegrees\" IS NOT NULL\n          AND \"start_time\" IS NULL\n          AND \"timezone\" IS NULL\n          AND \"competitor_limit\" IS NOT NULL\n          AND \"schedule\" IS NOT NULL)",
-      "name": "contests_comp_check",
-      "entityType": "checks",
-      "schema": "record_ranks",
-      "table": "contests"
-    },
-    {
-      "value": "\"type\" <> 'meetup'\n        OR (\"region_code\" IS NOT NULL\n          AND \"city\" IS NOT NULL\n          AND \"venue\" IS NOT NULL\n          AND \"address\" IS NOT NULL\n          AND \"latitude_microdegrees\" IS NOT NULL\n          AND \"longitude_microdegrees\" IS NOT NULL\n          AND \"start_time\" IS NOT NULL\n          AND \"timezone\" IS NOT NULL\n          AND \"schedule\" IS NULL)",
+      "value": "(\"type\" <> 'meetup'\n          AND \"start_time\" IS NULL\n          AND \"timezone\" IS NULL\n          AND \"schedule\" IS NOT NULL)\n        OR (\"type\" = 'meetup'\n          AND \"start_time\" IS NOT NULL\n          AND \"timezone\" IS NOT NULL\n          AND \"schedule\" IS NULL)",
       "name": "contests_meetup_check",
-      "entityType": "checks",
-      "schema": "record_ranks",
-      "table": "contests"
-    },
-    {
-      "value": "\"type\" <> 'online'\n        OR (\"region_code\" IS NULL\n          AND \"city\" IS NULL\n          AND \"venue\" IS NULL\n          AND \"address\" IS NULL\n          AND \"latitude_microdegrees\" IS NULL\n          AND \"longitude_microdegrees\" IS NULL\n          AND \"start_time\" IS NULL)",
-      "name": "contests_online_check",
       "entityType": "checks",
       "schema": "record_ranks",
       "table": "contests"

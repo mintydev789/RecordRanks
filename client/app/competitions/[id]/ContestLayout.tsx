@@ -1,5 +1,4 @@
 import Tabs from "~/app/components/UI/Tabs.tsx";
-import { getIsCompType } from "~/helpers/utilityFunctions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 
 type Props = {
@@ -29,7 +28,7 @@ function ContestLayout({ contest, activeTab, children }: Props) {
       title: "Schedule",
       value: "schedule",
       route: `/competitions/${contest.competitionId}/schedule`,
-      hidden: !getIsCompType(contest.type),
+      hidden: contest.type === "meetup",
     },
   ];
 

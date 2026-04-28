@@ -458,12 +458,6 @@ export function getResultProceeds(
 export const getAlwaysShowDecimals = (event: Pick<EventResponse, "category" | "format">): boolean =>
   event.category === "extreme-bld" && event.format !== "multi";
 
-export function getIsCompType(contestType: ContestType | undefined): boolean {
-  if (!contestType) throw new Error("getIsCompType cannot accept undefined contestType");
-
-  return ["wca-comp", "comp"].includes(contestType);
-}
-
 export function getNameAndLocalizedName(wcaName: string): { name: string; localizedName: string | undefined } {
   const [name, localizedName] = wcaName.replace(/\)$/, "").split(" (");
   return { name, localizedName };

@@ -20,6 +20,7 @@ import {
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";
+import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
@@ -276,8 +277,8 @@ export const createContestSF = actionClient
       sendContestSubmittedEmail(
         organizerUsers.map((u) => u.email),
         createdContest,
-        region.name,
         creatorPerson.name,
+        NonMetaRegionCodeRegex.test(region.code) ? region.name : undefined,
       );
     },
   );

@@ -35,7 +35,6 @@ import {
   getContestIdFromName,
   getDateOnly,
   getHasRole,
-  getIsCompType,
   getIsUrgent,
 } from "~/helpers/utilityFunctions.ts";
 import { ContestValidator } from "~/helpers/validators/Contest.ts";
@@ -148,7 +147,7 @@ function ContestForm({
         if (isValid(startDate) && isValid(startTime)) {
           if (type === "meetup") {
             setStartTime(fromZonedTime(toZonedTime(startTime!, timezone), res.data!));
-          } else if (getIsCompType(type)) {
+          } else {
             setRooms(
               rooms.map((r: Room) => ({
                 ...r,
@@ -192,7 +191,7 @@ function ContestForm({
     {
       title: "Schedule",
       value: "schedule",
-      hidden: !type || !getIsCompType(type),
+      hidden: !type || type === "meetup",
       disabled: isPending || !isValid(startDate),
     },
   ];
@@ -205,12 +204,12 @@ function ContestForm({
     const longitudeMicrodegrees = longitude ? Math.round(longitude * 1000000) : 0;
     let schedule: Schedule | null = null;
 
-    if (getIsCompType(type)) {
+    if (type !== "meetup") {
       schedule = {
         venues: [
           {
             id: 1,
-            name: venue,
+            name: type === "online" ? C.onlineCompKey : venue,
             countryIso2: regionCode,
             latitudeMicrodegrees,
             longitudeMicrodegrees,
@@ -240,7 +239,7 @@ function ContestForm({
       organizerIds: selectedOrganizers.map((o) => o.id),
       contact: contact.trim() || null,
       description: description.trim() || null,
-      competitorLimit: competitorLimit || null,
+      competitorLimit,
       schedule,
     });
 
@@ -344,6 +343,16 @@ function ContestForm({
           }),
         );
       }
+    }
+  };
+
+  const changeType = (newType: ContestType) => {
+    setType(newType);
+
+    if (newType === "online") {
+      setCity(C.onlineCompKey);
+      setRegionCode("XW");
+      setRooms([{ id: 1, name: C.onlineCompKey, color: "#fff", activities: [] }]);
     }
   };
 
@@ -495,22 +504,12 @@ function ContestForm({
 
       {activeTab === "details" && (
         <>
-          {mode === "new" && process.env.NODE_ENV !== "production" && (
+          {mode === "new" && process.env.NODE_ENV !== "production" && !type && (
             <div className="d-flex my-3 flex-wrap gap-3">
-              <Button
-                onClick={() => fillWithMockData()}
-                isLoading={isGettingPerson}
-                disabled={type !== undefined}
-                className="btn-secondary"
-              >
+              <Button onClick={() => fillWithMockData()} isLoading={isGettingPerson} className="btn-secondary">
                 Set Mock Competition
               </Button>
-              <Button
-                onClick={() => fillWithMockData("meetup")}
-                isLoading={isGettingPerson}
-                disabled={type !== undefined}
-                className="btn-secondary"
-              >
+              <Button onClick={() => fillWithMockData("meetup")} isLoading={isGettingPerson} className="btn-secondary">
                 Set Mock Meetup
               </Button>
             </div>
@@ -580,7 +579,7 @@ function ContestForm({
             title="Type"
             options={contestTypes.map((ct) => contestTypeOptions.find((cto) => cto.value === ct)!)}
             selected={type}
-            setSelected={setType}
+            setSelected={changeType}
             disabled={mode !== "new" || type !== undefined}
           />
           {type === "wca-comp" && disabled && mode === "new" && (
@@ -630,73 +629,77 @@ function ContestForm({
                 disabled={disabledIfDetailsImported || disabledIfContestApproved || (mode === "edit" && !isAdmin)}
                 className="mb-3"
               />
-              <div className="row">
-                <div className="col-12 col-md-6 mb-3">
-                  <FormTextInput
-                    title="City"
-                    value={city}
-                    setValue={setCity}
-                    disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                  />
-                </div>
-                <div className="col-12 col-md-6 mb-3">
-                  <FormRegionSelect
-                    regionCode={regionCode}
-                    setRegionCode={setRegionCode}
-                    regions={regions}
-                    disabled={mode === "edit" || disabledIfDetailsImported}
-                  />
-                </div>
-              </div>
-              <FormTextInput
-                title="Address"
-                value={address}
-                setValue={setAddress}
-                disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                className="mb-3"
-              />
-              <div className="row">
-                <div className="col-12 col-md-6 mb-3">
-                  <FormTextInput
-                    title="Venue"
-                    value={venue}
-                    setValue={setVenue}
-                    disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                  />
-                </div>
-                <div className="col-12 col-md-6">
-                  <div className="row mb-3">
-                    <div className="col-6">
-                      <FormNumberInput
-                        title="Latitude"
-                        value={latitude}
-                        setValue={(val) => changeCoordinates(val, longitude)}
-                        disabled={disabledIfContestApproved || disabledIfDetailsImported}
-                        min={-90}
-                        max={90}
-                      />
-                    </div>
-                    <div className="col-6">
-                      <FormNumberInput
-                        title="Longitude"
-                        value={longitude}
-                        setValue={(val) => changeCoordinates(latitude, val)}
-                        disabled={disabledIfContestApproved || disabledIfDetailsImported}
-                        min={-180}
-                        max={180}
-                      />
-                    </div>
-                  </div>
+              {type !== "online" && (
+                <>
                   <div className="row">
-                    <div className="fs-6 mb-2 text-secondary">
-                      Time zone: {isPendingTimeZone ? <Loading small dontCenter /> : timezone}
+                    <div className="col-12 col-md-6 mb-3">
+                      <FormTextInput
+                        title="City"
+                        value={city}
+                        setValue={setCity}
+                        disabled={disabledIfDetailsImported || disabledIfContestPublished}
+                      />
                     </div>
-                    <div className="fs-6 text-danger">
-                      The coordinates must point to a building and match the address of the venue.
+                    <div className="col-12 col-md-6 mb-3">
+                      <FormRegionSelect
+                        regionCode={regionCode}
+                        setRegionCode={setRegionCode}
+                        regions={regions}
+                        disabled={mode === "edit" || disabledIfDetailsImported}
+                      />
                     </div>
                   </div>
-                </div>
-              </div>
+                  <FormTextInput
+                    title="Address"
+                    value={address}
+                    setValue={setAddress}
+                    disabled={disabledIfDetailsImported || disabledIfContestPublished}
+                    className="mb-3"
+                  />
+                  <div className="row">
+                    <div className="col-12 col-md-6 mb-3">
+                      <FormTextInput
+                        title="Venue"
+                        value={venue}
+                        setValue={setVenue}
+                        disabled={disabledIfDetailsImported || disabledIfContestPublished}
+                      />
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <div className="row mb-3">
+                        <div className="col-6">
+                          <FormNumberInput
+                            title="Latitude"
+                            value={latitude}
+                            setValue={(val) => changeCoordinates(val, longitude)}
+                            disabled={disabledIfContestApproved || disabledIfDetailsImported}
+                            min={-90}
+                            max={90}
+                          />
+                        </div>
+                        <div className="col-6">
+                          <FormNumberInput
+                            title="Longitude"
+                            value={longitude}
+                            setValue={(val) => changeCoordinates(latitude, val)}
+                            disabled={disabledIfContestApproved || disabledIfDetailsImported}
+                            min={-180}
+                            max={180}
+                          />
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="fs-6 mb-2 text-secondary">
+                          Time zone: {isPendingTimeZone ? <Loading small dontCenter /> : timezone}
+                        </div>
+                        <div className="fs-6 text-danger">
+                          The coordinates must point to a building and match the address of the venue.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="row my-3">
                 <div className="col">
                   {type === "meetup" ? (
@@ -720,7 +723,7 @@ function ContestForm({
                     />
                   )}
                 </div>
-                {getIsCompType(type) && (
+                {type !== "meetup" && (
                   <div className="col">
                     <FormDatePicker
                       id="end_date"
@@ -778,7 +781,7 @@ function ContestForm({
                 </div>
               )}
               <FormNumberInput
-                title={`Competitor limit ${!getIsCompType(type) ? "(optional)" : ""}`}
+                title="Competitor limit"
                 value={competitorLimit}
                 setValue={setCompetitorLimit}
                 disabled={

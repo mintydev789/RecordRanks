@@ -7,4 +7,12 @@ export const ColorValidator = z.string().regex(/^#([0-9a-f]{3}|[0-9a-f]{6})$/);
 
 export const RoundNumberValidator = z.int().min(1).max(C.maxRounds);
 
-export const RegionCodeValidator = z.string().min(2, { error: "Invalid country" }).max(2, { error: "Invalid country" });
+export const RegionCodeValidator = z
+  .string()
+  .min(2, { error: "Invalid region code" })
+  .max(2, { error: "Invalid region code" });
+
+export const NonMetaRegionCodeRegex = /^[A-W,Y-Z][A-Z]$/; // exclude region codes starting with X
+export const NonMetaRegionCodeValidator = RegionCodeValidator.regex(NonMetaRegionCodeRegex, {
+  error: "Invalid region code",
+});

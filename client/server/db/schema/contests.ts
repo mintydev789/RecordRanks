@@ -21,12 +21,14 @@ export const contestsTable = rrSchema.table(
     name: text().notNull(),
     shortName: varchar({ length: C.maxContestShortName }).notNull(),
     type: contestTypeEnum().notNull(),
-    regionCode: varchar({ length: 2 }).references(() => regionsTable.code, { onUpdate: "cascade" }),
-    city: text(),
-    venue: text(),
-    address: text(),
-    latitudeMicrodegrees: integer(),
-    longitudeMicrodegrees: integer(),
+    regionCode: varchar({ length: 2 })
+      .references(() => regionsTable.code, { onUpdate: "cascade" })
+      .notNull(),
+    city: text().notNull(),
+    venue: text().notNull(),
+    address: text().notNull(),
+    latitudeMicrodegrees: integer().notNull(),
+    longitudeMicrodegrees: integer().notNull(),
     startDate: timestamp().notNull(),
     endDate: timestamp().notNull(),
     startTime: timestamp(), // only used for meetups
@@ -34,7 +36,7 @@ export const contestsTable = rrSchema.table(
     organizerIds: integer().array().notNull(),
     contact: text(),
     description: text(),
-    competitorLimit: integer(),
+    competitorLimit: integer().notNull(),
     participants: integer().default(0).notNull(),
     schedule: jsonb().$type<Schedule>(), // not used for meetups
     adminNotes: text(),
@@ -43,42 +45,15 @@ export const contestsTable = rrSchema.table(
   },
   (table) => [
     check(
-      "contests_comp_check",
-      sql`(${table.type} <> 'comp' AND ${table.type} <> 'wca-comp')
-        OR (${table.regionCode} IS NOT NULL
-          AND ${table.city} IS NOT NULL
-          AND ${table.venue} IS NOT NULL
-          AND ${table.address} IS NOT NULL
-          AND ${table.latitudeMicrodegrees} IS NOT NULL
-          AND ${table.longitudeMicrodegrees} IS NOT NULL
+      "contests_meetup_check",
+      sql`(${table.type} <> 'meetup'
           AND ${table.startTime} IS NULL
           AND ${table.timezone} IS NULL
-          AND ${table.competitorLimit} IS NOT NULL
-          AND ${table.schedule} IS NOT NULL)`,
-    ),
-    check(
-      "contests_meetup_check",
-      sql`${table.type} <> 'meetup'
-        OR (${table.regionCode} IS NOT NULL
-          AND ${table.city} IS NOT NULL
-          AND ${table.venue} IS NOT NULL
-          AND ${table.address} IS NOT NULL
-          AND ${table.latitudeMicrodegrees} IS NOT NULL
-          AND ${table.longitudeMicrodegrees} IS NOT NULL
+          AND ${table.schedule} IS NOT NULL)
+        OR (${table.type} = 'meetup'
           AND ${table.startTime} IS NOT NULL
           AND ${table.timezone} IS NOT NULL
           AND ${table.schedule} IS NULL)`,
-    ),
-    check(
-      "contests_online_check",
-      sql`${table.type} <> 'online'
-        OR (${table.regionCode} IS NULL
-          AND ${table.city} IS NULL
-          AND ${table.venue} IS NULL
-          AND ${table.address} IS NULL
-          AND ${table.latitudeMicrodegrees} IS NULL
-          AND ${table.longitudeMicrodegrees} IS NULL
-          AND ${table.startTime} IS NULL)`,
     ),
   ],
 );
