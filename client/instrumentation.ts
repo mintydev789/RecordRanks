@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
-import { defaultSettings } from "~/helpers/defaultSettings.ts";
+import { defaultSettings } from "~/helpers/default-settings.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { testPersons } from "~/helpers/test-data/testPersons.ts";
 import { testPosts } from "~/helpers/test-data/testPosts.ts";

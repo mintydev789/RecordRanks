@@ -11,9 +11,6 @@ type Props = {
 async function DataEntryPage({ params, searchParams }: Props) {
   const { id } = await params;
   const { eventId } = await searchParams;
-  const { user } = await authorizeUser({
-    permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
-  });
 
   const res = await getContestSF({ competitionId: id, eventId });
 
@@ -22,6 +19,9 @@ async function DataEntryPage({ params, searchParams }: Props) {
   const { contest, events, rounds, results, persons, recordConfigs, regions } = res.data;
   const eventIdOrFirst = eventId ?? events[0].eventId;
 
+  const { user } = await authorizeUser(
+    contest.type === "online" ? undefined : { permissions: { competitions: ["create"], meetups: ["create"] } },
+  );
   if (!getUserHasAccessToContest(user, contest))
     return <LoadingError reason="You do not have access rights for this contest" />;
 

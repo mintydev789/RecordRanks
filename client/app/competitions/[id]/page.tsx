@@ -10,7 +10,7 @@ import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
 import ContestControls from "~/app/mod/ContestControls.tsx";
-import { getDateOnly, getFormattedDate, getHasRole } from "~/helpers/utilityFunctions.ts";
+import { getDateOnly, getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";
@@ -119,13 +119,7 @@ async function ContestDetailsPage({ params }: Props) {
           <div className="px-2">
             <div className="mb-3">
               <ToastMessages />
-              {hasAccessToContest && (
-                <ContestControls
-                  contest={contest}
-                  isAdmin={getHasRole("admin", session.user.role)}
-                  forPage="contest-details"
-                />
-              )}
+              {hasAccessToContest && <ContestControls contest={contest} forPage="contest-details" />}
             </div>
 
             {contest.state === "created" ? (

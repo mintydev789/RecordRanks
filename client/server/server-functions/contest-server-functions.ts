@@ -674,7 +674,7 @@ export const openRoundSF = actionClient
 
       const [contest, rounds, results] = await Promise.all([
         db.query.contests.findFirst({
-          columns: { state: true, organizerIds: true },
+          columns: { state: true, type: true, organizerIds: true },
           where: { competitionId },
         }),
         db.query.rounds.findMany({
@@ -725,7 +725,7 @@ export const createAccessTokenSF = actionClient
       logMessage("RR0040", `Creating access token for contest with ID ${competitionId}`);
 
       const contest = await db.query.contests.findFirst({
-        columns: { competitionId: true, state: true, organizerIds: true, createdBy: true },
+        columns: { competitionId: true, state: true, type: true, organizerIds: true, createdBy: true },
         where: { competitionId },
       });
 

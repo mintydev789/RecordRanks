@@ -94,12 +94,7 @@ function ModDashboardScreen({ regions, isAdminView }: Props) {
                     {contest.state === "removed" ? (
                       <span className="text-danger">Removed</span>
                     ) : (
-                      <ContestControls
-                        contest={contest}
-                        isAdmin={isAdminView}
-                        forPage="mod-dashboard"
-                        onUpdateContestState={mutate}
-                      />
+                      <ContestControls contest={contest} forPage="mod-dashboard" onUpdateContestState={mutate} />
                     )}
                   </td>
                 </tr>

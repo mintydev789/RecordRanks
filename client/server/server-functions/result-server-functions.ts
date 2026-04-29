@@ -582,13 +582,15 @@ async function getRecordResult(
     .orderBy(table[bestOrAverage])
     .limit(1);
 
+  // Similar to the code in getRecords()
   const recordTypes: RecordType[] = ["WR"];
   if (recordType === "NR") {
-    const { superRegionRecordType } = (await (tx ?? db).query.regions.findFirst({
+    const reg = await (tx ?? db).query.regions.findFirst({
       columns: { superRegionRecordType: true },
       where: { code: regionCode },
-    }))!;
-    recordTypes.push(superRegionRecordType, recordType);
+    });
+    if (!reg?.superRegionRecordType) throw new RrActionError("Super region record type not found");
+    recordTypes.push(reg.superRegionRecordType, recordType);
   } else if (isCrRecordType) {
     recordTypes.push(recordType);
   }

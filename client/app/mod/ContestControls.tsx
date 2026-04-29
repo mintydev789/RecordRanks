@@ -6,9 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useContext } from "react";
+import useSWR from "swr";
 import Button from "~/app/components/UI/Button.tsx";
+import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { SwrKey } from "~/helpers/swr-keys.ts";
+import { clientGetUserHasPermission, getActionError } from "~/helpers/utilityFunctions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import {
   approveContestSF,
@@ -28,16 +31,28 @@ type ContestDetailsProps = {
 
 type Props = {
   contest: ContestResponse;
-  isAdmin: boolean;
 } & (ModDashboardProps | ContestDetailsProps);
 
-function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestState }: Props) {
+function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
   const { changeErrorMessages } = useContext(MainContext);
 
   const { executeAsync: approveContest, isPending: isApproving } = useAction(approveContestSF);
   const { executeAsync: finishContest, isPending: isFinishing } = useAction(finishContestSF);
   const { executeAsync: publishContest, isPending: isPublishing } = useAction(publishContestSF);
+  const { data: canCreateContests } = useSWR([SwrKey.CanCreateContests, session], () =>
+    clientGetUserHasPermission({ competitions: ["create"], meetups: ["create"] }),
+  );
+  const { data: canUpdateContests } = useSWR([SwrKey.CanUpdateContests, session], () =>
+    clientGetUserHasPermission({ competitions: ["update"], meetups: ["update"] }),
+  );
+  const { data: canApproveContests } = useSWR([SwrKey.CanApproveContests, session], () =>
+    clientGetUserHasPermission({ competitions: ["approve"], meetups: ["approve"] }),
+  );
+  const { data: canPublishContests } = useSWR([SwrKey.CanPublishContests, session], () =>
+    clientGetUserHasPermission({ competitions: ["publish"], meetups: ["publish"] }),
+  );
 
   const isPending = isApproving || isFinishing || isPublishing;
   const smallButtons = forPage === "mod-dashboard";
@@ -74,18 +89,19 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
 
   return (
     <div className="d-flex gap-2 align-items-center">
-      {(["created", "approved", "ongoing"].includes(contest.state) || isAdmin) && (
-        <Link
-          href={`/mod/competition?editId=${contest.competitionId}`}
-          prefetch={false}
-          className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
-          title="Edit"
-          aria-label="Edit"
-        >
-          <FontAwesomeIcon icon={faPencil} />
-        </Link>
-      )}
-      {contest.type !== "wca-comp" && (
+      {canPublishContests ||
+        (canUpdateContests && ["created", "approved", "ongoing"].includes(contest.state) && (
+          <Link
+            href={`/mod/competition?editId=${contest.competitionId}`}
+            prefetch={false}
+            className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
+            title="Edit"
+            aria-label="Edit"
+          >
+            <FontAwesomeIcon icon={faPencil} />
+          </Link>
+        ))}
+      {canCreateContests && contest.type !== "wca-comp" && (
         <Link
           href={`/mod/competition?copyId=${contest?.competitionId}`}
           prefetch={false}
@@ -96,7 +112,8 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
           <FontAwesomeIcon icon={faCopy} />
         </Link>
       )}
-      {(["approved", "ongoing"].includes(contest.state) || (isAdmin && contest.state === "finished")) && (
+      {(((canCreateContests || contest.type === "online") && ["approved", "ongoing"].includes(contest.state)) ||
+        (canPublishContests && contest.state === "finished")) && (
         <Link
           href={`/mod/competition/${contest.competitionId}`}
           prefetch={false}
@@ -105,7 +122,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
           Results
         </Link>
       )}
-      {contest.state === "created" && isAdmin && (
+      {canApproveContests && contest.state === "created" && (
         <Button
           type="button"
           onClick={() => onApproveContest()}
@@ -116,7 +133,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
           Approve
         </Button>
       )}
-      {contest.state === "ongoing" && (
+      {canCreateContests && contest.state === "ongoing" && (
         <Button
           type="button"
           onClick={() => onFinishContest()}
@@ -128,7 +145,7 @@ function ContestControls({ contest, isAdmin = false, forPage, onUpdateContestSta
         </Button>
       )}
       {contest.state === "finished" &&
-        (isAdmin ? (
+        (canPublishContests ? (
           <Button
             type="button"
             onClick={() => onPublishContest()}

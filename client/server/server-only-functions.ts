@@ -25,6 +25,7 @@ import {
   getResultProceeds,
 } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
+import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { type ContestResponse, contestsTable } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
@@ -91,8 +92,9 @@ export async function authorizeUser({
       !session.user.personId &&
       (Object.keys(permissions).some((key) => key !== ("videoBasedResults" satisfies keyof typeof permissions)) ||
         permissions.videoBasedResults?.some((perm) => perm !== "create"))
-    )
+    ) {
       redirect("/login");
+    }
   }
 
   return session;
@@ -100,11 +102,14 @@ export async function authorizeUser({
 
 export function getUserHasAccessToContest(
   user: typeof auth.$Infer.Session.user,
-  contest: Pick<ContestResponse, "state" | "organizerIds">,
+  contest: Pick<ContestResponse, "state" | "type" | "organizerIds">,
 ) {
   if (!user.personId) return false;
   if (contest.state === "removed") return false;
   if (getHasRole("admin", user.role)) return true;
+
+  const userHasAccess = ["approved", "ongoing"].includes(contest.state) && contest.type === "online";
+  if (userHasAccess) return userHasAccess;
 
   const modHasAccess =
     ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(user.personId);
@@ -174,15 +179,20 @@ export async function getRecords(
   const recordTypes: RecordType[] = ["WR"];
   const continent = Continents.find((c) => c.code === region);
 
+  // Similar to the code in getRecordResult()
   if (region) {
+    if (!NonMetaRegionCodeRegex.test(region))
+      throw new RrActionError("Meta region codes are not eligible for regional records");
+
     if (continent) {
       recordTypes.push(continent.recordTypeId);
     } else {
-      const { superRegionRecordType } = (await db.query.regions.findFirst({
+      const reg = await db.query.regions.findFirst({
         columns: { superRegionRecordType: true },
         where: { code: region },
-      }))!;
-      recordTypes.push(superRegionRecordType, "NR");
+      });
+      if (!reg?.superRegionRecordType) throw new RrActionError("Super region record type not found");
+      recordTypes.push(reg.superRegionRecordType, "NR");
     }
   }
 

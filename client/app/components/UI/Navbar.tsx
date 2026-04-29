@@ -5,11 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
-import { getHasRole } from "~/helpers/utilityFunctions.ts";
+import { SwrKey } from "~/helpers/swr-keys.ts";
+import { clientGetUserHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
 import { getModInstructionsSF } from "~/server/server-functions/server-functions.ts";
 
 function Navbar() {
@@ -23,20 +24,12 @@ function Navbar() {
   const [resultsExpanded, setResultsExpanded] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [userExpanded, setUserExpanded] = useState(false);
-  const [canAccessModDashboard, setCanAccessModDashboard] = useState(false);
-  const [canApproveVideoBasedResults, setCanApproveVideoBasedResults] = useState(false);
-
-  useEffect(() => {
-    if (session?.user) {
-      authClient.admin.hasPermission({ permissions: { modDashboard: ["view"] } }).then(({ data }) => {
-        if (data) setCanAccessModDashboard(data.success);
-      });
-
-      authClient.admin.hasPermission({ permissions: { videoBasedResults: ["approve"] } }).then(({ data }) => {
-        if (data) setCanApproveVideoBasedResults(data.success);
-      });
-    }
-  }, [session]);
+  const { data: canAccessModDashboard } = useSWR([SwrKey.CanAccessModDashboard, session], () =>
+    clientGetUserHasPermission({ modDashboard: ["view"] }),
+  );
+  const { data: canApproveVideoBasedResults } = useSWR([SwrKey.CanApproveVideoBasedResults, session], () =>
+    clientGetUserHasPermission({ videoBasedResults: ["approve"] }),
+  );
 
   const logOut = async () => {
     // Clear the SWR cache
