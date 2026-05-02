@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import Markdown from "react-markdown";
 import DonateSection from "~/app/components/contest/DonateSection.tsx";
 import { getSettingFromDb } from "~/server/server-only-functions.ts";
@@ -9,8 +8,6 @@ export const metadata = {
 };
 
 async function AboutPage() {
-  await connection();
-
   const content = await getSettingFromDb({ key: "about-page-content", optional: true });
 
   return (

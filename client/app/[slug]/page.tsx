@@ -1,20 +1,17 @@
 import { desc } from "drizzle-orm";
 import Link from "next/link";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import Markdown from "react-markdown";
 import BlogSection from "~/app/components/contest/BlogSection.tsx";
 import CollectiveCubing from "~/app/components/contest/CollectiveCubing.tsx";
+import DonateSection from "~/app/components/contest/DonateSection.tsx";
 import ModInstructionsSection from "~/app/components/contest/ModInstructionsSection.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { db } from "~/server/db/provider.ts";
 import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
 import { getSettingFromDb } from "~/server/server-only-functions.ts";
-import DonateSection from "./components/contest/DonateSection.tsx";
 
-async function HomePage() {
-  await connection();
-
+async function OrganizationHomePage() {
   const description = await getSettingFromDb({ key: "home-page-description", optional: true });
 
   const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
@@ -79,4 +76,4 @@ async function HomePage() {
   );
 }
 
-export default HomePage;
+export default OrganizationHomePage;

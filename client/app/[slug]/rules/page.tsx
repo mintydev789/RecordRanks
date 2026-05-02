@@ -1,8 +1,7 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import Markdown from "react-markdown";
+import EventRules from "~/app/[slug]/rules/EventRules.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
-import EventRules from "~/app/rules/EventRules.tsx";
 import { db } from "~/server/db/provider.ts";
 import { getSettingFromDb } from "~/server/server-only-functions.ts";
 
@@ -12,8 +11,6 @@ export const metadata = {
 };
 
 async function RulesPage() {
-  await connection();
-
   const content = await getSettingFromDb({ key: "rules-page-content" });
 
   const columns = {

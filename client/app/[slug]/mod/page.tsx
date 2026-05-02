@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { SWRConfig, unstable_serialize as serialize } from "swr";
+import { type ModDashboardFiltersDto, ModDashboardFiltersValidator } from "~/app/[slug]/mod/ModDashboardFilters.ts";
 import DonateButton from "~/app/components/DonateButton.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import { type ModDashboardFiltersDto, ModDashboardFiltersValidator } from "~/app/mod/ModDashboardFilters.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
@@ -58,10 +58,10 @@ async function ModeratorDashboardPage({ searchParams }: Props) {
               <Link href="/admin/users" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
                 Manage users
               </Link>
-              <Link href="/admin/events" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
+              <Link href="/mod/events" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
                 Configure events
               </Link>
-              <Link href="/admin/records-configuration" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
+              <Link href="/mod/records-configuration" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
                 Configure records
               </Link>
             </>
