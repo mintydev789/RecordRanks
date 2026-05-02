@@ -20,8 +20,8 @@ import type { MultiChoiceOption } from "./types/MultiChoiceOption.ts";
 import type { EventFormat, EventWrPair, RoundFormat } from "./types.ts";
 import type { PersonDto } from "./validators/Person.ts";
 
-export function getHasRole(role: Role, rolesString: string | null | undefined): boolean {
-  return !!rolesString?.split(",").some((r) => r === role);
+export function getHasRole(roleToCheck: Role, userRoles: string | null | undefined): boolean {
+  return !!userRoles?.split(",").some((r) => r === roleToCheck);
 }
 
 export function getFormattedDate(startDate: Date, endDate?: Date | null): string {

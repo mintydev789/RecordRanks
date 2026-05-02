@@ -2,15 +2,34 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin as adminPlugin, genericOAuth, username } from "better-auth/plugins";
-import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { admin as adminPlugin, genericOAuth, organization, username } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
+import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
+import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
+import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
+import { C, HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { defaultSettings } from "~/helpers/default-settings.ts";
+import { testPersons } from "~/helpers/test-data/testPersons.ts";
+import { testPosts } from "~/helpers/test-data/testPosts.ts";
+import { RecordTypeValues } from "~/helpers/types.ts";
+import { getHasRole } from "~/helpers/utilityFunctions.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   accountsTable as accounts,
+  invitationsTable as invitations,
+  membersTable as members,
+  organizationsTable as organizations,
   sessionsTable as sessions,
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
+import { eventsTable } from "~/server/db/schema/events.ts";
+import { personsTable } from "~/server/db/schema/persons.ts";
+import { postsTable } from "~/server/db/schema/posts.ts";
+import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
+import { roundsTable } from "~/server/db/schema/rounds.ts";
+import { settingsTable } from "~/server/db/schema/settings.ts";
 import {
   sendAccountDeletedEmail,
   sendPasswordChangedEmail,
@@ -31,6 +50,9 @@ export const auth = betterAuth({
       sessions,
       accounts,
       verifications,
+      organizations,
+      members,
+      invitations,
     },
     usePlural: true,
   }),
@@ -43,6 +65,84 @@ export const auth = betterAuth({
     adminPlugin({
       ac,
       roles: { admin, mod, videoBasedResultReviewer, user },
+    }),
+    organization({
+      allowUserToCreateOrganization: (user) => getHasRole("admin", user.role),
+      organizationHooks: {
+        afterCreateOrganization: async () => {
+          // if (process.env.NODE_ENV !== "production") {
+          //   if ((await db.select().from(personsTable)).length === 0) {
+          //     console.log("Seeding test persons...");
+          //     await db.insert(personsTable).values(testPersons);
+          //     console.log("Finished seeding test persons");
+          //   }
+          //   if ((await db.select().from(eventsTable)).length === 0) {
+          //     console.log("Seeding test events...");
+          //     await db.insert(eventsTable).values(eventsStub);
+          //     console.log("Finished seeding test events");
+          //   }
+          //   if ((await db.select().from(contestsTable)).length === 0) {
+          //     console.log("Seeding test contests...");
+          //     await db.insert(contestsTable).values(contestsStub);
+          //     console.log("Finished seeding test contests");
+          //   }
+          //   if ((await db.select().from(roundsTable)).length === 0) {
+          //     console.log("Seeding test rounds...");
+          //     await db.insert(roundsTable).values(roundsStub.map(({ id, ...r }) => r));
+          //     console.log("Finished seeding test rounds");
+          //   }
+          //   if ((await db.select().from(postsTable)).length === 0) {
+          //     console.log("Seeding test posts...");
+          //     await db.insert(postsTable).values(testPosts);
+          //     console.log("Finished seeding test posts");
+          //   }
+          // }
+          // // Seed init record configs
+          // if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
+          //   for (let i = 0; i < RecordTypeValues.length; i++) {
+          //     const recordTypeId = RecordTypeValues[i];
+          //     await db.insert(recordConfigsTable).values([
+          //       {
+          //         recordTypeId,
+          //         category: "competitions",
+          //         label: recordTypeId,
+          //         rank: (i + 1) * 10,
+          //         color:
+          //           recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+          //       },
+          //       {
+          //         recordTypeId,
+          //         category: "meetups",
+          //         label: `M${recordTypeId}`,
+          //         rank: 100 + (i + 1) * 10,
+          //         color:
+          //           recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+          //       },
+          //       {
+          //         recordTypeId,
+          //         category: "online",
+          //         label: `O${recordTypeId}`,
+          //         rank: 200 + (i + 1) * 10,
+          //         color:
+          //           recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+          //       },
+          //     ]);
+          //   }
+          // }
+          // // Seed default settings
+          // for (const defaultSetting of defaultSettings) {
+          //   const [existingSetting] = await db
+          //     .select({ id: settingsTable.id })
+          //     .from(settingsTable)
+          //     .where(eq(settingsTable.key, defaultSetting.key))
+          //     .limit(1);
+          //   if (!existingSetting) {
+          //     const [createdSetting] = await db.insert(settingsTable).values(defaultSetting).returning();
+          //     console.log(`Seeded setting: ${createdSetting.group}.${createdSetting.key}`);
+          //   }
+          // }
+        },
+      },
     }),
     genericOAuth({
       config: [

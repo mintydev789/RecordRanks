@@ -5,6 +5,9 @@ import { postsTable as posts } from "~/server/db/schema/posts.ts";
 import { settingsTable as settings } from "~/server/db/schema/settings.ts";
 import {
   accountsTable as accounts,
+  invitationsTable as invitations,
+  membersTable as members,
+  organizationsTable as organizations,
   sessionsTable as sessions,
   usersTable as users,
   verificationsTable as verifications,
@@ -21,10 +24,16 @@ import { userRequestsTable as userRequests } from "./schema/user-requests.ts";
 
 export const relations = defineRelations(
   {
+    // Better Auth relations
     users,
     sessions,
     accounts,
     verifications,
+    organizations,
+    members,
+    invitations,
+
+    // RecordRanks relations
     userRequests,
     events,
     contests,
@@ -43,6 +52,8 @@ export const relations = defineRelations(
     users: {
       sessions: r.many.sessions(),
       accounts: r.many.accounts(),
+      members: r.many.members(),
+      invitations: r.many.invitations(),
       person: r.one.persons({
         from: r.users.personId,
         to: r.persons.id,
@@ -63,6 +74,35 @@ export const relations = defineRelations(
       }),
     },
     verifications: {},
+    organizations: {
+      members: r.many.members(),
+      invitations: r.many.invitations(),
+    },
+    members: {
+      organization: r.one.organizations({
+        from: r.members.organizationId,
+        to: r.organizations.id,
+        optional: false,
+      }),
+      user: r.one.users({
+        from: r.members.userId,
+        to: r.users.id,
+        optional: false,
+      }),
+      person: r.many.persons(),
+    },
+    invitations: {
+      organization: r.one.organizations({
+        from: r.invitations.organizationId,
+        to: r.organizations.id,
+        optional: false,
+      }),
+      inviter: r.one.users({
+        from: r.invitations.inviterId,
+        to: r.users.id,
+        optional: false,
+      }),
+    },
 
     // RecordRanks relations
     userRequests: {
@@ -152,6 +192,10 @@ export const relations = defineRelations(
         from: r.persons.regionCode,
         to: r.regions.code,
         optional: false,
+      }),
+      member: r.one.members({
+        from: r.persons.memberId,
+        to: r.members.id,
       }),
       creator: r.one.users({
         from: r.persons.createdBy,

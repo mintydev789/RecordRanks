@@ -2,7 +2,7 @@ import "server-only";
 import { getColumns } from "drizzle-orm";
 import { boolean, integer, text, varchar } from "drizzle-orm/pg-core";
 import { tableTimestamps } from "~/server/db/dbUtils.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
+import { membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { regionsTable } from "~/server/db/schema/regions.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 
@@ -15,6 +15,7 @@ export const personsTable = rrSchema.table("persons", {
     .notNull(),
   wcaId: varchar({ length: 10 }).unique(),
   approved: boolean().default(false).notNull(),
+  memberId: text().references(() => membersTable.id, { onDelete: "set null" }),
   // Before the v0.13, createdExternally wasn't a column, and createdBy was just set to undefined if the person was created externally
   createdBy: text().references(() => usersTable.id, { onDelete: "set null" }),
   createdExternally: boolean().default(false).notNull(),
