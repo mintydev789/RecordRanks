@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useContext, useState, useTransition } from "react";
+import useSWRImmutable from "swr/immutable";
 import z from "zod";
 import CreatorDetails from "~/app/components/CreatorDetails.tsx";
 import Form from "~/app/components/form/Form.tsx";
@@ -21,12 +22,12 @@ import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
-import Tooltip from "~/app/components/UI/Tooltip.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
+import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { Room, Schedule } from "~/helpers/types/Schedule.ts";
 import type { ContestType, Creator, InputPerson } from "~/helpers/types.ts";
 import {
@@ -34,7 +35,6 @@ import {
   getContestIdFromName,
   getDateOnly,
   getHasRole,
-  getIsCompType,
   getIsUrgent,
 } from "~/helpers/utilityFunctions.ts";
 import { ContestValidator } from "~/helpers/validators/Contest.ts";
@@ -100,6 +100,7 @@ function ContestForm({
   const { executeAsync: unfinishContest, isPending: isUnfinishing } = useAction(unfinishContestSF);
   const { executeAsync: removeContest, isPending: isDeleting } = useAction(removeContestSF);
   const { executeAsync: createAccessToken, isPending: isCreatingAccessToken } = useAction(createAccessTokenSF);
+  const { data: contestTypesData } = useSWRImmutable<string>(SwrKey.ContestTypes);
   const [activeTab, setActiveTab] = useState("details");
   const [detailsImported, setDetailsImported] = useState(mode === "edit" && contest?.type === "wca-comp");
 
@@ -146,7 +147,7 @@ function ContestForm({
         if (isValid(startDate) && isValid(startTime)) {
           if (type === "meetup") {
             setStartTime(fromZonedTime(toZonedTime(startTime!, timezone), res.data!));
-          } else if (getIsCompType(type)) {
+          } else {
             setRooms(
               rooms.map((r: Room) => ({
                 ...r,
@@ -190,10 +191,11 @@ function ContestForm({
     {
       title: "Schedule",
       value: "schedule",
-      hidden: !type || !getIsCompType(type),
+      hidden: !type || type === "meetup",
       disabled: isPending || !isValid(startDate),
     },
   ];
+  const contestTypes = contestTypesData!.split(",") as ContestType[];
 
   const handleSubmit = async () => {
     const selectedOrganizers = organizers.filter((o: InputPerson) => o !== null);
@@ -202,12 +204,12 @@ function ContestForm({
     const longitudeMicrodegrees = longitude ? Math.round(longitude * 1000000) : 0;
     let schedule: Schedule | null = null;
 
-    if (getIsCompType(type)) {
+    if (type !== "meetup") {
       schedule = {
         venues: [
           {
             id: 1,
-            name: venue,
+            name: type === "online" ? C.onlineCompKey : venue,
             countryIso2: regionCode,
             latitudeMicrodegrees,
             longitudeMicrodegrees,
@@ -237,7 +239,7 @@ function ContestForm({
       organizerIds: selectedOrganizers.map((o) => o.id),
       contact: contact.trim() || null,
       description: description.trim() || null,
-      competitorLimit: competitorLimit || null,
+      competitorLimit,
       schedule,
     });
 
@@ -341,6 +343,16 @@ function ContestForm({
           }),
         );
       }
+    }
+  };
+
+  const changeType = (newType: ContestType) => {
+    setType(newType);
+
+    if (newType === "online") {
+      setCity(C.onlineCompKey);
+      setRegionCode("XW");
+      setRooms([{ id: 1, name: C.onlineCompKey, color: "#fff", activities: [] }]);
     }
   };
 
@@ -470,7 +482,7 @@ function ContestForm({
     }
   };
 
-  const getAccessToken = async () => {
+  const _getAccessToken = async () => {
     const res = await createAccessToken({ competitionId: contest!.competitionId });
 
     if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
@@ -478,85 +490,65 @@ function ContestForm({
   };
 
   return (
-    <div>
-      <Form
-        buttonText={mode === "edit" ? "Save Contest" : "Create Contest"}
-        onSubmit={handleSubmit}
-        isLoading={isCreating || isUpdating}
-        disableControls={isPending || disabled || disabledIfContestPublished || disabledIfNotUnderstood}
-      >
-        {mode === "edit" && isAdmin && creator !== undefined && (
-          <CreatorDetails creator={creator} person={creatorPerson} regions={regions} />
-        )}
+    <Form
+      buttonText={mode === "edit" ? "Save Contest" : "Create Contest"}
+      onSubmit={handleSubmit}
+      isLoading={isCreating || isUpdating}
+      disableControls={isPending || disabled || disabledIfContestPublished || disabledIfNotUnderstood}
+    >
+      {mode === "edit" && isAdmin && creator !== undefined && (
+        <CreatorDetails creator={creator} person={creatorPerson} regions={regions} />
+      )}
 
-        <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={changeActiveTab} />
+      <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={changeActiveTab} />
 
-        {activeTab === "details" && (
-          <>
-            {mode === "new" && process.env.NODE_ENV !== "production" && (
-              <div className="d-flex my-3 flex-wrap gap-3">
-                <Button
-                  onClick={() => fillWithMockData()}
-                  isLoading={isGettingPerson}
-                  disabled={type !== undefined}
-                  className="btn-secondary"
+      {activeTab === "details" && (
+        <>
+          {mode === "new" && process.env.NODE_ENV !== "production" && !type && (
+            <div className="d-flex my-3 flex-wrap gap-3">
+              <Button onClick={() => fillWithMockData()} isLoading={isGettingPerson} className="btn-secondary">
+                Set Mock Competition
+              </Button>
+              <Button onClick={() => fillWithMockData("meetup")} isLoading={isGettingPerson} className="btn-secondary">
+                Set Mock Meetup
+              </Button>
+            </div>
+          )}
+          {mode === "edit" && contest && (
+            <div className="d-flex mt-3 mb-3 flex-wrap gap-3">
+              {contest.type !== "wca-comp" && (
+                <Link
+                  href={`/mod/competition?copyId=${contest.competitionId}`}
+                  prefetch={false}
+                  className="btn btn-primary"
                 >
-                  Set Mock Competition
-                </Button>
-                <Button
-                  onClick={() => fillWithMockData("meetup")}
-                  isLoading={isGettingPerson}
-                  disabled={type !== undefined}
-                  className="btn-secondary"
-                >
-                  Set Mock Meetup
-                </Button>
-              </div>
-            )}
-            {mode === "edit" && contest && (
-              <>
-                <div className="d-flex mt-3 mb-3 flex-wrap gap-3">
-                  {contest.type !== "wca-comp" && (
-                    <Link
-                      href={`/mod/competition?copyId=${contest.competitionId}`}
-                      prefetch={false}
-                      className="btn btn-primary"
+                  Clone
+                </Link>
+              )}
+              {isAdmin && (
+                <>
+                  {contest.state === "finished" && (
+                    <Button
+                      type="button"
+                      onClick={() => onUnfinishContest()}
+                      isLoading={isUnfinishing}
+                      disabled={isPending}
+                      className="btn-warning"
                     >
-                      Clone
-                    </Link>
-                  )}
-                  {isAdmin && (
-                    <>
-                      {contest.state === "finished" && (
-                        <Button
-                          type="button"
-                          onClick={() => onUnfinishContest()}
-                          isLoading={isUnfinishing}
-                          disabled={isPending}
-                          className="btn-warning"
-                        >
-                          Un-finish Contest
-                        </Button>
-                      )}
-                      <Button
-                        onClick={onRemoveContest}
-                        isLoading={isDeleting}
-                        disabled={isPending || contest.participants > 0}
-                        className="btn-danger"
-                      >
-                        Remove Contest
-                      </Button>
-                    </>
+                      Un-finish Contest
+                    </Button>
                   )}
                   <Button
-                    id="download_scorecards_a4_button"
-                    onClick={() => alert("This feature is not currently supported")}
-                    disabled
-                    className="btn-success"
+                    onClick={onRemoveContest}
+                    isLoading={isDeleting}
+                    disabled={isPending || contest.participants > 0}
+                    className="btn-danger"
                   >
-                    Scorecards
+                    Remove Contest
                   </Button>
-                  <div className="d-flex gap-1 align-items-center">
+                </>
+              )}
+              {/* <div className="d-flex gap-1 align-items-center">
                     <Button id="enable_queue_button" disabled className="btn-secondary">
                       Enable Queue
                     </Button>
@@ -564,8 +556,8 @@ function ContestForm({
                       id="queue_tooltip"
                       text="(DISABLED) This can be used for contests where there are not enough solving stations. In such cases random scrambles must be used for every competitor."
                     />
-                  </div>
-                  {type !== "meetup" && (
+                  </div> */}
+              {/* {type !== "meetup" && (
                     <div className="d-flex gap-1 align-items-center">
                       <Button
                         onClick={getAccessToken}
@@ -580,290 +572,289 @@ function ContestForm({
                         text="Used for external data entry. See the RecordRanks README for more information."
                       />
                     </div>
-                  )}
-                </div>
-                <p className="fs-6 fst-italic mb-3">
-                  If the scorecards aren't generating correctly, please report this to the admins!
-                </p>
-              </>
-            )}
-            <FormRadio
-              title="Type"
-              options={contestTypeOptions.filter((ct) => !ct.disabled)}
-              selected={type}
-              setSelected={setType}
-              disabled={mode !== "new" || type !== undefined}
-            />
-            {type === "wca-comp" && disabled && mode === "new" && (
-              <>
-                {/* Almost the same as the Contest ID element below */}
-                <FormTextInput
-                  title="Competition ID"
-                  value={competitionId}
-                  setValue={setCompetitionId}
-                  tooltip="You can get the Competition ID from the end of the link of the WCA competition page"
-                  disabled={disabledIfDetailsImported || disabledIfContestApproved}
-                  className="mb-3"
-                />
-                <Button
-                  onClick={getWcaCompDetails}
-                  isLoading={isPendingWcaCompDetails}
-                  className="mb-3"
-                  disabled={disabledIfDetailsImported || !competitionId}
-                >
-                  Get WCA competition details
-                </Button>
-              </>
-            )}
+                  )} */}
+            </div>
+          )}
+          <FormRadio
+            title="Type"
+            options={contestTypes.map((ct) => contestTypeOptions.find((cto) => cto.value === ct)!)}
+            selected={type}
+            setSelected={changeType}
+            disabled={mode !== "new" || type !== undefined}
+          />
+          {type === "wca-comp" && disabled && mode === "new" && (
+            <>
+              {/* Almost the same as the Contest ID element below */}
+              <FormTextInput
+                title="Competition ID"
+                value={competitionId}
+                setValue={setCompetitionId}
+                tooltip="You can get the Competition ID from the end of the link of the WCA competition page"
+                disabled={disabledIfDetailsImported || disabledIfContestApproved}
+                className="mb-3"
+              />
+              <Button
+                onClick={getWcaCompDetails}
+                isLoading={isPendingWcaCompDetails}
+                className="mb-3"
+                disabled={disabledIfDetailsImported || !competitionId}
+              >
+                Get WCA competition details
+              </Button>
+            </>
+          )}
 
-            {!disabled && (
-              <>
-                <FormTextInput
-                  title="Contest name"
-                  value={name}
-                  setValue={changeName}
-                  autoFocus
-                  disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                  className="mb-3"
-                />
-                <FormTextInput
-                  title="Short name"
-                  value={shortName}
-                  setValue={changeShortName}
-                  disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                  className="mb-3"
-                />
-                {/* Almost the same as the Competition ID element above */}
-                <FormTextInput
-                  title="Contest ID"
-                  value={competitionId}
-                  setValue={setCompetitionId}
-                  disabled={disabledIfDetailsImported || disabledIfContestApproved || (mode === "edit" && !isAdmin)}
-                  className="mb-3"
-                />
-                <div className="row">
-                  <div className="col-12 col-md-6 mb-3">
-                    <FormTextInput
-                      title="City"
-                      value={city}
-                      setValue={setCity}
-                      disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                    />
-                  </div>
-                  <div className="col-12 col-md-6 mb-3">
-                    <FormRegionSelect
-                      regionCode={regionCode}
-                      setRegionCode={setRegionCode}
-                      regions={regions}
-                      disabled={mode === "edit" || disabledIfDetailsImported}
-                    />
-                  </div>
-                </div>
-                <FormTextInput
-                  title="Address"
-                  value={address}
-                  setValue={setAddress}
-                  disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                  className="mb-3"
-                />
-                <div className="row">
-                  <div className="col-12 col-md-6 mb-3">
-                    <FormTextInput
-                      title="Venue"
-                      value={venue}
-                      setValue={setVenue}
-                      disabled={disabledIfDetailsImported || disabledIfContestPublished}
-                    />
-                  </div>
-                  <div className="col-12 col-md-6">
-                    <div className="row mb-3">
-                      <div className="col-6">
-                        <FormNumberInput
-                          title="Latitude"
-                          value={latitude}
-                          setValue={(val) => changeCoordinates(val, longitude)}
-                          disabled={disabledIfContestApproved || disabledIfDetailsImported}
-                          min={-90}
-                          max={90}
-                        />
-                      </div>
-                      <div className="col-6">
-                        <FormNumberInput
-                          title="Longitude"
-                          value={longitude}
-                          setValue={(val) => changeCoordinates(latitude, val)}
-                          disabled={disabledIfContestApproved || disabledIfDetailsImported}
-                          min={-180}
-                          max={180}
-                        />
-                      </div>
-                    </div>
-                    <div className="row">
-                      <div className="fs-6 mb-2 text-secondary">
-                        Time zone: {isPendingTimeZone ? <Loading small dontCenter /> : timezone}
-                      </div>
-                      <div className="fs-6 text-danger">
-                        The coordinates must point to a building and match the address of the venue.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="row my-3">
-                  <div className="col">
-                    {type === "meetup" ? (
-                      <FormDatePicker
-                        id="start_date"
-                        title={`Start date and time (${isPendingTimeZone ? "..." : timezone})`}
-                        value={startTime}
-                        setValue={changeStartDate}
-                        timezone={timezone}
-                        disabled={disabledIfContestApproved}
-                        dateFormat="Pp"
-                        showUTCTime
-                      />
-                    ) : (
-                      <FormDatePicker
-                        id="start_date"
-                        title="Start date"
-                        value={startDate}
-                        setValue={changeStartDate}
-                        disabled={disabledIfContestApproved || disabledIfDetailsImported}
-                      />
-                    )}
-                  </div>
-                  {getIsCompType(type) && (
-                    <div className="col">
-                      <FormDatePicker
-                        id="end_date"
-                        title="End date"
-                        value={endDate}
-                        setValue={changeEndDate}
-                        disabled={disabledIfContestApproved || disabledIfDetailsImported}
+          {!disabled && (
+            <>
+              <FormTextInput
+                title="Contest name"
+                value={name}
+                setValue={changeName}
+                autoFocus
+                disabled={disabledIfDetailsImported || disabledIfContestPublished}
+                className="mb-3"
+              />
+              <FormTextInput
+                title="Short name"
+                value={shortName}
+                setValue={changeShortName}
+                disabled={disabledIfDetailsImported || disabledIfContestPublished}
+                className="mb-3"
+              />
+              {/* Almost the same as the Competition ID element above */}
+              <FormTextInput
+                title="Contest ID"
+                value={competitionId}
+                setValue={setCompetitionId}
+                disabled={disabledIfDetailsImported || disabledIfContestApproved || (mode === "edit" && !isAdmin)}
+                className="mb-3"
+              />
+              {type !== "online" && (
+                <>
+                  <div className="row">
+                    <div className="col-12 col-md-6 mb-3">
+                      <FormTextInput
+                        title="City"
+                        value={city}
+                        setValue={setCity}
+                        disabled={disabledIfDetailsImported || disabledIfContestPublished}
                       />
                     </div>
+                    <div className="col-12 col-md-6 mb-3">
+                      <FormRegionSelect
+                        regionCode={regionCode}
+                        setRegionCode={setRegionCode}
+                        regions={regions}
+                        disabled={mode === "edit" || disabledIfDetailsImported}
+                      />
+                    </div>
+                  </div>
+                  <FormTextInput
+                    title="Address"
+                    value={address}
+                    setValue={setAddress}
+                    disabled={disabledIfDetailsImported || disabledIfContestPublished}
+                    className="mb-3"
+                  />
+                  <div className="row">
+                    <div className="col-12 col-md-6 mb-3">
+                      <FormTextInput
+                        title="Venue"
+                        value={venue}
+                        setValue={setVenue}
+                        disabled={disabledIfDetailsImported || disabledIfContestPublished}
+                      />
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <div className="row mb-3">
+                        <div className="col-6">
+                          <FormNumberInput
+                            title="Latitude"
+                            value={latitude}
+                            setValue={(val) => changeCoordinates(val, longitude)}
+                            disabled={disabledIfContestApproved || disabledIfDetailsImported}
+                            min={-90}
+                            max={90}
+                          />
+                        </div>
+                        <div className="col-6">
+                          <FormNumberInput
+                            title="Longitude"
+                            value={longitude}
+                            setValue={(val) => changeCoordinates(latitude, val)}
+                            disabled={disabledIfContestApproved || disabledIfDetailsImported}
+                            min={-180}
+                            max={180}
+                          />
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="fs-6 mb-2 text-secondary">
+                          Time zone: {isPendingTimeZone ? <Loading small dontCenter /> : timezone}
+                        </div>
+                        <div className="fs-6 text-danger">
+                          The coordinates must point to a building and match the address of the venue.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="row my-3">
+                <div className="col">
+                  {type === "meetup" ? (
+                    <FormDatePicker
+                      id="start_date"
+                      title={`Start date and time (${isPendingTimeZone ? "..." : timezone})`}
+                      value={startTime}
+                      setValue={changeStartDate}
+                      timezone={timezone}
+                      disabled={disabledIfContestApproved}
+                      dateFormat="Pp"
+                      showUTCTime
+                    />
+                  ) : (
+                    <FormDatePicker
+                      id="start_date"
+                      title="Start date"
+                      value={startDate}
+                      setValue={changeStartDate}
+                      disabled={disabledIfContestApproved || disabledIfDetailsImported}
+                    />
                   )}
                 </div>
-                <h5>Organizers</h5>
-                <div className="my-3 rounded border bg-body-tertiary px-4 pt-3 pb-2">
-                  <FormPersonInputs
-                    title="Organizer"
-                    personNames={organizerNames}
-                    setPersonNames={setOrganizerNames}
-                    persons={organizers}
-                    setPersons={setOrganizers}
-                    regions={regions}
-                    infiniteInputs
-                    nextFocusTargetId="contact"
-                    disabled={(disabledIfContestApproved && !isAdmin) || disabledIfContestPublished}
-                    addNewPersonMode="from-new-tab"
-                    display="grid"
-                  />
-                </div>
-                <FormTextInput
-                  id="contact"
-                  title="Contact (optional)"
-                  placeholder="john@example.com"
-                  value={contact}
-                  setValue={setContact}
-                  disabled={disabledIfContestPublished}
-                  className="mb-3"
-                />
-                <FormTextArea
-                  title="Description (optional, Markdown supported)"
-                  value={description}
-                  setValue={setDescription}
-                  disabled={disabledIfContestPublished}
-                />
-                {type === "wca-comp" && (
-                  <div>
-                    <p className="fs-6">
-                      The description must be available in English for WCA competitions. You may still include versions
-                      written in other languages, and the order doesn't matter.
-                    </p>
-                    <p className="fs-6 fst-italic">
-                      The following text will be displayed above the description on the contest page:
-                    </p>
-                    <div className="mx-2">
-                      <WcaCompAdditionalDetails name={name || "CONTEST NAME"} competitionId={competitionId} />
-                    </div>
+                {type !== "meetup" && (
+                  <div className="col">
+                    <FormDatePicker
+                      id="end_date"
+                      title="End date"
+                      value={endDate}
+                      setValue={changeEndDate}
+                      disabled={disabledIfContestApproved || disabledIfDetailsImported}
+                    />
                   </div>
                 )}
-                <FormNumberInput
-                  title={`Competitor limit ${!getIsCompType(type) ? "(optional)" : ""}`}
-                  value={competitorLimit}
-                  setValue={setCompetitorLimit}
-                  disabled={
-                    (disabledIfContestApproved && !isAdmin) || disabledIfDetailsImported || disabledIfContestPublished
-                  }
-                  integer
-                  min={C.minCompetitorLimit}
+              </div>
+              <h5>Organizers</h5>
+              <div className="my-3 rounded border bg-body-tertiary px-4 pt-3 pb-2">
+                <FormPersonInputs
+                  title="Organizer"
+                  personNames={organizerNames}
+                  setPersonNames={setOrganizerNames}
+                  persons={organizers}
+                  setPersons={setOrganizers}
+                  regions={regions}
+                  infiniteInputs
+                  nextFocusTargetId="contact"
+                  disabled={(disabledIfContestApproved && !isAdmin) || disabledIfContestPublished}
+                  addNewPersonMode="from-new-tab"
+                  display="grid"
                 />
-              </>
-            )}
-          </>
-        )}
+              </div>
+              <FormTextInput
+                id="contact"
+                title="Contact (optional)"
+                placeholder="john@example.com"
+                value={contact}
+                setValue={setContact}
+                disabled={disabledIfContestPublished}
+                className="mb-3"
+              />
+              <FormTextArea
+                title="Description (optional, Markdown supported)"
+                value={description}
+                setValue={setDescription}
+                disabled={disabledIfContestPublished}
+              />
+              {type === "wca-comp" && (
+                <div>
+                  <p className="fs-6">
+                    The description must be available in English for WCA competitions. You may still include versions
+                    written in other languages, and the order doesn't matter.
+                  </p>
+                  <p className="fs-6 fst-italic">
+                    The following text will be displayed above the description on the contest page:
+                  </p>
+                  <div className="mx-2">
+                    <WcaCompAdditionalDetails name={name || "CONTEST NAME"} competitionId={competitionId} />
+                  </div>
+                </div>
+              )}
+              <FormNumberInput
+                title="Competitor limit"
+                value={competitorLimit}
+                setValue={setCompetitorLimit}
+                disabled={
+                  (disabledIfContestApproved && !isAdmin) || disabledIfDetailsImported || disabledIfContestPublished
+                }
+                integer
+                min={C.minCompetitorLimit}
+              />
+            </>
+          )}
+        </>
+      )}
 
-        {activeTab === "events" && (
-          <ContestEvents
-            events={events}
-            rounds={rounds}
-            setRounds={setRounds}
-            totalResultsByRound={totalResultsByRound}
-            competitionId={competitionId}
-            contestType={type!}
-            disabled={disabledIfContestPublished}
-            newEventsDisabled={disabledIfContestApproved && !isAdmin}
-          />
-        )}
+      {activeTab === "events" && (
+        <ContestEvents
+          events={events}
+          rounds={rounds}
+          setRounds={setRounds}
+          totalResultsByRound={totalResultsByRound}
+          competitionId={competitionId}
+          contestType={type!}
+          disabled={disabledIfContestPublished}
+          newEventsDisabled={disabledIfContestApproved && !isAdmin}
+        />
+      )}
 
-        {activeTab === "schedule" && (
-          <ScheduleEditor
-            rooms={rooms}
-            setRooms={setRooms}
-            venueTimeZone={timezone}
-            startDate={startDate!}
-            contestType={type!}
-            events={events}
-            rounds={rounds}
-            disabled={disabledIfContestPublished}
-          />
-        )}
+      {activeTab === "schedule" && (
+        <ScheduleEditor
+          rooms={rooms}
+          setRooms={setRooms}
+          venueTimeZone={timezone}
+          startDate={startDate!}
+          contestType={type!}
+          events={events}
+          rounds={rounds}
+          disabled={disabledIfContestPublished}
+        />
+      )}
 
-        {!disabled && mode !== "edit" && (
-          <>
-            {type === "comp" && IS_CUBING_CONTESTS_INSTANCE && (
-              <>
-                <p className="fs-6 mt-4">
-                  This is an unofficial competition, which means that you must provide at least two photos of the setup
-                  (i.e. scrambling area, competition area, etc.) in the contest finished email thread after the
-                  competition, in accordance with rule U2.
-                </p>
-                <FormCheckbox
-                  id="comp_photos_understood"
-                  title="I understand"
-                  selected={isCompPhotosUnderstood}
-                  setSelected={setIsCompPhotosUnderstood}
-                />
-              </>
-            )}
-            {urgent && (
-              <>
-                <p className="fs-6 mt-4">
-                  You are submitting this contest within 7 days of the start date. In the future,{" "}
-                  <strong>please submit contests at least a week in advance</strong>.
-                </p>
-                <FormCheckbox
-                  id="timeliness_understood"
-                  title="I understand"
-                  selected={isTimelinessUnderstood}
-                  setSelected={setIsTimelinessUnderstood}
-                />
-              </>
-            )}
-          </>
-        )}
-      </Form>
-    </div>
+      {!disabled && mode !== "edit" && (
+        <>
+          {type === "comp" && IS_CUBING_CONTESTS_INSTANCE && (
+            <>
+              <p className="fs-6 mt-4">
+                This is an unofficial competition, which means that you must provide at least two photos of the setup
+                (i.e. scrambling area, competition area, etc.) in the contest finished email thread after the
+                competition, in accordance with rule U2.
+              </p>
+              <FormCheckbox
+                id="comp_photos_understood"
+                title="I understand"
+                selected={isCompPhotosUnderstood}
+                setSelected={setIsCompPhotosUnderstood}
+              />
+            </>
+          )}
+          {urgent && (
+            <>
+              <p className="fs-6 mt-4">
+                You are submitting this contest within 7 days of the start date. In the future,{" "}
+                <strong>please submit contests at least a week in advance</strong>.
+              </p>
+              <FormCheckbox
+                id="timeliness_understood"
+                title="I understand"
+                selected={isTimelinessUnderstood}
+                setSelected={setIsTimelinessUnderstood}
+              />
+            </>
+          )}
+        </>
+      )}
+    </Form>
   );
 }
 

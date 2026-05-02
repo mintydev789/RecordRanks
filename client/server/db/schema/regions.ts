@@ -13,8 +13,8 @@ export const regionsTable = rrSchema.table("regions", {
   name: text().notNull(),
   shortName: text(),
   code: varchar({ length: 2 }).notNull().unique(),
-  superRegionCode: superRegionCodeEnum().notNull(),
-  superRegionRecordType: superRegionRecordTypeEnum().notNull(),
+  superRegionCode: superRegionCodeEnum(),
+  superRegionRecordType: superRegionRecordTypeEnum(),
   ...tableTimestamps,
 });
 

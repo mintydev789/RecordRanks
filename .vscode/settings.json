@@ -6,5 +6,6 @@
     "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit"
   },
-  "js/ts.preferences.importModuleSpecifierEnding": "auto"
+  "js/ts.preferences.importModuleSpecifierEnding": "js",
+  "js/ts.preferences.importModuleSpecifier": "non-relative"
 }

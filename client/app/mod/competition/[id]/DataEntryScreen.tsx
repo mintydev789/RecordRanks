@@ -3,9 +3,10 @@
 import { usePathname } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useContext, useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
 import z from "zod";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
-import BestAndAverage from "~/app/components/BestAndAverage";
+import BestAndAverage from "~/app/components/BestAndAverage.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
@@ -13,12 +14,15 @@ import RoundResultsTable from "~/app/components/RoundResultsTable.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import EventImportantInfo from "~/app/mod/competition/EventImportantInfo.tsx";
+import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
+import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import {
+  clientGetUserHasPermission,
   getActionError,
   getBlankCompetitors,
   getMakesCutoff,
@@ -65,6 +69,7 @@ function DataEntryScreen({
   regions,
 }: Props) {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { executeAsync: getWrPairUpToDate, isPending: isPendingWrPairs } = useAction(getWrPairUpToDateSF);
@@ -73,6 +78,9 @@ function DataEntryScreen({
   const { executeAsync: updateResult, isPending: isUpdating } = useAction(updateContestResultSF);
   const { executeAsync: deleteResult, isPending: isDeleting } = useAction(deleteContestResultSF);
   const { executeAsync: openRound, isPending: isOpeningRound } = useAction(openRoundSF);
+  const { data: canCreateAndUpdateContests } = useSWR(session ? [SwrKey.CanCreateContests, session] : null, () =>
+    clientGetUserHasPermission({ competitions: ["create", "update"], meetups: ["create", "update"] }),
+  );
   const [resultUnderEdit, setResultUnderEdit] = useState<ResultResponse | null>(null);
   const [eventWrPair, setEventWrPair] = useState<EventWrPair | undefined>();
   const [round, setRound] = useState<RoundResponse>(rounds[0]); // display round 1 by default
@@ -377,10 +385,10 @@ function DataEntryScreen({
             persons={persons}
             recordConfigs={recordConfigs}
             regions={regions}
-            onEditResult={round.open ? onEditResult : undefined}
-            onDeleteResult={round.open ? onDeleteResult : undefined}
-            disableEditAndDelete={resultUnderEdit !== null}
+            onEditResult={round.open && canCreateAndUpdateContests ? onEditResult : undefined}
+            onDeleteResult={round.open && canCreateAndUpdateContests ? onDeleteResult : undefined}
             loadingId={loadingId}
+            disableActions={resultUnderEdit !== null}
           />
         ) : (
           <div className="mt-5">

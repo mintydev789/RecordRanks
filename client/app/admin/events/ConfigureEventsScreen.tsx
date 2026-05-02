@@ -280,6 +280,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
               <th scope="col">Event ID</th>
               <th scope="col">Rank</th>
               <th scope="col">Default format</th>
+              <th scope="col">Participants</th>
               <th scope="col">Category</th>
               <th scope="col">Options</th>
               <th scope="col">Actions</th>
@@ -302,7 +303,14 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
                 >
                   {event.rank}
                 </td>
-                <td>{roundFormats.find((rf) => rf.value === event.defaultRoundFormat)?.shortLabel ?? "ERROR"}</td>
+                <td>
+                  {roundFormats.find((rf) => rf.value === event.defaultRoundFormat)?.shortLabel ?? (
+                    <span className="text-danger">ERROR</span>
+                  )}
+                </td>
+                <td>
+                  <span className={`${event.participants > 1 ? "fw-bold text-info" : ""}`}>{event.participants}</span>
+                </td>
                 <td>
                   <span
                     className={`badge ${

@@ -19,10 +19,9 @@ type Props = {
   persons: PersonResponse[];
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
-  onDeleteResult?: (resultId: number) => void;
 };
 
-function EventResultsTable({ event, rounds, results, persons, recordConfigs, regions, onDeleteResult }: Props) {
+function EventResultsTable({ event, rounds, results, persons, recordConfigs, regions }: Props) {
   // Display finals by default
   const [currRound, setCurrRound] = useState(rounds.at(-1)!);
 
@@ -60,7 +59,6 @@ function EventResultsTable({ event, rounds, results, persons, recordConfigs, reg
         persons={persons}
         recordConfigs={recordConfigs}
         regions={regions}
-        onDeleteResult={onDeleteResult}
       />
     </div>
   );

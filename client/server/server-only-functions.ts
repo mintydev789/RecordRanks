@@ -9,6 +9,7 @@ import { Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import {
+  type ContestType,
   type GetOrCreatePersonObject,
   type RecordCategory,
   RecordCategoryValues,
@@ -21,12 +22,12 @@ import {
   compareSingles,
   fetchWcaPerson,
   getActionError,
-  getHasRole,
   getResultProceeds,
 } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
+import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
-import { type ContestResponse, contestsTable } from "~/server/db/schema/contests.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
@@ -91,24 +92,12 @@ export async function authorizeUser({
       !session.user.personId &&
       (Object.keys(permissions).some((key) => key !== ("videoBasedResults" satisfies keyof typeof permissions)) ||
         permissions.videoBasedResults?.some((perm) => perm !== "create"))
-    )
+    ) {
       redirect("/login");
+    }
   }
 
   return session;
-}
-
-export function getUserHasAccessToContest(
-  user: typeof auth.$Infer.Session.user,
-  contest: Pick<ContestResponse, "state" | "organizerIds">,
-) {
-  if (!user.personId) return false;
-  if (contest.state === "removed") return false;
-  if (getHasRole("admin", user.role)) return true;
-
-  const modHasAccess =
-    ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(user.personId);
-  return modHasAccess;
 }
 
 export async function getContestParticipantIds(tx: DbTransactionType, competitionId: string): Promise<number[]> {
@@ -124,11 +113,19 @@ export async function getContestParticipantIds(tx: DbTransactionType, competitio
   return Array.from(participantIds);
 }
 
-export async function getRecordConfigs(recordFor: RecordCategory) {
+export async function getRecordConfigs({
+  recordCategory,
+  contestType,
+}: { recordCategory: RecordCategory; contestType?: never } | { recordCategory?: never; contestType: ContestType }) {
   const recordConfigs = await db
     .select(recordConfigsPublicCols)
     .from(recordConfigsTable)
-    .where(eq(recordConfigsTable.category, recordFor));
+    .where(
+      eq(
+        recordConfigsTable.category,
+        recordCategory ?? (contestType === "online" ? "online" : contestType === "meetup" ? "meetups" : "competitions"),
+      ),
+    );
 
   if (recordConfigs.length !== RecordTypeValues.length) {
     throw new Error(
@@ -174,15 +171,20 @@ export async function getRecords(
   const recordTypes: RecordType[] = ["WR"];
   const continent = Continents.find((c) => c.code === region);
 
+  // Similar to the code in getRecordResult()
   if (region) {
+    if (!NonMetaRegionCodeRegex.test(region))
+      throw new RrActionError("Meta region codes are not eligible for regional records");
+
     if (continent) {
       recordTypes.push(continent.recordTypeId);
     } else {
-      const { superRegionRecordType } = (await db.query.regions.findFirst({
+      const reg = await db.query.regions.findFirst({
         columns: { superRegionRecordType: true },
         where: { code: region },
-      }))!;
-      recordTypes.push(superRegionRecordType, "NR");
+      });
+      if (!reg?.superRegionRecordType) throw new RrActionError("Super region record type not found");
+      recordTypes.push(reg.superRegionRecordType, "NR");
     }
   }
 

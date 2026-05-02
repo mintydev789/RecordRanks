@@ -7,6 +7,7 @@ const permissions = {
   recordConfigs: ["create-and-update"],
   competitions: ["create", "update", "approve", "publish", "delete"],
   meetups: ["create", "update", "approve", "publish", "delete"],
+  onlineComps: ["submit-own-result"],
   persons: ["create", "update", "approve", "delete"],
   events: ["create", "update", "delete"],
   videoBasedResults: ["create", "update", "approve", "delete"],
@@ -22,6 +23,7 @@ export type RrPermissions = Partial<{
   recordConfigs: Array<(typeof permissions.recordConfigs)[number]>;
   competitions: Array<(typeof permissions.competitions)[number]>;
   meetups: Array<(typeof permissions.meetups)[number]>;
+  onlineComps: Array<(typeof permissions.onlineComps)[number]>;
   persons: Array<(typeof permissions.persons)[number]>;
   events: Array<(typeof permissions.events)[number]>;
   videoBasedResults: Array<(typeof permissions.videoBasedResults)[number]>;
@@ -36,16 +38,19 @@ export const mod = ac.newRole({
   modDashboard: ["view"],
   competitions: ["create", "update"],
   meetups: ["create", "update"],
+  onlineComps: ["submit-own-result"],
   persons: ["create", "update", "delete"],
   videoBasedResults: ["create"],
 });
 
 export const videoBasedResultReviewer = ac.newRole({
+  onlineComps: ["submit-own-result"],
   persons: ["create", "update", "delete"],
   videoBasedResults: ["create", "update", "approve", "delete"],
 });
 
 export const user = ac.newRole({
+  onlineComps: ["submit-own-result"],
   videoBasedResults: ["create"],
 });
 

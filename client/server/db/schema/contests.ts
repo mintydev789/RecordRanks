@@ -36,9 +36,10 @@ export const contestsTable = rrSchema.table(
     organizerIds: integer().array().notNull(),
     contact: text(),
     description: text(),
-    competitorLimit: integer(),
+    competitorLimit: integer().notNull(),
     participants: integer().default(0).notNull(),
     schedule: jsonb().$type<Schedule>(), // not used for meetups
+    adminNotes: text(),
     createdBy: text().references(() => usersTable.id, { onDelete: "set null" }), // this can be null if the user has been deleted
     ...tableTimestamps,
   },
@@ -48,7 +49,6 @@ export const contestsTable = rrSchema.table(
       sql`(${table.type} <> 'meetup'
           AND ${table.startTime} IS NULL
           AND ${table.timezone} IS NULL
-          AND ${table.competitorLimit} IS NOT NULL
           AND ${table.schedule} IS NOT NULL)
         OR (${table.type} = 'meetup'
           AND ${table.startTime} IS NOT NULL
@@ -63,9 +63,10 @@ export type SelectContest = typeof contestsTable.$inferSelect;
 
 const {
   schedule: _, // technically not a private column, but it's not needed most of the time
-  createdBy: _1,
-  createdAt: _2,
-  updatedAt: _3,
+  adminNotes: _1,
+  createdBy: _2,
+  createdAt: _3,
+  updatedAt: _4,
   ...contestsPublicCols
 } = getColumns(contestsTable);
 

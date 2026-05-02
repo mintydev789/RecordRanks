@@ -6,7 +6,7 @@ import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
-import { getActionError } from "~/helpers/utilityFunctions";
+import { getActionError } from "~/helpers/utilityFunctions.ts";
 import { sendDebugEmailSF } from "~/server/server-functions/user-server-functions.ts";
 
 function DebugScreen() {

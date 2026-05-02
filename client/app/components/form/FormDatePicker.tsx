@@ -71,7 +71,7 @@ function FormDatePicker({
       />
 
       {showUTCTime && (
-        <div className="fs-6 mt-3 text-secondary">UTC:&#8194;{value?.toUTCString().slice(0, -4) ?? "?"}</div>
+        <div className="fs-6 mt-2 text-secondary">UTC:&#8194;{value?.toUTCString().slice(0, -4) ?? "?"}</div>
       )}
     </div>
   );

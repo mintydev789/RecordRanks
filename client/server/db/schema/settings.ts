@@ -16,11 +16,13 @@ export type SettingKey =
   | "about-page-content"
   | "rules-page-content"
   | "moderator-instructions-page-content"
+  | "moderator-instructions-description"
   | "video-based-results-instructions"
   | "user-request-instructions"
   | "public-exports-readme"
 
   // features
+  | "contest-types"
   | "collective-cubing-enabled";
 
 export const settingsTable = rrSchema.table("settings", {

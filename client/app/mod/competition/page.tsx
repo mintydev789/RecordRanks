@@ -1,7 +1,10 @@
 import { eq, inArray, sql } from "drizzle-orm";
+import { SWRConfig } from "swr";
 import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
+import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { Creator } from "~/helpers/types.ts";
+import { getUserControlsContest } from "~/helpers/utilityFunctions.ts";
 import { auth } from "~/server/auth.ts";
 import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
@@ -11,7 +14,7 @@ import { type PersonResponse, personsPublicCols, personsTable } from "~/server/d
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { resultsTable } from "~/server/db/schema/results.ts";
 import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
-import { authorizeUser, getUserHasAccessToContest } from "~/server/server-only-functions.ts";
+import { authorizeUser, getSettingFromDb } from "~/server/server-only-functions.ts";
 import ContestForm from "./ContestForm.tsx";
 
 type Props = {
@@ -64,7 +67,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
     let creatorPerson: PersonResponse | undefined;
 
     if (contest) {
-      if (!getUserHasAccessToContest(session.user, contest))
+      if (!getUserControlsContest(session.user, contest))
         return <LoadingError reason="You do not have access rights for this contest" />;
 
       const totalResultsByRoundPromise =
@@ -108,18 +111,26 @@ async function CreateEditContestPage({ searchParams }: Props) {
       <section>
         <h2 className="mb-4 text-center">{mode === "edit" ? "Edit Contest" : "Create Contest"}</h2>
 
-        <ContestForm
-          events={events}
-          rounds={rounds}
-          totalResultsByRound={totalResultsByRound}
-          regions={regions}
-          mode={mode}
-          contest={contest}
-          organizers={organizers}
-          creator={creator}
-          creatorPerson={creatorPerson}
-          session={session}
-        />
+        <SWRConfig
+          value={{
+            fallback: {
+              [SwrKey.ContestTypes]: getSettingFromDb({ key: "contest-types" }),
+            },
+          }}
+        >
+          <ContestForm
+            events={events}
+            rounds={rounds}
+            totalResultsByRound={totalResultsByRound}
+            regions={regions}
+            mode={mode}
+            contest={contest}
+            organizers={organizers}
+            creator={creator}
+            creatorPerson={creatorPerson}
+            session={session}
+          />
+        </SWRConfig>
       </section>
     );
   } catch (err) {

@@ -4,19 +4,20 @@ import snakeCase from "lodash/snakeCase";
 import type { SafeActionResult } from "next-safe-action";
 import { remove as removeAccents } from "remove-accents";
 import z from "zod";
+import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import type { InputPerson } from "~/helpers/types.ts";
 import { WcaPersonValidator } from "~/helpers/validators/wca/WcaPerson.ts";
 import type { SelectAccessToken } from "~/server/db/schema/access-tokens.ts";
-import type { SelectContest } from "~/server/db/schema/contests.ts";
+import type { ContestResponse, SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";
-import type { Role } from "~/server/permissions.ts";
+import type { Role, RrPermissions } from "~/server/permissions.ts";
 import type { RrServerErrorObject } from "~/server/safeAction.ts";
 import { getRankedAverageFormat, type RoundFormatObject, roundFormats } from "./roundFormats.ts";
 import type { MultiChoiceOption } from "./types/MultiChoiceOption.ts";
-import type { ContestType, EventFormat, EventWrPair, RoundFormat } from "./types.ts";
+import type { EventFormat, EventWrPair, RoundFormat } from "./types.ts";
 import type { PersonDto } from "./validators/Person.ts";
 
 export function getHasRole(role: Role, rolesString: string | null | undefined): boolean {
@@ -458,12 +459,6 @@ export function getResultProceeds(
 export const getAlwaysShowDecimals = (event: Pick<EventResponse, "category" | "format">): boolean =>
   event.category === "extreme-bld" && event.format !== "multi";
 
-export function getIsCompType(contestType: ContestType | undefined): boolean {
-  if (!contestType) throw new Error("getIsCompType cannot accept undefined contestType");
-
-  return ["wca-comp", "comp"].includes(contestType);
-}
-
 export function getNameAndLocalizedName(wcaName: string): { name: string; localizedName: string | undefined } {
   const [name, localizedName] = wcaName.replace(/\)$/, "").split(" (");
   return { name, localizedName };
@@ -622,4 +617,22 @@ export async function verifyAccessToken(
   }
 
   return null;
+}
+
+export function clientGetUserHasPermission(permissions: RrPermissions): Promise<boolean> {
+  return authClient.admin.hasPermission({ permissions }).then(({ data }) => Boolean(data?.success));
+}
+
+// Assumes that the user permissions have already been checked (i.e. create, update, etc.)
+export function getUserControlsContest(
+  user: typeof authClient.$Infer.Session.user,
+  contest: Pick<ContestResponse, "state" | "organizerIds">,
+) {
+  if (!user.personId) return false;
+  if (contest.state === "removed") return false;
+  if (getHasRole("admin", user.role)) return true;
+
+  const modHasAccess =
+    ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(user.personId);
+  return modHasAccess;
 }

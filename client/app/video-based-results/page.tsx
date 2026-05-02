@@ -16,7 +16,7 @@ async function ManageResultsPage() {
       where: { competitionId: { isNull: true } },
       orderBy: { createdAt: "desc" },
     }),
-    getRecordConfigs("video-based-results"),
+    getRecordConfigs({ recordCategory: "online" }),
     db.select(regionsPublicCols).from(regionsTable),
     getSettingFromDb({ key: "video-based-results-instructions" }),
   ]);

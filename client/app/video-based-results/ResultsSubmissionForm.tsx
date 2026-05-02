@@ -99,7 +99,7 @@ function ResultsSubmissionForm({
   const updateWrPair = useCallback(
     debounce(async (eventId: string, recordsUpTo: Date) => {
       const res = await getWrPairUpToDate({
-        recordCategory: "video-based-results",
+        recordCategory: "online",
         eventId,
         recordsUpTo,
         excludeResultId: result?.id,

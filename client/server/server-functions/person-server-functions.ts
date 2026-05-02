@@ -6,7 +6,7 @@ import { C } from "~/helpers/constants.ts";
 import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
 import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
-import { RegionCodeValidator, WcaIdValidator } from "~/helpers/validators/Validators.ts";
+import { NonMetaRegionCodeValidator, WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import {
@@ -53,7 +53,7 @@ export const getOrCreatePersonSF = actionClient
   .inputSchema(
     z.strictObject({
       name: z.string(),
-      regionCode: RegionCodeValidator,
+      regionCode: NonMetaRegionCodeValidator,
     }),
   )
   .action<GetOrCreatePersonObject>(async ({ parsedInput: { name, regionCode } }) => {

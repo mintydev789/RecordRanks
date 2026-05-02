@@ -6,7 +6,7 @@ import { and, arrayContains, desc, eq, gte, inArray, lt, notInArray, or } from "
 import { find as findTimezone } from "geo-tz";
 import z from "zod";
 import { ModDashboardFiltersValidator } from "~/app/mod/ModDashboardFilters.ts";
-import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { C } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
@@ -16,10 +16,12 @@ import {
   getMaxAllowedRounds,
   getNameAndLocalizedName,
   getResultProceeds,
+  getUserControlsContest,
 } from "~/helpers/utilityFunctions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";
+import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
@@ -39,7 +41,7 @@ import {
   approvePersons,
   getContestParticipantIds,
   getRecordConfigs,
-  getUserHasAccessToContest,
+  getSettingFromDb,
   logMessage,
 } from "~/server/server-only-functions.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
@@ -106,7 +108,7 @@ export const getContestSF = actionClient
         .from(eventsTable)
         .where(inArray(eventsTable.eventId, eventIds))
         .orderBy(eventsTable.rank),
-      getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions"),
+      getRecordConfigs({ contestType: contest.type }),
     ]);
     if (eventId && !events.some((e) => e.eventId === eventId))
       throw new RrActionError(`Event with ID ${eventId} not found`);
@@ -275,8 +277,8 @@ export const createContestSF = actionClient
       sendContestSubmittedEmail(
         organizerUsers.map((u) => u.email),
         createdContest,
-        region.name,
         creatorPerson.name,
+        NonMetaRegionCodeRegex.test(region.code) ? region.name : undefined,
       );
     },
   );
@@ -342,7 +344,7 @@ export const finishContestSF = actionClient
       });
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
 
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (contest.state !== "ongoing") throw new RrActionError("Contest cannot be finished");
       if (["meetup", "comp"].includes(contest.type) && contest.participants < C.minCompetitorsForNonWca) {
@@ -564,7 +566,7 @@ export const updateContestSF = actionClient
       const [contest, prevRounds, results] = await Promise.all([contestPromise, prevRoundsPromise, resultsPromise]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${originalCompetitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!["created", "approved", "ongoing"].includes(contest.state))
         throw new RrActionError("Finished contests cannot be edited");
@@ -671,20 +673,14 @@ export const openRoundSF = actionClient
       logMessage("RR0012", `Opening next round for event ${eventId} (contest ${competitionId})`);
 
       const [contest, rounds, results] = await Promise.all([
-        db.query.contests.findFirst({
-          columns: { state: true, organizerIds: true },
-          where: { competitionId },
-        }),
-        db.query.rounds.findMany({
-          where: { competitionId, eventId },
-          orderBy: { roundNumber: "asc" },
-        }),
+        db.query.contests.findFirst({ columns: { state: true, organizerIds: true }, where: { competitionId } }),
+        db.query.rounds.findMany({ where: { competitionId, eventId }, orderBy: { roundNumber: "asc" } }),
         db.query.results.findMany({ where: { competitionId, eventId } }),
       ]);
       const prevOpenRound = rounds.find((r) => r.open === true);
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!prevOpenRound) throw new RrActionError("Previous open round not found");
       if (prevOpenRound.roundTypeId === "f") throw new RrActionError("The final round for this event is already open");
@@ -728,7 +724,7 @@ export const createAccessTokenSF = actionClient
       });
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (user.id !== contest.createdBy && !getHasRole("admin", user.role))
         throw new RrActionError("Only the creator of the contest or an admin can generate access tokens");
@@ -749,8 +745,9 @@ async function validateAndCleanUpContest(
   userPersonId: number,
   canApprove: boolean,
 ): Promise<{ region: SelectRegion }> {
-  if (contest.type === "wca-comp" && !IS_CUBING_CONTESTS_INSTANCE)
-    throw new RrActionError("WCA contest type is disabled");
+  const contestTypes = await getSettingFromDb({ key: "contest-types" });
+  if (!contestTypes.split(",").some((ct) => contest.type === ct))
+    throw new RrActionError(`${contest.type} contest type is disabled`);
 
   const [events, region] = await Promise.all([
     db.query.events.findMany({

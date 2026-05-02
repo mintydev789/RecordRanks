@@ -9,7 +9,7 @@ async function SubmitResultsPage() {
 
   const [events, recordConfigs, regions, { success: isVideoBasedResultReviewer }] = await Promise.all([
     getVideoBasedEvents(),
-    getRecordConfigs("video-based-results"),
+    getRecordConfigs({ recordCategory: "online" }),
     db.select(regionsPublicCols).from(regionsTable),
     auth.api.userHasPermission({
       body: { userId: user.id, permissions: { videoBasedResults: ["update", "approve", "delete"] } },

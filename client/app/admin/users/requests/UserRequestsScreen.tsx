@@ -100,7 +100,7 @@ function UserRequestsScreen({ userRequests: initUserRequests, regions }: Props) 
                       ))}
                   </td>
                   <td>
-                    <div style={{ maxWidth: "25rem", whiteSpace: "pre-wrap" }}>{ur.comment}</div>
+                    <div style={{ minWidth: "10rem", maxWidth: "25rem", whiteSpace: "pre-wrap" }}>{ur.comment}</div>
                   </td>
                   <td>
                     <div className="d-flex gap-2">

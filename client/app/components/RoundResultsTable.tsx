@@ -21,11 +21,20 @@ type Props = {
   persons: PersonResponse[];
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
-  onEditResult?: (result: ResultResponse) => void;
-  onDeleteResult?: (resultId: number) => void;
-  loadingId?: string;
-  disableEditAndDelete?: boolean;
-};
+} & (
+  | {
+      onEditResult?: never;
+      onDeleteResult?: never;
+      loadingId?: never;
+      disableActions?: never;
+    }
+  | {
+      onEditResult: ((result: ResultResponse) => void) | undefined;
+      onDeleteResult: ((resultId: number) => void) | undefined;
+      loadingId: string;
+      disableActions: boolean;
+    }
+);
 
 function RoundResultsTable({
   event,
@@ -38,7 +47,7 @@ function RoundResultsTable({
   onEditResult,
   onDeleteResult,
   loadingId,
-  disableEditAndDelete,
+  disableActions,
 }: Props) {
   const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
   const roundCanHaveAverage = roundFormat.attempts >= 3;
@@ -117,7 +126,7 @@ function RoundResultsTable({
                         id={`edit_result_${result.id}_button`}
                         onClick={() => onEditResult(result)}
                         loadingId={loadingId}
-                        disabled={disableEditAndDelete}
+                        disabled={disableActions}
                         className="btn-xs"
                         title="Edit"
                         ariaLabel="Edit"
@@ -128,7 +137,7 @@ function RoundResultsTable({
                         id={`delete_result_${result.id}_button`}
                         onClick={() => onDeleteResult(result.id)}
                         loadingId={loadingId}
-                        disabled={disableEditAndDelete}
+                        disabled={disableActions}
                         className="btn-danger btn-xs"
                         title="Delete"
                         ariaLabel="Delete"

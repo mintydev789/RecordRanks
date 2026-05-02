@@ -136,7 +136,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   // Video-based result records
   {
     recordTypeId: "WR",
-    category: "video-based-results",
+    category: "online",
     label: "WB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -144,7 +144,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "ER",
-    category: "video-based-results",
+    category: "online",
     label: "EB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -152,7 +152,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "OcR",
-    category: "video-based-results",
+    category: "online",
     label: "OcB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -160,7 +160,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AsR",
-    category: "video-based-results",
+    category: "online",
     label: "AsB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -168,7 +168,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NAR",
-    category: "video-based-results",
+    category: "online",
     label: "NAB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -176,7 +176,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "SAR",
-    category: "video-based-results",
+    category: "online",
     label: "SAB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -184,7 +184,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AfR",
-    category: "video-based-results",
+    category: "online",
     label: "AfB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -192,7 +192,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NR",
-    category: "video-based-results",
+    category: "online",
     label: "NB",
     active: true,
     rank: 1, // doesn't matter for tests

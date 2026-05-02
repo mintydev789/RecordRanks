@@ -44,7 +44,7 @@ async function RecordsPage({ params, searchParams }: Props) {
   const urlSearchParams = new URLSearchParams(omitBy({ category, eventId, region } as any, (val) => !val));
   const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ eventId, region } as any, (val) => !val));
 
-  const recordCategory = category ?? (eventCategory === "extreme-bld" ? "video-based-results" : "competitions");
+  const recordCategory = category ?? (eventCategory === "extreme-bld" ? "online" : "competitions");
 
   const recordsPromise = getRecords(eventCategory, recordCategory, eventId ?? undefined, region ?? undefined);
 
@@ -113,11 +113,11 @@ async function RecordsPage({ params, searchParams }: Props) {
               <Link
                 href={`/records/${eventCategory}?${
                   urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                }category=video-based-results`}
+                }category=online`}
                 prefetch={false}
-                className={`btn btn-primary ${recordCategory === "video-based-results" ? "active" : ""}`}
+                className={`btn btn-primary ${recordCategory === "online" ? "active" : ""}`}
               >
-                Video-based
+                Online
               </Link>
             </div>
           </div>

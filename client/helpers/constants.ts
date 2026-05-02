@@ -34,6 +34,7 @@ export const C = {
   unknownErrorMsg: "Unknown error",
   videoNoLongerAvailableMsg: "Video no longer available",
   notSelectedOption: "NOT_SELECTED",
+  onlineCompKey: "ONLINE",
   publicExportsFormatVersions: ["v1"],
   color: {
     rankingHighlight: "#10c010",

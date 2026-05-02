@@ -13,6 +13,7 @@ import Modal from "~/app/components/UI/Modal.tsx";
 import PersonForm from "~/app/mod/competitors/PersonForm.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { InputPerson, UserRequestDetails } from "~/helpers/types.ts";
 import { getActionError, getHasRole } from "~/helpers/utilityFunctions.ts";
@@ -31,9 +32,9 @@ function UserRequestTab({ regions }: Props) {
 
   const { executeAsync: createOrUpdateUserRequest, isPending: isCreating } = useAction(createOrUpdateUserRequestSF);
   const { executeAsync: deleteUserRequest, isPending: isDeleting } = useAction(deleteUserRequestSF);
-  const { data: userRequestDetails, mutate } = useSWR<UserRequestDetails>("user-request-details");
+  const { data: userRequestDetails, mutate } = useSWR<UserRequestDetails>(SwrKey.UserRequestDetails);
   const userRequest = userRequestDetails?.userRequest;
-  const { data: userRequestInstructions } = useSWR<string>("user-request-instructions");
+  const { data: userRequestInstructions } = useSWR<string>(SwrKey.UserRequestInstructions);
   const [persons, setPersons] = useState<InputPerson[]>([userRequest?.requestedPerson ?? null]);
   const [personNames, setPersonNames] = useState([userRequest?.requestedPerson?.name ?? ""]);
   const [requestedRole, setRequestedRole] = useState<(typeof roleOptions)[number]["value"]>(

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { SWRConfig } from "swr";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
+import { SwrKey } from "~/helpers/swr-keys.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
@@ -26,8 +27,8 @@ async function UserSettingsPage() {
       <SWRConfig
         value={{
           fallback: {
-            "user-request-details": getUserRequestDetails(user.id),
-            "user-request-instructions": getSettingFromDb({ key: "user-request-instructions" }),
+            [SwrKey.UserRequestDetails]: getUserRequestDetails(user.id),
+            [SwrKey.UserRequestInstructions]: getSettingFromDb({ key: "user-request-instructions" }),
           },
         }}
       >

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { getFormattedDate } from "~/helpers/utilityFunctions";
-import type { PostResponse } from "~/server/db/schema/posts";
+import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
+import type { PostResponse } from "~/server/db/schema/posts.ts";
 
 type Props = {
   post: PostResponse & {

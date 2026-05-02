@@ -165,43 +165,49 @@ function ScheduleEditor({ rooms, setRooms, venueTimeZone, startDate, contestType
   return (
     <>
       <section>
-        <h3 className="mb-3">Rooms</h3>
+        {contestType !== "online" && (
+          <>
+            <h3 className="mb-3">Rooms</h3>
 
-        <div className="row">
-          <div className="col-8">
-            <FormTextInput title="Room name" value={roomName} setValue={setRoomName} disabled={disabled} />
-          </div>
-          <div className="d-flex justify-content-between col-4 gap-3 align-items-end">
-            <div className="flex-grow-1">
-              <FormSelect
-                title="Color"
-                options={colorOptions}
-                selected={roomColor}
-                setSelected={setRoomColor as any}
-                disabled={disabled}
-              />
+            <div className="row">
+              <div className="col-8">
+                <FormTextInput title="Room name" value={roomName} setValue={setRoomName} disabled={disabled} />
+              </div>
+              <div className="d-flex justify-content-between col-4 gap-3 align-items-end">
+                <div className="flex-grow-1">
+                  <FormSelect
+                    title="Color"
+                    options={colorOptions}
+                    selected={roomColor}
+                    setSelected={setRoomColor as any}
+                    disabled={disabled}
+                  />
+                </div>
+                <ColorSquare color={roomColor} />
+              </div>
             </div>
-            <ColorSquare color={roomColor} />
-          </div>
-        </div>
-        <Button onClick={addRoom} disabled={disabled || !roomName.trim()} className="btn-success mt-3 mb-2">
-          Create
-        </Button>
-        <hr />
+            <Button onClick={addRoom} disabled={disabled || !roomName.trim()} className="btn-success mt-3 mb-2">
+              Create
+            </Button>
+            <hr />
+          </>
+        )}
 
         <h3 className="mb-3">Schedule</h3>
 
         <div className="row mb-3">
-          <div className="col-12 col-md-6">
-            <FormSelect
-              title="Room"
-              options={roomOptions}
-              selected={selectedRoom}
-              setSelected={setSelectedRoom as any}
-              disabled={disabled || rooms.length === 0 || activityUnderEdit !== null}
-            />
-          </div>
-          <div className="col-12 col-md-6">
+          {contestType !== "online" && (
+            <div className="col-12 col-md-6">
+              <FormSelect
+                title="Room"
+                options={roomOptions}
+                selected={selectedRoom}
+                setSelected={setSelectedRoom as any}
+                disabled={disabled || rooms.length === 0 || activityUnderEdit !== null}
+              />
+            </div>
+          )}
+          <div className={`col-12 ${contestType === "online" ? "" : "col-md-6"}`}>
             <FormSelect
               title="Activity"
               options={activityOptions}

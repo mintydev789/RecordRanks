@@ -44,7 +44,7 @@ describe("getWrPairUpToDateSF", () => {
   it("gets WR pair up to date", async () => {
     const res = await getWrPairUpToDateSF({
       eventId: "444bf",
-      recordCategory: "video-based-results",
+      recordCategory: "online",
       recordsUpTo: date,
     });
 
@@ -77,7 +77,7 @@ describe("getWrPairUpToDateSF", () => {
   it("doesn't get WR single or average if there are no successful results for the event yet", async () => {
     const res = await getWrPairUpToDateSF({
       eventId: "555bf",
-      recordCategory: "video-based-results",
+      recordCategory: "online",
       recordsUpTo: date,
     });
 
@@ -752,7 +752,7 @@ describe("deleteContestResultSF", () => {
     });
 
     it("throws error for non-contest result", async () => {
-      const videoBasedResult = await db.query.results.findFirst({ where: { recordCategory: "video-based-results" } });
+      const videoBasedResult = await db.query.results.findFirst({ where: { recordCategory: "online" } });
       const res = await deleteContestResultSF({ id: videoBasedResult!.id });
 
       expect(res.serverError?.message).toBe(`Result with ID ${videoBasedResult!.id} not found`);
