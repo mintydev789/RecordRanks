@@ -57,8 +57,8 @@ export async function register() {
           },
           {
             recordTypeId,
-            category: "video-based-results",
-            label: `${recordTypeId.slice(0, -1)}B`,
+            category: "online",
+            label: `O${recordTypeId}`,
             rank: 200 + (i + 1) * 10,
             color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
           },
@@ -461,7 +461,7 @@ export async function register() {
     //   };
 
     //   await db.transaction(async (tx) => {
-    //     for (const category of ["meetups", "video-based-results", "competitions"]) {
+    //     for (const category of ["meetups", "online", "competitions"]) {
     //       for (const event of eventsDump) {
     //         if (!(await tx.query.results.findFirst({ columns: { id: true }, where: { eventId: event.eventId } }))) {
     //           console.log(`No results found for event ${event.eventId}, skipping`);

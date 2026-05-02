@@ -18,7 +18,7 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
 
   const [events, recordConfigs, regions, result] = await Promise.all([
     getVideoBasedEvents(),
-    getRecordConfigs("video-based-results"),
+    getRecordConfigs({ recordCategory: "online" }),
     db.select(regionsPublicCols).from(regionsTable),
     db.query.results.findFirst({ where: { id: resultId } }),
   ]);

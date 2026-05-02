@@ -44,7 +44,7 @@ export type RoundProceed = (typeof RoundProceedValues)[number];
 export const EventCategoryValues = ["unofficial", "wca", "extreme-bld", "miscellaneous", "removed"] as const;
 export type EventCategory = (typeof EventCategoryValues)[number];
 
-export const RecordCategoryValues = ["competitions", "meetups", "video-based-results"] as const;
+export const RecordCategoryValues = ["competitions", "meetups", "online"] as const;
 export type RecordCategory = (typeof RecordCategoryValues)[number];
 
 export const RecordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"] as const;

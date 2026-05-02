@@ -15,7 +15,7 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { Continents } from "~/helpers/continents.ts";
-import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
+import { recordCategoryOptions, recordTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import {
   type ListPageMode,
   type RecordCategory,
@@ -30,22 +30,6 @@ import {
   createRecordConfigSF,
   updateRecordConfigSF,
 } from "~/server/server-functions/record-config-server-functions.ts";
-
-const recordCategoryOptions: MultiChoiceOption[] = [
-  {
-    value: "competitions",
-    label: "Competitions",
-  },
-  {
-    value: "meetups",
-    label: "Meetups",
-  },
-  {
-    value: "video-based-results",
-    label: "Video-based results",
-  },
-];
-const recordTypeOptions: MultiChoiceOption[] = RecordTypeValues.map((v) => ({ value: v, label: v }));
 
 type Props = {
   recordConfigs: RecordConfigResponse[];

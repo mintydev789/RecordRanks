@@ -173,8 +173,10 @@ export const createContestResultSF = actionClient
         roundFormat.attempts,
       );
 
-      const recordConfigs = await getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions");
+      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
       const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
+      const recordCategory: RecordCategory =
+        contest.type === "online" ? "online" : contest.type === "meetup" ? "meetups" : "competitions";
       const newResult: InsertResult = {
         eventId,
         date: getRoundDate(round, contest),
@@ -182,7 +184,7 @@ export const createContestResultSF = actionClient
         attempts: newResultDto.attempts,
         best,
         average,
-        recordCategory: contest.type === "meetup" ? "meetups" : "competitions",
+        recordCategory,
         competitionId,
         roundId,
         ranking: 1, // gets set to the correct value below
@@ -254,7 +256,7 @@ export const updateContestResultSF = actionClient
       if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
 
-      const recordConfigs = await getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions");
+      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
       const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
       newAttempts = await validateTimeLimitAndCutoff(newAttempts, result.personIds, round, roundFormat.attempts);
@@ -364,7 +366,7 @@ export const deleteContestResultSF = actionClient
       if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
 
-      const recordConfigs = await getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions");
+      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
 
       await db.transaction(async (tx) => {
         await tx.delete(table).where(eq(table.id, id));
@@ -420,7 +422,7 @@ export const createVideoBasedResultSF = actionClient
       const [event, participants, recordConfigs, creatorPerson, videoBasedResultsContactEmail] = await Promise.all([
         db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
         db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
-        getRecordConfigs("video-based-results"),
+        getRecordConfigs({ recordCategory: "online" }),
         user.personId
           ? db.query.persons.findFirst({ columns: { name: true }, where: { id: user.personId } })
           : undefined,
@@ -444,7 +446,7 @@ export const createVideoBasedResultSF = actionClient
         ...newResultDto,
         best,
         average,
-        recordCategory: "video-based-results",
+        recordCategory: "online",
         createdBy: user.id,
       };
 
@@ -493,7 +495,7 @@ export const updateVideoBasedResultSF = actionClient
 
     const [event, recordConfigs] = await Promise.all([
       db.query.events.findFirst({ where: { eventId: result.eventId } }),
-      getRecordConfigs("video-based-results"),
+      getRecordConfigs({ recordCategory: "online" }),
     ]);
 
     if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);

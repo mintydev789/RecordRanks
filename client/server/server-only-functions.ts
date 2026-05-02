@@ -9,6 +9,7 @@ import { Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import {
+  type ContestType,
   type GetOrCreatePersonObject,
   type RecordCategory,
   RecordCategoryValues,
@@ -21,13 +22,12 @@ import {
   compareSingles,
   fetchWcaPerson,
   getActionError,
-  getHasRole,
   getResultProceeds,
 } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
 import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
-import { type ContestResponse, contestsTable } from "~/server/db/schema/contests.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
@@ -113,11 +113,19 @@ export async function getContestParticipantIds(tx: DbTransactionType, competitio
   return Array.from(participantIds);
 }
 
-export async function getRecordConfigs(recordFor: RecordCategory) {
+export async function getRecordConfigs({
+  recordCategory,
+  contestType,
+}: { recordCategory: RecordCategory; contestType?: never } | { recordCategory?: never; contestType: ContestType }) {
   const recordConfigs = await db
     .select(recordConfigsPublicCols)
     .from(recordConfigsTable)
-    .where(eq(recordConfigsTable.category, recordFor));
+    .where(
+      eq(
+        recordConfigsTable.category,
+        recordCategory ?? (contestType === "online" ? "online" : contestType === "meetup" ? "meetups" : "competitions"),
+      ),
+    );
 
   if (recordConfigs.length !== RecordTypeValues.length) {
     throw new Error(

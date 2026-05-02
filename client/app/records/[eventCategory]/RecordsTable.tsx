@@ -76,7 +76,7 @@ function RecordsTable({ recordsPromise, events, regions }: Props) {
                         {mixedRecords && <th>Average</th>}
                         {!mixedRecords && <th>Representing</th>}
                         {!mixedRecords && <th>Date</th>}
-                        <th>{category === "video-based-results" ? "Link" : "Contest"}</th>
+                        <th>{category === "online" ? "Link" : "Contest"}</th>
                         <th>Solves</th>
                       </tr>
                     </thead>

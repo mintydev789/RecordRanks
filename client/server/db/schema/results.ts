@@ -52,11 +52,11 @@ export const resultsTable = rrSchema.table(
     check(
       "results_check",
       sql`(${table.competitionId} IS NOT NULL
-          AND ${table.recordCategory} <> 'video-based-results'
+          AND ${table.recordCategory} <> 'online'
           AND ${table.roundId} IS NOT NULL
           AND ${table.ranking} IS NOT NULL)
         OR (${table.competitionId} IS NULL
-          AND ${table.recordCategory} = 'video-based-results'
+          AND ${table.recordCategory} = 'online'
           AND ${table.roundId} IS NULL
           AND ${table.ranking} IS NULL
           AND ${table.proceeds} IS NULL)`,

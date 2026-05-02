@@ -65,7 +65,7 @@ function generateRandom444bfResults(): InsertResult[] {
       const personId = Math.floor(Math.random() * personsStub.length);
       const regionCode = personsStub[personId].regionCode;
       const recordCategory = RecordCategoryValues[Math.floor(Math.random() * 3)];
-      const isVideoBasedResult = recordCategory === "video-based-results";
+      const isVideoBasedResult = recordCategory === "online";
 
       const attemptCounts = [1, 2, 3, 5];
       const numAttempts = attemptCounts[Math.floor(Math.random() * attemptCounts.length)];
@@ -111,7 +111,7 @@ function getVideoBasedResult(result: MockInsertResult): InsertResult {
     ...result,
     best,
     average,
-    recordCategory: "video-based-results",
+    recordCategory: "online",
     videoLink: "https://example.com",
   };
 }

@@ -91,7 +91,7 @@ async function RankingsPage({ params, searchParams }: Props) {
   const recordCategory =
     category ??
     (event.category === "extreme-bld" || (event.category !== "unofficial" && event.submissionsAllowed)
-      ? "video-based-results"
+      ? "online"
       : "competitions");
   const roundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
 
@@ -250,11 +250,11 @@ async function RankingsPage({ params, searchParams }: Props) {
                 <Link
                   href={`/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                  }category=video-based-results`}
+                  }category=online`}
                   prefetch={false}
-                  className={`btn btn-primary ${recordCategory === "video-based-results" ? "active" : ""}`}
+                  className={`btn btn-primary ${recordCategory === "online" ? "active" : ""}`}
                 >
-                  Video-based
+                  Online
                 </Link>
                 <Link
                   href={`/rankings/${eventId}/${type}?${

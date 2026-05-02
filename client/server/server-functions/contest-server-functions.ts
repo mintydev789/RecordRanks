@@ -108,7 +108,7 @@ export const getContestSF = actionClient
         .from(eventsTable)
         .where(inArray(eventsTable.eventId, eventIds))
         .orderBy(eventsTable.rank),
-      getRecordConfigs(contest.type === "meetup" ? "meetups" : "competitions"),
+      getRecordConfigs({ contestType: contest.type }),
     ]);
     if (eventId && !events.some((e) => e.eventId === eventId))
       throw new RrActionError(`Event with ID ${eventId} not found`);
