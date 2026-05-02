@@ -22,8 +22,8 @@ async function DataEntryPage({ params, searchParams }: Props) {
   const eventIdOrFirst = eventId ?? events[0].eventId;
 
   if (contest.type === "online") {
-    await authorizeUser({ permissions: { onlineComps: ["submit-own-result"] } });
-    if (!["approved", "ongoing"].includes(contest.state))
+    const { user } = await authorizeUser({ permissions: { onlineComps: ["submit-own-result"] } });
+    if (!user.personId || !["approved", "ongoing"].includes(contest.state))
       return <LoadingError reason="You are unauthorized to submit results for this contest" />;
   } else {
     const { user } = await authorizeUser({

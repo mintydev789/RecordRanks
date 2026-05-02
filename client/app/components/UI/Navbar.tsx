@@ -24,11 +24,12 @@ function Navbar() {
   const [resultsExpanded, setResultsExpanded] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [userExpanded, setUserExpanded] = useState(false);
-  const { data: canAccessModDashboard } = useSWR([SwrKey.CanAccessModDashboard, session], () =>
+  const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
     clientGetUserHasPermission({ modDashboard: ["view"] }),
   );
-  const { data: canApproveVideoBasedResults } = useSWR([SwrKey.CanApproveVideoBasedResults, session], () =>
-    clientGetUserHasPermission({ videoBasedResults: ["approve"] }),
+  const { data: canApproveVideoBasedResults } = useSWR(
+    session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
+    () => clientGetUserHasPermission({ videoBasedResults: ["approve"] }),
   );
 
   const logOut = async () => {

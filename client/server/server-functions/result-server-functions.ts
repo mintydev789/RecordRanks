@@ -133,7 +133,7 @@ export const createContestResultSF = actionClient
       const hasAccessToResults = canSubmitOwnOnlineCompResult && contest.type === "online" && user.personId;
       if (!userControlsContest && !hasAccessToResults)
         throw new RrActionError("You are unauthorized to submit results for this contest");
-      if (!userControlsContest && !personIds.includes(user.personId as any))
+      if (!userControlsContest && hasAccessToResults && !personIds.includes(user.personId as any))
         throw new RrActionError("You can only submit your own result");
       if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${newResultDto.roundId} not found`);

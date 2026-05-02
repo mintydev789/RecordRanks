@@ -92,80 +92,83 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
     }
   };
 
-  if (!session) return;
-
   return (
     <div className="d-flex gap-2 align-items-center">
-      {userControlsContest && (
-        <Link
-          href={`/mod/competition?editId=${contest.competitionId}`}
-          prefetch={false}
-          className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
-          title="Edit"
-          aria-label="Edit"
-        >
-          <FontAwesomeIcon icon={faPencil} />
-        </Link>
+      {session && (
+        <>
+          {userControlsContest &&
+            (canPublishContests || ["created", "approved", "ongoing"].includes(contest.state)) && (
+              <Link
+                href={`/mod/competition?editId=${contest.competitionId}`}
+                prefetch={false}
+                className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
+                title="Edit"
+                aria-label="Edit"
+              >
+                <FontAwesomeIcon icon={faPencil} />
+              </Link>
+            )}
+          {canCreateAndUpdateContests && contest.type !== "wca-comp" && (
+            <Link
+              href={`/mod/competition?copyId=${contest?.competitionId}`}
+              prefetch={false}
+              className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
+              title="Clone"
+              aria-label="Clone"
+            >
+              <FontAwesomeIcon icon={faCopy} />
+            </Link>
+          )}
+          {((hasAccessToResults && ["approved", "ongoing"].includes(contest.state)) ||
+            (canPublishContests && contest.state === "finished")) && (
+            <Link
+              href={`/mod/competition/${contest.competitionId}`}
+              prefetch={false}
+              className={`btn btn-success ${smallButtons ? "btn-xs" : ""}`}
+            >
+              Results
+            </Link>
+          )}
+          {canApproveContests && contest.state === "created" && (
+            <Button
+              type="button"
+              onClick={() => onApproveContest()}
+              isLoading={isApproving}
+              disabled={isPending}
+              className={`btn-warning ${smallButtons ? "btn-xs" : ""}`}
+            >
+              Approve
+            </Button>
+          )}
+          {userControlsContest && contest.state === "ongoing" && (
+            <Button
+              type="button"
+              onClick={() => onFinishContest()}
+              isLoading={isFinishing}
+              disabled={isPending}
+              className={`btn-warning ${smallButtons ? "btn-xs" : ""}`}
+            >
+              Finish
+            </Button>
+          )}
+          {contest.state === "finished" && canPublishContests && (
+            <Button
+              type="button"
+              onClick={() => onPublishContest()}
+              isLoading={isPublishing}
+              disabled={isPending}
+              className={`btn-warning ${smallButtons ? "btn-xs" : ""}`}
+            >
+              Publish
+            </Button>
+          )}
+          {forPage === "mod-dashboard" && contest.state === "finished" && !canPublishContests && (
+            <span title="Contest pending review">
+              <FontAwesomeIcon icon={faClock} aria-label="Contest pending review" className="fs-5 mt-1" />
+            </span>
+          )}
+        </>
       )}
-      {canCreateAndUpdateContests && contest.type !== "wca-comp" && (
-        <Link
-          href={`/mod/competition?copyId=${contest?.competitionId}`}
-          prefetch={false}
-          className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
-          title="Clone"
-          aria-label="Clone"
-        >
-          <FontAwesomeIcon icon={faCopy} />
-        </Link>
-      )}
-      {((hasAccessToResults && ["approved", "ongoing"].includes(contest.state)) ||
-        (canPublishContests && contest.state === "finished")) && (
-        <Link
-          href={`/mod/competition/${contest.competitionId}`}
-          prefetch={false}
-          className={`btn btn-success ${smallButtons ? "btn-xs" : ""}`}
-        >
-          Results
-        </Link>
-      )}
-      {canApproveContests && contest.state === "created" && (
-        <Button
-          type="button"
-          onClick={() => onApproveContest()}
-          isLoading={isApproving}
-          disabled={isPending}
-          className={`btn-warning ${smallButtons ? "btn-xs" : ""}`}
-        >
-          Approve
-        </Button>
-      )}
-      {userControlsContest && contest.state === "ongoing" && (
-        <Button
-          type="button"
-          onClick={() => onFinishContest()}
-          isLoading={isFinishing}
-          disabled={isPending}
-          className={`btn-warning ${smallButtons ? "btn-xs" : ""}`}
-        >
-          Finish
-        </Button>
-      )}
-      {contest.state === "finished" &&
-        (canPublishContests ? (
-          <Button
-            type="button"
-            onClick={() => onPublishContest()}
-            isLoading={isPublishing}
-            disabled={isPending}
-            className={`btn-warning ${smallButtons ? "btn-xs" : ""}`}
-          >
-            Publish
-          </Button>
-        ) : (
-          <span title="Contest pending review">
-            <FontAwesomeIcon icon={faClock} aria-label="Contest pending review" className="fs-5 mt-1" />
-          </span>
-        ))}
     </div>
   );
 }
