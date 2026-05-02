@@ -22,6 +22,7 @@ import {
   getHasRole,
   getMakesCutoff,
   getRoundDate,
+  getUserControlsContest,
 } from "~/helpers/utilityFunctions.ts";
 import {
   AttemptsValidator,
@@ -51,7 +52,6 @@ import {
   getContestParticipantIds,
   getRecordConfigs,
   getSettingFromDb,
-  getUserHasAccessToContest,
   logMessage,
   setRankingAndProceedsValues,
 } from "../server-only-functions.ts";
@@ -86,7 +86,8 @@ export const getWrPairUpToDateSF = actionClient
   });
 
 export const createContestResultSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  // Permissions checked below
+  .metadata({ permissions: null })
   .inputSchema(
     z.strictObject({
       newResultDto: ResultValidator,
@@ -105,7 +106,19 @@ export const createContestResultSF = actionClient
         `Creating contest result for contest ${competitionId}, event ${eventId}, round ${roundId} and persons ${personIds.join(", ")}: ${JSON.stringify(newResultDto.attempts)}`,
       );
 
-      const [contest, event, rounds, roundResults, participants] = await Promise.all([
+      const [
+        { success: canCreateAndUpdateContests },
+        { success: canSubmitOwnOnlineCompResult },
+        contest,
+        event,
+        rounds,
+        roundResults,
+        participants,
+      ] = await Promise.all([
+        auth.api.userHasPermission({
+          body: { userId: user.id, permissions: { competitions: ["create", "update"], meetups: ["create", "update"] } },
+        }),
+        auth.api.userHasPermission({ body: { userId: user.id, permissions: { onlineComps: ["submit-own-result"] } } }),
         db.query.contests.findFirst({ where: { competitionId } }),
         db.query.events.findFirst({ where: { eventId } }),
         db.query.rounds.findMany({ where: { competitionId, eventId } }),
@@ -115,8 +128,13 @@ export const createContestResultSF = actionClient
       const round = rounds.find((r) => r.id === roundId);
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
-        throw new RrActionError("You do not have access rights for this contest");
+      // This is similar to the logic in the contest controls component
+      const userControlsContest = canCreateAndUpdateContests && getUserControlsContest(user, contest);
+      const hasAccessToResults = canSubmitOwnOnlineCompResult && contest.type === "online" && user.personId;
+      if (!userControlsContest && !hasAccessToResults)
+        throw new RrActionError("You are unauthorized to submit results for this contest");
+      if (!userControlsContest && !personIds.includes(user.personId as any))
+        throw new RrActionError("You can only submit your own result");
       if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${newResultDto.roundId} not found`);
       if (!round.open) throw new RrActionError("The round is not open");
@@ -231,7 +249,7 @@ export const updateContestResultSF = actionClient
       ]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
@@ -341,7 +359,7 @@ export const deleteContestResultSF = actionClient
       ]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);

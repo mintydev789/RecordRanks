@@ -47,7 +47,7 @@ export const roundProceedOptions: MultiChoiceOption[] = [
 export const eventFormatOptions: MultiChoiceOption[] = [
   { label: "Time", value: "time" },
   { label: "Number", value: "number" },
-  { label: "Multi-Blind", value: "multi" },
+  { label: "Multi", value: "multi" },
 ];
 
 export const eventCategoryOptions: MultiChoiceOption[] = eventCategories.map((ec) => ({

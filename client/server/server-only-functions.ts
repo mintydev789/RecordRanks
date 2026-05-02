@@ -100,22 +100,6 @@ export async function authorizeUser({
   return session;
 }
 
-export function getUserHasAccessToContest(
-  user: typeof auth.$Infer.Session.user,
-  contest: Pick<ContestResponse, "state" | "type" | "organizerIds">,
-) {
-  if (!user.personId) return false;
-  if (contest.state === "removed") return false;
-  if (getHasRole("admin", user.role)) return true;
-
-  const userHasAccess = ["approved", "ongoing"].includes(contest.state) && contest.type === "online";
-  if (userHasAccess) return userHasAccess;
-
-  const modHasAccess =
-    ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(user.personId);
-  return modHasAccess;
-}
-
 export async function getContestParticipantIds(tx: DbTransactionType, competitionId: string): Promise<number[]> {
   const results = await tx.query.results.findMany({ columns: { personIds: true }, where: { competitionId } });
 

@@ -11,7 +11,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
-import { clientGetUserHasPermission, getActionError } from "~/helpers/utilityFunctions.ts";
+import { clientGetUserHasPermission, getActionError, getUserControlsContest } from "~/helpers/utilityFunctions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import {
   approveContestSF,
@@ -41,21 +41,26 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
   const { executeAsync: approveContest, isPending: isApproving } = useAction(approveContestSF);
   const { executeAsync: finishContest, isPending: isFinishing } = useAction(finishContestSF);
   const { executeAsync: publishContest, isPending: isPublishing } = useAction(publishContestSF);
-  const { data: canCreateContests } = useSWR([SwrKey.CanCreateContests, session], () =>
-    clientGetUserHasPermission({ competitions: ["create"], meetups: ["create"] }),
+  const { data: canCreateAndUpdateContests } = useSWR(session ? [SwrKey.CanCreateContests, session] : null, () =>
+    clientGetUserHasPermission({ competitions: ["create", "update"], meetups: ["create", "update"] }),
   );
-  const { data: canUpdateContests } = useSWR([SwrKey.CanUpdateContests, session], () =>
-    clientGetUserHasPermission({ competitions: ["update"], meetups: ["update"] }),
-  );
-  const { data: canApproveContests } = useSWR([SwrKey.CanApproveContests, session], () =>
+  const { data: canApproveContests } = useSWR(session ? [SwrKey.CanApproveContests, session] : null, () =>
     clientGetUserHasPermission({ competitions: ["approve"], meetups: ["approve"] }),
   );
-  const { data: canPublishContests } = useSWR([SwrKey.CanPublishContests, session], () =>
+  const { data: canPublishContests } = useSWR(session ? [SwrKey.CanPublishContests, session] : null, () =>
     clientGetUserHasPermission({ competitions: ["publish"], meetups: ["publish"] }),
+  );
+  const { data: canSubmitOwnOnlineCompResult } = useSWR(
+    session ? [SwrKey.CanSubmitOwnOnlineCompResult, session] : null,
+    () => clientGetUserHasPermission({ onlineComps: ["submit-own-result"] }),
   );
 
   const isPending = isApproving || isFinishing || isPublishing;
   const smallButtons = forPage === "mod-dashboard";
+  // This is similar to the logic in the create contest result server function
+  const userControlsContest = canCreateAndUpdateContests && getUserControlsContest(session!.user, contest);
+  const hasAccessToResults =
+    canCreateAndUpdateContests || (canSubmitOwnOnlineCompResult && contest.type === "online" && session!.user.personId);
 
   const onApproveContest = async () => {
     if (confirm(`Are you sure you would like to approve ${contest.name}?`)) {
@@ -87,21 +92,22 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
     }
   };
 
+  if (!session) return;
+
   return (
     <div className="d-flex gap-2 align-items-center">
-      {canPublishContests ||
-        (canUpdateContests && ["created", "approved", "ongoing"].includes(contest.state) && (
-          <Link
-            href={`/mod/competition?editId=${contest.competitionId}`}
-            prefetch={false}
-            className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
-            title="Edit"
-            aria-label="Edit"
-          >
-            <FontAwesomeIcon icon={faPencil} />
-          </Link>
-        ))}
-      {canCreateContests && contest.type !== "wca-comp" && (
+      {userControlsContest && (
+        <Link
+          href={`/mod/competition?editId=${contest.competitionId}`}
+          prefetch={false}
+          className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
+          title="Edit"
+          aria-label="Edit"
+        >
+          <FontAwesomeIcon icon={faPencil} />
+        </Link>
+      )}
+      {canCreateAndUpdateContests && contest.type !== "wca-comp" && (
         <Link
           href={`/mod/competition?copyId=${contest?.competitionId}`}
           prefetch={false}
@@ -112,7 +118,7 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
           <FontAwesomeIcon icon={faCopy} />
         </Link>
       )}
-      {(((canCreateContests || contest.type === "online") && ["approved", "ongoing"].includes(contest.state)) ||
+      {((hasAccessToResults && ["approved", "ongoing"].includes(contest.state)) ||
         (canPublishContests && contest.state === "finished")) && (
         <Link
           href={`/mod/competition/${contest.competitionId}`}
@@ -133,7 +139,7 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
           Approve
         </Button>
       )}
-      {canCreateContests && contest.state === "ongoing" && (
+      {userControlsContest && contest.state === "ongoing" && (
         <Button
           type="button"
           onClick={() => onFinishContest()}

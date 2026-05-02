@@ -9,7 +9,7 @@ import { C } from "~/helpers/constants.ts";
 import type { InputPerson } from "~/helpers/types.ts";
 import { WcaPersonValidator } from "~/helpers/validators/wca/WcaPerson.ts";
 import type { SelectAccessToken } from "~/server/db/schema/access-tokens.ts";
-import type { SelectContest } from "~/server/db/schema/contests.ts";
+import type { ContestResponse, SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";
@@ -621,4 +621,18 @@ export async function verifyAccessToken(
 
 export function clientGetUserHasPermission(permissions: RrPermissions): Promise<boolean> {
   return authClient.admin.hasPermission({ permissions }).then(({ data }) => Boolean(data?.success));
+}
+
+// Assumes that the user permissions have already been checked (i.e. create, update, etc.)
+export function getUserControlsContest(
+  user: typeof authClient.$Infer.Session.user,
+  contest: Pick<ContestResponse, "state" | "organizerIds">,
+) {
+  if (!user.personId) return false;
+  if (contest.state === "removed") return false;
+  if (getHasRole("admin", user.role)) return true;
+
+  const modHasAccess =
+    ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(user.personId);
+  return modHasAccess;
 }

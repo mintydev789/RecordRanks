@@ -16,6 +16,7 @@ import {
   getMaxAllowedRounds,
   getNameAndLocalizedName,
   getResultProceeds,
+  getUserControlsContest,
 } from "~/helpers/utilityFunctions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
@@ -41,7 +42,6 @@ import {
   getContestParticipantIds,
   getRecordConfigs,
   getSettingFromDb,
-  getUserHasAccessToContest,
   logMessage,
 } from "~/server/server-only-functions.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
@@ -344,7 +344,7 @@ export const finishContestSF = actionClient
       });
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
 
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (contest.state !== "ongoing") throw new RrActionError("Contest cannot be finished");
       if (["meetup", "comp"].includes(contest.type) && contest.participants < C.minCompetitorsForNonWca) {
@@ -566,7 +566,7 @@ export const updateContestSF = actionClient
       const [contest, prevRounds, results] = await Promise.all([contestPromise, prevRoundsPromise, resultsPromise]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${originalCompetitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!["created", "approved", "ongoing"].includes(contest.state))
         throw new RrActionError("Finished contests cannot be edited");
@@ -673,20 +673,14 @@ export const openRoundSF = actionClient
       logMessage("RR0012", `Opening next round for event ${eventId} (contest ${competitionId})`);
 
       const [contest, rounds, results] = await Promise.all([
-        db.query.contests.findFirst({
-          columns: { state: true, type: true, organizerIds: true },
-          where: { competitionId },
-        }),
-        db.query.rounds.findMany({
-          where: { competitionId, eventId },
-          orderBy: { roundNumber: "asc" },
-        }),
+        db.query.contests.findFirst({ columns: { state: true, organizerIds: true }, where: { competitionId } }),
+        db.query.rounds.findMany({ where: { competitionId, eventId }, orderBy: { roundNumber: "asc" } }),
         db.query.results.findMany({ where: { competitionId, eventId } }),
       ]);
       const prevOpenRound = rounds.find((r) => r.open === true);
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!prevOpenRound) throw new RrActionError("Previous open round not found");
       if (prevOpenRound.roundTypeId === "f") throw new RrActionError("The final round for this event is already open");
@@ -725,12 +719,12 @@ export const createAccessTokenSF = actionClient
       logMessage("RR0040", `Creating access token for contest with ID ${competitionId}`);
 
       const contest = await db.query.contests.findFirst({
-        columns: { competitionId: true, state: true, type: true, organizerIds: true, createdBy: true },
+        columns: { competitionId: true, state: true, organizerIds: true, createdBy: true },
         where: { competitionId },
       });
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      if (!getUserHasAccessToContest(user, contest))
+      if (!getUserControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (user.id !== contest.createdBy && !getHasRole("admin", user.role))
         throw new RrActionError("Only the creator of the contest or an admin can generate access tokens");

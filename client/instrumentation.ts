@@ -44,7 +44,7 @@ export async function register() {
           {
             recordTypeId,
             category: "competitions",
-            label: `X${recordTypeId}`,
+            label: recordTypeId,
             rank: (i + 1) * 10,
             color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
           },
