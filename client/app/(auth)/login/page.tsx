@@ -112,7 +112,7 @@ function LoginPage() {
             setValue={setPassword}
             disabled={isPending}
             password
-            submitOnEnter
+            nextFocusTargetId="form_submit_button"
             className="mb-3"
           />
           <Link href="/forgot-password" className="d-block mt-4">
