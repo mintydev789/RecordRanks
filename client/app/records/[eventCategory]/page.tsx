@@ -117,7 +117,7 @@ async function RecordsPage({ params, searchParams }: Props) {
                 prefetch={false}
                 className={`btn btn-primary ${recordCategory === "online" ? "active" : ""}`}
               >
-                Video-based
+                Online
               </Link>
             </div>
           </div>
