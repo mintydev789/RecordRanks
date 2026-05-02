@@ -244,7 +244,7 @@ describe("createContestResultSF", () => {
         },
       });
 
-      expect(res.serverError?.message).toBe("You do not have access rights for this contest");
+      expect(res.serverError?.message).toBe("You are unauthorized to submit results for this contest");
       expect(res.data).toBeUndefined();
     });
 
