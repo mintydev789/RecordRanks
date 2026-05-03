@@ -95,7 +95,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
     }
   };
 
-  const onAddEvent = () => {
+  const onCreateEvent = () => {
     window.scrollTo(0, 0);
     resetMessages();
     setMode("add");
@@ -117,7 +117,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
     setImportantInfo("");
   };
 
-  const onEditEvent = (event: SelectEvent, clone = false) => {
+  const onUpdateEvent = (event: SelectEvent, clone = false) => {
     window.scrollTo(0, 0);
     resetMessages();
     setMode(clone ? "add" : "edit");
@@ -147,7 +147,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
   return (
     <>
       {mode === "view" ? (
-        <Button onClick={onAddEvent} className="btn-success btn-sm mx-2">
+        <Button onClick={onCreateEvent} className="btn-success btn-sm mx-2">
           Create Event
         </Button>
       ) : (
@@ -351,7 +351,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
                 <td>
                   <div className="d-flex gap-2">
                     <Button
-                      onClick={() => onEditEvent(event)}
+                      onClick={() => onUpdateEvent(event)}
                       disabled={mode !== "view"}
                       className="btn-xs"
                       title="Edit"
@@ -360,7 +360,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
                       <FontAwesomeIcon icon={faPencil} />
                     </Button>
                     <Button
-                      onClick={() => onEditEvent(event, true)}
+                      onClick={() => onUpdateEvent(event, true)}
                       disabled={mode !== "view"}
                       className="btn-xs"
                       title="Clone"

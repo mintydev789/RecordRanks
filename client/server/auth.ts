@@ -32,6 +32,7 @@ import { roundsTable } from "~/server/db/schema/rounds.ts";
 import { settingsTable } from "~/server/db/schema/settings.ts";
 import {
   sendAccountDeletedEmail,
+  sendOrganizationInvitationEmail,
   sendPasswordChangedEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
@@ -68,6 +69,19 @@ export const auth = betterAuth({
     }),
     organization({
       allowUserToCreateOrganization: (user) => getHasRole("admin", user.role),
+      cancelPendingInvitationsOnReInvite: true,
+      membershipLimit: 1000, // TO-DO: THIS IS TEMPORARY!!!
+      sendInvitationEmail: async (data) => {
+        if (process.env.EMAIL_HOST)
+          logMessage("RR0039", `Sending invitation to ${data.organization.name} to email ${data.email}`);
+
+        sendOrganizationInvitationEmail(data.email, {
+          organizationName: data.organization.name,
+          invitedByUsername: data.inviter.user.name,
+          invitedByEmail: data.inviter.user.email,
+          inviteLink: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation/${data.id}`,
+        });
+      },
       organizationHooks: {
         afterCreateOrganization: async () => {
           // if (process.env.NODE_ENV !== "production") {

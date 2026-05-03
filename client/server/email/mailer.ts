@@ -197,6 +197,28 @@ export function sendAccountDeletedEmail(to: string) {
   });
 }
 
+export function sendOrganizationInvitationEmail(
+  to: string,
+  details: { organizationName: string; invitedByUsername: string; invitedByEmail: string; inviteLink: string },
+) {
+  send({
+    templateFileName: "organization-invitation.hbs",
+    context: {
+      baseUrl,
+      projectName,
+      ...details,
+    },
+    callback: async (html) => {
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
+        subject: `Invitation to ${details.organizationName}`,
+        html,
+      });
+    },
+  });
+}
+
 export function sendRolesChangedEmail(
   to: string,
   roles: string[],

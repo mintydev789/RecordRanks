@@ -76,12 +76,14 @@ export function logMessage(
 
 export async function authorizeUser({
   permissions,
+  useOrganization = false,
 }: {
   permissions?: RrPermissions;
+  useOrganization?: boolean;
 } = {}): Promise<typeof auth.$Infer.Session> {
   const session = await auth.api.getSession({ headers: await headers() });
 
-  if (!session) redirect("/login");
+  if (!session || (useOrganization && !session.session.activeOrganizationId)) redirect("/login");
 
   if (permissions) {
     const { success } = await auth.api.userHasPermission({ body: { userId: session.user.id, permissions } });

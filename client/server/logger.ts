@@ -78,6 +78,7 @@ export const LogCodes = {
   RR0036: "send user deleted email",
   RR0037: "create user request",
   RR0038: "delete user request",
+  RR0039: "send organization invitation",
   // Access Tokens
   RR0040: "create access token",
 

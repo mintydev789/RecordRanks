@@ -51,8 +51,6 @@ function DebugScreen() {
     if (!parsed.success) {
       changeErrorMessages([z.prettifyError(parsed.error)]);
     } else {
-      console.log(parsed);
-
       startTransition(async () => {
         const { error } = await authClient.organization.create({
           name: parsed.data.name,
@@ -72,7 +70,7 @@ function DebugScreen() {
   };
 
   return (
-    <div className="mx-auto px-3" style={{ width: "var(--rr-md-width)" }}>
+    <div className="mx-auto mb-4 w-100 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
       <h2 className="mb-5 text-center">Page for debugging</h2>
 
       <ToastMessages />
@@ -96,7 +94,7 @@ function DebugScreen() {
       </Button>
 
       <form action={createOrganization} className="mt-5">
-        <h3 className="mb-3">Create organization</h3>
+        <h3 className="mb-3">Create Organization</h3>
 
         <fieldset className="mb-3">
           <label htmlFor="name_input" className="form-label">
