@@ -1,14 +1,14 @@
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { eq, inArray } from "drizzle-orm";
 import Markdown from "react-markdown";
-import ContestLayout from "~/app/competitions/[id]/ContestLayout.tsx";
+import ContestLayout from "~/app/[slug]/competitions/[id]/ContestLayout.tsx";
+import ContestControls from "~/app/[slug]/mod/ContestControls.tsx";
 import Competitor from "~/app/components/Competitor.tsx";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Region from "~/app/components/Region.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
-import ContestControls from "~/app/mod/ContestControls.tsx";
 import { getDateOnly, getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";

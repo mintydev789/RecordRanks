@@ -13,7 +13,15 @@ export const metadata = {
   },
 };
 
-async function PostsPage() {
+type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
+
+async function PostsPage({ params }: Props) {
+  const { slug } = await params;
+
   const posts = await db
     .select({ ...postsPublicCols, authorName: personsTable.name })
     .from(postsTable)
@@ -31,7 +39,7 @@ async function PostsPage() {
         <div className="row mx-0 mt-4 mb-2">
           {posts.map((post) => (
             <div key={post.id} className="col-md-6 mb-4">
-              <BlogPostCard post={post} />
+              <BlogPostCard organizationSlug={slug} post={post} />
             </div>
           ))}
         </div>

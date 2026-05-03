@@ -1,5 +1,5 @@
 import { inArray } from "drizzle-orm";
-import ContestLayout from "~/app/competitions/[id]/ContestLayout.tsx";
+import ContestLayout from "~/app/[slug]/competitions/[id]/ContestLayout.tsx";
 import Schedule from "~/app/components/Schedule.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { db } from "~/server/db/provider.ts";

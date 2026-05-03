@@ -11,21 +11,7 @@ const nextConfig: NextConfig = withMDX({
     return Promise.resolve([
       // This is to override Better Auth's default behavior when redirecting after an error
       // https://github.com/better-auth/better-auth/issues/5467
-      {
-        source: "/api/auth/error",
-        destination: "/oauth-error",
-        permanent: false,
-      },
-      {
-        source: "/records",
-        destination: "/records/unofficial",
-        permanent: true,
-      },
-      {
-        source: "/rankings",
-        destination: "/rankings/fto/single",
-        permanent: true,
-      },
+      { source: "/api/auth/error", destination: "/oauth-error", permanent: false },
     ]);
   },
   // Enables streaming (https://nextjs.org/docs/app/guides/self-hosting#streaming-and-suspense)
@@ -33,12 +19,7 @@ const nextConfig: NextConfig = withMDX({
     return [
       {
         source: "/:path*{/}?",
-        headers: [
-          {
-            key: "X-Accel-Buffering",
-            value: "no",
-          },
-        ],
+        headers: [{ key: "X-Accel-Buffering", value: "no" }],
       },
     ];
   },

@@ -1,21 +1,24 @@
 import { eq } from "drizzle-orm";
 import Markdown from "react-markdown";
 import z from "zod";
-import LoadingError from "~/app/components/UI/LoadingError";
+import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
-import { db } from "~/server/db/provider";
-import { usersTable } from "~/server/db/schema/auth-schema";
-import { personsTable } from "~/server/db/schema/persons";
-import { postsPublicCols, postsTable } from "~/server/db/schema/posts";
+import { db } from "~/server/db/provider.ts";
+import { usersTable } from "~/server/db/schema/auth-schema.ts";
+import { personsTable } from "~/server/db/schema/persons.ts";
+import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
+
+const ParamsValidator = z.strictObject({
+  slug: z.string().nonempty(),
+  postId: z.string().nonempty(),
+});
 
 type Props = {
-  params: Promise<{
-    postId: string;
-  }>;
+  params: Promise<z.infer<typeof ParamsValidator>>;
 };
 
 async function BlogPostPage({ params }: Props) {
-  const { postId } = z.strictObject({ postId: z.string().nonempty() }).parse(await params);
+  const { postId } = ParamsValidator.parse(await params);
 
   const [post] = await db
     .select({ ...postsPublicCols, authorName: personsTable.name })

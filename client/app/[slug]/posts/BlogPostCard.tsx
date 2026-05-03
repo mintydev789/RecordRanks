@@ -3,12 +3,13 @@ import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import type { PostResponse } from "~/server/db/schema/posts.ts";
 
 type Props = {
+  organizationSlug: string;
   post: PostResponse & {
     authorName?: string | null;
   };
 };
 
-function BlogPostCard({ post }: Props) {
+function BlogPostCard({ organizationSlug, post }: Props) {
   return (
     <div className="card h-100">
       <div className="card-body">
@@ -26,7 +27,7 @@ function BlogPostCard({ post }: Props) {
           </p>
         )}
 
-        <Link href={`/posts/${post.postId}`} prefetch={false} className="btn btn-primary">
+        <Link href={`/${organizationSlug}/posts/${post.postId}`} prefetch={false} className="btn btn-primary">
           Read more
         </Link>
       </div>

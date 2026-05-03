@@ -17,17 +17,6 @@ import {
 import { actionClient, RrActionError } from "../safeAction.ts";
 import { getSettingFromDb, logMessage } from "../server-only-functions.ts";
 
-export const logAffiliateLinkClickSF = actionClient
-  .metadata({})
-  .inputSchema(
-    z.strictObject({
-      message: z.string().nonempty(),
-    }),
-  )
-  .action(async ({ parsedInput: { message } }) => {
-    logMessage("RR0004", message);
-  });
-
 export const logErrorSF = actionClient
   .metadata({})
   .inputSchema(

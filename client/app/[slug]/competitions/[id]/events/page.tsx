@@ -1,5 +1,5 @@
 import { asc, eq } from "drizzle-orm";
-import ContestLayout from "~/app/competitions/[id]/ContestLayout.tsx";
+import ContestLayout from "~/app/[slug]/competitions/[id]/ContestLayout.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { roundFormats } from "~/helpers/roundFormats.ts";

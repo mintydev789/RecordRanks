@@ -5,7 +5,7 @@ import { toZonedTime } from "date-fns-tz";
 import { and, arrayContains, desc, eq, gte, inArray, lt, notInArray, or } from "drizzle-orm";
 import { find as findTimezone } from "geo-tz";
 import z from "zod";
-import { ModDashboardFiltersValidator } from "~/app/mod/ModDashboardFilters.ts";
+import { ModDashboardFiltersValidator } from "~/app/[slug]/mod/ModDashboardFilters.ts";
 import { C } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";

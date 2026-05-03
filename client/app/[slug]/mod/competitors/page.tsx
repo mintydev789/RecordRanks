@@ -1,6 +1,6 @@
 import { desc, eq, inArray } from "drizzle-orm";
+import ManageCompetitorsScreen from "~/app/[slug]/mod/competitors/ManageCompetitorsScreen.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import ManageCompetitorsScreen from "~/app/mod/competitors/ManageCompetitorsScreen.tsx";
 import type { Creator } from "~/helpers/types.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";

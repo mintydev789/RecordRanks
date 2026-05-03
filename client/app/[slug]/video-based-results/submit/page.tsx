@@ -1,4 +1,4 @@
-import ResultsSubmissionForm from "~/app/video-based-results/ResultsSubmissionForm.tsx";
+import ResultsSubmissionForm from "~/app/[slug]/video-based-results/ResultsSubmissionForm.tsx";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";

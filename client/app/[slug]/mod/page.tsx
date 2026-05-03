@@ -14,10 +14,14 @@ import { authorizeUser } from "~/server/server-only-functions.ts";
 import ModDashboardScreen from "./ModDashboardScreen.tsx";
 
 type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
   searchParams: Promise<ModDashboardFiltersDto>;
 };
 
-async function ModeratorDashboardPage({ searchParams }: Props) {
+async function ModeratorDashboardPage({ params, searchParams }: Props) {
+  const { slug } = await params;
   const filters = ModDashboardFiltersValidator.parse(await searchParams);
   const session = await authorizeUser({ permissions: { modDashboard: ["view"] } });
 
@@ -47,10 +51,10 @@ async function ModeratorDashboardPage({ searchParams }: Props) {
         )}
 
         <div className="d-flex fs-5 column-gap-2 column-gap-xl-3 row-gap-2 mt-4 mb-3 flex-wrap">
-          <Link href="/mod/competition" prefetch={false} className="btn btn-success btn-sm btn-lg-md">
+          <Link href={`/${slug}/mod/competition`} prefetch={false} className="btn btn-success btn-sm btn-lg-md">
             Create new contest
           </Link>
-          <Link href="/mod/competitors" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
+          <Link href={`/${slug}/mod/competitors`} prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
             Manage competitors
           </Link>
           {isAdminView ? (
@@ -58,10 +62,14 @@ async function ModeratorDashboardPage({ searchParams }: Props) {
               <Link href="/admin/users" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
                 Manage users
               </Link>
-              <Link href="/mod/events" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
+              <Link href={`/${slug}/mod/events`} prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
                 Configure events
               </Link>
-              <Link href="/mod/records-configuration" prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
+              <Link
+                href={`/${slug}/mod/records-configuration`}
+                prefetch={false}
+                className="btn btn-secondary btn-sm btn-lg-md"
+              >
                 Configure records
               </Link>
             </>

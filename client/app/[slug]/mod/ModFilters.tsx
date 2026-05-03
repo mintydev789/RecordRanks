@@ -2,11 +2,11 @@
 
 import { useAction } from "next-safe-action/hooks";
 import { useContext, useState } from "react";
+import { type ModDashboardStateFilterValue, useModDashboardQueryState } from "~/app/[slug]/mod/ModDashboardFilters.ts";
 import FiltersContainer from "~/app/components/FiltersContainer.tsx";
 import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
 import Button from "~/app/components/UI/Button.tsx";
-import { type ModDashboardStateFilterValue, useModDashboardQueryState } from "~/app/mod/ModDashboardFilters.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { InputPerson } from "~/helpers/types.ts";

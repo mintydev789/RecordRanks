@@ -1,4 +1,4 @@
-import ContestLayout from "~/app/competitions/[id]/ContestLayout.tsx";
+import ContestLayout from "~/app/[slug]/competitions/[id]/ContestLayout.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import EventResultsTable from "~/app/components/EventResultsTable.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
