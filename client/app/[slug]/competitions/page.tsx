@@ -1,6 +1,5 @@
 import { and, eq, ne } from "drizzle-orm";
 import { Suspense } from "react";
-import AffiliateLink from "~/app/components/AffiliateLink.tsx";
 import ContestsTable from "~/app/components/ContestsTable.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import RegionSelect from "~/app/components/RegionSelect.tsx";
@@ -69,8 +68,6 @@ async function ContestsPage({ searchParams }: Props) {
   return (
     <section>
       <h2 className="mb-4 text-center">All Contests</h2>
-
-      <AffiliateLink type="other" />
 
       {events.length === 0 ? (
         <LoadingError loadingEntity="contests" />

@@ -2,12 +2,11 @@ import omitBy from "lodash/omitBy";
 import Link from "next/link";
 import { Suspense } from "react";
 import z from "zod";
-import AffiliateLink from "~/app/components/AffiliateLink.tsx";
+import RecordsTable from "~/app/[slug]/records/[eventCategory]/RecordsTable.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import RegionSelect from "~/app/components/RegionSelect.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
-import RecordsTable from "~/app/records/[eventCategory]/RecordsTable.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
@@ -24,6 +23,7 @@ export const metadata = {
 };
 
 const ParamsValidator = z.strictObject({
+  slug: z.string().nonempty(),
   eventCategory: z.string().nonempty(),
 });
 const SearchParamsValidator = z.strictObject({
@@ -38,7 +38,7 @@ type Props = {
 };
 
 async function RecordsPage({ params, searchParams }: Props) {
-  const { eventCategory } = ParamsValidator.parse(await params);
+  const { slug, eventCategory } = ParamsValidator.parse(await params);
   const { category, eventId, region } = SearchParamsValidator.parse(await searchParams);
 
   const urlSearchParams = new URLSearchParams(omitBy({ category, eventId, region } as any, (val) => !val));
@@ -73,8 +73,6 @@ async function RecordsPage({ params, searchParams }: Props) {
   return (
     <section>
       <h2 className="mb-4 text-center">Records</h2>
-
-      <AffiliateLink type={eventCategory === "unofficial" ? "fto" : eventCategory === "wca" ? "wca" : "other"} />
 
       <Tabs tabs={tabs} activeTab={eventCategory} forServerSidePage />
 

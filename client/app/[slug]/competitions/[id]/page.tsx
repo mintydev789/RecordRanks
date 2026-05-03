@@ -53,7 +53,7 @@ async function ContestDetailsPage({ params }: Props) {
       <a
         href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}&zoom=18`}
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noreferrer"
       >
         {latitude}, {longitude}
       </a>

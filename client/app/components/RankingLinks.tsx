@@ -9,14 +9,14 @@ function RankingLinks({ ranking }: Props) {
   return (
     <div className="d-flex gap-2">
       {ranking.videoLink ? (
-        <a href={ranking.videoLink} target="_blank" rel="noopener noreferrer">
+        <a href={ranking.videoLink} target="_blank" rel="noreferrer">
           Video
         </a>
       ) : (
         C.videoNoLongerAvailableMsg
       )}
       {ranking.discussionLink && (
-        <a href={ranking.discussionLink} target="_blank" rel="noopener noreferrer">
+        <a href={ranking.discussionLink} target="_blank" rel="noreferrer">
           Discussion
         </a>
       )}

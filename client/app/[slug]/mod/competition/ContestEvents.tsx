@@ -402,11 +402,7 @@ function ContestEvents({
           {ce.rounds.length > 1 && (
             <p className="fs-6 fw-bold fst-italic mt-4 text-danger">
               Make sure{" "}
-              <a
-                href="https://www.worldcubeassociation.org/regulations/full/#9m"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="https://www.worldcubeassociation.org/regulations/full/#9m" target="_blank" rel="noreferrer">
                 Regulation 9m
               </a>{" "}
               is followed when opening subsequent rounds. Not having enough competitors will result in the subsequent

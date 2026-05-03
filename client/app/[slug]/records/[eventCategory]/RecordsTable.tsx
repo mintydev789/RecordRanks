@@ -2,8 +2,8 @@
 
 import { useQueryState } from "nuqs";
 import { use } from "react";
+import RecordRow from "~/app/[slug]/records/[eventCategory]/RecordRow.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
-import RecordRow from "~/app/records/[eventCategory]/RecordRow.tsx";
 import type { RecordRanking } from "~/helpers/types/Rankings.tsx";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";

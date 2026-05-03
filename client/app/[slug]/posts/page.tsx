@@ -1,6 +1,5 @@
 import { desc, eq } from "drizzle-orm";
 import BlogPostCard from "~/app/[slug]/posts/BlogPostCard.tsx";
-import AffiliateLink from "~/app/components/AffiliateLink.tsx";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
@@ -25,8 +24,6 @@ async function PostsPage() {
   return (
     <section>
       <h2 className="mb-4 text-center">Blog</h2>
-
-      <AffiliateLink type="other" />
 
       {posts.length === 0 ? (
         <p className="fs-5 mx-3 mt-4 text-center">No posts have been published yet</p>

@@ -12,7 +12,7 @@ import { getActionError } from "~/helpers/utilityFunctions.ts";
 import { sendDebugEmailSF } from "~/server/server-functions/user-server-functions.ts";
 
 function DebugScreen() {
-  const { changeErrorMessages, resetMessages } = useContext(MainContext);
+  const { changeSuccessMessage, changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { executeAsync: sendDebugEmail, isPending: isSendingEmail } = useAction(sendDebugEmailSF);
   const [debugOutput, setDebugOutput] = useState("");
@@ -39,7 +39,11 @@ function DebugScreen() {
     const parsed = z
       .strictObject({
         name: z.string().nonempty(),
-        slug: z.string().nonempty(),
+        slug: z
+          .string()
+          .min(3)
+          .max(12)
+          .regex(/^[a-z0-9]$/),
         logo: z.string().nullable(),
       })
       .safeParse(Object.fromEntries(formData.entries()));
@@ -50,7 +54,7 @@ function DebugScreen() {
       console.log(parsed);
 
       startTransition(async () => {
-        const { data, error } = await authClient.organization.create({
+        const { error } = await authClient.organization.create({
           name: parsed.data.name,
           slug: parsed.data.slug,
           logo: parsed.data.logo || undefined,
@@ -61,7 +65,7 @@ function DebugScreen() {
         if (error) {
           changeErrorMessages([error.message ?? error.statusText]);
         } else {
-          console.log(data);
+          changeSuccessMessage("Successfully created organization");
         }
       });
     }

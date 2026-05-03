@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import BlogPostCard from "~/app/posts/BlogPostCard.tsx";
+import BlogPostCard from "~/app/[slug]/posts/BlogPostCard.tsx";
 import type { PostResponse } from "~/server/db/schema/posts.ts";
 
 type Props = {

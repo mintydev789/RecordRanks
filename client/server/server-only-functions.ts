@@ -264,7 +264,7 @@ export async function getRankings(
     type: z.enum(["single", "average", "all-avg-formats"]),
     recordCategory: z.enum([...RecordCategoryValues, "all"]),
     show: z.enum(["persons", "results"]).optional(),
-    region: z.string().optional(),
+    region: z.string().nonempty().optional(),
     topN: z.int().min(1).max(C.maxRankings),
   }).parse({ type, recordCategory, show, region, topN });
 

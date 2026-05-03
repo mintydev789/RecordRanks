@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import EventInformation from "~/app/rules/EventInformation.tsx";
+import EventInformation from "~/app/[slug]/rules/EventInformation.tsx";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 
 type Props = {

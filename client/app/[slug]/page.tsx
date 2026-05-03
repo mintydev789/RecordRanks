@@ -29,7 +29,7 @@ async function OrganizationHomePage() {
       {IS_CUBING_CONTESTS_INSTANCE && (
         <div className="alert alert-light mb-4" role="alert">
           Join the Cubing Contests{" "}
-          <a href={C.discordServerLink} target="_blank" rel="noopener noreferrer">
+          <a href={C.discordServerLink} target="_blank" rel="noreferrer">
             Discord server
           </a>
           !

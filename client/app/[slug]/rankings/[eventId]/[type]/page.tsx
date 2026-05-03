@@ -1,79 +1,61 @@
+import { eq } from "drizzle-orm";
 import omitBy from "lodash/omitBy";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import AffiliateLink from "~/app/components/AffiliateLink.tsx";
+import z from "zod";
+import RankingsTable from "~/app/[slug]/rankings/[eventId]/[type]/RankingsTable.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
 import RegionSelect from "~/app/components/RegionSelect.tsx";
-import Loading from "~/app/components/UI/Loading";
-import Tooltip from "~/app/components/UI/Tooltip";
-import RankingsTable from "~/app/rankings/[eventId]/[type]/RankingsTable";
-import { roundFormats } from "~/helpers/roundFormats";
-import type { RecordCategory } from "~/helpers/types";
-import { db } from "~/server/db/provider";
-import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events";
+import Loading from "~/app/components/UI/Loading.tsx";
+import Tooltip from "~/app/components/UI/Tooltip.tsx";
+import { roundFormats } from "~/helpers/roundFormats.ts";
+import { RecordCategoryValues } from "~/helpers/types.ts";
+import { shortenEventName } from "~/helpers/utilityFunctions.ts";
+import { db } from "~/server/db/provider.ts";
+import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { getRankings } from "~/server/server-only-functions.ts";
 
-const eventsWith3x3 = [
-  "333",
-  "333oh",
-  "333bf",
-  "333bf_oh",
-  "333fm",
-  "333mbf",
-  "333_team_bld",
-  "333_team_bld_old",
-  "333_linear_fm",
-  "333_speed_bld",
-  "333mts",
-  "333ft",
-  "333mbo",
-  "333_team_factory",
-  "333_one_move_team_factory",
-  "333_inspectionless",
-  "333_scrambling",
-  "333oh_x2",
-  "333_oven_mitts",
-  "333_doubles",
-  "333_one_side",
-  "333_supersolve",
-  "333_bets",
-  "333_cube_mile",
-  "333bf_2_person_relay",
-  "333bf_3_person_relay",
-  "333bf_4_person_relay",
-  "333bf_8_person_relay",
-  "333_oh_bld_team_relay",
-];
-
-// TO-DO: MAKE THIS DYNAMICALLY INCLUDE THE EVENT, IF POSSIBLE!!!!!
-export const metadata = {
-  title: "Rankings",
-  description: process.env.METADATA_RANKINGS_DESCRIPTION,
-  openGraph: {
-    images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/rankings.jpg`],
-  },
-};
+const ParamsValidator = z.strictObject({
+  slug: z.string().nonempty(),
+  eventId: z.string().nonempty(),
+  type: z.enum(["single", "average", "all-avg-formats"]),
+});
+const SearchParamsValidator = z.strictObject({
+  show: z.literal("results").optional(),
+  category: z.enum([...RecordCategoryValues, "all"]).optional(),
+  region: z.string().nonempty().optional(),
+  topN: z
+    .string()
+    .optional()
+    .refine((val) => val === undefined || !Number.isNaN(Number(val)), { error: "Invalid topN number" })
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val)),
+});
 
 type Props = {
-  params: Promise<{
-    eventId: string;
-    type: "single" | "average" | "all-avg-formats";
-  }>;
-  // Keep in mind that the rankings links on the records page also pass the search params along, so they have to match
-  searchParams: Promise<{
-    show?: "results";
-    category?: RecordCategory | "all";
-    region?: string;
-    topN?: string;
-  }>;
+  params: Promise<z.infer<typeof ParamsValidator>>;
+  searchParams: Promise<z.infer<typeof SearchParamsValidator>>;
 };
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { eventId } = await params;
+
+  const [event] = await db.select(eventsPublicCols).from(table).where(eq(table.eventId, eventId!));
+
+  return {
+    title: `${shortenEventName(event.name)} Rankings`,
+    description: process.env.METADATA_RANKINGS_DESCRIPTION,
+    openGraph: {
+      images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/rankings.jpg`],
+    },
+  };
+}
+
 async function RankingsPage({ params, searchParams }: Props) {
-  // All params are validated in getRankings()
-  const { eventId, type } = await params;
-  const { show, category, region, topN } = await searchParams;
+  const { slug, eventId, type } = ParamsValidator.parse(await params);
+  const { show, category, region, topN } = SearchParamsValidator.parse(await searchParams);
 
   const urlSearchParams = new URLSearchParams(omitBy({ show, category, region, topN } as any, (val) => !val));
   const urlSearchParamsWithoutShow = new URLSearchParams(omitBy({ category, region, topN } as any, (val) => !val));
@@ -95,38 +77,18 @@ async function RankingsPage({ params, searchParams }: Props) {
       : "competitions");
   const roundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
 
-  const rankingsPromise = getRankings(event, type, recordCategory, {
-    show,
-    region,
-    topN: topN ? parseInt(topN, 10) : undefined,
-  });
-
-  const affiliateLinkType = eventsWith3x3.includes(eventId)
-    ? "3x3"
-    : ["222", "222bf", "222fm", "222oh"].includes(eventId)
-      ? "2x2"
-      : event.category === "wca"
-        ? "wca"
-        : ["fto", "fto_bld", "fto_mbld", "mfto", "baby_fto"].includes(eventId)
-          ? "fto"
-          : ["333_mirror_blocks", "333_mirror_blocks_bld", "222_mirror_blocks"].includes(eventId)
-            ? "mirror"
-            : eventId === "kilominx"
-              ? "kilominx"
-              : "other";
+  const rankingsPromise = getRankings(event, type, recordCategory, { show, region, topN });
 
   return (
     <section>
       <h2 className="mb-3 text-center">Rankings</h2>
-
-      <AffiliateLink type={affiliateLinkType} />
 
       <div className="mb-3 px-2">
         <h4>Event</h4>
         <EventButtons
           events={visibleEvents}
           eventIdOverride={eventId}
-          pathTemplate={`/rankings/__EVENT_ID__/${type}`}
+          pathTemplate={`/${slug}/rankings/__EVENT_ID__/${type}`}
         />
 
         {/* Similar code to the records page */}
@@ -147,21 +109,21 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Type">
                 <Link
-                  href={`/rankings/${eventId}/single?${urlSearchParams}`}
+                  href={`/${slug}/rankings/${eventId}/single?${urlSearchParams}`}
                   prefetch={false}
                   className={`btn btn-primary ${type === "single" ? "active" : ""}`}
                 >
                   Single
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/average?${urlSearchParams}`}
+                  href={`/${slug}/rankings/${eventId}/average?${urlSearchParams}`}
                   prefetch={false}
                   className={`btn btn-primary ${type === "average" ? "active" : ""}`}
                 >
                   {roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"}
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/all-avg-formats?${urlSearchParams}`}
+                  href={`/${slug}/rankings/${eventId}/all-avg-formats?${urlSearchParams}`}
                   prefetch={false}
                   className={`btn btn-primary ${type === "all-avg-formats" ? "active" : ""}`}
                 >
@@ -175,14 +137,14 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Show">
                 <Link
-                  href={`/rankings/${eventId}/${type}?${urlSearchParamsWithoutShow}`}
+                  href={`/${slug}/rankings/${eventId}/${type}?${urlSearchParamsWithoutShow}`}
                   prefetch={false}
                   className={`btn btn-primary ${!show ? "active" : ""}`}
                 >
                   Top Persons
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${type}?${
+                  href={`/${slug}/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutShow.toString() ? `${urlSearchParamsWithoutShow}&` : ""
                   }show=results`}
                   prefetch={false}
@@ -198,27 +160,27 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Top">
                 <Link
-                  href={`/rankings/${eventId}/${type}?${urlSearchParamsWithoutTopN}`}
+                  href={`/${slug}/rankings/${eventId}/${type}?${urlSearchParamsWithoutTopN}`}
                   prefetch={false}
-                  className={`btn btn-primary ${!topN || topN === "100" ? "active" : ""}`}
+                  className={`btn btn-primary ${!topN || topN === 100 ? "active" : ""}`}
                 >
                   100
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${type}?${
+                  href={`/${slug}/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
                   }topN=1000`}
                   prefetch={false}
-                  className={`btn btn-primary ${topN === "1000" ? "active" : ""}`}
+                  className={`btn btn-primary ${topN === 1000 ? "active" : ""}`}
                 >
                   1000
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${type}?${
+                  href={`/${slug}/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
                   }topN=10000`}
                   prefetch={false}
-                  className={`btn btn-primary ${topN === "10000" ? "active" : ""}`}
+                  className={`btn btn-primary ${topN === 10000 ? "active" : ""}`}
                 >
                   10000
                 </Link>

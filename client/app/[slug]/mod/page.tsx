@@ -38,7 +38,7 @@ async function ModeratorDashboardPage({ searchParams }: Props) {
         {IS_CUBING_CONTESTS_INSTANCE && (
           <div className="alert alert-light mb-4" role="alert">
             We have a Cubing Contests Discord server!{" "}
-            <a href={C.discordServerLink} target="_blank" rel="noopener noreferrer">
+            <a href={C.discordServerLink} target="_blank" rel="noreferrer">
               Click here to join
             </a>
             , then send your CC username and your Discord username in an email to{" "}
@@ -70,7 +70,7 @@ async function ModeratorDashboardPage({ searchParams }: Props) {
               <a
                 href="https://docs.google.com/forms/d/12AuZdtH4qHwTxd4Kxd2Y_TwZHlBuBu8XuKX3VdKrE60"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noreferrer"
                 className="btn btn-light btn-sm btn-lg-md"
               >
                 Request new event

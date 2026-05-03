@@ -5,7 +5,7 @@ function DonateButton() {
     <a
       href={C.rrDonationLink}
       target="_blank"
-      rel="noopener noreferrer"
+      rel="noreferrer"
       className="rr-kofi-button text-decoration-none text-white"
     >
       <img
