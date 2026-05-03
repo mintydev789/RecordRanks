@@ -6,11 +6,14 @@ import { db } from "~/server/db/provider.ts";
 import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 
 type Props = {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    slug: string;
+    id: string;
+  }>;
 };
 
 async function CompetitionSchedulePage({ params }: Props) {
-  const { id } = await params;
+  const { slug, id } = await params;
 
   const contestPromise = db.query.contests.findFirst({
     columns: { competitionId: true, name: true, type: true, schedule: true },
@@ -28,7 +31,7 @@ async function CompetitionSchedulePage({ params }: Props) {
   if (!contest?.schedule || !rounds || !events) return <LoadingError loadingEntity="contest" />;
 
   return (
-    <ContestLayout contest={contest} activeTab="schedule">
+    <ContestLayout organizationSlug={slug} contest={contest} activeTab="schedule">
       <Schedule
         rooms={contest.schedule.venues[0].rooms}
         events={events}

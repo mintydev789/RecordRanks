@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import z from "zod";
+import ResultsSubmissionForm from "~/app/[slug]/video-based-results/ResultsSubmissionForm.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import ResultsSubmissionForm from "~/app/video-based-results/ResultsSubmissionForm.tsx";
 import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";

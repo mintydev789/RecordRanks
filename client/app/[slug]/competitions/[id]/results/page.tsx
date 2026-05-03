@@ -5,12 +5,17 @@ import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { getContestSF } from "~/server/server-functions/contest-server-functions.ts";
 
 type Props = {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ eventId?: string }>;
+  params: Promise<{
+    slug: string;
+    id: string;
+  }>;
+  searchParams: Promise<{
+    eventId?: string;
+  }>;
 };
 
 async function ContestResultsPage({ params, searchParams }: Props) {
-  const { id } = await params;
+  const { slug, id } = await params;
   const { eventId } = await searchParams;
 
   const res = await getContestSF({ competitionId: id, eventId });
@@ -21,7 +26,7 @@ async function ContestResultsPage({ params, searchParams }: Props) {
   const event = eventId ? events.find((e) => e.eventId === eventId)! : events[0];
 
   return (
-    <ContestLayout contest={contest} activeTab="results">
+    <ContestLayout organizationSlug={slug} contest={contest} activeTab="results">
       <div className="px-1">
         <EventButtons events={events} eventIdOverride={event.eventId} showAllEvents />
       </div>

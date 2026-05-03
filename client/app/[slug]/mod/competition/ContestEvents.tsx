@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import EventImportantInfo from "~/app/[slug]/mod/competition/EventImportantInfo.tsx";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
@@ -9,7 +10,6 @@ import FormNumberInput from "~/app/components/form/FormNumberInput.tsx";
 import FormRadio from "~/app/components/form/FormRadio.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
 import Button from "~/app/components/UI/Button.tsx";
-import EventImportantInfo from "~/app/mod/competition/EventImportantInfo.tsx";
 import { C } from "~/helpers/constants.ts";
 import { cutoffAttemptsOptions, roundProceedOptions } from "~/helpers/multipleChoiceOptions.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";

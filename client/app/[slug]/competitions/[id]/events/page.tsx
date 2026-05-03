@@ -11,11 +11,14 @@ import { eventsTable } from "~/server/db/schema/events.ts";
 import { roundsTable } from "~/server/db/schema/rounds.ts";
 
 type Props = {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    slug: string;
+    id: string;
+  }>;
 };
 
 async function ContestEventsPage({ params }: Props) {
-  const { id } = await params;
+  const { slug, id } = await params;
 
   const [contest] = await db.select(contestsPublicCols).from(table).where(eq(table.competitionId, id));
   const roundsData = await db
@@ -28,7 +31,7 @@ async function ContestEventsPage({ params }: Props) {
   if (!contest || !roundsData) return <LoadingError loadingEntity="contest" />;
 
   return (
-    <ContestLayout contest={contest} activeTab="events">
+    <ContestLayout organizationSlug={slug} contest={contest} activeTab="events">
       <div className="table-responsive mb-5 flex-grow-1">
         <table className="table-hover table text-nowrap">
           <thead>

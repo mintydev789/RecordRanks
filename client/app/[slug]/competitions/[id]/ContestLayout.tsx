@@ -2,32 +2,33 @@ import Tabs from "~/app/components/UI/Tabs.tsx";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 
 type Props = {
+  organizationSlug: string;
   contest: Pick<ContestResponse, "competitionId" | "name" | "type">;
   activeTab: string;
   children: React.ReactNode;
 };
 
-function ContestLayout({ contest, activeTab, children }: Props) {
+function ContestLayout({ organizationSlug, contest, activeTab, children }: Props) {
   const tabs = [
     {
       title: "Details",
       value: "details",
-      route: `/competitions/${contest.competitionId}`,
+      route: `/${organizationSlug}/competitions/${contest.competitionId}`,
     },
     {
       title: "Results",
       value: "results",
-      route: `/competitions/${contest.competitionId}/results`,
+      route: `/${organizationSlug}/competitions/${contest.competitionId}/results`,
     },
     {
       title: "Events",
       value: "events",
-      route: `/competitions/${contest.competitionId}/events`,
+      route: `/${organizationSlug}/competitions/${contest.competitionId}/events`,
     },
     {
       title: "Schedule",
       value: "schedule",
-      route: `/competitions/${contest.competitionId}/schedule`,
+      route: `/${organizationSlug}/competitions/${contest.competitionId}/schedule`,
       hidden: contest.type === "meetup",
     },
   ];

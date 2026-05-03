@@ -2,7 +2,6 @@
 
 import { faBars, faBook, faCalendarDays, faRankingStar, faStar, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -17,6 +16,7 @@ function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
+  const { data: activeOrganization } = authClient.useActiveOrganization();
   const { mutate } = useSWRConfig();
 
   const { data: moderatorInstructions } = useSWR(["mod-instructions"], () => getModInstructionsSF());
@@ -67,11 +67,14 @@ function Navbar() {
     setUserExpanded(false);
   };
 
+  // TO-DO: FIX NO NAVBAR FLASHING BEFORE HYDRATION!
+  if (!activeOrganization) return;
+
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary">
       <div className="container-md position-relative">
-        <Link href="/" prefetch={false} className="navbar-brand">
-          <Image src="/favicon.png" height={45} width={45} alt="Home" />
+        <Link href={`/${activeOrganization.slug}`} prefetch={false} className="navbar-brand">
+          {activeOrganization.logo ? <img src={activeOrganization.logo} height={45} width={45} alt="Home" /> : "Home"}
         </Link>
         <button
           type="button"
@@ -86,10 +89,10 @@ function Navbar() {
           <ul className="navbar-nav fs-5 mx-2 mt-3 mt-lg-0 gap-lg-2 align-items-lg-end align-items-start">
             <li className="nav-item">
               <Link
-                href="/competitions"
+                href={`/${activeOrganization.slug}/competitions`}
                 onClick={collapseAll}
                 prefetch={false}
-                className={`nav-link ${pathname === "/competitions" ? "active" : ""}`}
+                className={`nav-link ${pathname === `/${activeOrganization.slug}/competitions` ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faCalendarDays} size="xs" className="me-2" />
                 Contests
@@ -103,7 +106,7 @@ function Navbar() {
               <button
                 type="button"
                 onClick={() => toggleDropdown("results", !resultsExpanded)}
-                className={`nav-link dropdown-toggle ${/^\/(rankings|records|export)/.test(pathname) ? "active" : ""}`}
+                className={`nav-link dropdown-toggle ${/^\/[a-z0-9]+\/(rankings|records|export)/.test(pathname) ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faRankingStar} size="xs" className="me-2" />
                 Results
@@ -111,20 +114,20 @@ function Navbar() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${resultsExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    href="/records"
+                    href={`/${activeOrganization.slug}/records`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/records\//.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${/^\/[a-z0-9]+\/records\//.test(pathname) ? "active" : ""}`}
                   >
                     Records
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/rankings"
+                    href={`/${activeOrganization.slug}/rankings`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/rankings\//.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${/^\/[a-z0-9]+\/rankings\//.test(pathname) ? "active" : ""}`}
                   >
                     Rankings
                   </Link>
@@ -132,10 +135,10 @@ function Navbar() {
                 {process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP && process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP !== "0" && (
                   <li>
                     <Link
-                      href="/export"
+                      href={`/${activeOrganization.slug}/export`}
                       onClick={collapseAll}
                       prefetch={false}
-                      className={`nav-link ${pathname === "/export" ? "active" : ""}`}
+                      className={`nav-link ${pathname === `/${activeOrganization.slug}/export` ? "active" : ""}`}
                     >
                       Exports
                     </Link>
@@ -145,10 +148,10 @@ function Navbar() {
             </li>
             <li className="nav-item">
               <Link
-                href="/rules"
+                href={`/${activeOrganization.slug}/rules`}
                 onClick={collapseAll}
                 prefetch={false}
-                className={`nav-link ${pathname === "/rules" ? "active" : ""}`}
+                className={`nav-link ${pathname === `/${activeOrganization.slug}/rules` ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
                 Rules
@@ -170,20 +173,20 @@ function Navbar() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${moreExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    href="/about"
+                    href={`/${activeOrganization.slug}/about`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${pathname === "/about" ? "active" : ""}`}
+                    className={`nav-link ${pathname === `/${activeOrganization.slug}/about` ? "active" : ""}`}
                   >
                     About
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/posts"
+                    href={`/${activeOrganization.slug}/posts`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/posts/.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${/^\/[a-z0-9]+\/posts/.test(pathname) ? "active" : ""}`}
                   >
                     Blog
                   </Link>
@@ -191,10 +194,10 @@ function Navbar() {
                 {moderatorInstructions && (
                   <li>
                     <Link
-                      href="/moderator-instructions"
+                      href={`/${activeOrganization.slug}/moderator-instructions`}
                       onClick={collapseAll}
                       prefetch={false}
-                      className={`nav-link ${pathname === "/moderator-instructions" ? "active" : ""}`}
+                      className={`nav-link ${pathname === `/${activeOrganization.slug}/moderator-instructions` ? "active" : ""}`}
                     >
                       Moderator instructions
                     </Link>
@@ -204,7 +207,7 @@ function Navbar() {
                   <a
                     href={C.rrDonationLink}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noreferrer"
                     onClick={collapseAll}
                     className="nav-link"
                   >
@@ -214,6 +217,7 @@ function Navbar() {
               </ul>
             </li>
             {!session ? (
+              // TO-DO: THIS NEEDS TO BE REMOVED NOW! BUT WAIT, WHAT ABOUT WHITE-LABEL? (i.e. CC)
               <li className="nav-item">
                 <Link href="/login" prefetch={false} onClick={collapseAll} className="nav-link">
                   <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
@@ -239,10 +243,10 @@ function Navbar() {
                   {canAccessModDashboard && (
                     <li>
                       <Link
-                        href={`/mod${getHasRole("admin", session.user.role) ? "?state=pending" : ""}`}
+                        href={`/${activeOrganization.slug}/mod${getHasRole("admin", session.user.role) ? "?state=pending" : ""}`}
                         prefetch={false}
                         onClick={collapseAll}
-                        className={`nav-link ${pathname === "/mod" ? "active" : ""}`}
+                        className={`nav-link ${pathname === `/${activeOrganization.slug}/mod` ? "active" : ""}`}
                       >
                         Mod dashboard
                       </Link>
@@ -251,10 +255,10 @@ function Navbar() {
                   {canApproveVideoBasedResults && (
                     <li>
                       <Link
-                        href="/video-based-results"
+                        href={`/${activeOrganization.slug}/video-based-results`}
                         prefetch={false}
                         onClick={collapseAll}
-                        className={`nav-link ${pathname === "/video-based-results" ? "active" : ""}`}
+                        className={`nav-link ${pathname === `/${activeOrganization.slug}/video-based-results` ? "active" : ""}`}
                       >
                         Video-based results
                       </Link>
@@ -262,10 +266,10 @@ function Navbar() {
                   )}
                   <li>
                     <Link
-                      href="/video-based-results/submit"
+                      href={`/${activeOrganization.slug}/video-based-results/submit`}
                       prefetch={false}
                       onClick={collapseAll}
-                      className={`nav-link ${pathname === "/video-based-results/submit" ? "active" : ""}`}
+                      className={`nav-link ${pathname === `/${activeOrganization.slug}/video-based-results/submit` ? "active" : ""}`}
                     >
                       Submit results
                     </Link>

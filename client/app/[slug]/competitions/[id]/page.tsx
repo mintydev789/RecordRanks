@@ -16,11 +16,14 @@ import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 
 type Props = {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    slug: string;
+    id: string;
+  }>;
 };
 
 async function ContestDetailsPage({ params }: Props) {
-  const { id } = await params;
+  const { slug, id } = await params;
 
   const [[contest], regions] = await Promise.all([
     db.select(contestsPublicCols).from(table).where(eq(table.competitionId, id)).limit(1),
@@ -61,7 +64,7 @@ async function ContestDetailsPage({ params }: Props) {
   };
 
   return (
-    <ContestLayout contest={contest} activeTab="details">
+    <ContestLayout organizationSlug={slug} contest={contest} activeTab="details">
       <div className="row fs-5 mx-0 w-100">
         <div className="col-md-5 px-0">
           <div className="px-2">
