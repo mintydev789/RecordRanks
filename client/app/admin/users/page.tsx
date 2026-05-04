@@ -12,7 +12,7 @@ import { authorizeUser } from "~/server/server-only-functions.ts";
 import ManageUsersScreen from "./ManageUsersScreen.tsx";
 
 async function ManageUsersPage() {
-  await authorizeUser({ permissions: { user: ["list"] } });
+  await authorizeUser({ permissions: { user: ["list"] }, useOrganization: false });
 
   const [res, accounts, regions] = await Promise.all([
     auth.api.listUsers({

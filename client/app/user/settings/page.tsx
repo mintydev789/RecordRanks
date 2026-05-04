@@ -9,7 +9,7 @@ import { authorizeUser, getSettingFromDb, getUserRequestDetails } from "~/server
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
-  const { user } = await authorizeUser();
+  const { user } = await authorizeUser({ useOrganization: false });
 
   const [[person], regions] = await Promise.all([
     user.personId

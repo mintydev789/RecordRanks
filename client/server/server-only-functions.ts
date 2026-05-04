@@ -76,7 +76,7 @@ export function logMessage(
 
 export async function authorizeUser({
   permissions,
-  useOrganization = false,
+  useOrganization = true,
 }: {
   permissions?: RrPermissions;
   useOrganization?: boolean;

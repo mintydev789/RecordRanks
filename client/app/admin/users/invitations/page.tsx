@@ -6,8 +6,7 @@ import Tabs from "~/app/components/UI/Tabs.tsx";
 import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function InvitationsPage() {
-  // TO-DO: THIS PROBABLY NEEDS TO CHECK ANOTHER PERMISSION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  await authorizeUser({ permissions: { adminDashboard: ["view"] }, useOrganization: true });
+  await authorizeUser({ permissions: { adminDashboard: ["view"] } });
 
   return (
     <>

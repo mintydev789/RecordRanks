@@ -10,9 +10,10 @@ import type { ListPageMode } from "~/helpers/types.ts";
 function OrganizationInvitationsScreen() {
   const { resetMessages, changeErrorMessages, changeSuccessMessage } = useContext(MainContext);
   const { data: session } = authClient.useSession();
+  const { data: activeOrganization } = authClient.useActiveOrganization();
 
   const {
-    data: { data: invitations },
+    data: invitations,
     isLoading,
     isValidating,
     mutate,
@@ -102,7 +103,7 @@ function OrganizationInvitationsScreen() {
         </form>
       )}
 
-      {!invitations || invitations.length === 0 ? (
+      {!invitations?.data || invitations.data.length === 0 ? (
         <p className="fs-5 mt-5 px-2">There are no pending invitations</p>
       ) : (
         <div className="table-responsive mt-4">
@@ -117,9 +118,9 @@ function OrganizationInvitationsScreen() {
               </tr>
             </thead>
             <tbody>
-              {invitations.map((invitation) => (
+              {invitations.data.map((invitation) => (
                 <tr key={invitation.id}>
-                  <td>{invitation.organizationId}</td>
+                  <td>{activeOrganization?.name}</td>
                   <td>{invitation.email}</td>
                   <td>{invitation.role}</td>
                   <td>{invitation.status}</td>

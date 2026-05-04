@@ -12,18 +12,36 @@ function AcceptInvitationPage() {
   const router = useRouter();
   const { resetMessages, changeErrorMessages, changeSuccessMessage } = useContext(MainContext);
 
-  const [isPending, startTransition] = useTransition();
+  const [isAccepting, startAcceptInvitationTransition] = useTransition();
+  const [isRejecting, startRejectInvitationTransition] = useTransition();
+
+  const isPending = isAccepting || isRejecting;
 
   const acceptInvitation = async () => {
     resetMessages();
 
-    startTransition(async () => {
+    startAcceptInvitationTransition(async () => {
       const { error } = await authClient.organization.acceptInvitation({ invitationId });
 
       if (error) {
         changeErrorMessages([error.message ?? error.statusText]);
       } else {
         changeSuccessMessage("Successfully accepted invitation");
+        setTimeout(() => router.push("/"), 2000);
+      }
+    });
+  };
+
+  const rejectInvitation = async () => {
+    resetMessages();
+
+    startRejectInvitationTransition(async () => {
+      const { error } = await authClient.organization.rejectInvitation({ invitationId });
+
+      if (error) {
+        changeErrorMessages([error.message ?? error.statusText]);
+      } else {
+        changeSuccessMessage("Successfully rejected invitation");
         setTimeout(() => router.push("/"), 2000);
       }
     });
@@ -37,9 +55,14 @@ function AcceptInvitationPage() {
 
       <p className="fs-5 mb-4 text-center">Click the button below to accept the invitation.</p>
 
-      <Button onClick={() => acceptInvitation()} isLoading={isPending} className="btn-success d-block mx-auto">
-        Accept Invitation
-      </Button>
+      <div className="d-flex justify-content-center gap-3">
+        <Button onClick={() => acceptInvitation()} isLoading={isAccepting} disabled={isPending} className="btn-success">
+          Accept Invitation
+        </Button>
+        <Button onClick={() => rejectInvitation()} isLoading={isRejecting} disabled={isPending} className="btn-danger">
+          Reject Invitation
+        </Button>
+      </div>
     </section>
   );
 }

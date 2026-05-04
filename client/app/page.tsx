@@ -5,7 +5,7 @@ import { auth } from "~/server/auth.ts";
 import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function HomePage() {
-  await authorizeUser();
+  await authorizeUser({ useOrganization: false });
 
   const data = await auth.api.listOrganizations({ headers: await headers() });
 
