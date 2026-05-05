@@ -72,6 +72,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
     return persons.filter((p) => {
       const passesNameFilter =
         p.id.toString() === simplifiedSearch || // search by ID
+        (p.wcaId && p.wcaId.toLowerCase() === simplifiedSearch) || // search by WCA ID
         getSimplifiedString(p.name).includes(simplifiedSearch) || // search by name
         (p.localizedName && getSimplifiedString(p.localizedName).includes(simplifiedSearch)) || // search by localized name
         (users && users.find((c) => c.id === (p as SelectPerson).createdBy)?.name === simplifiedSearch); // search by creator name
