@@ -53,6 +53,13 @@ function DebugScreen() {
       <Button onClick={sendEmail} isLoading={isSendingEmail}>
         Send
       </Button>
+
+      {process.env.NODE_ENV === "production" && (
+        <>
+          <h4 className="my-4">Version</h4>
+          <p>This instance is running on RecordRanks version {process.env.NEXT_PUBLIC_VERSION || "UNKNOWN"}</p>
+        </>
+      )}
     </div>
   );
 }
