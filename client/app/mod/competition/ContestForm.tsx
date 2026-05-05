@@ -23,7 +23,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
-import type { authClient } from "~/helpers/authClient.ts";
+import { authClient } from "~/helpers/authClient.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
@@ -72,7 +72,6 @@ type Props = {
   organizers: PersonResponse[] | undefined;
   creator: Creator | null | undefined; // null means the user has been deleted
   creatorPerson: PersonResponse | undefined;
-  session: typeof authClient.$Infer.Session;
 };
 
 function ContestForm({
@@ -85,10 +84,10 @@ function ContestForm({
   organizers: initOrganizers = [],
   creator,
   creatorPerson,
-  session,
 }: Props) {
   const router = useRouter();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
+  const { data: session } = authClient.useSession();
 
   const { executeAsync: getPersonById, isPending: isGettingPerson } = useAction(getPersonByIdSF);
   const { executeAsync: getOrCreatePersonByWcaId, isPending: isGettingOrCreatingWcaPerson } =
@@ -167,7 +166,7 @@ function ContestForm({
     [timezone, startTime, rooms, type],
   );
 
-  const isAdmin = getHasRole("admin", session.user.role);
+  const isAdmin = getHasRole("admin", session?.user.role);
   const modDashboardUrl = isAdmin ? "/mod?state=pending" : "/mod";
   const isPending =
     isCreating ||
@@ -282,7 +281,7 @@ function ContestForm({
   };
 
   const fillWithMockData = async (mockContestType: ContestType = "comp") => {
-    const res = await getPersonById({ id: session.user.personId! });
+    const res = await getPersonById({ id: session!.user.personId! });
 
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
@@ -805,6 +804,7 @@ function ContestForm({
           contestType={type!}
           disabled={disabledIfContestPublished}
           newEventsDisabled={disabledIfContestApproved && !isAdmin}
+          isAdmin={isAdmin}
         />
       )}
 

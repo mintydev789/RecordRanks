@@ -31,13 +31,13 @@ async function CreateEditContestPage({ searchParams }: Props) {
       copyId: z.string().nonempty().optional(),
     })
     .parse(await searchParams);
-  const session = await authorizeUser({
+  const { user } = await authorizeUser({
     permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
 
   const [{ success: canApprove }, regions] = await Promise.all([
     auth.api.userHasPermission({
-      body: { userId: session.user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
+      body: { userId: user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
     }),
     db.select(regionsPublicCols).from(regionsTable),
   ]);
@@ -67,7 +67,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
     let creatorPerson: PersonResponse | undefined;
 
     if (contest) {
-      if (!getUserControlsContest(session.user, contest))
+      if (!getUserControlsContest(user, contest))
         return <LoadingError reason="You do not have access rights for this contest" />;
 
       const totalResultsByRoundPromise =
@@ -128,7 +128,6 @@ async function CreateEditContestPage({ searchParams }: Props) {
             organizers={organizers}
             creator={creator}
             creatorPerson={creatorPerson}
-            session={session}
           />
         </SWRConfig>
       </section>
