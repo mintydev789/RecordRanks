@@ -6,7 +6,7 @@
 # Copyright 2025 Inder Singh. Licensed under Apache License 2.0.
 # Original source: https://github.com/singh-inder/supabase-automated-self-host/blob/main/setup.sh
 
-if [ "$(pwd | tail -c 5)" == "/bin" ]; then
+if [[ "$(pwd | tail -c 5)" == "/bin" ]]; then
   echo "Please run this script from the repo's root directory"
   exit 1
 fi

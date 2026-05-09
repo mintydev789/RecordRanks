@@ -7,7 +7,7 @@
 # $1 - (optional) --restart/-r - skip apt update and DB dump
 # $2 - (optional) --no-backup - skip creating the backup
 
-if [ "$(pwd | tail -c 5)" == "/bin" ]; then
+if [[ "$(pwd | tail -c 5)" == "/bin" ]]; then
   echo "Please run this script from the repo's root directory"
   exit 1
 fi

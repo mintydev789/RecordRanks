@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$(pwd | tail -c 5)" == "/bin" ]; then
+if [[ "$(pwd | tail -c 5)" == "/bin" ]]; then
   echo "Please run this script from the repo's root directory"
   exit 1
 fi

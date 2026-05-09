@@ -2,7 +2,7 @@
 
 # This script originates from docker/reset.sh in the Supabase repo
 
-if [ "$(pwd | tail -c 5)" == "/bin" ]; then
+if [[ "$(pwd | tail -c 5)" == "/bin" ]]; then
   echo "Please run this script from the repo's root directory"
   exit 1
 fi
