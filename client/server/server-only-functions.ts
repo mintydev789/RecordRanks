@@ -689,10 +689,17 @@ export async function getSettingFromDb({
   return setting.value;
 }
 
-export async function getMemberRequestDetails(userId: string, memberId: string): Promise<MemberRequestDetails> {
+export async function getMemberRequestDetails({
+  memberId,
+  userId,
+}: {
+  memberId: string;
+  userId: string;
+}): Promise<MemberRequestDetails> {
   const [fullMemberRequest, ownCreatedPersons] = await Promise.all([
     db.query.memberRequests.findFirst({
       with: {
+        user: { columns: { id: true, name: true, email: true } },
         requestedPerson: {
           columns: { id: true, name: true, localizedName: true, regionCode: true, wcaId: true, approved: true },
         },

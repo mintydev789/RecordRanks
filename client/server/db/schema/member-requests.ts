@@ -23,6 +23,6 @@ export type InsertMemberRequest = typeof memberRequestsTable.$inferInsert;
 export type SelectMemberRequest = typeof memberRequestsTable.$inferSelect;
 
 export type FullMemberRequest = SelectMemberRequest & {
-  // user?: Creator;
+  user: Creator;
   requestedPerson: PersonResponse | null;
 };

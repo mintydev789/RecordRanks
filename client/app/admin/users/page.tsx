@@ -10,10 +10,7 @@ async function ManageUsersPage() {
   await authorizeUser({ useOrganization: false, permissions: { user: ["list"] } });
 
   const [{ users }, accounts] = await Promise.all([
-    auth.api.listUsers({
-      query: { sortBy: "createdAt", sortDirection: "desc" },
-      headers: await headers(),
-    }),
+    auth.api.listUsers({ headers: await headers(), query: { sortBy: "createdAt", sortDirection: "desc" } }),
     db.query.accounts.findMany({ columns: { userId: true, providerId: true } }),
   ]);
 

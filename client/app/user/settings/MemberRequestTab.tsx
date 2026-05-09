@@ -80,7 +80,7 @@ function MemberRequestTab({ regions }: Props) {
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
     } else {
-      changeSuccessMessage("Your user request has been successfully deleted");
+      changeSuccessMessage("Your request has been successfully deleted");
       mutate(
         { memberRequest: null, ownRequestedPersonId: memberRequestDetails?.ownRequestedPersonId },
         { revalidate: false },
@@ -127,12 +127,12 @@ function MemberRequestTab({ regions }: Props) {
               personNames={personNames}
               setPersonNames={setPersonNames}
               regions={regions}
-              disabled={isPending || !!memberRequest?.requestedPersonId || !!member?.personId}
+              disabled={isPending || !!memberRequest?.requestedPersonId || !!member!.personId}
               addNewPersonMode="disabled"
               display="grid"
               showWcaId
             />
-            {!member?.personId &&
+            {!member!.personId &&
               (!persons[0] ? (
                 <Button onClick={() => openPersonModal()} className="btn-success my-2">
                   Create New Person
@@ -149,7 +149,7 @@ function MemberRequestTab({ regions }: Props) {
               options={roleOptions}
               selected={requestedRole}
               setSelected={setRequestedRole as any}
-              disabled={isPending || member?.role !== "member"}
+              disabled={isPending || member!.role !== "member"}
             />
           </div>
         </div>

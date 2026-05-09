@@ -110,6 +110,11 @@ export const relations = defineRelations(
         to: r.members.id,
         optional: false,
       }),
+      user: r.one.users({
+        from: r.memberRequests.memberId.through(r.members.id),
+        to: r.users.id.through(r.members.userId),
+        optional: false,
+      }),
       requestedPerson: r.one.persons({
         from: r.memberRequests.requestedPersonId,
         to: r.persons.id,

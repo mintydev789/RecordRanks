@@ -23,7 +23,7 @@ export const actionClient = createSafeActionClient({
           role: z.enum(Roles).optional(),
         }),
         z.strictObject({
-          useOrganization: z.literal(true).default(true).optional(),
+          useOrganization: z.literal(true),
           orgPermissions: z.custom<OrgPluginPermissions>().optional(),
           orgRole: z.enum(OrganizationRoles).optional(),
           permissions: z.never().optional(),

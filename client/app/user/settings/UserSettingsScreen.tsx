@@ -21,11 +21,6 @@ import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { orgRolesObject } from "~/server/organization-permissions.ts";
 import { linkWcaProfileSF, logUserDeletedSF } from "~/server/server-functions/user-server-functions.ts";
 
-const tabs = [
-  { title: "Account", value: "account" },
-  { title: "Member Request", value: "member-request" },
-] as const satisfies NavigationItem[];
-
 // Just a copy of the type of the data property from the return type of authClient.listAccounts()
 type Account = {
   scopes: string[];
@@ -58,12 +53,16 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   const [isInitiatingEmailChange, startEmailChange] = useTransition();
   const [isDeleting, startDeleteAccountTransition] = useTransition();
 
+  const tabs = [
+    { title: "Account", value: "account" },
+    { title: "Member Request", value: "member-request", disabled: !member },
+  ] as const satisfies NavigationItem[];
   const showLinkWcaProfileButton =
     HAS_WCA_AUTH &&
     !["disabled", "linked"].includes(wcaProfileLinkStatus) &&
     accounts!.some((a) => a.providerId === "wca");
-  const roles = member
-    ? member
+  const roles = session?.activeOrganizationId
+    ? member!
         .role!.split(",")
         .map((role) => (orgRolesObject as any)[role])
         .join(", ")
@@ -116,9 +115,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
       setWcaProfileLinkStatus("enabled");
     } else {
       changeSuccessMessage(
-        user!.personId
-          ? "Successfully synced WCA competitor profile"
-          : "Successfully linked WCA competitor profile",
+        user!.personId ? "Successfully synced WCA competitor profile" : "Successfully linked WCA competitor profile",
       );
       setWcaProfileLinkStatus("linked");
       setPerson(res.data);
@@ -210,7 +207,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
               </div>
             </div>
           ) : (
-            <p>There is no competitor profile tied to your account.</p>
+            <p className="mt-4">There is no competitor profile tied to your member profile.</p>
           )}
           {showLinkWcaProfileButton && (
             <Button
@@ -226,12 +223,11 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
             </Button>
           )}
 
-          <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-4">
+          <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-3">
             Delete Account
           </Button>
           <p className="mt-2" style={{ fontSize: "0.85rem" }}>
-            This deletes all of your account data, but does not affect your competitor data, even if your competitor
-            profile is tied to your account.
+            This deletes all of your account data, but does not affect your competitor profile data.
           </p>
         </>
       )}

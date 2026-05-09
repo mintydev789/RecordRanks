@@ -14,7 +14,6 @@ import type { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
 import { type Role, rolesObject } from "~/server/permissions.ts";
-import { updateMemberSF } from "~/server/server-functions/user-server-functions.ts";
 
 type Props = {
   users: (typeof authClient.$Infer.Session.user & { providerId: string })[];
@@ -23,7 +22,7 @@ type Props = {
 function ManageUsersScreen({ users: initUsers }: Props) {
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
-  const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateMemberSF);
+  const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateUserSF);
   const [users, setUsers] = useState(initUsers);
   const [userId, setUserId] = useState<string>();
   const [name, setName] = useState(""); // for email + password users this is the same as the username

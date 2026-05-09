@@ -9,11 +9,11 @@ import { authorizeUser, getMemberRequestDetails, getSettingFromDb } from "~/serv
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
-  const { user } = await authorizeUser({ useOrganization: false });
+  const { user, member } = await authorizeUser({ useOrganization: false });
 
   const [[person], regions] = await Promise.all([
-    user.personId
-      ? await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, user.personId)).limit(1)
+    member?.personId
+      ? await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, member.personId)).limit(1)
       : [],
     db.select(regionsPublicCols).from(regionsTable),
   ]);
@@ -27,7 +27,9 @@ async function UserSettingsPage() {
       <SWRConfig
         value={{
           fallback: {
-            [SwrKey.MemberRequestDetails]: getMemberRequestDetails(user.id),
+            [SwrKey.MemberRequestDetails]: member
+              ? getMemberRequestDetails({ memberId: member.id, userId: user.id })
+              : undefined,
             [SwrKey.MemberRequestInstructions]: getSettingFromDb({ key: "member-request-instructions" }),
           },
         }}

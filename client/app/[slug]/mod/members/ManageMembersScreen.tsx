@@ -19,6 +19,7 @@ import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utili
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { type OrganizationRole, orgRolesObject } from "~/server/organization-permissions.ts";
+import { updateMemberSF } from "~/server/server-functions/user-server-functions.ts";
 
 type Props = {
   members: (typeof authClient.$Infer.Member)[];
@@ -29,7 +30,7 @@ type Props = {
 function ManageMembersScreen({ members: initMembers, memberPersons: initMemberPersons, regions }: Props) {
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
-  const { executeAsync: updateMember, isPending: isUpdating } = useAction(updateUserSF);
+  const { executeAsync: updateMember, isPending: isUpdating } = useAction(updateMemberSF);
   const [members, setMembers] = useState(initMembers);
   const [memberPersons, setMemberPersons] = useState(initMemberPersons);
   const [memberId, setMemberId] = useState<string>();
@@ -74,8 +75,14 @@ function ManageMembersScreen({ members: initMembers, memberPersons: initMemberPe
       resetMessages();
       setMemberId(undefined);
       setName("");
-      setMembers(members.map((m) => (m.id === memberId ? res.data!.user : m)));
-      const { person } = res.data!;
+      const { member, person } = res.data!;
+      setMembers(
+        members.map((m) =>
+          m.id === memberId
+            ? { ...member, role: member.role as OrganizationRole, user: m.user, personId: member.personId ?? undefined }
+            : m,
+        ),
+      );
       if (person && !memberPersons.some((p) => p.id === person.id)) setMemberPersons([...memberPersons, person]);
     }
   };
@@ -88,7 +95,7 @@ function ManageMembersScreen({ members: initMembers, memberPersons: initMemberPe
     setName(member.user.name);
     setEmail(member.user.email);
 
-    if (!member.role) throw new Error("Error: user role is empty");
+    if (!member.role) throw new Error("Error: role is empty");
     setIsMember(getHasRole("member", member.role));
     setIsMod(getHasRole("mod", member.role));
     setIsVideoBasedResultReviewer(getHasRole("videoBasedResultReviewer", member.role));
@@ -129,12 +136,7 @@ function ManageMembersScreen({ members: initMembers, memberPersons: initMemberPe
             display="grid"
           />
           <h5 className="mt-3 mb-3">Roles</h5>
-          <FormCheckbox
-            title={orgRolesObject.member}
-            selected={isMember}
-            setSelected={setIsMember}
-            disabled={isUpdating}
-          />
+          <FormCheckbox title={orgRolesObject.member} selected={isMember} setSelected={setIsMember} disabled />
           <FormCheckbox title={orgRolesObject.mod} selected={isMod} setSelected={setIsMod} disabled={isUpdating} />
           <FormCheckbox
             title={orgRolesObject.videoBasedResultReviewer}
@@ -158,8 +160,8 @@ function ManageMembersScreen({ members: initMembers, memberPersons: initMemberPe
         <p className="text-secondary">Search by name, username, email or competitor name</p>
 
         <p className="mb-2">
-          Number of users:&nbsp;<b>{filteredMembers.length}</b>
-          {filteredMembers.length === C.maxUsers ? " (reached limit; please contact the development team)" : ""}
+          Number of members:&nbsp;<b>{filteredMembers.length}</b>
+          {filteredMembers.length === C.maxMembers ? " (reached limit; please contact the development team)" : ""}
         </p>
       </div>
 

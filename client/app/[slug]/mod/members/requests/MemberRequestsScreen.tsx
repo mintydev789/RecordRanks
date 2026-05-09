@@ -37,8 +37,8 @@ function MemberRequestsScreen({ memberRequests: initMemberRequests, regions }: P
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
     } else {
-      setMemberRequests(memberRequests.filter((ur) => ur.id !== id));
-      changeSuccessMessage("User request successfully approved");
+      setMemberRequests(memberRequests.filter((mr) => mr.id !== id));
+      changeSuccessMessage("Request successfully approved");
     }
     setLoadingId("");
   };
@@ -51,8 +51,8 @@ function MemberRequestsScreen({ memberRequests: initMemberRequests, regions }: P
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
     } else {
-      setMemberRequests(memberRequests.filter((ur) => ur.id !== id));
-      changeSuccessMessage("User request successfully rejected");
+      setMemberRequests(memberRequests.filter((mr) => mr.id !== id));
+      changeSuccessMessage("Request successfully rejected");
     }
     setLoadingId("");
   };
@@ -60,11 +60,11 @@ function MemberRequestsScreen({ memberRequests: initMemberRequests, regions }: P
   return (
     <>
       <p className="mb-4 px-2">
-        Please note that competitor profiles must be approved before you can approve the user request
+        Please note that the competitor profile must be approved before you can approve the request
       </p>
 
       {memberRequests.length === 0 ? (
-        <p className="fs-5 px-2">No user requests have been submitted yet</p>
+        <p className="fs-5 px-2">No requests have been submitted yet</p>
       ) : (
         <div className="table-responsive mt-3">
           <table className="table-hover table text-nowrap">
@@ -79,34 +79,34 @@ function MemberRequestsScreen({ memberRequests: initMemberRequests, regions }: P
               </tr>
             </thead>
             <tbody>
-              {memberRequests.map((ur) => (
-                <tr key={ur.id}>
-                  <td>{ur.user!.name}</td>
-                  <td>{ur.user!.email}</td>
+              {memberRequests.map((mr) => (
+                <tr key={mr.id}>
+                  <td>{mr.user.name}</td>
+                  <td>{mr.user.email}</td>
                   <td>
-                    {ur.requestedPerson && (
+                    {mr.requestedPerson && (
                       <div className="d-flex gap-3 align-items-center">
-                        <Competitor person={ur.requestedPerson} regions={regions} showWcaId />
-                        <ActiveInactiveIcon isActive={ur.requestedPerson.approved} />
+                        <Competitor person={mr.requestedPerson} regions={regions} showWcaId />
+                        <ActiveInactiveIcon isActive={mr.requestedPerson.approved} />
                       </div>
                     )}
                   </td>
                   <td>
-                    {ur.requestedRole &&
-                      (ur.requestedRole in orgRolesObject ? (
-                        (orgRolesObject as any)[ur.requestedRole]
+                    {mr.requestedRole &&
+                      (mr.requestedRole in orgRolesObject ? (
+                        (orgRolesObject as any)[mr.requestedRole]
                       ) : (
                         <span className="text-danger">ERROR</span>
                       ))}
                   </td>
                   <td>
-                    <div style={{ minWidth: "10rem", maxWidth: "25rem", whiteSpace: "pre-wrap" }}>{ur.comment}</div>
+                    <div style={{ minWidth: "10rem", maxWidth: "25rem", whiteSpace: "pre-wrap" }}>{mr.comment}</div>
                   </td>
                   <td>
                     <div className="d-flex gap-2">
                       <Button
-                        id={`approve_request_${ur.id}_button`}
-                        onClick={() => approveRequest(ur.id)}
+                        id={`approve_request_${mr.id}_button`}
+                        onClick={() => approveRequest(mr.id)}
                         disabled={isPending}
                         loadingId={loadingId}
                         className="btn-xs btn-success"
@@ -116,8 +116,8 @@ function MemberRequestsScreen({ memberRequests: initMemberRequests, regions }: P
                         <FontAwesomeIcon icon={faCheck} />
                       </Button>
                       <Button
-                        id={`reject_request_${ur.id}_button`}
-                        onClick={() => rejectRequest(ur.id)}
+                        id={`reject_request_${mr.id}_button`}
+                        onClick={() => rejectRequest(mr.id)}
                         disabled={isPending}
                         loadingId={loadingId}
                         className="btn-xs btn-danger"

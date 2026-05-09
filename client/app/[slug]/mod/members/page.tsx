@@ -23,7 +23,7 @@ async function ManageMembersPage({ params }: Props) {
     // This checks whether the user has the required permissions too
     auth.api.listMembers({
       headers: await headers(),
-      query: { organizationSlug: slug, sortBy: "createdAt", sortDirection: "desc", limit: C.maxUsers },
+      query: { organizationSlug: slug, sortBy: "createdAt", sortDirection: "desc", limit: C.maxMembers },
     }),
     db.select(regionsPublicCols).from(regionsTable),
   ]);

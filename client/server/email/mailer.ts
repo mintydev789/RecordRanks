@@ -227,8 +227,7 @@ export function sendMemberRolesChangedEmail(
   {
     roles,
     organizationName,
-    canAccessModDashboard,
-  }: { roles: string[]; organizationName: string; canAccessModDashboard: boolean },
+  }: { roles: string[]; organizationName: string;  },
 ) {
   send({
     templateFileName: "roles-changed.hbs",
@@ -237,7 +236,6 @@ export function sendMemberRolesChangedEmail(
       projectName,
       organizationName,
       roles: roles.map((r) => (orgRolesObject as any)[r]).join(", "),
-      canAccessModDashboard,
     },
     callback: async (html) => {
       await transporter.sendMail({
