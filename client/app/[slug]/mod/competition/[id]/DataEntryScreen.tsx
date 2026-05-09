@@ -14,15 +14,15 @@ import FormSelect from "~/app/components/form/FormSelect.tsx";
 import RoundResultsTable from "~/app/components/RoundResultsTable.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
-import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import {
-  clientGetUserHasPermission,
+  clientGetHasPermission,
   getActionError,
   getBlankCompetitors,
   getMakesCutoff,
@@ -69,7 +69,7 @@ function DataEntryScreen({
   regions,
 }: Props) {
   const pathname = usePathname();
-  const { data: session } = authClient.useSession();
+  const { session } = useSession();
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { executeAsync: getWrPairUpToDate, isPending: isPendingWrPairs } = useAction(getWrPairUpToDateSF);
@@ -79,7 +79,7 @@ function DataEntryScreen({
   const { executeAsync: deleteResult, isPending: isDeleting } = useAction(deleteContestResultSF);
   const { executeAsync: openRound, isPending: isOpeningRound } = useAction(openRoundSF);
   const { data: canCreateAndUpdateContests } = useSWR(session ? [SwrKey.CanCreateContests, session] : null, () =>
-    clientGetUserHasPermission({ competitions: ["create", "update"], meetups: ["create", "update"] }),
+    clientGetHasPermission({ competitions: ["create", "update"], meetups: ["create", "update"] }),
   );
   const [resultUnderEdit, setResultUnderEdit] = useState<ResultResponse | null>(null);
   const [eventWrPair, setEventWrPair] = useState<EventWrPair | undefined>();

@@ -14,9 +14,9 @@ import {
   getDateOnly,
   getHasRole,
   getMaxAllowedRounds,
+  getMemberControlsContest,
   getNameAndLocalizedName,
   getResultProceeds,
-  getUserControlsContest,
 } from "~/helpers/utilityFunctions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
@@ -57,7 +57,7 @@ const SELECT_AN_EVENT_MSG = "Please select at least one event";
 
 // TO-DO: THIS DOESN'T NEED TO BE A SERVER FUNCTION!!!!! BUT STILL DO VALIDATION IN A NORMAL FUNCTION.
 export const getContestSF = actionClient
-  .metadata({})
+  .metadata({ auth: null })
   .inputSchema(
     z.strictObject({
       competitionId: z.string().nonempty(),
@@ -137,14 +137,15 @@ export const getContestSF = actionClient
   });
 
 export const getModContestsSF = actionClient
-  .metadata({ permissions: { modDashboard: ["view"] } })
+  .metadata({ auth: { orgPermissions: { modDashboard: ["view"] } } })
   .inputSchema(ModDashboardFiltersValidator)
   .action<{ contests: ContestResponse[]; organizerPerson?: PersonResponse }>(
-    async ({ parsedInput: { organizerPersonId, state }, ctx: { session } }) => {
+    async ({ parsedInput: { organizerPersonId, state }, ctx: { session, httpHeaders } }) => {
       const queryFilters = [];
 
-      const { success: isAdmin } = await auth.api.userHasPermission({
-        body: { userId: session.user.id, permissions: { adminDashboard: ["view"] } },
+      const { success: isAdmin } = await auth.api.hasPermission({
+        headers: httpHeaders,
+        body: { permissions: { adminDashboard: ["view"] } },
       });
 
       // If it's a moderator, only get their own contests
@@ -203,7 +204,7 @@ export const getModContestsSF = actionClient
   );
 
 export const getTimeZoneFromCoordsSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(CoordinatesValidator)
   .action<string>(async ({ parsedInput: { latitude, longitude } }) => {
     const timezone = findTimezone(latitude, longitude).at(0);
@@ -214,83 +215,80 @@ export const getTimeZoneFromCoordsSF = actionClient
   });
 
 export const createContestSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       newContestDto: ContestValidator,
       rounds: z.array(RoundValidator).nonempty({ error: SELECT_AN_EVENT_MSG }),
     }),
   )
-  .action(
-    async ({
-      parsedInput: { newContestDto, rounds },
-      ctx: {
-        session: { user },
+  .action(async ({ parsedInput: { newContestDto, rounds }, ctx: { session, httpHeaders } }) => {
+    logMessage("RR0005", `Creating contest ${newContestDto.competitionId}`);
+
+    // No need to check that the state is not removed, because removed contests have _REMOVED at the end of the competitionId anyways
+    const sameIdContest = await db.query.contests.findFirst({
+      where: { competitionId: newContestDto.competitionId },
+    });
+    if (sameIdContest) throw new RrActionError(`A contest with the ID ${newContestDto.competitionId} already exists`);
+    const sameNameContest = await db.query.contests.findFirst({
+      where: { name: newContestDto.name, state: { NOT: "removed" } },
+    });
+    if (sameNameContest) throw new RrActionError(`A contest with the name ${newContestDto.name} already exists`);
+    const sameShortContest = await db.query.contests.findFirst({
+      where: { shortName: newContestDto.shortName, state: { NOT: "removed" } },
+    });
+    if (sameShortContest)
+      throw new RrActionError(`A contest with the short name ${newContestDto.shortName} already exists`);
+
+    const { success: canApprove } = await auth.api.hasPermission({
+      headers: httpHeaders,
+      body: { permissions: { competitions: ["approve"], meetups: ["approve"] } },
+    });
+
+    const { region } = await validateAndCleanUpContest(newContestDto, rounds, session.user.personId!, canApprove);
+
+    const creatorPerson = await db.query.persons.findFirst({
+      columns: { name: true },
+      where: { id: session.user.personId! },
+    });
+    if (!creatorPerson) throw new RrActionError("Contest creator's competitor profile not found");
+
+    const organizerUsers = await db.query.users.findMany({
+      columns: { email: true },
+      where: { personId: { in: newContestDto.organizerIds } },
+    });
+
+    const createdContest = await db.transaction(async (tx) => {
+      const [createdContest] = await tx
+        .insert(table)
+        .values({ ...newContestDto, createdBy: session.user.id })
+        .returning();
+
+      await createRounds(tx, rounds);
+
+      return createdContest;
+    });
+
+    // Notify the organizers and admins
+    sendContestSubmittedEmail(
+      organizerUsers.map((u) => u.email),
+      {
+        contest: createdContest,
+        creator: creatorPerson.name,
+        regionName: NonMetaRegionCodeRegex.test(region.code) ? region.name : undefined,
+        organization: session.organization!,
       },
-    }) => {
-      logMessage("RR0005", `Creating contest ${newContestDto.competitionId}`);
-
-      // No need to check that the state is not removed, because removed contests have _REMOVED at the end of the competitionId anyways
-      const sameIdContest = await db.query.contests.findFirst({
-        where: { competitionId: newContestDto.competitionId },
-      });
-      if (sameIdContest) throw new RrActionError(`A contest with the ID ${newContestDto.competitionId} already exists`);
-      const sameNameContest = await db.query.contests.findFirst({
-        where: { name: newContestDto.name, state: { NOT: "removed" } },
-      });
-      if (sameNameContest) throw new RrActionError(`A contest with the name ${newContestDto.name} already exists`);
-      const sameShortContest = await db.query.contests.findFirst({
-        where: { shortName: newContestDto.shortName, state: { NOT: "removed" } },
-      });
-      if (sameShortContest)
-        throw new RrActionError(`A contest with the short name ${newContestDto.shortName} already exists`);
-
-      const { success: canApprove } = await auth.api.userHasPermission({
-        body: { userId: user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
-      });
-
-      const { region } = await validateAndCleanUpContest(newContestDto, rounds, user.personId!, canApprove);
-
-      const creatorPerson = await db.query.persons.findFirst({
-        columns: { name: true },
-        where: { id: user.personId! },
-      });
-      if (!creatorPerson) throw new RrActionError("Contest creator's competitor profile not found");
-
-      const organizerUsers = await db.query.users.findMany({
-        columns: { email: true },
-        where: { personId: { in: newContestDto.organizerIds } },
-      });
-
-      const createdContest = await db.transaction(async (tx) => {
-        const [createdContest] = await tx
-          .insert(table)
-          .values({ ...newContestDto, createdBy: user.id })
-          .returning();
-
-        await createRounds(tx, rounds);
-
-        return createdContest;
-      });
-
-      // Notify the organizers and admins
-      sendContestSubmittedEmail(
-        organizerUsers.map((u) => u.email),
-        createdContest,
-        creatorPerson.name,
-        NonMetaRegionCodeRegex.test(region.code) ? region.name : undefined,
-      );
-    },
-  );
+    );
+  });
 
 export const approveContestSF = actionClient
-  .metadata({ permissions: { competitions: ["approve"], meetups: ["approve"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["approve"], meetups: ["approve"] } } })
   .inputSchema(
     z.strictObject({
       competitionId: z.string().nonempty(),
     }),
   )
-  .action(async ({ parsedInput: { competitionId } }) => {
+  .action(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
     logMessage("RR0006", `Approving contest ${competitionId}`);
 
     const contest = await db.query.contests.findFirst({
@@ -310,112 +308,104 @@ export const approveContestSF = actionClient
       await tx.update(personsTable).set({ approved: true }).where(inArray(personsTable.id, contest.organizerIds));
     });
 
-    sendContestApprovedEmail(creatorUser.email, contest);
+    sendContestApprovedEmail(creatorUser.email, { contest, organization: session.organization! });
   });
 
 export const finishContestSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       competitionId: z.string().nonempty(),
     }),
   )
-  .action(
-    async ({
-      parsedInput: { competitionId },
-      ctx: {
-        session: { user },
+  .action(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
+    logMessage("RR0007", `Finishing contest ${competitionId}`);
+
+    const contest = await db.query.contests.findFirst({
+      columns: {
+        competitionId: true,
+        name: true,
+        shortName: true,
+        type: true,
+        state: true,
+        organizerIds: true,
+        participants: true,
+        createdBy: true,
       },
-    }) => {
-      logMessage("RR0007", `Finishing contest ${competitionId}`);
+      where: { competitionId },
+    });
+    if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
 
-      const contest = await db.query.contests.findFirst({
-        columns: {
-          competitionId: true,
-          name: true,
-          shortName: true,
-          type: true,
-          state: true,
-          organizerIds: true,
-          participants: true,
-          createdBy: true,
-        },
-        where: { competitionId },
-      });
-      if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
+    if (!getMemberControlsContest(session.user, contest))
+      throw new RrActionError("You do not have access rights for this contest");
+    if (contest.state !== "ongoing") throw new RrActionError("Contest cannot be finished");
+    if (["meetup", "comp"].includes(contest.type) && contest.participants < C.minCompetitorsForNonWca) {
+      throw new RrActionError(
+        `A meetup or unofficial competition may not have fewer than ${C.minCompetitorsForNonWca} competitors`,
+      );
+    }
 
-      if (!getUserControlsContest(user, contest))
-        throw new RrActionError("You do not have access rights for this contest");
-      if (contest.state !== "ongoing") throw new RrActionError("Contest cannot be finished");
-      if (["meetup", "comp"].includes(contest.type) && contest.participants < C.minCompetitorsForNonWca) {
-        throw new RrActionError(
-          `A meetup or unofficial competition may not have fewer than ${C.minCompetitorsForNonWca} competitors`,
-        );
-      }
+    const [rounds, results, creatorUser, organizerUsers] = await Promise.all([
+      db.query.rounds.findMany({ where: { competitionId } }),
+      db.query.results.findMany({ where: { competitionId } }),
+      contest.createdBy
+        ? db.query.users.findFirst({ columns: { personId: true }, where: { id: contest.createdBy } })
+        : undefined,
+      db.query.users.findMany({
+        columns: { email: true },
+        where: { personId: { in: contest.organizerIds } },
+      }),
+    ]);
 
-      const [rounds, results, creatorUser, organizerUsers] = await Promise.all([
-        db.query.rounds.findMany({ where: { competitionId } }),
-        db.query.results.findMany({ where: { competitionId } }),
-        contest.createdBy
-          ? db.query.users.findFirst({ columns: { personId: true }, where: { id: contest.createdBy } })
-          : undefined,
-        db.query.users.findMany({
-          columns: { email: true },
-          where: { personId: { in: contest.organizerIds } },
-        }),
-      ]);
+    // Check there are no rounds with too few results
+    for (const { id, eventId, roundNumber } of rounds) {
+      const roundResults = results.filter((r) => r.roundId === id);
 
-      // Check there are no rounds with too few results
-      for (const { id, eventId, roundNumber } of rounds) {
-        const roundResults = results.filter((r) => r.roundId === id);
+      if (roundResults.length === 0 || (roundNumber > 1 && roundResults.length < C.minProceedNumber)) {
+        const event = (await db.query.events.findFirst({ columns: { name: true }, where: { eventId } }))!;
 
-        if (roundResults.length === 0 || (roundNumber > 1 && roundResults.length < C.minProceedNumber)) {
-          const event = (await db.query.events.findFirst({ columns: { name: true }, where: { eventId } }))!;
-
-          if (roundResults.length === 0) {
-            throw new RrActionError(`${event.name} round ${roundNumber} has no results`);
-          } else {
-            throw new RrActionError(
-              `${event.name} round ${roundNumber} has fewer than ${C.minProceedNumber} results (see WCA regulation 9q+)`,
-            );
-          }
+        if (roundResults.length === 0) {
+          throw new RrActionError(`${event.name} round ${roundNumber} has no results`);
+        } else {
+          throw new RrActionError(
+            `${event.name} round ${roundNumber} has fewer than ${C.minProceedNumber} results (see WCA regulation 9q+)`,
+          );
         }
       }
+    }
 
-      // Check there are no incomplete results
-      const incompleteResult = results.find((r) => r.attempts.some((a) => a.result === 0));
-      if (incompleteResult) {
-        const event = (await db.query.events.findFirst({
-          columns: { name: true },
-          where: { eventId: incompleteResult.eventId },
-        }))!;
-        const round = rounds.find((r) => r.id === incompleteResult.roundId)!;
-        throw new RrActionError(`This contest has an unentered attempt in ${event.name} round ${round.roundNumber}`);
-      }
+    // Check there are no incomplete results
+    const incompleteResult = results.find((r) => r.attempts.some((a) => a.result === 0));
+    if (incompleteResult) {
+      const event = (await db.query.events.findFirst({
+        columns: { name: true },
+        where: { eventId: incompleteResult.eventId },
+      }))!;
+      const round = rounds.find((r) => r.id === incompleteResult.roundId)!;
+      throw new RrActionError(`This contest has an unentered attempt in ${event.name} round ${round.roundNumber}`);
+    }
 
-      // If there are no issues, finish the contest and close all rounds
-      await db.transaction(async (tx) => {
-        await tx.update(table).set({ state: "finished" }).where(eq(table.competitionId, competitionId));
+    // If there are no issues, finish the contest and close all rounds
+    await db.transaction(async (tx) => {
+      await tx.update(table).set({ state: "finished" }).where(eq(table.competitionId, competitionId));
 
-        await tx.update(roundsTable).set({ open: false }).where(eq(roundsTable.competitionId, competitionId));
+      await tx.update(roundsTable).set({ open: false }).where(eq(roundsTable.competitionId, competitionId));
 
-        await tx.delete(accessTokensTable).where(eq(accessTokensTable.competitionId, competitionId));
-      });
+      await tx.delete(accessTokensTable).where(eq(accessTokensTable.competitionId, competitionId));
+    });
 
-      const creatorPerson = creatorUser
-        ? await db.query.persons.findFirst({ columns: { name: true }, where: { id: creatorUser.personId! } })
-        : undefined;
+    const creatorPerson = creatorUser
+      ? await db.query.persons.findFirst({ columns: { name: true }, where: { id: creatorUser.personId! } })
+      : undefined;
 
-      sendContestFinishedEmail(
-        organizerUsers.map((u) => u.email),
-        contest,
-        creatorPerson?.name ?? "DELETED USER",
-      );
-    },
-  );
+    sendContestFinishedEmail(
+      organizerUsers.map((u) => u.email),
+      { contest, creatorName: creatorPerson?.name ?? "DELETED USER", slug: session.organization!.slug },
+    );
+  });
 
 export const unfinishContestSF = actionClient
-  .metadata({ permissions: { competitions: ["publish"], meetups: ["publish"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["publish"], meetups: ["publish"] } } })
   .inputSchema(
     z.strictObject({
       competitionId: z.string().nonempty(),
@@ -440,13 +430,13 @@ export const unfinishContestSF = actionClient
   });
 
 export const publishContestSF = actionClient
-  .metadata({ permissions: { competitions: ["publish"], meetups: ["publish"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["publish"], meetups: ["publish"] } } })
   .inputSchema(
     z.strictObject({
       competitionId: z.string().nonempty(),
     }),
   )
-  .action(async ({ parsedInput: { competitionId } }) => {
+  .action(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
     logMessage("RR0009", `Publishing contest ${competitionId}`);
 
     const contest = await db.query.contests.findFirst({
@@ -531,11 +521,11 @@ export const publishContestSF = actionClient
       }
     });
 
-    if (creatorUser) sendContestPublishedEmail(creatorUser.email, contest);
+    if (creatorUser) sendContestPublishedEmail(creatorUser.email, { contest, organization: session.organization! });
   });
 
 export const updateContestSF = actionClient
-  .metadata({ permissions: { competitions: ["update"], meetups: ["update"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["update"], meetups: ["update"] } } })
   .inputSchema(
     z.strictObject({
       originalCompetitionId: z.string().nonempty(),
@@ -548,12 +538,14 @@ export const updateContestSF = actionClient
       parsedInput: { originalCompetitionId, newContestDto, rounds },
       ctx: {
         session: { user },
+        httpHeaders,
       },
     }) => {
       logMessage("RR0010", `Updating contest ${originalCompetitionId}`);
 
-      const { success: canApprove } = await auth.api.userHasPermission({
-        body: { userId: user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
+      const { success: canApprove } = await auth.api.hasPermission({
+        headers: httpHeaders,
+        body: { permissions: { competitions: ["approve"], meetups: ["approve"] } },
       });
 
       const contestPromise = db.query.contests.findFirst({
@@ -566,7 +558,7 @@ export const updateContestSF = actionClient
       const [contest, prevRounds, results] = await Promise.all([contestPromise, prevRoundsPromise, resultsPromise]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${originalCompetitionId} not found`);
-      if (!getUserControlsContest(user, contest))
+      if (!getMemberControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!["created", "approved", "ongoing"].includes(contest.state))
         throw new RrActionError("Finished contests cannot be edited");
@@ -617,7 +609,7 @@ export const updateContestSF = actionClient
   );
 
 export const removeContestSF = actionClient
-  .metadata({ permissions: { competitions: ["delete"], meetups: ["delete"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["delete"], meetups: ["delete"] } } })
   .inputSchema(z.strictObject({ competitionId: z.string() }))
   .action(async ({ parsedInput: { competitionId } }) => {
     logMessage("RR0011", `Removing contest ${competitionId}`);
@@ -656,7 +648,7 @@ export const removeContestSF = actionClient
   });
 
 export const openRoundSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       competitionId: z.string().nonempty(),
@@ -680,7 +672,7 @@ export const openRoundSF = actionClient
       const prevOpenRound = rounds.find((r) => r.open === true);
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      if (!getUserControlsContest(user, contest))
+      if (!getMemberControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!prevOpenRound) throw new RrActionError("Previous open round not found");
       if (prevOpenRound.roundTypeId === "f") throw new RrActionError("The final round for this event is already open");
@@ -703,7 +695,7 @@ export const openRoundSF = actionClient
   );
 
 export const createAccessTokenSF = actionClient
-  .metadata({ permissions: { competitions: ["update"], meetups: ["update"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["update"], meetups: ["update"] } } })
   .inputSchema(
     z.strictObject({
       competitionId: z.string().nonempty(),
@@ -724,7 +716,7 @@ export const createAccessTokenSF = actionClient
       });
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      if (!getUserControlsContest(user, contest))
+      if (!getMemberControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (user.id !== contest.createdBy && !getHasRole("admin", user.role))
         throw new RrActionError("Only the creator of the contest or an admin can generate access tokens");

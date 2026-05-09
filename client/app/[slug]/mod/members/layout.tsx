@@ -4,10 +4,10 @@ type Props = {
   children: React.ReactNode;
 };
 
-function UsersLayout({ children }: Props) {
+function MembersLayout({ children }: Props) {
   return (
     <section>
-      <h2 className="mb-4 text-center">Manage Users</h2>
+      <h2 className="mb-4 text-center">Manage Members</h2>
 
       <ToastMessages className="mx-2" />
 
@@ -16,4 +16,4 @@ function UsersLayout({ children }: Props) {
   );
 }
 
-export default UsersLayout;
+export default MembersLayout;

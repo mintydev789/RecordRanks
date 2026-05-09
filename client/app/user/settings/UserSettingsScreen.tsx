@@ -9,20 +9,21 @@ import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
-import UserRequestTab from "~/app/user/settings/UserRequestTab.tsx";
+import MemberRequestTab from "~/app/user/settings/MemberRequestTab";
 import { authClient } from "~/helpers/authClient.ts";
 import { HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { rolesObject } from "~/server/permissions.ts";
+import { orgRolesObject } from "~/server/organization-permissions.ts";
 import { linkWcaProfileSF, logUserDeletedSF } from "~/server/server-functions/user-server-functions.ts";
 
 const tabs = [
   { title: "Account", value: "account" },
-  { title: "User Request", value: "user-request" },
+  { title: "Member Request", value: "member-request" },
 ] as const satisfies NavigationItem[];
 
 // Just a copy of the type of the data property from the return type of authClient.listAccounts()
@@ -44,7 +45,7 @@ type Props = {
 function UserSettingsScreen({ initPerson, regions }: Props) {
   const router = useRouter();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
-  const { data: session, isPending: isPendingSession } = authClient.useSession();
+  const { session, user, member } = useSession();
 
   const [status, setStatus] = useQueryState("status", parseAsStringLiteral(["signup-success", "email-change-success"]));
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["value"]>("account");
@@ -61,13 +62,13 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
     HAS_WCA_AUTH &&
     !["disabled", "linked"].includes(wcaProfileLinkStatus) &&
     accounts!.some((a) => a.providerId === "wca");
-  const roles = session
-    ? session.user
+  const roles = member
+    ? member
         .role!.split(",")
-        .map((role) => (rolesObject as any)[role])
+        .map((role) => (orgRolesObject as any)[role])
         .join(", ")
     : "";
-  const isPending = isPendingSession || wcaProfileLinkStatus === "pending" || isInitiatingEmailChange || isDeleting;
+  const isPending = !session || wcaProfileLinkStatus === "pending" || isInitiatingEmailChange || isDeleting;
 
   useEffect(() => {
     if (session && !accounts) {
@@ -115,7 +116,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
       setWcaProfileLinkStatus("enabled");
     } else {
       changeSuccessMessage(
-        session!.user.personId
+        user!.personId
           ? "Successfully synced WCA competitor profile"
           : "Successfully linked WCA competitor profile",
       );
@@ -145,7 +146,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
     if (confirm("Are you CERTAIN you would like to delete your account? This action is permanent!")) {
       resetMessages();
       startDeleteAccountTransition(async () => {
-        logUserDeletedSF({ id: session!.user.id });
+        logUserDeletedSF({ id: user!.id });
         const { error } = await authClient.deleteUser();
 
         if (error) {
@@ -158,7 +159,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
     }
   };
 
-  if (!session || !accounts) return <Loading />;
+  if (!user || !accounts) return <Loading />;
 
   return (
     <>
@@ -166,25 +167,25 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
 
       {activeTab === "account" && (
         <>
-          {session.user.name !== session.user.username && (
+          {user.name !== user.username && (
             <p className="mb-2">
-              Name: <b>{session.user.name}</b>
+              Name: <b>{user.name}</b>
             </p>
           )}
-          {session.user.image && (
+          {user.image && (
             <img
-              src={session.user.image}
-              alt={session.user.name}
+              src={user.image}
+              alt={user.name}
               style={{ maxWidth: "min(90%, 400px)", marginTop: "0.8rem", marginBottom: "2rem" }}
             />
           )}
-          {session.user.username && (
+          {user.username && (
             <p className="mb-3">
-              Username: <b>{session.user.username}</b>
+              Username: <b>{user.username}</b>
             </p>
           )}
           <p className="mb-2">
-            Email address: <b>{session.user.email}</b>
+            Email address: <b>{user.email}</b>
           </p>
           <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
             <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
@@ -192,7 +193,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
               Change email
             </Button>
           </div>
-          {session.user.role && (
+          {roles && (
             <p className="mt-3">
               Your role: <strong>{roles}</strong>.
             </p>
@@ -235,7 +236,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
         </>
       )}
 
-      {activeTab === "user-request" && <UserRequestTab regions={regions} />}
+      {activeTab === "member-request" && <MemberRequestTab regions={regions} />}
     </>
   );
 }

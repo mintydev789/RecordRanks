@@ -8,7 +8,6 @@ import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
 import { C, HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
-import { defaultSettings } from "~/helpers/default-settings.ts";
 import { testPersons } from "~/helpers/test-data/testPersons.ts";
 import { testPosts } from "~/helpers/test-data/testPosts.ts";
 import { RecordTypeValues } from "~/helpers/types.ts";
@@ -29,7 +28,6 @@ import { personsTable } from "~/server/db/schema/persons.ts";
 import { postsTable } from "~/server/db/schema/posts.ts";
 import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { roundsTable } from "~/server/db/schema/rounds.ts";
-import { settingsTable } from "~/server/db/schema/settings.ts";
 import {
   sendAccountDeletedEmail,
   sendOrganizationInvitationEmail,
@@ -37,7 +35,15 @@ import {
   sendResetPasswordEmail,
   sendVerificationEmail,
 } from "~/server/email/mailer.ts";
-import { ac, admin, mod, user, videoBasedResultReviewer } from "~/server/permissions.ts";
+import {
+  admin as orgAdminRole,
+  organizationAc,
+  member as orgMemberRole,
+  mod as orgModRole,
+  owner as orgOwnerRole,
+  videoBasedResultReviewer as orgVideoBasedResultReviewerRole,
+} from "~/server/organization-permissions.ts";
+import { ac, admin, user } from "~/server/permissions.ts";
 import { logMessage } from "~/server/server-only-functions.ts";
 
 if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
@@ -64,23 +70,47 @@ export const auth = betterAuth({
       usernameValidator: (username) => /^[0-9a-zA-Z-_.]*$/.test(username),
     }),
     adminPlugin({
+      // authClient has to match this
       ac,
-      roles: { admin, mod, videoBasedResultReviewer, user },
+      roles: { admin, user },
     }),
     organization({
-      allowUserToCreateOrganization: (user) => getHasRole("admin", user.role),
+      allowUserToCreateOrganization: (user) => getHasRole("admin", user.role), // this refers to the role in the admin plugin
+      // authClient has to match this
+      ac: organizationAc,
+      roles: {
+        owner: orgOwnerRole,
+        admin: orgAdminRole,
+        mod: orgModRole,
+        videoBasedResultReviewer: orgVideoBasedResultReviewerRole,
+        member: orgMemberRole,
+      },
       cancelPendingInvitationsOnReInvite: true,
       membershipLimit: 1000, // TO-DO: THIS IS TEMPORARY!!!
+      // requireEmailVerificationOnInvitation: TO-DO: MAKE THIS REQUIRED FOR CREDENTIALS AUTH!!!
       sendInvitationEmail: async (data) => {
         if (process.env.EMAIL_HOST)
           logMessage("RR0039", `Sending invitation to ${data.organization.name} to email ${data.email}`);
 
         sendOrganizationInvitationEmail(data.email, {
           organizationName: data.organization.name,
+          organizationSlug: data.organization.slug,
           invitedByUsername: data.inviter.user.name,
           invitedByEmail: data.inviter.user.email,
           inviteLink: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation/${data.id}`,
         });
+      },
+      schema: {
+        member: {
+          additionalFields: {
+            personId: {
+              type: "number",
+              required: false,
+              unique: true,
+              input: false,
+            },
+          },
+        },
       },
       organizationHooks: {
         afterCreateOrganization: async () => {
@@ -141,18 +171,6 @@ export const auth = betterAuth({
           //           recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
           //       },
           //     ]);
-          //   }
-          // }
-          // // Seed default settings
-          // for (const defaultSetting of defaultSettings) {
-          //   const [existingSetting] = await db
-          //     .select({ id: settingsTable.id })
-          //     .from(settingsTable)
-          //     .where(eq(settingsTable.key, defaultSetting.key))
-          //     .limit(1);
-          //   if (!existingSetting) {
-          //     const [createdSetting] = await db.insert(settingsTable).values(defaultSetting).returning();
-          //     console.log(`Seeded setting: ${createdSetting.group}.${createdSetting.key}`);
           //   }
           // }
         },

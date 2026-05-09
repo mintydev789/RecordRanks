@@ -21,8 +21,8 @@ import {
   getFormattedTime,
   getHasRole,
   getMakesCutoff,
+  getMemberControlsContest,
   getRoundDate,
-  getUserControlsContest,
 } from "~/helpers/utilityFunctions.ts";
 import {
   AttemptsValidator,
@@ -51,7 +51,6 @@ import {
   approvePersons,
   getContestParticipantIds,
   getRecordConfigs,
-  getSettingFromDb,
   logMessage,
   setRankingAndProceedsValues,
 } from "../server-only-functions.ts";
@@ -60,7 +59,7 @@ const OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG =
   "The result is more than 30 days old and contains a record, which could affect other records. Please contact the development team.";
 
 export const getWrPairUpToDateSF = actionClient
-  .metadata({ permissions: { videoBasedResults: ["create"] } })
+  .metadata({ auth: { orgPermissions: { videoBasedResults: ["create"] } } })
   .inputSchema(
     z.strictObject({
       recordCategory: z.enum(RecordCategoryValues),
@@ -87,7 +86,7 @@ export const getWrPairUpToDateSF = actionClient
 
 export const createContestResultSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       newResultDto: ResultValidator,
@@ -98,6 +97,7 @@ export const createContestResultSF = actionClient
       parsedInput: { newResultDto },
       ctx: {
         session: { user },
+        httpHeaders,
       },
     }) => {
       const { eventId, personIds, competitionId, roundId } = newResultDto;
@@ -115,10 +115,11 @@ export const createContestResultSF = actionClient
         roundResults,
         participants,
       ] = await Promise.all([
-        auth.api.userHasPermission({
-          body: { userId: user.id, permissions: { competitions: ["create", "update"], meetups: ["create", "update"] } },
+        auth.api.hasPermission({
+          headers: httpHeaders,
+          body: { permissions: { competitions: ["create", "update"], meetups: ["create", "update"] } },
         }),
-        auth.api.userHasPermission({ body: { userId: user.id, permissions: { onlineComps: ["submit-own-result"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { onlineComps: ["submit-own-result"] } } }),
         db.query.contests.findFirst({ where: { competitionId } }),
         db.query.events.findFirst({ where: { eventId } }),
         db.query.rounds.findMany({ where: { competitionId, eventId } }),
@@ -129,7 +130,7 @@ export const createContestResultSF = actionClient
 
       if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
       // This is similar to the logic in the contest controls component
-      const userControlsContest = canCreateAndUpdateContests && getUserControlsContest(user, contest);
+      const userControlsContest = canCreateAndUpdateContests && getMemberControlsContest(user, contest);
       const hasAccessToResults = canSubmitOwnOnlineCompResult && contest.type === "online" && user.personId;
       if (!userControlsContest && !hasAccessToResults)
         throw new RrActionError("You are unauthorized to submit results for this contest");
@@ -224,7 +225,7 @@ export const createContestResultSF = actionClient
   );
 
 export const updateContestResultSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -251,7 +252,7 @@ export const updateContestResultSF = actionClient
       ]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getUserControlsContest(user, contest))
+      if (!getMemberControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
@@ -326,7 +327,7 @@ export const updateContestResultSF = actionClient
   );
 
 export const deleteContestResultSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -361,7 +362,7 @@ export const deleteContestResultSF = actionClient
       ]);
 
       if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getUserControlsContest(user, contest))
+      if (!getMemberControlsContest(user, contest))
         throw new RrActionError("You do not have access rights for this contest");
       if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
       if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
@@ -399,76 +400,68 @@ export const deleteContestResultSF = actionClient
   );
 
 export const createVideoBasedResultSF = actionClient
-  .metadata({ permissions: { videoBasedResults: ["create"] } })
+  .metadata({ auth: { orgPermissions: { videoBasedResults: ["create"] } } })
   .inputSchema(
     z.strictObject({
       newResultDto: VideoBasedResultValidator,
     }),
   )
-  .action<ResultResponse>(
-    async ({
-      parsedInput: { newResultDto },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      logMessage("RR0016", `Creating video-based result: ${JSON.stringify(newResultDto)}`);
+  .action<ResultResponse>(async ({ parsedInput: { newResultDto }, ctx: { session, httpHeaders } }) => {
+    logMessage("RR0016", `Creating video-based result: ${JSON.stringify(newResultDto)}`);
 
-      const { success: canApprove } = await auth.api.userHasPermission({
-        body: { userId: user.id, permissions: { videoBasedResults: ["approve"] } },
-      });
-      await validateVideoBasedResult(newResultDto, { userCanApprove: canApprove });
+    const { success: canApprove } = await auth.api.hasPermission({
+      headers: httpHeaders,
+      body: { permissions: { videoBasedResults: ["approve"] } },
+    });
+    await validateVideoBasedResult(newResultDto, { userCanApprove: canApprove });
 
-      const [event, participants, recordConfigs, creatorPerson, videoBasedResultsContactEmail] = await Promise.all([
-        db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
-        db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
-        getRecordConfigs({ recordCategory: "online" }),
-        user.personId
-          ? db.query.persons.findFirst({ columns: { name: true }, where: { id: user.personId } })
-          : undefined,
-        getSettingFromDb({ key: "video-based-results-contact-email", optional: true }),
-      ]);
+    const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
+      db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
+      db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
+      getRecordConfigs({ recordCategory: "online" }),
+      session.user.personId
+        ? db.query.persons.findFirst({ columns: { name: true }, where: { id: session.user.personId } })
+        : undefined,
+    ]);
 
-      if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
-      // Same check as in createContestResultSF
-      const notFoundPersonId = newResultDto.personIds.find((pid) => !participants.some((p) => p.id === pid));
-      if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
-      // Same check as in createContestResultSF
-      if (newResultDto.personIds.length !== event.participants) {
-        throw new RrActionError(
-          `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
-        );
-      }
-
-      const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
-      const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
-      const newResult: InsertResult = {
-        ...newResultDto,
-        best,
-        average,
-        recordCategory: "online",
-        createdBy: user.id,
-      };
-
-      await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
-
-      const [createdResult] = await db.insert(table).values(newResult).returning(resultsPublicCols);
-
-      sendVideoBasedResultSubmittedEmail(
-        user.email,
-        videoBasedResultsContactEmail,
-        event,
-        createdResult,
-        user.name,
-        creatorPerson?.name,
+    if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
+    // Same check as in createContestResultSF
+    const notFoundPersonId = newResultDto.personIds.find((pid) => !participants.some((p) => p.id === pid));
+    if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
+    // Same check as in createContestResultSF
+    if (newResultDto.personIds.length !== event.participants) {
+      throw new RrActionError(
+        `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
       );
+    }
 
-      return createdResult;
-    },
-  );
+    const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
+    const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
+    const newResult: InsertResult = {
+      ...newResultDto,
+      best,
+      average,
+      recordCategory: "online",
+      createdBy: session.user.id,
+    };
+
+    await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
+
+    const [createdResult] = await db.insert(table).values(newResult).returning(resultsPublicCols);
+
+    sendVideoBasedResultSubmittedEmail(session.user.email, {
+      event,
+      result: createdResult,
+      creatorName: session.user.name,
+      creatorPersonName: creatorPerson?.name,
+      organization: session.organization!,
+    });
+
+    return createdResult;
+  });
 
 export const updateVideoBasedResultSF = actionClient
-  .metadata({ permissions: { videoBasedResults: ["update", "approve"] } })
+  .metadata({ auth: { orgPermissions: { videoBasedResults: ["update", "approve"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -548,7 +541,7 @@ export const updateVideoBasedResultSF = actionClient
         const creatorUser = result.createdBy
           ? await tx.query.users.findFirst({ columns: { email: true }, where: { id: result.createdBy } })
           : undefined;
-        if (creatorUser) sendVideoBasedResultApprovedEmail(creatorUser.email, event);
+        if (creatorUser) sendVideoBasedResultApprovedEmail(creatorUser.email, { event });
       }
 
       return updatedResult;
@@ -1085,7 +1078,7 @@ async function validateVideoBasedResult(
 ) {
   // Disallow video-based-result-reviewer-only features
   if (!userCanApprove) {
-    if (newResultDto.videoLink === "") throw new RrActionError("Please enter a video link");
+    if (!newResultDto.videoLink) throw new RrActionError("Please enter a video link");
     if (newResultDto.attempts.some((a) => a.result === C.maxTime))
       throw new RrActionError("You are not authorized to set unknown time");
   }

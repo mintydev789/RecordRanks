@@ -19,6 +19,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { type RoundFormatObject, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import type { Creator, EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
@@ -69,6 +70,7 @@ function ResultsSubmissionForm({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { organization } = useSession();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
   const {
@@ -134,7 +136,7 @@ function ResultsSubmissionForm({
           date: date!,
           personIds: participants.map((p) => p!.id),
           attempts,
-          videoLink: videoUnavailable ? "" : videoLink,
+          videoLink: videoUnavailable ? null : videoLink,
           discussionLink: discussionLink || null,
         },
       });
@@ -242,7 +244,7 @@ function ResultsSubmissionForm({
               be identified from the provided video; if your channel name is not your real name, please include your
               full name or WCA ID in the description of the video. If you do not have a WCA ID, please contact the
               admins to have a competitor profile created for you. If you have any questions or suggestions, feel free
-              to send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.
+              to send an email to {organization?.metadata.contactEmail}.
             </p>
             <div className="d-flex flex-wrap gap-3">
               <button type="button" className="btn btn-success btn-sm" onClick={() => setShowRules(!showRules)}>

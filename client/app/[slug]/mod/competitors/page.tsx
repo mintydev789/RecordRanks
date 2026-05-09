@@ -1,4 +1,5 @@
 import { desc, eq, inArray } from "drizzle-orm";
+import { headers } from "next/headers";
 import ManageCompetitorsScreen from "~/app/[slug]/mod/competitors/ManageCompetitorsScreen.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import type { Creator } from "~/helpers/types.ts";
@@ -15,12 +16,10 @@ import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function CompetitorsPage() {
-  const { user } = await authorizeUser({ permissions: { persons: ["create", "update", "delete"] } });
+  const { user } = await authorizeUser({ orgPermissions: { persons: ["create", "update", "delete"] } });
 
   const [{ success: canApprovePersons }, regions] = await Promise.all([
-    auth.api.userHasPermission({
-      body: { userId: user.id, permissions: { persons: ["approve"] } },
-    }),
+    auth.api.hasPermission({ headers: await headers(), body: { permissions: { persons: ["approve"] } } }),
     db.select(regionsPublicCols).from(regionsTable),
   ]);
 

@@ -1,4 +1,5 @@
 import { desc } from "drizzle-orm";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 import Markdown from "react-markdown";
@@ -7,12 +8,25 @@ import CollectiveCubing from "~/app/components/contest/CollectiveCubing.tsx";
 import DonateSection from "~/app/components/contest/DonateSection.tsx";
 import ModInstructionsSection from "~/app/components/contest/ModInstructionsSection.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
+import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
-import { getSettingFromDb } from "~/server/server-only-functions.ts";
+import { getOrgDetails, getSettingFromDb } from "~/server/server-only-functions.ts";
 
-async function OrganizationHomePage() {
-  const description = await getSettingFromDb({ key: "home-page-description", optional: true });
+type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
+
+async function OrganizationHomePage({ params }: Props) {
+  const { slug } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  const [description, organization] = await Promise.all([
+    getSettingFromDb({ key: "home-page-description", optional: true }),
+    getOrgDetails({ session: session?.session, slug }),
+  ]);
 
   const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
   const modInstructionsPromise = getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });
@@ -67,7 +81,7 @@ async function OrganizationHomePage() {
       </Suspense>
 
       <h3 className="rr-basic-heading">Contact</h3>
-      <p>For general inquiries, send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.</p>
+      <p>For general inquiries, send an email to {organization?.metadata.contactEmail || "ERROR"}.</p>
 
       <Suspense>
         <CollectiveCubing settingValuePromise={collectiveCubingEnabledSettingPromise} />

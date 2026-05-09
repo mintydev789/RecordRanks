@@ -108,6 +108,7 @@ export const membersTable = rrSchema.table(
       .references(() => usersTable.id, { onDelete: "cascade" }),
     role: text("role").default("member").notNull(),
     createdAt: timestamp("created_at").notNull(),
+    personId: integer("person_id").unique(),
   },
   (table) => [
     index("members_organizationId_idx").on(table.organizationId),

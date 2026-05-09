@@ -8,15 +8,15 @@ import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
-import { clientGetUserHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
+import { clientGetHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
 import { getModInstructionsSF } from "~/server/server-functions/server-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const { data: activeOrganization } = authClient.useActiveOrganization();
+  const { session, user, member, organization } = useSession();
   const { mutate } = useSWRConfig();
 
   const { data: moderatorInstructions } = useSWR(["mod-instructions"], () => getModInstructionsSF());
@@ -25,11 +25,11 @@ function Navbar() {
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [userExpanded, setUserExpanded] = useState(false);
   const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
-    clientGetUserHasPermission({ modDashboard: ["view"] }),
+    clientGetHasPermission({ modDashboard: ["view"] }),
   );
   const { data: canApproveVideoBasedResults } = useSWR(
     session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
-    () => clientGetUserHasPermission({ videoBasedResults: ["approve"] }),
+    () => clientGetHasPermission({ videoBasedResults: ["approve"] }),
   );
 
   const logOut = async () => {
@@ -68,13 +68,13 @@ function Navbar() {
   };
 
   // TO-DO: FIX NO NAVBAR FLASHING BEFORE HYDRATION!
-  if (!activeOrganization) return;
+  if (!organization) return;
 
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary">
       <div className="container-md position-relative">
-        <Link href={`/${activeOrganization.slug}`} prefetch={false} className="navbar-brand">
-          {activeOrganization.logo ? <img src={activeOrganization.logo} height={45} width={45} alt="Home" /> : "Home"}
+        <Link href={`/${organization.slug}`} prefetch={false} className="navbar-brand">
+          {organization.logo ? <img src={organization.logo} height={45} width={45} alt="Home" /> : "Home"}
         </Link>
         <button
           type="button"
@@ -89,10 +89,10 @@ function Navbar() {
           <ul className="navbar-nav fs-5 mx-2 mt-3 mt-lg-0 gap-lg-2 align-items-lg-end align-items-start">
             <li className="nav-item">
               <Link
-                href={`/${activeOrganization.slug}/competitions`}
+                href={`/${organization.slug}/competitions`}
                 onClick={collapseAll}
                 prefetch={false}
-                className={`nav-link ${pathname === `/${activeOrganization.slug}/competitions` ? "active" : ""}`}
+                className={`nav-link ${pathname === `/${organization.slug}/competitions` ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faCalendarDays} size="xs" className="me-2" />
                 Contests
@@ -114,7 +114,7 @@ function Navbar() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${resultsExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    href={`/${activeOrganization.slug}/records`}
+                    href={`/${organization.slug}/records`}
                     onClick={collapseAll}
                     prefetch={false}
                     className={`nav-link ${/^\/[a-z0-9]+\/records\//.test(pathname) ? "active" : ""}`}
@@ -124,7 +124,7 @@ function Navbar() {
                 </li>
                 <li>
                   <Link
-                    href={`/${activeOrganization.slug}/rankings`}
+                    href={`/${organization.slug}/rankings`}
                     onClick={collapseAll}
                     prefetch={false}
                     className={`nav-link ${/^\/[a-z0-9]+\/rankings\//.test(pathname) ? "active" : ""}`}
@@ -135,10 +135,10 @@ function Navbar() {
                 {process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP && process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP !== "0" && (
                   <li>
                     <Link
-                      href={`/${activeOrganization.slug}/export`}
+                      href={`/${organization.slug}/export`}
                       onClick={collapseAll}
                       prefetch={false}
-                      className={`nav-link ${pathname === `/${activeOrganization.slug}/export` ? "active" : ""}`}
+                      className={`nav-link ${pathname === `/${organization.slug}/export` ? "active" : ""}`}
                     >
                       Exports
                     </Link>
@@ -148,10 +148,10 @@ function Navbar() {
             </li>
             <li className="nav-item">
               <Link
-                href={`/${activeOrganization.slug}/rules`}
+                href={`/${organization.slug}/rules`}
                 onClick={collapseAll}
                 prefetch={false}
-                className={`nav-link ${pathname === `/${activeOrganization.slug}/rules` ? "active" : ""}`}
+                className={`nav-link ${pathname === `/${organization.slug}/rules` ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
                 Rules
@@ -173,17 +173,17 @@ function Navbar() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${moreExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    href={`/${activeOrganization.slug}/about`}
+                    href={`/${organization.slug}/about`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${pathname === `/${activeOrganization.slug}/about` ? "active" : ""}`}
+                    className={`nav-link ${pathname === `/${organization.slug}/about` ? "active" : ""}`}
                   >
                     About
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href={`/${activeOrganization.slug}/posts`}
+                    href={`/${organization.slug}/posts`}
                     onClick={collapseAll}
                     prefetch={false}
                     className={`nav-link ${/^\/[a-z0-9]+\/posts/.test(pathname) ? "active" : ""}`}
@@ -194,10 +194,10 @@ function Navbar() {
                 {moderatorInstructions && (
                   <li>
                     <Link
-                      href={`/${activeOrganization.slug}/moderator-instructions`}
+                      href={`/${organization.slug}/moderator-instructions`}
                       onClick={collapseAll}
                       prefetch={false}
-                      className={`nav-link ${pathname === `/${activeOrganization.slug}/moderator-instructions` ? "active" : ""}`}
+                      className={`nav-link ${pathname === `/${organization.slug}/moderator-instructions` ? "active" : ""}`}
                     >
                       Moderator instructions
                     </Link>
@@ -216,7 +216,7 @@ function Navbar() {
                 </li>
               </ul>
             </li>
-            {!session ? (
+            {!member ? (
               // TO-DO: THIS NEEDS TO BE REMOVED NOW! BUT WAIT, WHAT ABOUT WHITE-LABEL? (i.e. CC)
               <li className="nav-item">
                 <Link href="/login" prefetch={false} onClick={collapseAll} className="nav-link">
@@ -237,16 +237,16 @@ function Navbar() {
                   style={{ maxWidth: "15rem" }}
                 >
                   <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
-                  {session.user.name}
+                  {user!.name}
                 </button>
                 <ul className={`dropdown-menu end-0 px-3 px-lg-2 py-0 ${userExpanded ? "show" : ""}`}>
                   {canAccessModDashboard && (
                     <li>
                       <Link
-                        href={`/${activeOrganization.slug}/mod${getHasRole("admin", session.user.role) ? "?state=pending" : ""}`}
+                        href={`/${organization.slug}/mod${getHasRole("admin", member.role) ? "?state=pending" : ""}`}
                         prefetch={false}
                         onClick={collapseAll}
-                        className={`nav-link ${pathname === `/${activeOrganization.slug}/mod` ? "active" : ""}`}
+                        className={`nav-link ${pathname === `/${organization.slug}/mod` ? "active" : ""}`}
                       >
                         Mod dashboard
                       </Link>
@@ -255,10 +255,10 @@ function Navbar() {
                   {canApproveVideoBasedResults && (
                     <li>
                       <Link
-                        href={`/${activeOrganization.slug}/video-based-results`}
+                        href={`/${organization.slug}/video-based-results`}
                         prefetch={false}
                         onClick={collapseAll}
-                        className={`nav-link ${pathname === `/${activeOrganization.slug}/video-based-results` ? "active" : ""}`}
+                        className={`nav-link ${pathname === `/${organization.slug}/video-based-results` ? "active" : ""}`}
                       >
                         Video-based results
                       </Link>
@@ -266,10 +266,10 @@ function Navbar() {
                   )}
                   <li>
                     <Link
-                      href={`/${activeOrganization.slug}/video-based-results/submit`}
+                      href={`/${organization.slug}/video-based-results/submit`}
                       prefetch={false}
                       onClick={collapseAll}
-                      className={`nav-link ${pathname === `/${activeOrganization.slug}/video-based-results/submit` ? "active" : ""}`}
+                      className={`nav-link ${pathname === `/${organization.slug}/video-based-results/submit` ? "active" : ""}`}
                     >
                       Submit results
                     </Link>

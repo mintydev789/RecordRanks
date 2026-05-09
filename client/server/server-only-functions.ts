@@ -1,6 +1,7 @@
 import "server-only";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { camelCase } from "lodash";
+import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import z from "zod";
@@ -10,18 +11,21 @@ import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts"
 import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import {
   type ContestType,
+  type FullSession,
   type GetOrCreatePersonObject,
+  type MemberRequestDetails,
+  type OrganizationDetails,
   type RecordCategory,
   RecordCategoryValues,
   type RecordType,
   RecordTypeValues,
-  type UserRequestDetails,
 } from "~/helpers/types.ts";
 import {
   compareAvgs,
   compareSingles,
   fetchWcaPerson,
   getActionError,
+  getHasRole,
   getResultProceeds,
 } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
@@ -29,19 +33,20 @@ import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
+import type { FullMemberRequest } from "~/server/db/schema/member-requests.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { type ResultResponse, resultsTable } from "~/server/db/schema/results.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import type { SettingKey } from "~/server/db/schema/settings.ts";
-import type { FullUserRequest } from "~/server/db/schema/user-requests.ts";
 import { sendErrorEmail } from "~/server/email/mailer.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
+import type { AdminPluginPermissions, Role } from "~/server/permissions.ts";
 import { RrActionError } from "~/server/safeAction.ts";
 import { updatePersonSF } from "~/server/server-functions/person-server-functions.ts";
 import { getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
 import { auth } from "./auth.ts";
-import type { RrPermissions } from "./permissions.ts";
+import type { OrganizationRole, OrgPluginPermissions } from "./organization-permissions.ts";
 
 export function logMessage(
   code: LogCode,
@@ -74,32 +79,98 @@ export function logMessage(
   }
 }
 
-export async function authorizeUser({
-  permissions,
-  useOrganization = true,
-}: {
-  permissions?: RrPermissions;
-  useOrganization?: boolean;
-} = {}): Promise<typeof auth.$Infer.Session> {
-  const session = await auth.api.getSession({ headers: await headers() });
+export async function authorizeUser(
+  {
+    useOrganization = true,
+    orgPermissions,
+    orgRole,
+    permissions,
+    role,
+  }:
+    | {
+        useOrganization: false;
+        orgPermissions?: never;
+        orgRole?: never;
+        permissions?: AdminPluginPermissions;
+        role?: Role;
+      }
+    | {
+        useOrganization?: true;
+        orgPermissions?: OrgPluginPermissions;
+        orgRole?: OrganizationRole;
+        permissions?: never;
+        role?: never;
+      },
+  httpHeaders?: ReadonlyHeaders,
+): Promise<FullSession> {
+  const hdrs = httpHeaders ?? (await headers());
+  const session = await auth.api.getSession({ headers: hdrs });
+  let member: typeof auth.$Infer.Member | undefined;
+  let organization: OrganizationDetails | undefined;
 
-  if (!session || (useOrganization && !session.session.activeOrganizationId)) redirect("/login");
+  if (!session) redirect("/login");
 
-  if (permissions) {
-    const { success } = await auth.api.userHasPermission({ body: { userId: session.user.id, permissions } });
-    if (!success) redirect("/login");
+  if (useOrganization) {
+    if (!session.session.activeOrganizationId) redirect("/"); // go back to org selection
 
-    // The user must have an assigned person to be able to do any operation except creating video-based results
-    if (
-      !session.user.personId &&
-      (Object.keys(permissions).some((key) => key !== ("videoBasedResults" satisfies keyof typeof permissions)) ||
-        permissions.videoBasedResults?.some((perm) => perm !== "create"))
-    ) {
-      redirect("/login");
+    member = await auth.api.getActiveMember({ headers: hdrs });
+    organization = await getOrgDetails({ session: session.session, id: member.organizationId });
+
+    if (orgPermissions) {
+      const { success } = await auth.api.hasPermission({ headers: hdrs, body: { permissions: orgPermissions } });
+      if (!success) throw new RrActionError("You are unauthorized to perform this action");
+
+      // The user must have an assigned person to be able to do any operation except creating video-based results
+      if (
+        !member.personId &&
+        (Object.keys(orgPermissions).some((key) => key !== "videoBasedResults") ||
+          orgPermissions.videoBasedResults?.some((perm) => perm !== "create"))
+      ) {
+        throw new RrActionError("You are unauthorized to perform this action");
+      }
+    }
+
+    if (orgRole) {
+      const hasRole = getHasRole(orgRole, member.role);
+      if (!hasRole) throw new RrActionError("You are unauthorized to perform this action");
+    }
+  } else {
+    if (permissions) {
+      const { success } = await auth.api.userHasPermission({ body: { userId: session.user.id, permissions } });
+      if (!success) throw new RrActionError("You are unauthorized to perform this action");
+    }
+
+    if (role) {
+      const hasRole = getHasRole(role, session.user.role);
+      if (!hasRole) throw new RrActionError("You are unauthorized to perform this action");
     }
   }
 
-  return session;
+  return { ...session, member, organization };
+}
+
+export async function getOrgDetails({
+  session,
+  id,
+  slug,
+}: {
+  session: Pick<typeof auth.$Infer.Session.session, "activeOrganizationId"> | undefined;
+  id?: string;
+  slug?: string;
+}) {
+  const organization = await db.query.organizations
+    .findFirst({
+      columns: { id: true, name: true, slug: true, logo: true, metadata: true },
+      where: id ? { id } : { slug },
+    })
+    .then((res) => {
+      if (!res) throw new RrActionError("Organization not found");
+      return { ...res, metadata: JSON.parse(res.metadata!) } as OrganizationDetails;
+    });
+
+  if (organization.metadata.private && session?.activeOrganizationId !== organization.id) redirect("/login");
+
+  return organization;
 }
 
 export async function getContestParticipantIds(tx: DbTransactionType, competitionId: string): Promise<number[]> {
@@ -618,16 +689,16 @@ export async function getSettingFromDb({
   return setting.value;
 }
 
-export async function getUserRequestDetails(userId: string): Promise<UserRequestDetails> {
-  const [fullUserRequest, ownCreatedPersons] = await Promise.all([
-    db.query.userRequests.findFirst({
+export async function getMemberRequestDetails(userId: string, memberId: string): Promise<MemberRequestDetails> {
+  const [fullMemberRequest, ownCreatedPersons] = await Promise.all([
+    db.query.memberRequests.findFirst({
       with: {
         requestedPerson: {
           columns: { id: true, name: true, localizedName: true, regionCode: true, wcaId: true, approved: true },
         },
       },
-      where: { userId: userId },
-    }) satisfies Promise<FullUserRequest | undefined>,
+      where: { memberId },
+    }) satisfies Promise<FullMemberRequest | undefined>,
     db.query.persons.findMany({
       columns: { id: true },
       // This logic is consistent with updatePersonSF()
@@ -635,11 +706,11 @@ export async function getUserRequestDetails(userId: string): Promise<UserRequest
     }),
   ]);
 
-  if (fullUserRequest && ownCreatedPersons.length > 1) {
+  if (fullMemberRequest && ownCreatedPersons.length > 1) {
     throw new RrActionError(
       "You have somehow created more than one competitor profile. Please contact the admin team to assign your profile.",
     );
   }
 
-  return { userRequest: fullUserRequest ?? null, ownRequestedPersonId: ownCreatedPersons.at(0)?.id };
+  return { memberRequest: fullMemberRequest ?? null, ownRequestedPersonId: ownCreatedPersons.at(0)?.id };
 }

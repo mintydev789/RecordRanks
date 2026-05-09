@@ -11,43 +11,46 @@ import FormSelect from "~/app/components/form/FormSelect.tsx";
 import FormTextArea from "~/app/components/form/FormTextArea.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Modal from "~/app/components/UI/Modal.tsx";
-import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
-import type { InputPerson, UserRequestDetails } from "~/helpers/types.ts";
+import type { InputPerson, MemberRequestDetails } from "~/helpers/types.ts";
 import { getActionError, getHasRole } from "~/helpers/utilityFunctions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { requestableRoles, rolesObject } from "~/server/permissions.ts";
-import { createOrUpdateUserRequestSF, deleteUserRequestSF } from "~/server/server-functions/user-server-functions.ts";
+import { orgRolesObject, requestableRoles } from "~/server/organization-permissions.ts";
+import {
+  createOrUpdateMemberRequestSF,
+  deleteMemberRequestSF,
+} from "~/server/server-functions/user-server-functions.ts";
 
 type Props = {
   regions: RegionResponse[];
 };
 
-function UserRequestTab({ regions }: Props) {
-  const { data: session } = authClient.useSession();
+function MemberRequestTab({ regions }: Props) {
+  const { member } = useSession();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
-  const { executeAsync: createOrUpdateUserRequest, isPending: isCreating } = useAction(createOrUpdateUserRequestSF);
-  const { executeAsync: deleteUserRequest, isPending: isDeleting } = useAction(deleteUserRequestSF);
-  const { data: userRequestDetails, mutate } = useSWR<UserRequestDetails>(SwrKey.UserRequestDetails);
-  const userRequest = userRequestDetails?.userRequest;
-  const { data: userRequestInstructions } = useSWR<string>(SwrKey.UserRequestInstructions);
-  const [persons, setPersons] = useState<InputPerson[]>([userRequest?.requestedPerson ?? null]);
-  const [personNames, setPersonNames] = useState([userRequest?.requestedPerson?.name ?? ""]);
+  const { executeAsync: createOrUpdateMemberRequest, isPending: isCreating } = useAction(createOrUpdateMemberRequestSF);
+  const { executeAsync: deleteMemberRequest, isPending: isDeleting } = useAction(deleteMemberRequestSF);
+  const { data: memberRequestDetails, mutate } = useSWR<MemberRequestDetails>(SwrKey.MemberRequestDetails);
+  const memberRequest = memberRequestDetails?.memberRequest;
+  const { data: memberRequestInstructions } = useSWR<string>(SwrKey.MemberRequestInstructions);
+  const [persons, setPersons] = useState<InputPerson[]>([memberRequest?.requestedPerson ?? null]);
+  const [personNames, setPersonNames] = useState([memberRequest?.requestedPerson?.name ?? ""]);
   const [requestedRole, setRequestedRole] = useState<(typeof roleOptions)[number]["value"]>(
-    userRequest ? (userRequest.requestedRole as any) : null,
+    memberRequest ? (memberRequest.requestedRole as any) : null,
   );
-  const [comment, setComment] = useState(userRequest?.comment ?? "");
+  const [comment, setComment] = useState(memberRequest?.comment ?? "");
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const roleOptions = [
     { value: null, label: "Not selected" },
-    ...requestableRoles.map((r) => ({ value: r, label: rolesObject[r] })),
+    ...requestableRoles.map((r) => ({ value: r, label: orgRolesObject[r] })),
   ] as const satisfies MultiChoiceOption[];
-  const isAdmin = getHasRole("admin", session?.user.role);
+  const isAdmin = getHasRole("admin", member?.role);
   const isPending = isCreating || isDeleting;
 
   const handleSubmit = async () => {
@@ -55,7 +58,7 @@ function UserRequestTab({ regions }: Props) {
       changeErrorMessages(["Please enter or clear the competitor profile"]);
     } else {
       resetMessages();
-      const res = await createOrUpdateUserRequest({
+      const res = await createOrUpdateMemberRequest({
         requestedPersonId: persons[0]?.id ?? null,
         requestedRole,
         comment: comment || null,
@@ -64,7 +67,7 @@ function UserRequestTab({ regions }: Props) {
       if (res.serverError || res.validationErrors) {
         changeErrorMessages([getActionError(res)]);
       } else {
-        changeSuccessMessage("Your user request has been successfully submitted. The admin team will review it soon.");
+        changeSuccessMessage("Your request has been successfully submitted. The admin team will review it soon.");
         mutate(res.data!, { revalidate: false });
       }
     }
@@ -72,14 +75,14 @@ function UserRequestTab({ regions }: Props) {
 
   const onDelete = async () => {
     resetMessages();
-    const res = await deleteUserRequest(userRequest!.id);
+    const res = await deleteMemberRequest(memberRequest!.id);
 
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
     } else {
       changeSuccessMessage("Your user request has been successfully deleted");
       mutate(
-        { userRequest: null, ownRequestedPersonId: userRequestDetails?.ownRequestedPersonId },
+        { memberRequest: null, ownRequestedPersonId: memberRequestDetails?.ownRequestedPersonId },
         { revalidate: false },
       );
       setPersons([null]);
@@ -102,7 +105,7 @@ function UserRequestTab({ regions }: Props) {
 
   return (
     <>
-      <Markdown>{userRequestInstructions}</Markdown>
+      <Markdown>{memberRequestInstructions}</Markdown>
 
       <Form
         onSubmit={handleSubmit}
@@ -112,9 +115,7 @@ function UserRequestTab({ regions }: Props) {
         className="mt-4 mb-5"
       >
         {isAdmin && (
-          <p className="fs-6 fw-bold text-center text-danger">
-            You cannot submit user requests, because you are an admin
-          </p>
+          <p className="fs-6 fw-bold text-center text-danger">You cannot submit requests, because you are an admin</p>
         )}
 
         <div className="row mb-2">
@@ -126,17 +127,17 @@ function UserRequestTab({ regions }: Props) {
               personNames={personNames}
               setPersonNames={setPersonNames}
               regions={regions}
-              disabled={isPending || !!userRequest?.requestedPersonId || !!session?.user.personId}
+              disabled={isPending || !!memberRequest?.requestedPersonId || !!member?.personId}
               addNewPersonMode="disabled"
               display="grid"
               showWcaId
             />
-            {!session?.user.personId &&
+            {!member?.personId &&
               (!persons[0] ? (
                 <Button onClick={() => openPersonModal()} className="btn-success my-2">
                   Create New Person
                 </Button>
-              ) : persons[0].id === userRequestDetails?.ownRequestedPersonId ? (
+              ) : persons[0].id === memberRequestDetails?.ownRequestedPersonId ? (
                 <Button onClick={() => openPersonModal()} className="btn-primary my-2">
                   Edit Person
                 </Button>
@@ -148,17 +149,17 @@ function UserRequestTab({ regions }: Props) {
               options={roleOptions}
               selected={requestedRole}
               setSelected={setRequestedRole as any}
-              disabled={isPending || session?.user.role !== "user"}
+              disabled={isPending || member?.role !== "member"}
             />
           </div>
         </div>
         <FormTextArea title="Comment" value={comment} setValue={setComment} disabled={isPending || isAdmin} rows={5} />
       </Form>
 
-      {userRequest && (
+      {memberRequest && (
         <>
           <p>
-            You have already submitted a user request. To change the details, simply submit again. If you would like to
+            You have already submitted a request. To change the details, simply submit again. If you would like to
             request a different competitor profile, delete your request and submit a new one.
           </p>
           <Button onClick={() => onDelete()} isLoading={isDeleting} disabled={isPending} className="btn-danger mb-4">
@@ -185,4 +186,4 @@ function UserRequestTab({ regions }: Props) {
   );
 }
 
-export default UserRequestTab;
+export default MemberRequestTab;

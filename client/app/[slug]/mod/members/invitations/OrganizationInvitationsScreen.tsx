@@ -5,12 +5,12 @@ import useSWR from "swr";
 import Button from "~/app/components/UI/Button.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import type { ListPageMode } from "~/helpers/types.ts";
 
 function OrganizationInvitationsScreen() {
   const { resetMessages, changeErrorMessages, changeSuccessMessage } = useContext(MainContext);
-  const { data: session } = authClient.useSession();
-  const { data: activeOrganization } = authClient.useActiveOrganization();
+  const { session, organization } = useSession();
 
   const {
     data: invitations,
@@ -19,8 +19,7 @@ function OrganizationInvitationsScreen() {
     mutate,
   } = useSWR(
     session ? ["organization-invitations", session] : null,
-    () =>
-      authClient.organization.listInvitations({ query: { organizationId: session!.session.activeOrganizationId! } }),
+    () => authClient.organization.listInvitations({ query: { organizationId: session!.activeOrganizationId! } }),
     { suspense: true },
   );
   const [mode, setMode] = useState<ListPageMode>("view");
@@ -53,7 +52,7 @@ function OrganizationInvitationsScreen() {
         const { error } = await authClient.organization.inviteMember({
           email,
           role: "member",
-          organizationId: session!.session.activeOrganizationId!,
+          organizationId: session!.activeOrganizationId!,
           resend: true,
         });
 
@@ -120,7 +119,7 @@ function OrganizationInvitationsScreen() {
             <tbody>
               {invitations.data.map((invitation) => (
                 <tr key={invitation.id}>
-                  <td>{activeOrganization?.name}</td>
+                  <td>{organization!.name}</td>
                   <td>{invitation.email}</td>
                   <td>{invitation.role}</td>
                   <td>{invitation.status}</td>

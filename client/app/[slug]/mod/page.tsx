@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SWRConfig, unstable_serialize as serialize } from "swr";
@@ -23,12 +24,10 @@ type Props = {
 async function ModeratorDashboardPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const filters = ModDashboardFiltersValidator.parse(await searchParams);
-  const session = await authorizeUser({ permissions: { modDashboard: ["view"] } });
+  const { organization } = await authorizeUser({ orgPermissions: { modDashboard: ["view"] } });
 
   const [{ success: isAdminView }, regions] = await Promise.all([
-    auth.api.userHasPermission({
-      body: { userId: session.user.id, permissions: { adminDashboard: ["view"] } },
-    }),
+    auth.api.hasPermission({ headers: await headers(), body: { permissions: { adminDashboard: ["view"] } } }),
     db.select(regionsPublicCols).from(regionsTable),
   ]);
 
@@ -45,8 +44,8 @@ async function ModeratorDashboardPage({ params, searchParams }: Props) {
             <a href={C.discordServerLink} target="_blank" rel="noreferrer">
               Click here to join
             </a>
-            , then send your CC username and your Discord username in an email to{" "}
-            {process.env.NEXT_PUBLIC_CONTACT_EMAIL} so you can be given the moderator role on the server.
+            , then send your CC username and your Discord username in an email to {organization!.metadata.contactEmail}{" "}
+            so you can be given the moderator role on the server.
           </div>
         )}
 
@@ -59,8 +58,8 @@ async function ModeratorDashboardPage({ params, searchParams }: Props) {
           </Link>
           {isAdminView ? (
             <>
-              <Link href="/admin/users" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
-                Manage users
+              <Link href={`/${slug}/mod/members`} prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
+                Manage members
               </Link>
               <Link href={`/${slug}/mod/events`} prefetch={false} className="btn btn-secondary btn-sm btn-lg-md">
                 Configure events

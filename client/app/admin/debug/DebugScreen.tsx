@@ -8,6 +8,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import type { OrganizationMetadata } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import { sendDebugEmailSF } from "~/server/server-functions/user-server-functions.ts";
 
@@ -44,6 +45,7 @@ function DebugScreen() {
           .min(3)
           .max(12)
           .regex(/^[a-z0-9]$/),
+        contactEmail: z.email(),
         logo: z.string().nullable(),
       })
       .safeParse(Object.fromEntries(formData.entries()));
@@ -56,14 +58,15 @@ function DebugScreen() {
           name: parsed.data.name,
           slug: parsed.data.slug,
           logo: parsed.data.logo || undefined,
-          // userId: "some_user_id",
-          keepCurrentActiveOrganization: true,
+          metadata: { 
+            private: false, contactEmail: parsed.data.contactEmail } satisfies OrganizationMetadata,
+          keepCurrentActiveOrganization: true
         });
 
         if (error) {
           changeErrorMessages([error.message ?? error.statusText]);
         } else {
-          changeSuccessMessage("Successfully created organization");
+          changeSuccessMessage("Successfully created organization")
         }
       });
     }
@@ -115,6 +118,13 @@ function DebugScreen() {
             Organization ID *
           </label>
           <input id="slug_input" type="text" name="slug" placeholder="iax" required className="form-control" />
+        </fieldset>
+
+        <fieldset className="mb-4">
+          <label htmlFor="contact_email_input" className="form-label">
+            Contact Email *
+          </label>
+          <input id="contact_email_input" type="email" name="contactEmail" className="form-control" />
         </fieldset>
 
         <fieldset className="mb-4">

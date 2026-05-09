@@ -21,9 +21,8 @@ export const db =
           connect_timeout: 30,
           idle_timeout: 30,
         },
-        casing: "snake_case",
         relations,
         // logger: true,
       });
 
-export type DbTransactionType = PgAsyncTransaction<PostgresJsQueryResultHKT, Record<string, never>, typeof relations>;
+export type DbTransactionType = PgAsyncTransaction<PostgresJsQueryResultHKT, typeof relations>;

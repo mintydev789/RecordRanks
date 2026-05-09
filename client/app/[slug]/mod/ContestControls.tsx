@@ -8,10 +8,10 @@ import { useAction } from "next-safe-action/hooks";
 import { useContext } from "react";
 import useSWR from "swr";
 import Button from "~/app/components/UI/Button.tsx";
-import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
-import { clientGetUserHasPermission, getActionError, getUserControlsContest } from "~/helpers/utilityFunctions.ts";
+import { clientGetHasPermission, getActionError, getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import {
   approveContestSF,
@@ -35,32 +35,32 @@ type Props = {
 
 function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { session, user } = useSession();
   const { changeErrorMessages } = useContext(MainContext);
 
   const { executeAsync: approveContest, isPending: isApproving } = useAction(approveContestSF);
   const { executeAsync: finishContest, isPending: isFinishing } = useAction(finishContestSF);
   const { executeAsync: publishContest, isPending: isPublishing } = useAction(publishContestSF);
   const { data: canCreateAndUpdateContests } = useSWR(session ? [SwrKey.CanCreateContests, session] : null, () =>
-    clientGetUserHasPermission({ competitions: ["create", "update"], meetups: ["create", "update"] }),
+    clientGetHasPermission({ competitions: ["create", "update"], meetups: ["create", "update"] }),
   );
   const { data: canApproveContests } = useSWR(session ? [SwrKey.CanApproveContests, session] : null, () =>
-    clientGetUserHasPermission({ competitions: ["approve"], meetups: ["approve"] }),
+    clientGetHasPermission({ competitions: ["approve"], meetups: ["approve"] }),
   );
   const { data: canPublishContests } = useSWR(session ? [SwrKey.CanPublishContests, session] : null, () =>
-    clientGetUserHasPermission({ competitions: ["publish"], meetups: ["publish"] }),
+    clientGetHasPermission({ competitions: ["publish"], meetups: ["publish"] }),
   );
   const { data: canSubmitOwnOnlineCompResult } = useSWR(
     session ? [SwrKey.CanSubmitOwnOnlineCompResult, session] : null,
-    () => clientGetUserHasPermission({ onlineComps: ["submit-own-result"] }),
+    () => clientGetHasPermission({ onlineComps: ["submit-own-result"] }),
   );
 
   const isPending = isApproving || isFinishing || isPublishing;
   const smallButtons = forPage === "mod-dashboard";
   // This is similar to the logic in the create contest result server function
-  const userControlsContest = canCreateAndUpdateContests && getUserControlsContest(session!.user, contest);
+  const userControlsContest = canCreateAndUpdateContests && getMemberControlsContest(user!, contest);
   const hasAccessToResults =
-    canCreateAndUpdateContests || (canSubmitOwnOnlineCompResult && contest.type === "online" && session!.user.personId);
+    canCreateAndUpdateContests || (canSubmitOwnOnlineCompResult && contest.type === "online" && user!.personId);
 
   const onApproveContest = async () => {
     if (confirm(`Are you sure you would like to approve ${contest.name}?`)) {

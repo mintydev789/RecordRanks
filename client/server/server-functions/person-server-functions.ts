@@ -19,7 +19,7 @@ import { actionClient, RrActionError } from "../safeAction.ts";
 import { getOrCreatePersonByWcaId, getPersonExactMatchWcaId, logMessage } from "../server-only-functions.ts";
 
 export const getPersonByIdSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       id: z.int().min(1),
@@ -32,7 +32,7 @@ export const getPersonByIdSF = actionClient
   });
 
 export const getPersonsByNameSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       name: z.string().max(60),
@@ -49,7 +49,7 @@ export const getPersonsByNameSF = actionClient
   });
 
 export const getOrCreatePersonSF = actionClient
-  .metadata({ permissions: { persons: ["create"] } })
+  .metadata({ auth: { orgPermissions: { persons: ["create"] } } })
   .inputSchema(
     z.strictObject({
       name: z.string(),
@@ -76,7 +76,7 @@ export const getOrCreatePersonSF = actionClient
   });
 
 export const getOrCreatePersonByWcaIdSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       wcaId: WcaIdValidator,
@@ -88,7 +88,7 @@ export const getOrCreatePersonByWcaIdSF = actionClient
 
 export const createPersonSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       newPersonDto: PersonValidator,
@@ -100,6 +100,7 @@ export const createPersonSF = actionClient
       parsedInput: { newPersonDto, ignoreDuplicate },
       ctx: {
         session: { user },
+        httpHeaders,
       },
     }) => {
       newPersonDto.name = newPersonDto.name.trim();
@@ -108,8 +109,8 @@ export const createPersonSF = actionClient
       logMessage("RR0019", `Creating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
       const [{ success: canCreate }, { success: canApprove }] = await Promise.all([
-        auth.api.userHasPermission({ body: { userId: user.id, permissions: { persons: ["create"] } } }),
-        auth.api.userHasPermission({ body: { userId: user.id, permissions: { persons: ["approve"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["create"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
       ]);
 
       // Regular users are only allowed to create one person without a WCA ID (when requesting a competitor profile)
@@ -139,7 +140,7 @@ export const createPersonSF = actionClient
 
 export const updatePersonSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -148,20 +149,20 @@ export const updatePersonSF = actionClient
     }),
   )
   .action<PersonResponse | SelectPerson>(
-    async ({ parsedInput: { id, newPersonDto, ignoreDuplicate }, ctx: { session } }) => {
+    async ({ parsedInput: { id, newPersonDto, ignoreDuplicate }, ctx: { session, httpHeaders } }) => {
       const { name, wcaId } = newPersonDto;
       logMessage("RR0020", `Updating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
       const [{ success: canUpdate }, { success: canApprove }] = await Promise.all([
-        auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["update"] } } }),
-        auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["update"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
       ]);
 
       const person = await db.query.persons.findFirst({ where: { id } });
       if (!person) throw new RrActionError("Person with the provided ID not found");
       const canUpdateOwnWcaPerson = id === session.user.personId && person.wcaId && newPersonDto.wcaId;
       const canUpdateOwnCreatedPerson = canUpdate && person.createdBy === session.user.id && !person.approved;
-      // This logic is consistent with getUserRequestDetails() and deletePersonSF()
+      // This logic is consistent with getMemberRequestDetails() and deletePersonSF()
       const canUpdateOwnRequestedPerson =
         person.createdBy === session.user.id && !person.approved && !person.wcaId && !newPersonDto.wcaId;
       if (!canApprove && !canUpdateOwnWcaPerson && !canUpdateOwnCreatedPerson && !canUpdateOwnRequestedPerson)
@@ -194,18 +195,18 @@ export const updatePersonSF = actionClient
 
 export const deletePersonSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
     }),
   )
-  .action(async ({ parsedInput: { id }, ctx: { session } }) => {
+  .action(async ({ parsedInput: { id }, ctx: { session, httpHeaders } }) => {
     logMessage("RR0021", `Deleting person with ID ${id}`);
 
     const [{ success: canDelete }, { success: canApprove }] = await Promise.all([
-      auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["delete"] } } }),
-      auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } }),
+      auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["delete"] } } }),
+      auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
     ]);
 
     const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
@@ -242,7 +243,7 @@ export const deletePersonSF = actionClient
   });
 
 export const approvePersonSF = actionClient
-  .metadata({ permissions: { persons: ["approve"] } })
+  .metadata({ auth: { orgPermissions: { persons: ["approve"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -264,7 +265,7 @@ export const approvePersonSF = actionClient
         where: { organizerIds: { arrayContains: [id] } },
       });
       if (!organizedContest) {
-        const userRequest = await db.query.userRequests.findFirst({
+        const userRequest = await db.query.memberRequests.findFirst({
           columns: { id: true },
           where: { requestedPersonId: id },
         });

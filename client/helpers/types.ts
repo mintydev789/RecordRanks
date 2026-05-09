@@ -1,6 +1,6 @@
 import type { authClient } from "~/helpers/authClient.ts";
+import type { FullMemberRequest } from "~/server/db/schema/member-requests.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
-import type { FullUserRequest } from "~/server/db/schema/user-requests.ts";
 
 // WCIF types
 export type {
@@ -20,6 +20,20 @@ export type PageSize = "A4" | "A6";
 export type ListPageMode = "view" | "add" | "edit";
 
 export type InputPerson = PersonResponse | null;
+
+export type OrganizationMetadata = {
+  private: boolean;
+  contactEmail: string;
+};
+
+export type OrganizationDetails = Pick<typeof authClient.$Infer.Organization, "id" | "name" | "slug" | "logo"> & {
+  metadata: OrganizationMetadata;
+};
+
+export type FullSession = typeof authClient.$Infer.Session & {
+  member?: typeof authClient.$Infer.Member;
+  organization?: OrganizationDetails;
+};
 
 // This has to stay consistent with the creator columns object in dbUtils.ts
 export type Creator = Pick<typeof authClient.$Infer.Session.user, "id" | "name" | "email" | "personId">;
@@ -71,4 +85,4 @@ export type GetOrCreatePersonObject = {
   isNew: boolean;
 };
 
-export type UserRequestDetails = { userRequest: FullUserRequest | null; ownRequestedPersonId?: number };
+export type MemberRequestDetails = { memberRequest: FullMemberRequest | null; ownRequestedPersonId?: number };

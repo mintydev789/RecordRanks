@@ -5,7 +5,7 @@ import { SwrKey } from "~/helpers/swr-keys.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getSettingFromDb, getUserRequestDetails } from "~/server/server-only-functions.ts";
+import { authorizeUser, getMemberRequestDetails, getSettingFromDb } from "~/server/server-only-functions.ts";
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
@@ -27,8 +27,8 @@ async function UserSettingsPage() {
       <SWRConfig
         value={{
           fallback: {
-            [SwrKey.UserRequestDetails]: getUserRequestDetails(user.id),
-            [SwrKey.UserRequestInstructions]: getSettingFromDb({ key: "user-request-instructions" }),
+            [SwrKey.MemberRequestDetails]: getMemberRequestDetails(user.id),
+            [SwrKey.MemberRequestInstructions]: getSettingFromDb({ key: "member-request-instructions" }),
           },
         }}
       >

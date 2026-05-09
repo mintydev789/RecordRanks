@@ -1,3 +1,4 @@
+-- This was later renamed to member_requests
 CREATE TABLE "record_ranks"."user_requests" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "record_ranks"."user_requests_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"user_id" text NOT NULL UNIQUE,

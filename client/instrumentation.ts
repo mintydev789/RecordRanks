@@ -1,5 +1,6 @@
 import type fsType from "node:fs";
 import { eq } from "drizzle-orm";
+import { defaultSettings } from "~/helpers/default-settings.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { testUsers } from "~/helpers/test-data/testUsers.ts";
 import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utilityFunctions.ts";
@@ -7,6 +8,7 @@ import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition
 import type { auth as authType } from "~/server/auth.ts";
 import type { db as dbType } from "~/server/db/provider.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
+import { settingsTable } from "~/server/db/schema/settings.ts";
 import { C } from "./helpers/constants.ts";
 import type { InsertContest } from "./server/db/schema/contests.ts";
 import type { PersonResponse } from "./server/db/schema/persons.ts";
@@ -20,6 +22,20 @@ const hashForRr =
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { db }: { db: typeof dbType } = await import("~/server/db/provider.ts");
+
+    // Seed default settings
+    for (const defaultSetting of defaultSettings) {
+      const [existingSetting] = await db
+        .select({ id: settingsTable.id })
+        .from(settingsTable)
+        .where(eq(settingsTable.key, defaultSetting.key))
+        .limit(1);
+
+      if (!existingSetting) {
+        const [createdSetting] = await db.insert(settingsTable).values(defaultSetting).returning();
+        console.log(`Seeded setting: ${createdSetting.group}.${createdSetting.key}`);
+      }
+    }
 
     // Seed test data
     if (process.env.NODE_ENV !== "production") {
@@ -39,13 +55,13 @@ export async function register() {
             );
           }
 
-          const { role, emailVerified, personId, ...body } = testUser;
+          const { role, emailVerified, ...body } = testUser;
           await auth.api.signUpEmail({ body });
 
           // Set emailVerified and personId
           const [user] = await db
             .update(usersTable)
-            .set({ emailVerified, personId })
+            .set({ emailVerified })
             .where(eq(usersTable.email, testUser.email))
             .returning();
 
@@ -335,7 +351,7 @@ export async function register() {
       console.log("Archive migration done");
     }
 
-    // const doSetResultRecords = false
+    // const doSetResultRecords = false;
     // if (doSetResultRecords) {
     //   console.log("Setting result records...");
 

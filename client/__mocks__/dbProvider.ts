@@ -15,8 +15,6 @@ const { pushSchema } = require("drizzle-kit/api-postgres") as typeof import("dri
 
 const client = new PGlite();
 // This uses some of the same options from drizzle.config.ts
-// pushSchema doesn't respect the casing parameter yet. See https://github.com/drizzle-team/drizzle-orm/pull/5018
-// const db = drizzle({ client, schema, relations, casing: "snake_case" });
 export const mockDb = drizzle({ client, schema, relations });
 
 // Apply schema to db

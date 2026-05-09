@@ -8,7 +8,7 @@ import { authorizeUser, getRecordConfigs, getSettingFromDb } from "~/server/serv
 import ManageResultsScreen from "./ManageResultsScreen.tsx";
 
 async function ManageResultsPage() {
-  await authorizeUser({ permissions: { videoBasedResults: ["update", "approve", "delete"] } });
+  await authorizeUser({ orgPermissions: { videoBasedResults: ["update", "approve", "delete"] } });
 
   const [results, recordConfigs, regions, instructions] = await Promise.all([
     db.query.results.findMany({

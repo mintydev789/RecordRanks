@@ -18,7 +18,7 @@ export type SettingKey =
   | "moderator-instructions-page-content"
   | "moderator-instructions-description"
   | "video-based-results-instructions"
-  | "user-request-instructions"
+  | "member-request-instructions"
   | "public-exports-readme"
 
   // features

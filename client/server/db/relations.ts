@@ -15,12 +15,12 @@ import {
 import { collectiveSolutionsTable as collectiveSolutions } from "./schema/collective-solutions.ts";
 import { contestsTable as contests } from "./schema/contests.ts";
 import { eventsTable as events } from "./schema/events.ts";
+import { memberRequestsTable as memberRequests } from "./schema/member-requests.ts";
 import { personsTable as persons } from "./schema/persons.ts";
 import { recordConfigsTable as recordConfigs } from "./schema/record-configs.ts";
 import { regionsTable as regions } from "./schema/regions.ts";
 import { resultsTable as results } from "./schema/results.ts";
 import { roundsTable as rounds } from "./schema/rounds.ts";
-import { userRequestsTable as userRequests } from "./schema/user-requests.ts";
 
 export const relations = defineRelations(
   {
@@ -34,7 +34,7 @@ export const relations = defineRelations(
     invitations,
 
     // RecordRanks relations
-    userRequests,
+    memberRequests,
     events,
     contests,
     accessTokens,
@@ -54,10 +54,6 @@ export const relations = defineRelations(
       accounts: r.many.accounts(),
       members: r.many.members(),
       invitations: r.many.invitations(),
-      person: r.one.persons({
-        from: r.users.personId,
-        to: r.persons.id,
-      }),
     },
     sessions: {
       user: r.one.users({
@@ -89,7 +85,10 @@ export const relations = defineRelations(
         to: r.users.id,
         optional: false,
       }),
-      person: r.many.persons(),
+      person: r.one.persons({
+        from: r.members.personId,
+        to: r.persons.id,
+      }),
     },
     invitations: {
       organization: r.one.organizations({
@@ -105,14 +104,14 @@ export const relations = defineRelations(
     },
 
     // RecordRanks relations
-    userRequests: {
-      user: r.one.users({
-        from: r.userRequests.userId,
-        to: r.users.id,
+    memberRequests: {
+      member: r.one.members({
+        from: r.memberRequests.memberId,
+        to: r.members.id,
         optional: false,
       }),
       requestedPerson: r.one.persons({
-        from: r.userRequests.requestedPersonId,
+        from: r.memberRequests.requestedPersonId,
         to: r.persons.id,
       }),
     },
@@ -193,10 +192,7 @@ export const relations = defineRelations(
         to: r.regions.code,
         optional: false,
       }),
-      member: r.one.members({
-        from: r.persons.memberId,
-        to: r.members.id,
-      }),
+      member: r.one.members(),
       creator: r.one.users({
         from: r.persons.createdBy,
         to: r.users.id,

@@ -73,7 +73,7 @@ If you see any errors, correct them before submitting. If you see anything that 
       "Instructions shown at the top of the video-based results page. Only video-based result reviewers can see this. Markdown is supported.",
   },
   {
-    key: "user-request-instructions",
+    key: "member-request-instructions",
     group: "page-contents",
     value:
       "Here you can send a request to the admin team to ask for a competitor profile to be tied to your account, ask for a role, or anything else.",

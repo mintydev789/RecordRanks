@@ -1,10 +1,11 @@
 import { eq, inArray, sql } from "drizzle-orm";
+import { headers } from "next/headers";
 import { SWRConfig } from "swr";
 import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { Creator } from "~/helpers/types.ts";
-import { getUserControlsContest } from "~/helpers/utilityFunctions.ts";
+import { getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
 import { auth } from "~/server/auth.ts";
 import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
@@ -32,12 +33,13 @@ async function CreateEditContestPage({ searchParams }: Props) {
     })
     .parse(await searchParams);
   const session = await authorizeUser({
-    permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
+    orgPermissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
 
   const [{ success: canApprove }, regions] = await Promise.all([
-    auth.api.userHasPermission({
-      body: { userId: session.user.id, permissions: { competitions: ["approve"], meetups: ["approve"] } },
+    auth.api.hasPermission({
+      headers: await headers(),
+      body: { permissions: { competitions: ["approve"], meetups: ["approve"] } },
     }),
     db.select(regionsPublicCols).from(regionsTable),
   ]);
@@ -67,7 +69,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
     let creatorPerson: PersonResponse | undefined;
 
     if (contest) {
-      if (!getUserControlsContest(session.user, contest))
+      if (!getMemberControlsContest(session.user, contest))
         return <LoadingError reason="You do not have access rights for this contest" />;
 
       const totalResultsByRoundPromise =

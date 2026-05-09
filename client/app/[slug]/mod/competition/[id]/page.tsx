@@ -1,7 +1,7 @@
 import DataEntryScreen from "~/app/[slug]/mod/competition/[id]/DataEntryScreen.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import { getUserControlsContest } from "~/helpers/utilityFunctions.ts";
+import { getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
 import { getContestSF } from "~/server/server-functions/contest-server-functions.ts";
 import { authorizeUser } from "~/server/server-only-functions.ts";
 
@@ -29,7 +29,7 @@ async function DataEntryPage({ params, searchParams }: Props) {
     const { user } = await authorizeUser({
       permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
     });
-    if (!getUserControlsContest(user, contest))
+    if (!getMemberControlsContest(user, contest))
       return <LoadingError reason="You do not have access rights for this contest" />;
   }
 

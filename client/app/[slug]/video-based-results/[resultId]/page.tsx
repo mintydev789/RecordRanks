@@ -8,13 +8,18 @@ import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/server-only-functions.ts";
 
+const ParamsValidator = z.strictObject({
+  slug: z.string().nonempty(),
+  resultId: z.string().transform((val) => Number(val)),
+});
+
 type Props = {
-  params: Promise<{ resultId: string }>;
+  params: Promise<z.infer<typeof ParamsValidator>>;
 };
 
 async function UpdateVideoBasedResultPage({ params }: Props) {
-  const { resultId } = z.strictObject({ resultId: z.string().transform((val) => Number(val)) }).parse(await params);
-  await authorizeUser({ permissions: { videoBasedResults: ["update", "approve", "delete"] } });
+  const { resultId } = ParamsValidator.parse(await params);
+  await authorizeUser({ orgPermissions: { videoBasedResults: ["update", "approve", "delete"] } });
 
   const [events, recordConfigs, regions, result] = await Promise.all([
     getVideoBasedEvents(),

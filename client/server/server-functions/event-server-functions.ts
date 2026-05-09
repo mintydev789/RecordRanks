@@ -12,16 +12,16 @@ import { logMessage } from "~/server/server-only-functions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
 
 export const createEventSF = actionClient
-  .metadata({ permissions: { events: ["create"] } })
+  .metadata({ auth: { orgPermissions: { events: ["create"] } } })
   .inputSchema(
     z.strictObject({
       newEventDto: EventValidator,
     }),
   )
-  .action<SelectEvent>(async ({ parsedInput: { newEventDto } }) => {
+  .action<SelectEvent>(async ({ parsedInput: { newEventDto }, ctx: { session } }) => {
     logMessage("RR0002", `Creating new event with ID ${newEventDto.eventId}`);
 
-    const [sameIdEvent] = await db.select().from(table).where(eq(table.eventId, newEventDto.eventId)).limit(1);
+    const sameIdEvent = await db.query.events.findFirst({ where: { eventId: newEventDto.eventId } });
     if (sameIdEvent) throw new RrActionError(`Event with ID ${newEventDto.eventId} already exists`);
 
     const [sameNameEvent] = await db
@@ -34,7 +34,7 @@ export const createEventSF = actionClient
     const [createdEvent] = await db.insert(table).values(newEventDto).returning();
 
     sendEmail(
-      process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
+      session.organization!.metadata.contactEmail,
       "Important: Event created",
       `A new event has been created:\n\n${JSON.stringify(createdEvent, null, 2)}`,
     );
@@ -43,7 +43,7 @@ export const createEventSF = actionClient
   });
 
 export const updateEventSF = actionClient
-  .metadata({ permissions: { events: ["update"] } })
+  .metadata({ auth: { orgPermissions: { events: ["update"] } } })
   .inputSchema(
     z.strictObject({
       originalEventId: z.string(),

@@ -1,6 +1,5 @@
-ignoredBuiltDependencies:
-  - prisma
-
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
+allowBuilds:
+  esbuild: true
+  sharp: true
+  prisma: false
+  '@prisma/engines': false

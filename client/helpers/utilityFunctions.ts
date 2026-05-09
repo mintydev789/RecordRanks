@@ -13,14 +13,15 @@ import type { ContestResponse, SelectContest } from "~/server/db/schema/contests
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
 import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";
-import type { Role, RrPermissions } from "~/server/permissions.ts";
+import type { OrganizationRole, OrgPluginPermissions } from "~/server/organization-permissions.ts";
+import type { Role } from "~/server/permissions.ts";
 import type { RrServerErrorObject } from "~/server/safeAction.ts";
 import { getRankedAverageFormat, type RoundFormatObject, roundFormats } from "./roundFormats.ts";
 import type { MultiChoiceOption } from "./types/MultiChoiceOption.ts";
 import type { EventFormat, EventWrPair, RoundFormat } from "./types.ts";
 import type { PersonDto } from "./validators/Person.ts";
 
-export function getHasRole(roleToCheck: Role, userRoles: string | null | undefined): boolean {
+export function getHasRole(roleToCheck: Role | OrganizationRole, userRoles: string | null | undefined): boolean {
   return !!userRoles?.split(",").some((r) => r === roleToCheck);
 }
 
@@ -619,12 +620,14 @@ export async function verifyAccessToken(
   return null;
 }
 
-export function clientGetUserHasPermission(permissions: RrPermissions): Promise<boolean> {
-  return authClient.admin.hasPermission({ permissions }).then(({ data }) => Boolean(data?.success));
+export function clientGetHasPermission(orgPermissions: OrgPluginPermissions): Promise<boolean> {
+  return authClient.organization
+    .hasPermission({ permissions: orgPermissions })
+    .then(({ data }) => Boolean(data?.success));
 }
 
 // Assumes that the user permissions have already been checked (i.e. create, update, etc.)
-export function getUserControlsContest(
+export function getMemberControlsContest(
   user: typeof authClient.$Infer.Session.user,
   contest: Pick<ContestResponse, "state" | "organizerIds">,
 ) {

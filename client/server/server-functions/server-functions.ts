@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { nxnMoves } from "~/helpers/types/NxNMove.ts";
+import type { OrganizationDetails } from "~/helpers/types.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import {
@@ -15,10 +16,10 @@ import {
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { getSettingFromDb, logMessage } from "../server-only-functions.ts";
+import { getOrgDetails, getSettingFromDb, logMessage } from "../server-only-functions.ts";
 
 export const logErrorSF = actionClient
-  .metadata({})
+  .metadata({ auth: null })
   .inputSchema(
     z.strictObject({
       errorMessage: z.string().nonempty(),
@@ -28,12 +29,23 @@ export const logErrorSF = actionClient
     logMessage("RR5000", errorMessage, { sendErrorLogEmail: true });
   });
 
-export const getModInstructionsSF = actionClient.metadata({}).action<string | null>(async () => {
+export const getOrgDetailsSF = actionClient
+  .metadata({ auth: null })
+  .inputSchema(
+    z.strictObject({
+      slug: z.string().nonempty(),
+    }),
+  )
+  .action<OrganizationDetails>(async ({ parsedInput: { slug }, ctx: { session } }) => {
+    return await getOrgDetails({ session: session?.session, slug });
+  });
+
+export const getModInstructionsSF = actionClient.metadata({ auth: null }).action<string | null>(async () => {
   return await getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });
 });
 
 export const getCurrentCollectiveCubingSolutionSF = actionClient
-  .metadata({})
+  .metadata({ auth: null })
   .action<CurrentCollectiveSolution | null>(async () => {
     // Doing it like this, because authentication is optional for this server function
     const session = await auth.api.getSession({ headers: await headers() });
@@ -56,7 +68,7 @@ export const getCurrentCollectiveCubingSolutionSF = actionClient
   });
 
 export const startNewCollectiveCubingSolutionSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: false } })
   .action<CurrentCollectiveSolution>(async ({ ctx: { session } }) => {
     logMessage("RR0029", "Starting new Collective Cubing solution");
 
@@ -94,7 +106,7 @@ async function getIsSolved(currentState: Alg): Promise<boolean> {
 }
 
 export const makeCollectiveCubingMoveSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: false } })
   .inputSchema(
     z.strictObject({
       move: z.enum(nxnMoves),

@@ -1,12 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { useEffect, useState } from "react";
 import { SWRConfig } from "swr";
 import Footer from "~/app/components/UI/Footer.tsx";
 import Navbar from "~/app/components/UI/Navbar.tsx";
-import { authClient } from "~/helpers/authClient.ts";
 import { MainContext, type Theme } from "~/helpers/contexts.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 
@@ -16,7 +15,7 @@ type Props = {
 
 function Providers({ children }: Props) {
   const pathname = usePathname();
-  const { data: activeOrganization } = authClient.useActiveOrganization();
+  const { slug } = useParams();
 
   const [theme, setTheme] = useState<Theme>("dark");
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -83,9 +82,9 @@ function Providers({ children }: Props) {
               resetMessages,
             }}
           >
-            {activeOrganization && <Navbar />}
+            {slug && <Navbar />}
             <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
-            {activeOrganization && <Footer />}
+            {slug && <Footer />}
           </MainContext.Provider>
         </NuqsAdapter>
       </SWRConfig>

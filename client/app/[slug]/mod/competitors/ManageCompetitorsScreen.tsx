@@ -15,8 +15,8 @@ import Region from "~/app/components/Region.tsx";
 import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { Creator, ListPageMode } from "~/helpers/types.ts";
 import { getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
@@ -48,7 +48,7 @@ type Props = {
 function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props) {
   const searchParams = useSearchParams();
   const { changeSuccessMessage, changeErrorMessages, resetMessages } = useContext(MainContext);
-  const { data: session } = authClient.useSession();
+  const { user } = useSession();
 
   const { executeAsync: deletePerson, isPending: isDeleting } = useAction(deletePersonSF);
   const { executeAsync: approvePerson, isPending: isApproving } = useAction(approvePersonSF);
@@ -72,6 +72,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
     return persons.filter((p) => {
       const passesNameFilter =
         p.id.toString() === simplifiedSearch || // search by ID
+        (p.wcaId && p.wcaId.toLowerCase() === simplifiedSearch) || // search by WCA ID
         getSimplifiedString(p.name).includes(simplifiedSearch) || // search by name
         (p.localizedName && getSimplifiedString(p.localizedName).includes(simplifiedSearch)) || // search by localized name
         (users && users.find((c) => c.id === (p as SelectPerson).createdBy)?.name === simplifiedSearch); // search by creator name
@@ -263,7 +264,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                               }
                               regions={regions}
                               createdExternally={!!(person as SelectPerson).createdExternally}
-                              isCurrentUser={(person as SelectPerson).createdBy === session?.user.id}
+                              isCurrentUser={(person as SelectPerson).createdBy === user?.id}
                               small
                             />
                           </td>

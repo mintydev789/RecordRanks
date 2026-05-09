@@ -27,6 +27,7 @@ CREATE TABLE "record_ranks"."organizations" (
 );
 --> statement-breakpoint
 ALTER TABLE "record_ranks"."sessions" ADD COLUMN "active_organization_id" text;--> statement-breakpoint
+-- This column was later removed
 ALTER TABLE "record_ranks"."persons" ADD COLUMN "member_id" text;--> statement-breakpoint
 CREATE INDEX "invitations_organizationId_idx" ON "record_ranks"."invitations" ("organization_id");--> statement-breakpoint
 CREATE INDEX "invitations_email_idx" ON "record_ranks"."invitations" ("email");--> statement-breakpoint

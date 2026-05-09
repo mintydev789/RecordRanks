@@ -1,17 +1,22 @@
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import OrganizationSelect from "~/app/components/OrganizationSelect.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { auth } from "~/server/auth.ts";
-import { authorizeUser } from "~/server/server-only-functions.ts";
 
 async function HomePage() {
-  await authorizeUser({ useOrganization: false });
+  let organizations: (typeof auth.$Infer.Organization)[];
 
-  const data = await auth.api.listOrganizations({ headers: await headers() });
+  try {
+    const data = await auth.api.listOrganizations({ headers: await headers() });
+    organizations = data;
+  } catch {
+    redirect("/login");
+  }
 
   return (
     <section className="container mx-auto p-3" style={{ maxWidth: "var(--rr-md-width)" }}>
-      {data.length === 0 ? (
+      {organizations.length === 0 ? (
         <p className="fs-5 my-3 text-center">
           You are not part of any organizations on {process.env.NEXT_PUBLIC_PROJECT_NAME}. You have to be invited to one
           first.
@@ -22,7 +27,7 @@ async function HomePage() {
 
           <ToastMessages />
 
-          <OrganizationSelect organizations={data} />
+          <OrganizationSelect organizations={organizations} />
         </>
       )}
     </section>

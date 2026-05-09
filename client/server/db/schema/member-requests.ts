@@ -2,27 +2,27 @@ import "server-only";
 import { integer, text } from "drizzle-orm/pg-core";
 import type { Creator } from "~/helpers/types.ts";
 import { tableTimestamps } from "~/server/db/dbUtils.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
+import { membersTable } from "~/server/db/schema/auth-schema.ts";
 import { type PersonResponse, personsTable } from "~/server/db/schema/persons.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
-import type { Role } from "~/server/permissions.ts";
+import type { OrganizationRole } from "~/server/organization-permissions.ts";
 
-export const userRequestsTable = rrSchema.table("user_requests", {
+export const memberRequestsTable = rrSchema.table("member_requests", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  userId: text()
-    .references(() => usersTable.id, { onDelete: "cascade" })
+  memberId: text()
+    .references(() => membersTable.id, { onDelete: "cascade" })
     .unique()
     .notNull(),
-  requestedRole: text().$type<Role>(),
+  requestedRole: text().$type<OrganizationRole>(),
   requestedPersonId: integer().references(() => personsTable.id, { onDelete: "cascade" }),
   comment: text(),
   ...tableTimestamps,
 });
 
-export type InsertUserRequest = typeof userRequestsTable.$inferInsert;
-export type SelectUserRequest = typeof userRequestsTable.$inferSelect;
+export type InsertMemberRequest = typeof memberRequestsTable.$inferInsert;
+export type SelectMemberRequest = typeof memberRequestsTable.$inferSelect;
 
-export type FullUserRequest = SelectUserRequest & {
-  user?: Creator;
+export type FullMemberRequest = SelectMemberRequest & {
+  // user?: Creator;
   requestedPerson: PersonResponse | null;
 };

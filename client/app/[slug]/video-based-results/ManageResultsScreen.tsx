@@ -4,6 +4,7 @@ import { faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import Competitors from "~/app/components/Competitors.tsx";
 import FiltersContainer from "~/app/components/FiltersContainer.tsx";
@@ -26,8 +27,9 @@ type Props = {
 };
 
 function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
-  const parentRef = useRef<Element>(null);
+  const { slug } = useParams();
 
+  const parentRef = useRef<Element>(null);
   const [persons, setPersons] = useState<InputPerson[]>([null]);
   const [personNames, setPersonNames] = useState([""]);
 
@@ -57,7 +59,7 @@ function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
       <div className="px-2">
         <ToastMessages />
 
-        <Link href="/mod/competitors" prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
+        <Link href={`/${slug}/mod/competitors`} prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
           Manage competitors
         </Link>
 
@@ -140,7 +142,7 @@ function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
                     </td>
                     <td>
                       <Link
-                        href={`/video-based-results/${result.id}`}
+                        href={`/${slug}/video-based-results/${result.id}`}
                         prefetch={false}
                         className="btn btn-primary btn-xs"
                         title="Edit"
