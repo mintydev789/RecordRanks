@@ -212,6 +212,7 @@ INSERT INTO "record_ranks"."regions" ("name", "short_name", "code", "super_regio
   ('Yemen', NULL, 'YE', 'ASIA', 'AsR'),
   ('Zambia', NULL, 'ZM', 'AFRICA', 'AfR'),
   ('Zimbabwe', NULL, 'ZW', 'AFRICA', 'AfR');
+--> statement-breakpoint
 ALTER TABLE "record_ranks"."contests" ALTER COLUMN "region_code" SET DATA TYPE varchar(2) USING "region_code"::varchar(2);--> statement-breakpoint
 ALTER TABLE "record_ranks"."persons" ALTER COLUMN "region_code" SET DATA TYPE varchar(2) USING "region_code"::varchar(2);--> statement-breakpoint
 ALTER TABLE "record_ranks"."results" ALTER COLUMN "region_code" SET DATA TYPE varchar(2) USING "region_code"::varchar(2);--> statement-breakpoint

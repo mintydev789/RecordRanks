@@ -15,4 +15,17 @@ ALTER TABLE "record_ranks"."persons" DROP COLUMN "member_id";--> statement-break
 ALTER TABLE "record_ranks"."members" ADD CONSTRAINT "members_person_id_key" UNIQUE("person_id");--> statement-breakpoint
 ALTER TABLE "record_ranks"."member_requests" ADD CONSTRAINT "member_requests_member_id_members_id_fkey" FOREIGN KEY ("member_id") REFERENCES "record_ranks"."members"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "record_ranks"."member_requests" ADD CONSTRAINT "member_requests_requested_person_id_persons_id_fkey" FOREIGN KEY ("requested_person_id") REFERENCES "record_ranks"."persons"("id") ON DELETE CASCADE;--> statement-breakpoint
-UPDATE "record_ranks"."settings" SET "key" = 'member-request-instructions' WHERE "key" = 'user-request-instructions';
+UPDATE "record_ranks"."settings" SET "key" = 'member-request-instructions' WHERE "key" = 'user-request-instructions';--> statement-breakpoint
+
+-- CUSTOM ADDITION FOR RECORDRANKS!
+INSERT INTO "record_ranks"."members" ("id", "organization_id", "user_id", "role", "created_at", "person_id")
+SELECT
+  CONCAT('migrated_', "id") AS "id",
+  'default' AS "organization_id",
+  "id" AS "user_id",
+  CASE WHEN "role" = 'user' THEN 'member' ELSE "role" END AS "role",
+  NOW() AS "created_at",
+  "person_id"
+FROM "record_ranks"."users";
+--> statement-breakpoint
+ALTER TABLE "record_ranks"."users" DROP COLUMN "person_id";

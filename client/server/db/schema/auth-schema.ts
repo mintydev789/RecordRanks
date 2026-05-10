@@ -19,7 +19,6 @@ export const usersTable = rrSchema.table("users", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
-  personId: integer("person_id").unique(),
 });
 
 export const sessionsTable = rrSchema.table(

@@ -1,13 +1,13 @@
 import "server-only";
 import { getColumns, sql } from "drizzle-orm";
-import { check, integer, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import * as d from "drizzle-orm/pg-core";
 import { C } from "~/helpers/constants.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import { ContestStateValues, ContestTypeValues } from "~/helpers/types.ts";
 import { tableTimestamps } from "~/server/db/dbUtils.ts";
 import { regionsTable } from "~/server/db/schema/regions.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
-import { usersTable } from "./auth-schema.ts";
+import { organizationsTable, usersTable } from "./auth-schema.ts";
 
 export const contestStateEnum = rrSchema.enum("contest_state", ContestStateValues);
 export const contestTypeEnum = rrSchema.enum("contest_type", ContestTypeValues);
@@ -15,36 +15,41 @@ export const contestTypeEnum = rrSchema.enum("contest_type", ContestTypeValues);
 export const contestsTable = rrSchema.table(
   "contests",
   {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    competitionId: text().notNull().unique(),
+    id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: d
+      .text()
+      .references(() => organizationsTable.id)
+      .notNull(),
+    competitionId: d.text().notNull().unique(),
     state: contestStateEnum().default("created").notNull(),
-    name: text().notNull(),
-    shortName: varchar({ length: C.maxContestShortName }).notNull(),
+    name: d.text().notNull(),
+    shortName: d.varchar({ length: C.maxContestShortName }).notNull(),
     type: contestTypeEnum().notNull(),
-    regionCode: varchar({ length: 2 })
+    regionCode: d
+      .varchar({ length: 2 })
       .references(() => regionsTable.code, { onUpdate: "cascade" })
       .notNull(),
-    city: text().notNull(),
-    venue: text().notNull(),
-    address: text().notNull(),
-    latitudeMicrodegrees: integer().notNull(),
-    longitudeMicrodegrees: integer().notNull(),
-    startDate: timestamp().notNull(),
-    endDate: timestamp().notNull(),
-    startTime: timestamp(), // only used for meetups
-    timezone: text(), // only used for meetups
-    organizerIds: integer().array().notNull(),
-    contact: text(),
-    description: text(),
-    competitorLimit: integer().notNull(),
-    participants: integer().default(0).notNull(),
-    schedule: jsonb().$type<Schedule>(), // not used for meetups
-    adminNotes: text(),
-    createdBy: text().references(() => usersTable.id, { onDelete: "set null" }), // this can be null if the user has been deleted
+    city: d.text().notNull(),
+    venue: d.text().notNull(),
+    address: d.text().notNull(),
+    latitudeMicrodegrees: d.integer().notNull(),
+    longitudeMicrodegrees: d.integer().notNull(),
+    startDate: d.timestamp().notNull(),
+    endDate: d.timestamp().notNull(),
+    startTime: d.timestamp(), // only used for meetups
+    timezone: d.text(), // only used for meetups
+    organizerIds: d.integer().array().notNull(),
+    contact: d.text(),
+    description: d.text(),
+    competitorLimit: d.integer().notNull(),
+    participants: d.integer().default(0).notNull(),
+    schedule: d.jsonb().$type<Schedule>(), // not used for meetups
+    adminNotes: d.text(),
+    createdBy: d.text().references(() => usersTable.id, { onDelete: "set null" }), // this can be null if the user has been deleted
     ...tableTimestamps,
   },
   (table) => [
-    check(
+    d.check(
       "contests_meetup_check",
       sql`(${table.type} <> 'meetup'
           AND ${table.startTime} IS NULL
@@ -62,11 +67,12 @@ export type InsertContest = typeof contestsTable.$inferInsert;
 export type SelectContest = typeof contestsTable.$inferSelect;
 
 const {
-  schedule: _, // technically not a private column, but it's not needed most of the time
-  adminNotes: _1,
-  createdBy: _2,
-  createdAt: _3,
-  updatedAt: _4,
+  organizationId: _,
+  schedule: _1, // technically not a private column, but it's not needed most of the time
+  adminNotes: _2,
+  createdBy: _3,
+  createdAt: _4,
+  updatedAt: _5,
   ...contestsPublicCols
 } = getColumns(contestsTable);
 

@@ -230,12 +230,6 @@ export const auth = betterAuth({
         required: false,
         unique: true,
       },
-      personId: {
-        type: "number",
-        required: false,
-        unique: true,
-        input: false,
-      },
     },
     changeEmail: {
       enabled: true,
