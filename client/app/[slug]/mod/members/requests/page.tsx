@@ -13,7 +13,7 @@ type Props = {
 
 async function MemberRequestsPage({ params }: Props) {
   const { slug } = await params;
-  await authorizeUser({ orgPermissions: { memberRequests: ["list"] } });
+  await authorizeUser({ useOrganization: true, orgPermissions: { memberRequests: ["list"] } });
 
   const [memberRequests, regions] = await Promise.all([
     db.query.memberRequests.findMany({

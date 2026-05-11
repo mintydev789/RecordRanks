@@ -3,6 +3,7 @@
 import { faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { useModDashboardQueryState } from "~/app/[slug]/mod/ModDashboardFilters.ts";
 import ModFilters from "~/app/[slug]/mod/ModFilters.tsx";
@@ -19,6 +20,7 @@ type Props = {
 };
 
 function ModDashboardScreen({ regions, isAdminView }: Props) {
+  const { slug } = useParams();
   const [filters] = useModDashboardQueryState();
   const { data, isLoading, isValidating, mutate } = useSWR(["mod", filters], () => getModContestsSF(filters), {
     revalidateOnMount: false,
@@ -71,7 +73,11 @@ function ModDashboardScreen({ regions, isAdminView }: Props) {
                 <tr key={contest.competitionId}>
                   <td>{getFormattedDate(contest.startDate, contest.endDate)}</td>
                   <td>
-                    <Link href={`/competitions/${contest.competitionId}`} prefetch={false} className="link-primary">
+                    <Link
+                      href={`/${slug}/competitions/${contest.competitionId}`}
+                      prefetch={false}
+                      className="link-primary"
+                    >
                       {contest.shortName}
                     </Link>
                   </td>

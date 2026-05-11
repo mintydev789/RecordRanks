@@ -229,7 +229,7 @@ export const roundsStub: (InsertRound & { id: number })[] = [
     timeLimitCentiseconds: 10 * 60_00,
     timeLimitCumulativeRoundIds: [],
   },
-].map((r, index) => ({ ...r, id: index + 1, open: true }));
+].map((r, index) => ({ organizationId: "default", ...r, id: index + 1, open: true }));
 // The id is set just for testing purposes; it's left out when seeding the mock DB
 
 // 2023

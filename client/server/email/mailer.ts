@@ -224,10 +224,7 @@ export function sendOrganizationInvitationEmail(
 
 export function sendMemberRolesChangedEmail(
   to: string,
-  {
-    roles,
-    organizationName,
-  }: { roles: string[]; organizationName: string;  },
+  { roles, organizationName }: { roles: string[]; organizationName: string },
 ) {
   send({
     templateFileName: "roles-changed.hbs",
@@ -331,11 +328,9 @@ export function sendContestFinishedEmail(
   recipients: string[],
   {
     contest,
-    creatorName,
     organization,
   }: {
     contest: Pick<SelectContest, "competitionId" | "name" | "shortName" | "type" | "participants">;
-    creatorName: string;
     organization: OrganizationDetails;
   },
 ) {
@@ -345,7 +340,6 @@ export function sendContestFinishedEmail(
       projectName,
       contestName: contest.name,
       contestUrl: `${baseUrl}/${organization.slug}/competitions/${contest.competitionId}`,
-      creatorName,
       rrDonationLink: C.rrDonationLink,
       isUnofficialCompetition: contest.type === "comp",
     },
@@ -475,7 +469,7 @@ export function sendVideoBasedResultApprovedEmail(
   });
 }
 
-export function sendUserRequestSubmittedEmail(
+export function sendMemberRequestSubmittedEmail(
   to: string,
   {
     name,

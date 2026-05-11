@@ -6,10 +6,10 @@ import z from "zod";
 // import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
-import { membersTable, usersTable as table } from "~/server/db/schema/auth-schema.ts";
+import { membersTable, type usersTable as table } from "~/server/db/schema/auth-schema.ts";
 import { memberRequestsTable } from "~/server/db/schema/member-requests";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
-import { sendEmail, sendMemberRolesChangedEmail, sendUserRequestSubmittedEmail } from "~/server/email/mailer.ts";
+import { sendEmail, sendMemberRequestSubmittedEmail, sendMemberRolesChangedEmail } from "~/server/email/mailer.ts";
 import { type OrganizationRole, OrganizationRoles, requestableRoles } from "~/server/organization-permissions.ts";
 import { actionClient, RrActionError } from "~/server/safeAction.ts";
 import { deletePersonSF } from "~/server/server-functions/person-server-functions.ts";
@@ -60,7 +60,7 @@ export const updateMemberSF = actionClient
 
       const [member, credentialAccount] = await Promise.all([
         db.query.members.findFirst({
-          with: { user: { columns: { id: true, name: true, email: true, emailVerified: true } } },
+          with: { user: { columns: { name: true, email: true, emailVerified: true } } },
           where: { id },
         }),
         db.query.accounts.findFirst({ columns: { id: true }, where: { userId: id, providerId: "credential" } }),
@@ -68,7 +68,6 @@ export const updateMemberSF = actionClient
       if (!member) throw new RrActionError("Member not found");
       if (credentialAccount && !member.user.emailVerified)
         throw new RrActionError("The user hasn't verified their email address yet");
-      console.log(member);
 
       let person: PersonResponse | undefined;
       if (personId) {
@@ -81,7 +80,6 @@ export const updateMemberSF = actionClient
       }
 
       const rolesAreDifferent = member.role!.split(",").sort().join(",") !== roles.sort().join(",");
-      console.log("TEST1");
       if (rolesAreDifferent) {
         await changeMemberRoles({
           memberId: id,
@@ -93,7 +91,6 @@ export const updateMemberSF = actionClient
         });
       }
 
-      console.log("TEST4");
       const [updatedMember] = await db
         .update(membersTable)
         .set({ personId })
@@ -102,7 +99,6 @@ export const updateMemberSF = actionClient
 
       // Log out user to avoid stale session data
       await auth.api.revokeUserSessions({ body: { userId: member.userId }, headers: httpHeaders });
-      console.log("TEST5");
 
       return { member: updatedMember, person };
     },
@@ -202,7 +198,7 @@ export const createOrUpdateMemberRequestSF = actionClient
 
     // If it's a new request, send an email notification
     if (!memberRequest) {
-      sendUserRequestSubmittedEmail(session.user.email, {
+      sendMemberRequestSubmittedEmail(session.user.email, {
         name: session.user.name,
         requestedPerson: person,
         requestedRole,
@@ -220,7 +216,7 @@ export const approveMemberRequestSF = actionClient
   .action(async ({ parsedInput: id, ctx: { session, httpHeaders } }) => {
     const memberRequest = await db.query.memberRequests.findFirst({
       with: {
-        user: { columns: { id: true, name: true, email: true } },
+        user: { columns: { name: true, email: true } },
         requestedPerson: { columns: { name: true, approved: true } },
       },
       where: { id },
@@ -241,10 +237,12 @@ export const approveMemberRequestSF = actionClient
     }
 
     await db.transaction(async (tx) => {
-      await tx
-        .update(membersTable)
-        .set({ personId: memberRequest.requestedPersonId })
-        .where(eq(table.id, memberRequest.user.id));
+      if (memberRequest.requestedPersonId) {
+        await tx
+          .update(membersTable)
+          .set({ personId: memberRequest.requestedPersonId })
+          .where(eq(membersTable.id, memberRequest.memberId));
+      }
 
       await tx.delete(memberRequestsTable).where(eq(memberRequestsTable.id, id));
     });
@@ -258,7 +256,7 @@ export const deleteMemberRequestSF = actionClient
   .action(async ({ parsedInput: id, ctx: { session, httpHeaders } }) => {
     logMessage("RR0038", `Deleting member request for user with ID ${session.user.id}`);
 
-    const { success: canDeleteUserRequests } = await auth.api.hasPermission({
+    const { success: canDeleteMemberRequests } = await auth.api.hasPermission({
       headers: httpHeaders,
       body: { permissions: { memberRequests: ["delete"] } },
     });
@@ -268,7 +266,7 @@ export const deleteMemberRequestSF = actionClient
       where: { id },
     });
     if (!memberRequest) throw new RrActionError("Member request not found");
-    if (memberRequest.memberId !== session.member?.id && !canDeleteUserRequests)
+    if (memberRequest.memberId !== session.member?.id && !canDeleteMemberRequests)
       throw new RrActionError("You are unauthorized to delete this request");
 
     // Delete competitor profile, if it was simply created by the user and isn't used anywhere else
@@ -302,14 +300,12 @@ async function changeMemberRoles({
   memberId: string;
   roles: OrganizationRole[];
   personName: string | undefined;
-  user: Pick<typeof table.$inferSelect, "id" | "name" | "email">;
+  user: Pick<typeof table.$inferSelect, "name" | "email">;
   organization: Pick<typeof auth.$Infer.Organization, "name" | "metadata">;
   httpHeaders: ReadonlyHeaders;
 }) {
-  console.log("TEST2");
   await auth.api.updateMemberRole({ headers: httpHeaders, body: { memberId, role: roles } });
 
-  console.log("TEST3");
   sendMemberRolesChangedEmail(user.email, { organizationName: organization.name, roles });
 
   if (roles.includes("admin")) {

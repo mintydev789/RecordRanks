@@ -12,7 +12,7 @@ import { logMessage } from "~/server/server-only-functions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
 
 export const createEventSF = actionClient
-  .metadata({ auth: { orgPermissions: { events: ["create"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { events: ["create"] } } })
   .inputSchema(
     z.strictObject({
       newEventDto: EventValidator,
@@ -31,7 +31,10 @@ export const createEventSF = actionClient
       .limit(1);
     if (sameNameEvent) throw new RrActionError(`Event with name ${newEventDto.name} already exists`);
 
-    const [createdEvent] = await db.insert(table).values(newEventDto).returning();
+    const [createdEvent] = await db
+      .insert(table)
+      .values({ organizationId: session.organization!.id, ...newEventDto })
+      .returning();
 
     sendEmail(
       session.organization!.metadata.contactEmail,
@@ -43,7 +46,7 @@ export const createEventSF = actionClient
   });
 
 export const updateEventSF = actionClient
-  .metadata({ auth: { orgPermissions: { events: ["update"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { events: ["update"] } } })
   .inputSchema(
     z.strictObject({
       originalEventId: z.string(),

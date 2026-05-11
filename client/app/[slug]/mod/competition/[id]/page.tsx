@@ -22,14 +22,18 @@ async function DataEntryPage({ params, searchParams }: Props) {
   const eventIdOrFirst = eventId ?? events[0].eventId;
 
   if (contest.type === "online") {
-    const { user } = await authorizeUser({ permissions: { onlineComps: ["submit-own-result"] } });
-    if (!user.personId || !["approved", "ongoing"].includes(contest.state))
+    const { member } = await authorizeUser({
+      useOrganization: true,
+      orgPermissions: { onlineComps: ["submit-own-result"] },
+    });
+    if (!member!.personId || !["approved", "ongoing"].includes(contest.state))
       return <LoadingError reason="You are unauthorized to submit results for this contest" />;
   } else {
-    const { user } = await authorizeUser({
-      permissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
+    const { member } = await authorizeUser({
+      useOrganization: true,
+      orgPermissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
     });
-    if (!getMemberControlsContest(user, contest))
+    if (!getMemberControlsContest(member!, contest))
       return <LoadingError reason="You do not have access rights for this contest" />;
   }
 

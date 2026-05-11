@@ -4,7 +4,7 @@ import { addYears, isValid } from "date-fns";
 import { fromZonedTime, getTimezoneOffset, toZonedTime } from "date-fns-tz";
 import debounce from "lodash/debounce";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useContext, useState, useTransition } from "react";
 import useSWRImmutable from "swr/immutable";
@@ -23,9 +23,9 @@ import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
-import type { authClient } from "~/helpers/authClient.ts";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { Room, Schedule } from "~/helpers/types/Schedule.ts";
@@ -47,7 +47,6 @@ import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { RoundResponse } from "~/server/db/schema/rounds.ts";
 import {
-  createAccessTokenSF,
   createContestSF,
   getTimeZoneFromCoordsSF,
   removeContestSF,
@@ -71,8 +70,6 @@ type Props = {
   contest: SelectContest | undefined;
   organizers: PersonResponse[] | undefined;
   creator: Creator | null | undefined; // null means the user has been deleted
-  creatorPerson: PersonResponse | undefined;
-  session: typeof authClient.$Infer.Session;
 };
 
 function ContestForm({
@@ -84,11 +81,11 @@ function ContestForm({
   contest,
   organizers: initOrganizers = [],
   creator,
-  creatorPerson,
-  session,
 }: Props) {
   const router = useRouter();
-  const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
+  const { slug } = useParams();
+  const { member } = useSession();
+  const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { executeAsync: getPersonById, isPending: isGettingPerson } = useAction(getPersonByIdSF);
   const { executeAsync: getOrCreatePersonByWcaId, isPending: isGettingOrCreatingWcaPerson } =
@@ -99,7 +96,7 @@ function ContestForm({
   const { executeAsync: updateContest, isPending: isUpdating } = useAction(updateContestSF);
   const { executeAsync: unfinishContest, isPending: isUnfinishing } = useAction(unfinishContestSF);
   const { executeAsync: removeContest, isPending: isDeleting } = useAction(removeContestSF);
-  const { executeAsync: createAccessToken, isPending: isCreatingAccessToken } = useAction(createAccessTokenSF);
+  // const { executeAsync: createAccessToken, isPending: isCreatingAccessToken } = useAction(createAccessTokenSF);
   const { data: contestTypesData } = useSWRImmutable<string>(SwrKey.ContestTypes);
   const [activeTab, setActiveTab] = useState("details");
   const [detailsImported, setDetailsImported] = useState(mode === "edit" && contest?.type === "wca-comp");
@@ -167,8 +164,8 @@ function ContestForm({
     [timezone, startTime, rooms, type],
   );
 
-  const isAdmin = getHasRole("admin", session.user.role);
-  const modDashboardUrl = isAdmin ? "/mod?state=pending" : "/mod";
+  const isAdmin = getHasRole("admin", member?.role);
+  const modDashboardUrl = isAdmin ? `/${slug}/mod?state=pending` : `/${slug}/mod`;
   const isPending =
     isCreating ||
     isUpdating ||
@@ -177,8 +174,8 @@ function ContestForm({
     isPendingTimeZone ||
     isPendingWcaCompDetails ||
     isGettingOrCreatingWcaPerson ||
-    isGettingOrCreatingPerson ||
-    isCreatingAccessToken;
+    isGettingOrCreatingPerson;
+  // isCreatingAccessToken
   const disabled = !type || (type === "wca-comp" && !detailsImported);
   const disabledIfContestApproved: boolean = mode === "edit" && !!contest && contest.state !== "created";
   const disabledIfContestPublished: boolean = mode === "edit" && !!contest && contest.state === "published";
@@ -282,7 +279,7 @@ function ContestForm({
   };
 
   const fillWithMockData = async (mockContestType: ContestType = "comp") => {
-    const res = await getPersonById({ id: session.user.personId! });
+    const res = await getPersonById({ id: member!.personId! });
 
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
@@ -482,12 +479,12 @@ function ContestForm({
     }
   };
 
-  const _getAccessToken = async () => {
-    const res = await createAccessToken({ competitionId: contest!.competitionId });
+  // const getAccessToken = async () => {
+  //   const res = await createAccessToken({ competitionId: contest!.competitionId });
 
-    if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
-    else changeSuccessMessage(`Your new access token is ${res.data}. Make sure to save it before leaving this page.`);
-  };
+  //   if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+  //   else changeSuccessMessage(`Your new access token is ${res.data}. Make sure to save it before leaving this page.`);
+  // };
 
   return (
     <Form
@@ -496,9 +493,7 @@ function ContestForm({
       isLoading={isCreating || isUpdating}
       disableControls={isPending || disabled || disabledIfContestPublished || disabledIfNotUnderstood}
     >
-      {mode === "edit" && isAdmin && creator !== undefined && (
-        <CreatorDetails creator={creator} person={creatorPerson} regions={regions} />
-      )}
+      {mode === "edit" && isAdmin && creator !== undefined && <CreatorDetails creator={creator} regions={regions} />}
 
       <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={changeActiveTab} />
 
@@ -518,7 +513,7 @@ function ContestForm({
             <div className="d-flex mt-3 mb-3 flex-wrap gap-3">
               {contest.type !== "wca-comp" && (
                 <Link
-                  href={`/mod/competition?copyId=${contest.competitionId}`}
+                  href={`/${slug}/mod/competition?copyId=${contest.competitionId}`}
                   prefetch={false}
                   className="btn btn-primary"
                 >

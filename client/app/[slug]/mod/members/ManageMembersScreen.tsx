@@ -136,7 +136,12 @@ function ManageMembersScreen({ members: initMembers, memberPersons: initMemberPe
             display="grid"
           />
           <h5 className="mt-3 mb-3">Roles</h5>
-          <FormCheckbox title={orgRolesObject.member} selected={isMember} setSelected={setIsMember} disabled />
+          <FormCheckbox
+            title={orgRolesObject.member}
+            selected={isMember}
+            setSelected={setIsMember}
+            disabled={isUpdating || isMember} // removing this role is no longer allowed
+          />
           <FormCheckbox title={orgRolesObject.mod} selected={isMod} setSelected={setIsMod} disabled={isUpdating} />
           <FormCheckbox
             title={orgRolesObject.videoBasedResultReviewer}

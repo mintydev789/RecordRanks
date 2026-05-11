@@ -35,8 +35,18 @@ export type FullSession = typeof authClient.$Infer.Session & {
   organization?: OrganizationDetails;
 };
 
-// This has to stay consistent with the creator columns object in dbUtils.ts
-export type Creator = Pick<typeof authClient.$Infer.Session.user, "id" | "name" | "email">;
+export type Creator = {
+  userId: string;
+  name: string;
+  email: string;
+  person: {
+    id: number;
+    name: string;
+    localizedName: string | null;
+    regionCode: string;
+    wcaId: string | null;
+  } | null;
+};
 
 export const EventFormatValues = [
   "time",
@@ -85,4 +95,7 @@ export type GetOrCreatePersonObject = {
   isNew: boolean;
 };
 
-export type MemberRequestDetails = { memberRequest: FullMemberRequest | null; ownRequestedPersonId?: number };
+export type MemberRequestDetails = {
+  memberRequest: FullMemberRequest | null;
+  ownRequestedPersonId?: number;
+};

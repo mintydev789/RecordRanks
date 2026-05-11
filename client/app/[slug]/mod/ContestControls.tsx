@@ -3,7 +3,7 @@
 import { faClock, faCopy, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useContext } from "react";
 import useSWR from "swr";
@@ -35,7 +35,8 @@ type Props = {
 
 function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
   const router = useRouter();
-  const { session, user } = useSession();
+  const { slug } = useParams();
+  const { session, member } = useSession();
   const { changeErrorMessages } = useContext(MainContext);
 
   const { executeAsync: approveContest, isPending: isApproving } = useAction(approveContestSF);
@@ -58,9 +59,9 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
   const isPending = isApproving || isFinishing || isPublishing;
   const smallButtons = forPage === "mod-dashboard";
   // This is similar to the logic in the create contest result server function
-  const userControlsContest = canCreateAndUpdateContests && getMemberControlsContest(user!, contest);
+  const userControlsContest = canCreateAndUpdateContests && getMemberControlsContest(member!, contest);
   const hasAccessToResults =
-    canCreateAndUpdateContests || (canSubmitOwnOnlineCompResult && contest.type === "online" && user!.personId);
+    canCreateAndUpdateContests || (canSubmitOwnOnlineCompResult && contest.type === "online" && member!.personId);
 
   const onApproveContest = async () => {
     if (confirm(`Are you sure you would like to approve ${contest.name}?`)) {
@@ -99,7 +100,7 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
           {userControlsContest &&
             (canPublishContests || ["created", "approved", "ongoing"].includes(contest.state)) && (
               <Link
-                href={`/mod/competition?editId=${contest.competitionId}`}
+                href={`/${slug}/mod/competition?editId=${contest.competitionId}`}
                 prefetch={false}
                 className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
                 title="Edit"
@@ -108,9 +109,9 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
                 <FontAwesomeIcon icon={faPencil} />
               </Link>
             )}
-          {canCreateAndUpdateContests && contest.type !== "wca-comp" && (
+          {userControlsContest && contest.type !== "wca-comp" && (
             <Link
-              href={`/mod/competition?copyId=${contest?.competitionId}`}
+              href={`/${slug}/mod/competition?copyId=${contest?.competitionId}`}
               prefetch={false}
               className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
               title="Clone"
@@ -122,7 +123,7 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
           {((hasAccessToResults && ["approved", "ongoing"].includes(contest.state)) ||
             (canPublishContests && contest.state === "finished")) && (
             <Link
-              href={`/mod/competition/${contest.competitionId}`}
+              href={`/${slug}/mod/competition/${contest.competitionId}`}
               prefetch={false}
               className={`btn btn-success ${smallButtons ? "btn-xs" : ""}`}
             >

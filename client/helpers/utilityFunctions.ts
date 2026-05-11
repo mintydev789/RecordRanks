@@ -628,14 +628,14 @@ export function clientGetHasPermission(orgPermissions: OrgPluginPermissions): Pr
 
 // Assumes that the user permissions have already been checked (i.e. create, update, etc.)
 export function getMemberControlsContest(
-  user: typeof authClient.$Infer.Session.user,
+  member: Pick<typeof authClient.$Infer.Member, "role" | "personId">,
   contest: Pick<ContestResponse, "state" | "organizerIds">,
 ) {
-  if (!user.personId) return false;
+  if (!member.personId) return false;
   if (contest.state === "removed") return false;
-  if (getHasRole("admin", user.role)) return true;
+  if (getHasRole("admin", member.role)) return true;
 
   const modHasAccess =
-    ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(user.personId);
+    ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(member.personId);
   return modHasAccess;
 }

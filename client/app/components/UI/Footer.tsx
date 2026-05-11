@@ -4,11 +4,13 @@ import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Image from "next/image";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useContext } from "react";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 
 function Footer() {
+  const { slug } = useParams();
   const { theme, setTheme } = useContext(MainContext);
 
   return (
@@ -51,7 +53,7 @@ function Footer() {
           />
         </svg>
       </a>
-      <Link href="/about" prefetch={false} className="text-light-emphasis">
+      <Link href={`/${slug}/about`} prefetch={false} className="text-light-emphasis">
         About
       </Link>
       <button

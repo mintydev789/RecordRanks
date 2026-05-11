@@ -6,7 +6,7 @@ import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/server-only-functions.ts";
 
 async function SubmitResultsPage() {
-  await authorizeUser({ orgPermissions: { videoBasedResults: ["create"] } });
+  await authorizeUser({ useOrganization: true, orgPermissions: { videoBasedResults: ["create"] } });
 
   const [events, recordConfigs, regions, { success: isVideoBasedResultReviewer }] = await Promise.all([
     getVideoBasedEvents(),

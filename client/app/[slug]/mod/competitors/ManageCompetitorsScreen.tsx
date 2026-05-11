@@ -37,18 +37,18 @@ type Props = {
   | {
       // When requested by an admin
       persons: SelectPerson[];
-      users: Creator[];
+      creators: Creator[];
     }
   | {
       persons: PersonResponse[];
-      users?: never;
+      creators?: never;
     }
 );
 
-function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props) {
+function ManageCompetitorsScreen({ persons: initPersons, regions, creators }: Props) {
   const searchParams = useSearchParams();
-  const { changeSuccessMessage, changeErrorMessages, resetMessages } = useContext(MainContext);
   const { user } = useSession();
+  const { changeSuccessMessage, changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { executeAsync: deletePerson, isPending: isDeleting } = useAction(deletePersonSF);
   const { executeAsync: approvePerson, isPending: isApproving } = useAction(approvePersonSF);
@@ -63,8 +63,10 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
   const ignoredWcaMatches = useRef<{ personId: number; wcaMatches: string[] }>(undefined);
   const creator = useMemo(
     () =>
-      personUnderEdit ? (users?.find((u) => u.id === (personUnderEdit as SelectPerson).createdBy) ?? null) : undefined,
-    [personUnderEdit, users],
+      personUnderEdit
+        ? (creators?.find((c) => c.userId === (personUnderEdit as SelectPerson).createdBy) ?? null)
+        : undefined,
+    [personUnderEdit, creators],
   );
   const filteredPersons = useMemo(() => {
     const simplifiedSearch = getSimplifiedString(search);
@@ -75,7 +77,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
         (p.wcaId && p.wcaId.toLowerCase() === simplifiedSearch) || // search by WCA ID
         getSimplifiedString(p.name).includes(simplifiedSearch) || // search by name
         (p.localizedName && getSimplifiedString(p.localizedName).includes(simplifiedSearch)) || // search by localized name
-        (users && users.find((c) => c.id === (p as SelectPerson).createdBy)?.name === simplifiedSearch); // search by creator name
+        (creators && creators.find((c) => c.userId === (p as SelectPerson).createdBy)?.name === simplifiedSearch); // search by creator name
 
       const passesApprovedFilter =
         approvedFilter === "" ||
@@ -86,7 +88,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
     });
   }, [persons, approvedFilter, search]);
 
-  const isAdmin = users !== undefined;
+  const isAdmin = creators !== undefined;
   const buttonsDisabled = mode !== "view" || isDeleting || isApproving;
 
   const rowVirtualizer = useVirtualizer({
@@ -177,7 +179,6 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
         <PersonForm
           personUnderEdit={personUnderEdit}
           creator={creator}
-          creatorPerson={creator ? persons.find((p) => p.id === creator.personId) : undefined}
           regions={regions}
           onSubmit={updateCompetitors}
           onCancel={mode !== "add-once" ? cancel : undefined}
@@ -223,7 +224,7 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                     <th scope="col">Localized Name</th>
                     <th scope="col">WCA ID</th>
                     <th scope="col">Country</th>
-                    {users && <th scope="col">Created by</th>}
+                    {creators && <th scope="col">Created by</th>}
                     <th scope="col">Approved</th>
                     <th scope="col">Actions</th>
                   </tr>
@@ -232,8 +233,9 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                   {rowVirtualizer.getVirtualItems().map((virtualItem, index) => {
                     if (filteredPersons.length === 0) return undefined;
                     const person = filteredPersons[virtualItem.index];
-                    const personCreator = users
-                      ? (users.find((u) => u.id === (person as SelectPerson).createdBy) ?? null)
+                    const personCreator = creators
+                      ? // null means the user has been deleted
+                        (creators.find((c) => c.userId === (person as SelectPerson).createdBy) ?? null)
                       : undefined;
 
                     return (
@@ -253,15 +255,10 @@ function ManageCompetitorsScreen({ persons: initPersons, regions, users }: Props
                         <td>
                           <Region regionCode={person.regionCode} regions={regions} shorten />
                         </td>
-                        {users && (
+                        {personCreator !== undefined && (
                           <td>
                             <CreatorDetails
-                              creator={personCreator as Creator | null}
-                              person={
-                                personCreator?.personId
-                                  ? persons.find((p) => p.id === personCreator.personId)
-                                  : undefined
-                              }
+                              creator={personCreator}
                               regions={regions}
                               createdExternally={!!(person as SelectPerson).createdExternally}
                               isCurrentUser={(person as SelectPerson).createdBy === user?.id}

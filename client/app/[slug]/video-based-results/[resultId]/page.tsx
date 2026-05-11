@@ -1,12 +1,9 @@
-import { eq } from "drizzle-orm";
 import z from "zod";
 import ResultsSubmissionForm from "~/app/[slug]/video-based-results/ResultsSubmissionForm.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/server-only-functions.ts";
+import { authorizeUser, getCreators, getRecordConfigs, getVideoBasedEvents } from "~/server/server-only-functions.ts";
 
 const ParamsValidator = z.strictObject({
   slug: z.string().nonempty(),
@@ -19,7 +16,10 @@ type Props = {
 
 async function UpdateVideoBasedResultPage({ params }: Props) {
   const { resultId } = ParamsValidator.parse(await params);
-  await authorizeUser({ orgPermissions: { videoBasedResults: ["update", "approve", "delete"] } });
+  await authorizeUser({
+    useOrganization: true,
+    orgPermissions: { videoBasedResults: ["update", "approve", "delete"] },
+  });
 
   const [events, recordConfigs, regions, result] = await Promise.all([
     getVideoBasedEvents(),
@@ -31,12 +31,7 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
   if (!result) return <LoadingError />;
 
   const participants = await db.query.persons.findMany({ where: { id: { in: result.personIds } } });
-  const creator = result.createdBy
-    ? ((await db.select(creatorCols).from(usersTable).where(eq(usersTable.id, result.createdBy))).at(0) ?? null)
-    : null;
-  const creatorPerson = creator?.personId
-    ? await db.query.persons.findFirst({ where: { id: creator.personId } })
-    : undefined;
+  const creator = result.createdBy ? ((await getCreators([result.createdBy])).at(0) ?? null) : null;
 
   return (
     <section>
@@ -49,7 +44,6 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
         result={result}
         participants={participants}
         creator={creator}
-        creatorPerson={creatorPerson}
         isVideoBasedResultReviewer // already checked on page load above
       />
     </section>

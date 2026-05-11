@@ -5,7 +5,7 @@ import { authorizeUser } from "~/server/server-only-functions.ts";
 import ConfigureEventsScreen from "./ConfigureEventsScreen.tsx";
 
 async function ConfigureEventsPage() {
-  await authorizeUser({ permissions: { events: ["create"] } });
+  await authorizeUser({ useOrganization: true, orgPermissions: { events: ["create"] } });
 
   const events = await db.select().from(table).orderBy(table.rank);
 

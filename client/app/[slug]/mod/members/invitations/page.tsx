@@ -13,7 +13,7 @@ type Props = {
 
 async function InvitationsPage({ params }: Props) {
   const { slug } = await params;
-  await authorizeUser({ orgPermissions: { invitation: ["create"] } });
+  await authorizeUser({ useOrganization: true, orgPermissions: { invitation: ["create"] } });
 
   return (
     <>

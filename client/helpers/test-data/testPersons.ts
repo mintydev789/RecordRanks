@@ -46,4 +46,4 @@ export const testPersons: InsertPerson[] = [
   { name: "Aleksandar Georgiev", regionCode: "MK", approved: true },
   { name: "Jana Dvořáková", regionCode: "CZ", approved: true },
   { name: "Pavel Horák", regionCode: "CZ", approved: true },
-];
+].map((p) => ({ organizationId: "default", ...p }));

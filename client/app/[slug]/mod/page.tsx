@@ -24,7 +24,7 @@ type Props = {
 async function ModeratorDashboardPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const filters = ModDashboardFiltersValidator.parse(await searchParams);
-  const { organization } = await authorizeUser({ orgPermissions: { modDashboard: ["view"] } });
+  const { organization } = await authorizeUser({ useOrganization: true, orgPermissions: { modDashboard: ["view"] } });
 
   const [{ success: isAdminView }, regions] = await Promise.all([
     auth.api.hasPermission({ headers: await headers(), body: { permissions: { adminDashboard: ["view"] } } }),

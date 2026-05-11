@@ -11,6 +11,7 @@ import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts"
 import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import {
   type ContestType,
+  type Creator,
   type FullSession,
   type GetOrCreatePersonObject,
   type MemberRequestDetails,
@@ -31,6 +32,7 @@ import {
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
 import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
+import { membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import type { FullMemberRequest } from "~/server/db/schema/member-requests.ts";
@@ -81,7 +83,7 @@ export function logMessage(
 
 export async function authorizeUser(
   {
-    useOrganization = true,
+    useOrganization,
     orgPermissions,
     orgRole,
     permissions,
@@ -95,7 +97,7 @@ export async function authorizeUser(
         role?: Role;
       }
     | {
-        useOrganization?: true;
+        useOrganization: true;
         orgPermissions?: OrgPluginPermissions;
         orgRole?: OrganizationRole;
         permissions?: never;
@@ -105,15 +107,14 @@ export async function authorizeUser(
 ): Promise<FullSession> {
   const hdrs = httpHeaders ?? (await headers());
   const session = await auth.api.getSession({ headers: hdrs });
-  let member: typeof auth.$Infer.Member | undefined;
+  const member = await auth.api.getActiveMember({ headers: hdrs }); // this is optional unless useOrganization = true
   let organization: OrganizationDetails | undefined;
 
   if (!session) redirect("/login");
 
   if (useOrganization) {
-    if (!session.session.activeOrganizationId) redirect("/"); // go back to org selection
+    if (!session.session.activeOrganizationId || !member) redirect("/"); // go back to org selection
 
-    member = await auth.api.getActiveMember({ headers: hdrs });
     organization = await getOrgDetails({ session: session.session, id: member.organizationId });
 
     if (orgPermissions) {
@@ -599,7 +600,11 @@ export async function getPersonExactMatchWcaId(
 
 export async function getOrCreatePersonByWcaId(
   wcaId: string,
-  { creatorUserId, createdExternally = false }: { creatorUserId: string; createdExternally?: boolean },
+  {
+    creatorUserId,
+    createdExternally = false,
+    organizationId,
+  }: { creatorUserId: string; createdExternally?: boolean; organizationId: string },
 ): Promise<GetOrCreatePersonObject> {
   const [person] = await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.wcaId, wcaId)).limit(1);
   if (person) return { person, isNew: false };
@@ -611,7 +616,7 @@ export async function getOrCreatePersonByWcaId(
 
   const [createdPerson] = await db
     .insert(personsTable)
-    .values({ ...wcaPerson, approved: true, createdBy: creatorUserId, createdExternally })
+    .values({ organizationId, ...wcaPerson, approved: true, createdBy: creatorUserId, createdExternally })
     .returning(personsPublicCols);
 
   return { person: createdPerson, isNew: true };
@@ -639,14 +644,18 @@ export async function syncPersonByWcaId(wcaId: string, personId: number): Promis
 
 export async function getPersonsForExternalDeviceDataEntry(
   { registrantId, wcaId }: Pick<EnterAttemptPayloadDto, "registrantId" | "wcaId">,
-  creatorUserId: string,
+  { creatorUserId, organizationId }: { creatorUserId: string; organizationId: string },
 ): Promise<PersonResponse[]> {
   if (wcaId) {
     const wcaIds = wcaId.split(",");
     const persons: PersonResponse[] = [];
 
     for (const wid of wcaIds) {
-      const { person } = await getOrCreatePersonByWcaId(wid.toUpperCase(), { creatorUserId, createdExternally: true });
+      const { person } = await getOrCreatePersonByWcaId(wid.toUpperCase(), {
+        creatorUserId,
+        createdExternally: true,
+        organizationId,
+      });
       persons.push(person);
     }
 
@@ -720,4 +729,26 @@ export async function getMemberRequestDetails({
   }
 
   return { memberRequest: fullMemberRequest ?? null, ownRequestedPersonId: ownCreatedPersons.at(0)?.id };
+}
+
+export async function getCreators(userIds: string[]): Promise<Creator[]> {
+  if (userIds.length === 0) return [];
+
+  return await db
+    .select({
+      userId: membersTable.userId,
+      name: usersTable.name,
+      email: usersTable.email,
+      person: {
+        id: personsTable.id,
+        name: personsTable.name,
+        localizedName: personsTable.localizedName,
+        regionCode: personsTable.regionCode,
+        wcaId: personsTable.wcaId,
+      },
+    })
+    .from(membersTable)
+    .innerJoin(usersTable, eq(membersTable.userId, usersTable.id))
+    .leftJoin(personsTable, eq(membersTable.personId, personsTable.id))
+    .where(inArray(membersTable.userId, userIds));
 }

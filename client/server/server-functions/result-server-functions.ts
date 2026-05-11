@@ -59,7 +59,7 @@ const OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG =
   "The result is more than 30 days old and contains a record, which could affect other records. Please contact the development team.";
 
 export const getWrPairUpToDateSF = actionClient
-  .metadata({ auth: { orgPermissions: { videoBasedResults: ["create"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { videoBasedResults: ["create"] } } })
   .inputSchema(
     z.strictObject({
       recordCategory: z.enum(RecordCategoryValues),
@@ -92,315 +92,294 @@ export const createContestResultSF = actionClient
       newResultDto: ResultValidator,
     }),
   )
-  .action<ResultResponse[]>(
-    async ({
-      parsedInput: { newResultDto },
-      ctx: {
-        session: { user },
-        httpHeaders,
-      },
-    }) => {
-      const { eventId, personIds, competitionId, roundId } = newResultDto;
-      logMessage(
-        "RR0013",
-        `Creating contest result for contest ${competitionId}, event ${eventId}, round ${roundId} and persons ${personIds.join(", ")}: ${JSON.stringify(newResultDto.attempts)}`,
+  .action<ResultResponse[]>(async ({ parsedInput: { newResultDto }, ctx: { session, httpHeaders } }) => {
+    const { eventId, personIds, competitionId, roundId } = newResultDto;
+    logMessage(
+      "RR0013",
+      `Creating contest result for contest ${competitionId}, event ${eventId}, round ${roundId} and persons ${personIds.join(", ")}: ${JSON.stringify(newResultDto.attempts)}`,
+    );
+
+    const [
+      { success: canCreateAndUpdateContests },
+      { success: canSubmitOwnOnlineCompResult },
+      contest,
+      event,
+      rounds,
+      roundResults,
+      participants,
+    ] = await Promise.all([
+      auth.api.hasPermission({
+        headers: httpHeaders,
+        body: { permissions: { competitions: ["create", "update"], meetups: ["create", "update"] } },
+      }),
+      auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { onlineComps: ["submit-own-result"] } } }),
+      db.query.contests.findFirst({ where: { competitionId } }),
+      db.query.events.findFirst({ where: { eventId } }),
+      db.query.rounds.findMany({ where: { competitionId, eventId } }),
+      db.query.results.findMany({ where: { roundId }, orderBy: { ranking: "asc" } }),
+      db.query.persons.findMany({ where: { id: { in: personIds } } }),
+    ]);
+    const round = rounds.find((r) => r.id === roundId);
+
+    if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
+    // This is similar to the logic in the contest controls component
+    const userControlsContest = canCreateAndUpdateContests && getMemberControlsContest(session.member!, contest);
+    const hasAccessToResults = canSubmitOwnOnlineCompResult && contest.type === "online" && session.member!.personId;
+    if (!userControlsContest && !hasAccessToResults)
+      throw new RrActionError("You are unauthorized to submit results for this contest");
+    if (!userControlsContest && hasAccessToResults && !personIds.includes(session.member!.personId as any))
+      throw new RrActionError("You can only submit your own result");
+    if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
+    if (!round) throw new RrActionError(`Round with ID ${newResultDto.roundId} not found`);
+    if (!round.open) throw new RrActionError("The round is not open");
+    // Same check as in createVideoBasedResultSF
+    const notFoundPersonId = personIds.find((pid) => !participants.some((p) => p.id === pid));
+    if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
+    // Same check as in createVideoBasedResultSF
+    if (newResultDto.personIds.length !== event.participants) {
+      throw new RrActionError(
+        `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
+      );
+    }
+    if (roundResults.some((r) => r.personIds.some((pid) => newResultDto.personIds.includes(pid))))
+      throw new RrActionError("The competitor(s) already has a result in this round");
+    // Check that all of the participants have proceeded to this round
+    if (round.roundNumber > 1) {
+      const prevRound = rounds.find((r) => r.roundNumber === round.roundNumber - 1)!;
+      const prevRoundResults = await db.query.results.findMany({ where: { roundId: prevRound.id } });
+      const notProceededCompetitorIndex = newResultDto.personIds.findIndex(
+        (pid) => !prevRoundResults.some((r) => r.proceeds && r.personIds.includes(pid)),
       );
 
-      const [
-        { success: canCreateAndUpdateContests },
-        { success: canSubmitOwnOnlineCompResult },
-        contest,
-        event,
-        rounds,
-        roundResults,
-        participants,
-      ] = await Promise.all([
-        auth.api.hasPermission({
-          headers: httpHeaders,
-          body: { permissions: { competitions: ["create", "update"], meetups: ["create", "update"] } },
-        }),
-        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { onlineComps: ["submit-own-result"] } } }),
-        db.query.contests.findFirst({ where: { competitionId } }),
-        db.query.events.findFirst({ where: { eventId } }),
-        db.query.rounds.findMany({ where: { competitionId, eventId } }),
-        db.query.results.findMany({ where: { roundId }, orderBy: { ranking: "asc" } }),
-        db.query.persons.findMany({ where: { id: { in: personIds } } }),
-      ]);
-      const round = rounds.find((r) => r.id === roundId);
-
-      if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      // This is similar to the logic in the contest controls component
-      const userControlsContest = canCreateAndUpdateContests && getMemberControlsContest(user, contest);
-      const hasAccessToResults = canSubmitOwnOnlineCompResult && contest.type === "online" && user.personId;
-      if (!userControlsContest && !hasAccessToResults)
-        throw new RrActionError("You are unauthorized to submit results for this contest");
-      if (!userControlsContest && hasAccessToResults && !personIds.includes(user.personId as any))
-        throw new RrActionError("You can only submit your own result");
-      if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
-      if (!round) throw new RrActionError(`Round with ID ${newResultDto.roundId} not found`);
-      if (!round.open) throw new RrActionError("The round is not open");
-      // Same check as in createVideoBasedResultSF
-      const notFoundPersonId = personIds.find((pid) => !participants.some((p) => p.id === pid));
-      if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
-      // Same check as in createVideoBasedResultSF
-      if (newResultDto.personIds.length !== event.participants) {
+      if (notProceededCompetitorIndex >= 0) {
         throw new RrActionError(
-          `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
+          `Competitor${event.participants > 1 ? ` ${notProceededCompetitorIndex + 1}` : ""} has not proceeded to this round`,
         );
       }
-      if (roundResults.some((r) => r.personIds.some((pid) => newResultDto.personIds.includes(pid))))
-        throw new RrActionError("The competitor(s) already has a result in this round");
-      // Check that all of the participants have proceeded to this round
-      if (round.roundNumber > 1) {
-        const prevRound = rounds.find((r) => r.roundNumber === round.roundNumber - 1)!;
-        const prevRoundResults = await db.query.results.findMany({ where: { roundId: prevRound.id } });
-        const notProceededCompetitorIndex = newResultDto.personIds.findIndex(
-          (pid) => !prevRoundResults.some((r) => r.proceeds && r.personIds.includes(pid)),
-        );
+    }
 
-        if (notProceededCompetitorIndex >= 0) {
-          throw new RrActionError(
-            `Competitor${event.participants > 1 ? ` ${notProceededCompetitorIndex + 1}` : ""} has not proceeded to this round`,
-          );
-        }
-      }
+    const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
-      const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
+    newResultDto.attempts = await validateTimeLimitAndCutoff(
+      newResultDto.attempts,
+      newResultDto.personIds,
+      round,
+      roundFormat.attempts,
+    );
 
-      newResultDto.attempts = await validateTimeLimitAndCutoff(
-        newResultDto.attempts,
-        newResultDto.personIds,
-        round,
-        roundFormat.attempts,
-      );
+    const recordConfigs = await getRecordConfigs({ contestType: contest.type });
+    const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
+    const recordCategory: RecordCategory =
+      contest.type === "online" ? "online" : contest.type === "meetup" ? "meetups" : "competitions";
+    const newResult: InsertResult = {
+      organizationId: session.organization!.id,
+      eventId,
+      date: getRoundDate(round, contest),
+      personIds,
+      attempts: newResultDto.attempts,
+      best,
+      average,
+      recordCategory,
+      competitionId,
+      roundId,
+      ranking: 1, // gets set to the correct value below
+      createdBy: session.user.id,
+    };
 
-      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
-      const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
-      const recordCategory: RecordCategory =
-        contest.type === "online" ? "online" : contest.type === "meetup" ? "meetups" : "competitions";
-      const newResult: InsertResult = {
-        eventId,
-        date: getRoundDate(round, contest),
-        personIds,
-        attempts: newResultDto.attempts,
-        best,
-        average,
-        recordCategory,
-        competitionId,
-        roundId,
-        ranking: 1, // gets set to the correct value below
-        createdBy: user.id,
-      };
+    await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
 
-      await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
+    if (
+      !process.env.VITEST &&
+      !getHasRole("admin", session.member!.role) &&
+      (newResult.regionalSingleRecord || newResult.regionalAverageRecord) &&
+      differenceInDays(new Date(), newResult.date) > 30
+    ) {
+      throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
+    }
 
-      if (
-        !process.env.VITEST &&
-        !getHasRole("admin", user.role) &&
-        (newResult.regionalSingleRecord || newResult.regionalAverageRecord) &&
-        differenceInDays(new Date(), newResult.date) > 30
-      ) {
-        throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
-      }
+    await db.transaction(async (tx) => {
+      const [createdResult] = await tx.insert(table).values(newResult).returning();
 
-      await db.transaction(async (tx) => {
-        const [createdResult] = await tx.insert(table).values(newResult).returning();
+      await setRankingAndProceedsValues(tx, [...roundResults, createdResult], round);
+      if (createdResult.regionalSingleRecord) await cancelFutureRecords(tx, createdResult, "best", recordConfigs);
+      if (createdResult.regionalAverageRecord) await cancelFutureRecords(tx, createdResult, "average", recordConfigs);
 
-        await setRankingAndProceedsValues(tx, [...roundResults, createdResult], round);
-        if (createdResult.regionalSingleRecord) await cancelFutureRecords(tx, createdResult, "best", recordConfigs);
-        if (createdResult.regionalAverageRecord) await cancelFutureRecords(tx, createdResult, "average", recordConfigs);
+      // Update contest state and participants
+      const updateContestObject: Partial<SelectContest> = {};
+      if (contest.state === "approved") updateContestObject.state = "ongoing";
+      const participantIds = await getContestParticipantIds(tx, competitionId);
+      if (participantIds.length !== contest.participants) updateContestObject.participants = participantIds.length;
+      // Do update, if some value actually changed
+      if (Object.keys(updateContestObject).length > 0)
+        await tx.update(contestsTable).set(updateContestObject).where(eq(contestsTable.competitionId, competitionId));
+    });
 
-        // Update contest state and participants
-        const updateContestObject: Partial<SelectContest> = {};
-        if (contest.state === "approved") updateContestObject.state = "ongoing";
-        const participantIds = await getContestParticipantIds(tx, competitionId);
-        if (participantIds.length !== contest.participants) updateContestObject.participants = participantIds.length;
-        // Do update, if some value actually changed
-        if (Object.keys(updateContestObject).length > 0)
-          await tx.update(contestsTable).set(updateContestObject).where(eq(contestsTable.competitionId, competitionId));
-      });
-
-      return await db.select(resultsPublicCols).from(table).where(eq(table.roundId, roundId)).orderBy(table.ranking);
-    },
-  );
+    return await db.select(resultsPublicCols).from(table).where(eq(table.roundId, roundId)).orderBy(table.ranking);
+  });
 
 export const updateContestResultSF = actionClient
-  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
       newAttempts: AttemptsValidator,
     }),
   )
-  .action<ResultResponse[]>(
-    async ({
-      parsedInput: { id, newAttempts },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      const result = await db.query.results.findFirst({ where: { id, competitionId: { isNotNull: true } } });
-      if (!result) throw new RrActionError(`Result with ID ${id} not found`);
+  .action<ResultResponse[]>(async ({ parsedInput: { id, newAttempts }, ctx: { session } }) => {
+    const result = await db.query.results.findFirst({ where: { id, competitionId: { isNotNull: true } } });
+    if (!result) throw new RrActionError(`Result with ID ${id} not found`);
 
-      logMessage("RR0014", `Updating result with ID ${id} (new attempts: ${JSON.stringify(newAttempts)})`);
+    logMessage("RR0014", `Updating result with ID ${id} (new attempts: ${JSON.stringify(newAttempts)})`);
 
-      const [contest, event, round, roundResults] = await Promise.all([
-        db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
-        db.query.events.findFirst({ where: { eventId: result.eventId } }),
-        db.query.rounds.findFirst({ where: { id: result.roundId! } }),
-        db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
-      ]);
+    const [contest, event, round, roundResults] = await Promise.all([
+      db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
+      db.query.events.findFirst({ where: { eventId: result.eventId } }),
+      db.query.rounds.findFirst({ where: { id: result.roundId! } }),
+      db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
+    ]);
 
-      if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getMemberControlsContest(user, contest))
-        throw new RrActionError("You do not have access rights for this contest");
-      if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
-      if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
+    if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
+    if (!getMemberControlsContest(session.member!, contest))
+      throw new RrActionError("You do not have access rights for this contest");
+    if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
+    if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
 
-      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
-      const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
+    const recordConfigs = await getRecordConfigs({ contestType: contest.type });
+    const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
-      newAttempts = await validateTimeLimitAndCutoff(newAttempts, result.personIds, round, roundFormat.attempts);
+    newAttempts = await validateTimeLimitAndCutoff(newAttempts, result.personIds, round, roundFormat.attempts);
 
-      const { best, average } = getBestAndAverage(newAttempts, event.format, roundFormat.value);
-      const newResult: SelectResult = {
-        ...result,
-        attempts: newAttempts,
-        best,
-        average,
-        regionalSingleRecord: null,
-        regionalAverageRecord: null,
-      };
+    const { best, average } = getBestAndAverage(newAttempts, event.format, roundFormat.value);
+    const newResult: SelectResult = {
+      ...result,
+      attempts: newAttempts,
+      best,
+      average,
+      regionalSingleRecord: null,
+      regionalAverageRecord: null,
+    };
 
-      await setResultRecords(newResult, event, recordConfigs, { excludeResultId: id });
+    await setResultRecords(newResult, event, recordConfigs, { excludeResultId: id });
 
-      if (
-        !process.env.VITEST &&
-        !getHasRole("admin", user.role) &&
-        (result.regionalSingleRecord ||
-          result.regionalAverageRecord ||
-          newResult.regionalSingleRecord ||
-          newResult.regionalAverageRecord) &&
-        differenceInDays(new Date(), result.date) > 30
-      ) {
-        throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
-      }
+    if (
+      !process.env.VITEST &&
+      !getHasRole("admin", session.member!.role) &&
+      (result.regionalSingleRecord ||
+        result.regionalAverageRecord ||
+        newResult.regionalSingleRecord ||
+        newResult.regionalAverageRecord) &&
+      differenceInDays(new Date(), result.date) > 30
+    ) {
+      throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
+    }
 
-      await db.transaction(async (tx) => {
-        const [updatedResult] = await tx
-          .update(table)
-          .set({
-            attempts: newResult.attempts,
-            best: newResult.best,
-            average: newResult.average,
-            regionalSingleRecord: newResult.regionalSingleRecord,
-            regionalAverageRecord: newResult.regionalAverageRecord,
-          })
-          .where(eq(table.id, id))
-          .returning();
+    await db.transaction(async (tx) => {
+      const [updatedResult] = await tx
+        .update(table)
+        .set({
+          attempts: newResult.attempts,
+          best: newResult.best,
+          average: newResult.average,
+          regionalSingleRecord: newResult.regionalSingleRecord,
+          regionalAverageRecord: newResult.regionalAverageRecord,
+        })
+        .where(eq(table.id, id))
+        .returning();
 
-        await setRankingAndProceedsValues(
-          tx,
-          roundResults.map((r) => (r.id === id ? updatedResult : r)),
-          round,
-        );
+      await setRankingAndProceedsValues(
+        tx,
+        roundResults.map((r) => (r.id === id ? updatedResult : r)),
+        round,
+      );
 
-        // Cancel future records, if the result got better
-        if (updatedResult.regionalSingleRecord && updatedResult.best < result.best)
-          await cancelFutureRecords(tx, updatedResult, "best", recordConfigs);
-        if (updatedResult.regionalAverageRecord && updatedResult.average < result.average)
-          await cancelFutureRecords(tx, updatedResult, "average", recordConfigs);
+      // Cancel future records, if the result got better
+      if (updatedResult.regionalSingleRecord && updatedResult.best < result.best)
+        await cancelFutureRecords(tx, updatedResult, "best", recordConfigs);
+      if (updatedResult.regionalAverageRecord && updatedResult.average < result.average)
+        await cancelFutureRecords(tx, updatedResult, "average", recordConfigs);
 
-        // Set records that may have been prevented before, if the result got worse
-        if (result.regionalSingleRecord && updatedResult.best > result.best)
-          await setFutureRecords(tx, result, event, "best", recordConfigs);
-        if (result.regionalAverageRecord && updatedResult.average > result.average)
-          await setFutureRecords(tx, result, event, "average", recordConfigs);
-      });
+      // Set records that may have been prevented before, if the result got worse
+      if (result.regionalSingleRecord && updatedResult.best > result.best)
+        await setFutureRecords(tx, result, event, "best", recordConfigs);
+      if (result.regionalAverageRecord && updatedResult.average > result.average)
+        await setFutureRecords(tx, result, event, "average", recordConfigs);
+    });
 
-      return await db
-        .select(resultsPublicCols)
-        .from(table)
-        .where(eq(table.roundId, result.roundId!))
-        .orderBy(table.ranking);
-    },
-  );
+    return await db
+      .select(resultsPublicCols)
+      .from(table)
+      .where(eq(table.roundId, result.roundId!))
+      .orderBy(table.ranking);
+  });
 
 export const deleteContestResultSF = actionClient
-  .metadata({ auth: { orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
     }),
   )
-  .action<ResultResponse[]>(
-    async ({
-      parsedInput: { id },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      const result = await db.query.results.findFirst({ where: { id, competitionId: { isNotNull: true } } });
-      if (!result) throw new RrActionError(`Result with ID ${id} not found`);
+  .action<ResultResponse[]>(async ({ parsedInput: { id }, ctx: { session } }) => {
+    const result = await db.query.results.findFirst({ where: { id, competitionId: { isNotNull: true } } });
+    if (!result) throw new RrActionError(`Result with ID ${id} not found`);
 
-      if (
-        !process.env.VITEST &&
-        !getHasRole("admin", user.role) &&
-        (result.regionalSingleRecord || result.regionalAverageRecord) &&
-        differenceInDays(new Date(), result.date) > 30
-      ) {
-        throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
+    if (
+      !process.env.VITEST &&
+      !getHasRole("admin", session.member!.role) &&
+      (result.regionalSingleRecord || result.regionalAverageRecord) &&
+      differenceInDays(new Date(), result.date) > 30
+    ) {
+      throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
+    }
+
+    logMessage("RR0015", `Deleting contest result: ${JSON.stringify(result)}`);
+
+    const [contest, event, round, roundResults] = await Promise.all([
+      db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
+      db.query.events.findFirst({ where: { eventId: result.eventId } }),
+      db.query.rounds.findFirst({ where: { id: result.roundId! } }),
+      db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
+    ]);
+
+    if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
+    if (!getMemberControlsContest(session.member!, contest))
+      throw new RrActionError("You do not have access rights for this contest");
+    if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
+    if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
+
+    const recordConfigs = await getRecordConfigs({ contestType: contest.type });
+
+    await db.transaction(async (tx) => {
+      await tx.delete(table).where(eq(table.id, id));
+
+      await setRankingAndProceedsValues(
+        tx,
+        roundResults.filter((r) => r.id !== id),
+        round,
+      );
+
+      // Set records that may have been prevented by the deleted result
+      if (result.regionalSingleRecord) await setFutureRecords(tx, result, event, "best", recordConfigs);
+      if (result.regionalAverageRecord) await setFutureRecords(tx, result, event, "average", recordConfigs);
+
+      const participantIds = await getContestParticipantIds(tx, result.competitionId!);
+      if (participantIds.length !== contest.participants) {
+        await tx
+          .update(contestsTable)
+          .set({ participants: participantIds.length })
+          .where(eq(contestsTable.competitionId, contest.competitionId));
       }
+    });
 
-      logMessage("RR0015", `Deleting contest result: ${JSON.stringify(result)}`);
-
-      const [contest, event, round, roundResults] = await Promise.all([
-        db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
-        db.query.events.findFirst({ where: { eventId: result.eventId } }),
-        db.query.rounds.findFirst({ where: { id: result.roundId! } }),
-        db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
-      ]);
-
-      if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getMemberControlsContest(user, contest))
-        throw new RrActionError("You do not have access rights for this contest");
-      if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
-      if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
-
-      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
-
-      await db.transaction(async (tx) => {
-        await tx.delete(table).where(eq(table.id, id));
-
-        await setRankingAndProceedsValues(
-          tx,
-          roundResults.filter((r) => r.id !== id),
-          round,
-        );
-
-        // Set records that may have been prevented by the deleted result
-        if (result.regionalSingleRecord) await setFutureRecords(tx, result, event, "best", recordConfigs);
-        if (result.regionalAverageRecord) await setFutureRecords(tx, result, event, "average", recordConfigs);
-
-        const participantIds = await getContestParticipantIds(tx, result.competitionId!);
-        if (participantIds.length !== contest.participants) {
-          await tx
-            .update(contestsTable)
-            .set({ participants: participantIds.length })
-            .where(eq(contestsTable.competitionId, contest.competitionId));
-        }
-      });
-
-      return await db
-        .select(resultsPublicCols)
-        .from(table)
-        .where(eq(table.roundId, result.roundId!))
-        .orderBy(table.ranking);
-    },
-  );
+    return await db
+      .select(resultsPublicCols)
+      .from(table)
+      .where(eq(table.roundId, result.roundId!))
+      .orderBy(table.ranking);
+  });
 
 export const createVideoBasedResultSF = actionClient
-  .metadata({ auth: { orgPermissions: { videoBasedResults: ["create"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { videoBasedResults: ["create"] } } })
   .inputSchema(
     z.strictObject({
       newResultDto: VideoBasedResultValidator,
@@ -419,8 +398,8 @@ export const createVideoBasedResultSF = actionClient
       db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
       db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
       getRecordConfigs({ recordCategory: "online" }),
-      session.user.personId
-        ? db.query.persons.findFirst({ columns: { name: true }, where: { id: session.user.personId } })
+      session.member!.personId
+        ? db.query.persons.findFirst({ columns: { name: true }, where: { id: session.member!.personId } })
         : undefined,
     ]);
 
@@ -438,6 +417,7 @@ export const createVideoBasedResultSF = actionClient
     const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
     const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
     const newResult: InsertResult = {
+      organizationId: session.organization!.id,
       ...newResultDto,
       best,
       average,
@@ -461,7 +441,7 @@ export const createVideoBasedResultSF = actionClient
   });
 
 export const updateVideoBasedResultSF = actionClient
-  .metadata({ auth: { orgPermissions: { videoBasedResults: ["update", "approve"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { videoBasedResults: ["update", "approve"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -474,7 +454,7 @@ export const updateVideoBasedResultSF = actionClient
       approve: z.boolean(),
     }),
   )
-  .action<ResultResponse>(async ({ parsedInput: { id, newResultDto, approve } }) => {
+  .action<ResultResponse>(async ({ parsedInput: { id, newResultDto, approve }, ctx: { session } }) => {
     const result = await db.query.results.findFirst({ where: { id, competitionId: { isNull: true } } });
     if (!result) throw new RrActionError(`Result with ID ${id} not found`);
     if (result.approved)
@@ -541,7 +521,8 @@ export const updateVideoBasedResultSF = actionClient
         const creatorUser = result.createdBy
           ? await tx.query.users.findFirst({ columns: { email: true }, where: { id: result.createdBy } })
           : undefined;
-        if (creatorUser) sendVideoBasedResultApprovedEmail(creatorUser.email, { event });
+        if (creatorUser)
+          sendVideoBasedResultApprovedEmail(creatorUser.email, { event, organization: session.organization! });
       }
 
       return updatedResult;

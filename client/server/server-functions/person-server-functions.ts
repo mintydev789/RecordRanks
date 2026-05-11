@@ -49,7 +49,7 @@ export const getPersonsByNameSF = actionClient
   });
 
 export const getOrCreatePersonSF = actionClient
-  .metadata({ auth: { orgPermissions: { persons: ["create"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { persons: ["create"] } } })
   .inputSchema(
     z.strictObject({
       name: z.string(),
@@ -83,7 +83,10 @@ export const getOrCreatePersonByWcaIdSF = actionClient
     }),
   )
   .action<GetOrCreatePersonObject>(async ({ parsedInput: { wcaId }, ctx: { session } }) => {
-    return await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id });
+    return await getOrCreatePersonByWcaId(wcaId, {
+      creatorUserId: session.user.id,
+      organizationId: session.organization!.id,
+    });
   });
 
 export const createPersonSF = actionClient
@@ -96,13 +99,7 @@ export const createPersonSF = actionClient
     }),
   )
   .action<PersonResponse | SelectPerson>(
-    async ({
-      parsedInput: { newPersonDto, ignoreDuplicate },
-      ctx: {
-        session: { user },
-        httpHeaders,
-      },
-    }) => {
+    async ({ parsedInput: { newPersonDto, ignoreDuplicate }, ctx: { session, httpHeaders } }) => {
       newPersonDto.name = newPersonDto.name.trim();
       if (newPersonDto.localizedName) newPersonDto.localizedName = newPersonDto.localizedName.trim();
       const { name, wcaId } = newPersonDto;
@@ -115,12 +112,12 @@ export const createPersonSF = actionClient
 
       // Regular users are only allowed to create one person without a WCA ID (when requesting a competitor profile)
       if (!canCreate) {
-        if (user.personId) {
+        if (session.member!.personId) {
           throw new RrActionError("You already have a competitor profile tied to your account");
         } else {
           const existingProfile = await db.query.persons.findFirst({
             columns: { id: true },
-            where: { createdBy: user.id, wcaId: { isNull: true } },
+            where: { createdBy: session.user.id, wcaId: { isNull: true } },
           });
           if (existingProfile) {
             throw new RrActionError(
@@ -132,7 +129,9 @@ export const createPersonSF = actionClient
 
       await validatePerson(newPersonDto, { ignoreDuplicate, canApprove });
 
-      const query = db.insert(table).values({ ...newPersonDto, createdBy: user.id });
+      const query = db
+        .insert(table)
+        .values({ organizationId: session.organization!.id, ...newPersonDto, createdBy: session.user.id });
       const [createdPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
       return createdPerson;
     },
@@ -160,7 +159,7 @@ export const updatePersonSF = actionClient
 
       const person = await db.query.persons.findFirst({ where: { id } });
       if (!person) throw new RrActionError("Person with the provided ID not found");
-      const canUpdateOwnWcaPerson = id === session.user.personId && person.wcaId && newPersonDto.wcaId;
+      const canUpdateOwnWcaPerson = id === session.member!.personId && person.wcaId && newPersonDto.wcaId;
       const canUpdateOwnCreatedPerson = canUpdate && person.createdBy === session.user.id && !person.approved;
       // This logic is consistent with getMemberRequestDetails() and deletePersonSF()
       const canUpdateOwnRequestedPerson =
@@ -218,10 +217,13 @@ export const deletePersonSF = actionClient
     if (!canDeleteAnyPerson && !canDeleteOwnCreatedPerson && !canDeleteOwnRequestedPerson)
       throw new RrActionError("You are unauthorized to delete this person");
 
-    const user = await db.query.users.findFirst({ where: { personId: person.id } });
-    if (user) {
+    const member = await db.query.members.findFirst({
+      with: { user: { columns: { name: true } } },
+      where: { personId: person.id },
+    });
+    if (member) {
       throw new RrActionError(
-        `You may not delete a person tied to a user. This person is tied to the user ${user.name}.`,
+        `You may not delete a person tied to a member profile. This person is tied to the member ${member.user.name}.`,
       );
     }
 
@@ -243,7 +245,7 @@ export const deletePersonSF = actionClient
   });
 
 export const approvePersonSF = actionClient
-  .metadata({ auth: { orgPermissions: { persons: ["approve"] } } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { persons: ["approve"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -265,11 +267,11 @@ export const approvePersonSF = actionClient
         where: { organizerIds: { arrayContains: [id] } },
       });
       if (!organizedContest) {
-        const userRequest = await db.query.memberRequests.findFirst({
+        const memberRequest = await db.query.memberRequests.findFirst({
           columns: { id: true },
           where: { requestedPersonId: id },
         });
-        if (!userRequest) {
+        if (!memberRequest) {
           throw new RrActionError(
             `${person.name} has no results, hasn't organized any contests and hasn't been requested as a competitor profile by a user. They could have been added by accident.`,
           );

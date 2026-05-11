@@ -4,7 +4,7 @@ import { authorizeUser } from "~/server/server-only-functions.ts";
 import ConfigureRecordsScreen from "./ConfigureRecordsScreen.tsx";
 
 async function RecordsConfigurationPage() {
-  await authorizeUser({ permissions: { recordConfigs: ["create-and-update"] } });
+  await authorizeUser({ useOrganization: true, orgPermissions: { recordConfigs: ["create-and-update"] } });
 
   const recordConfigs = await db.select(recordConfigsPublicCols).from(table).orderBy(table.rank);
 

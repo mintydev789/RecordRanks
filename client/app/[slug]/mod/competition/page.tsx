@@ -7,15 +7,13 @@ import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { Creator } from "~/helpers/types.ts";
 import { getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
 import { auth } from "~/server/auth.ts";
-import { creatorCols } from "~/server/db/dbUtils.ts";
 import { db } from "~/server/db/provider.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
 import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { resultsTable } from "~/server/db/schema/results.ts";
 import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
-import { authorizeUser, getSettingFromDb } from "~/server/server-only-functions.ts";
+import { authorizeUser, getCreators, getSettingFromDb } from "~/server/server-only-functions.ts";
 import ContestForm from "./ContestForm.tsx";
 
 type Props = {
@@ -33,6 +31,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
     })
     .parse(await searchParams);
   const session = await authorizeUser({
+    useOrganization: true,
     orgPermissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
 
@@ -66,13 +65,12 @@ async function CreateEditContestPage({ searchParams }: Props) {
     let totalResultsByRound: { roundId: number; totalResults: number }[] | undefined;
     let organizers: PersonResponse[] | undefined;
     let creator: Creator | null | undefined;
-    let creatorPerson: PersonResponse | undefined;
 
     if (contest) {
-      if (!getMemberControlsContest(session.user, contest))
+      if (!getMemberControlsContest(session.member!, contest))
         return <LoadingError reason="You do not have access rights for this contest" />;
 
-      const totalResultsByRoundPromise =
+      const [totalResultsByRoundRes, organizersRes, [creatorRes]] = await Promise.all([
         contest.participants > 0
           ? db
               .execute(
@@ -84,29 +82,13 @@ async function CreateEditContestPage({ searchParams }: Props) {
               .then((res) =>
                 res.map((row) => ({ roundId: row.round_id as number, totalResults: Number(row.total_results ?? 0) })),
               )
-          : undefined;
-      const organizersPromise = db
-        .select(personsPublicCols)
-        .from(personsTable)
-        .where(inArray(personsTable.id, contest.organizerIds));
-      const creatorPromise =
-        canApprove && contest.createdBy
-          ? db.select(creatorCols).from(usersTable).where(eq(usersTable.id, contest.createdBy))
-          : undefined;
-      const [totalResultsByRoundRes, organizersRes, creatorRes] = await Promise.all([
-        totalResultsByRoundPromise,
-        organizersPromise,
-        creatorPromise,
+          : undefined,
+        db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, contest.organizerIds)),
+        canApprove && contest.createdBy ? getCreators([contest.createdBy]) : [],
       ]);
       totalResultsByRound = totalResultsByRoundRes;
       organizers = organizersRes;
-      creator = creatorRes?.[0] ?? null;
-
-      if (creator?.personId) {
-        creatorPerson = (
-          await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, creator.personId))
-        ).at(0);
-      }
+      creator = creatorRes;
     }
 
     return (
@@ -129,8 +111,6 @@ async function CreateEditContestPage({ searchParams }: Props) {
             contest={contest}
             organizers={organizers}
             creator={creator}
-            creatorPerson={creatorPerson}
-            session={session}
           />
         </SWRConfig>
       </section>

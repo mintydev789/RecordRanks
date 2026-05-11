@@ -25,7 +25,6 @@ import {
 type Props = {
   personUnderEdit: PersonResponse | undefined; // undefined means we're creating a new person
   creator?: Creator | null; // null means the user has been deleted
-  creatorPerson?: PersonResponse;
   regions: RegionResponse[];
   onSubmit: (person: PersonResponse, { isNew }: { isNew: boolean }) => void;
   onSubmitError?: () => void;
@@ -33,16 +32,7 @@ type Props = {
   wcaIdInputHidden?: boolean;
 };
 
-function PersonForm({
-  personUnderEdit,
-  creator,
-  creatorPerson,
-  regions,
-  onSubmit,
-  onSubmitError,
-  onCancel,
-  wcaIdInputHidden,
-}: Props) {
+function PersonForm({ personUnderEdit, creator, regions, onSubmit, onSubmitError, onCancel, wcaIdInputHidden }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
@@ -172,7 +162,6 @@ function PersonForm({
       {personUnderEdit && creator !== undefined && (
         <CreatorDetails
           creator={creator}
-          person={creatorPerson}
           regions={regions}
           createdExternally={(personUnderEdit as any).createdExternally}
         />

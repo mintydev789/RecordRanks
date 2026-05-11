@@ -13,25 +13,28 @@ import {
 import { actionClient } from "../safeAction.ts";
 
 export const createRecordConfigSF = actionClient
-  .metadata({ permissions: { recordConfigs: ["create-and-update"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { recordConfigs: ["create-and-update"] } } })
   .inputSchema(
     z.strictObject({
       newRecordConfigDto: RecordConfigValidator,
     }),
   )
-  .action<RecordConfigResponse>(async ({ parsedInput: { newRecordConfigDto } }) => {
+  .action<RecordConfigResponse>(async ({ parsedInput: { newRecordConfigDto }, ctx: { session } }) => {
     const { category, recordTypeId, label } = newRecordConfigDto;
     logMessage(
       "RR0027",
       `Creating record config with category ${category}, record type ID ${recordTypeId} and label ${label}`,
     );
 
-    const [createdRecordConfig] = await db.insert(table).values(newRecordConfigDto).returning(recordConfigsPublicCols);
+    const [createdRecordConfig] = await db
+      .insert(table)
+      .values({ organizationId: session.organization!.id, ...newRecordConfigDto })
+      .returning(recordConfigsPublicCols);
     return createdRecordConfig;
   });
 
 export const updateRecordConfigSF = actionClient
-  .metadata({ permissions: { recordConfigs: ["create-and-update"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { recordConfigs: ["create-and-update"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),

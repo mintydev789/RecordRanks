@@ -1,7 +1,7 @@
 "use client";
 
 import debounce from "lodash/debounce";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useContext, useEffect, useState } from "react";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
@@ -46,14 +46,12 @@ type Props = {
       result?: never;
       participants?: never;
       creator?: never;
-      creatorPerson?: never;
     }
   | {
       // When editing an existing result (assumes elevated privileges)
       result: SelectResult;
       participants: PersonResponse[];
       creator: Creator | null;
-      creatorPerson: PersonResponse | undefined;
     }
 );
 
@@ -64,11 +62,11 @@ function ResultsSubmissionForm({
   result,
   participants: initParticipants,
   creator,
-  creatorPerson,
   isVideoBasedResultReviewer,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { slug } = useParams();
   const searchParams = useSearchParams();
   const { organization } = useSession();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
@@ -169,7 +167,7 @@ function ResultsSubmissionForm({
         setLoadingId(undefined);
       } else {
         changeSuccessMessage(approve ? "Result successfully approved" : "Result successfully updated");
-        setTimeout(() => router.push("/video-based-results"), 1000);
+        setTimeout(() => router.push(`/${slug}/video-based-results`), 1000);
       }
     }
   };
@@ -263,12 +261,7 @@ function ResultsSubmissionForm({
 
       <Form hideSubmitButton className="mb-5">
         {result && (
-          <CreatorDetails
-            creator={creator}
-            person={creatorPerson}
-            regions={regions}
-            createdExternally={Boolean(result.createdExternally)}
-          />
+          <CreatorDetails creator={creator} regions={regions} createdExternally={Boolean(result.createdExternally)} />
         )}
         <FormEventSelect
           events={events}
