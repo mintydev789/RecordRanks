@@ -338,6 +338,7 @@ export function sendContestFinishedEmail(
     templateFileName: "contest-finished.hbs",
     context: {
       projectName,
+      organizationName: organization.metadata.plan === "basic" ? organization.name : "",
       contestName: contest.name,
       contestUrl: `${baseUrl}/${organization.slug}/competitions/${contest.competitionId}`,
       rrDonationLink: C.rrDonationLink,

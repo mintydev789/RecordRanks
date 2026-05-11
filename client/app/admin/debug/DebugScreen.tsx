@@ -43,10 +43,11 @@ function DebugScreen() {
         slug: z
           .string()
           .min(3)
-          .max(12)
-          .regex(/^[a-z0-9]$/),
+          .max(15)
+          .regex(/^[a-z0-9]+$/),
         contactEmail: z.email(),
         logo: z.string().nullable(),
+        plan: z.enum(["basic", "pro", "custom"]),
       })
       .safeParse(Object.fromEntries(formData.entries()));
 
@@ -61,6 +62,7 @@ function DebugScreen() {
           metadata: {
             private: false,
             contactEmail: parsed.data.contactEmail,
+            plan: parsed.data.plan,
           } satisfies OrganizationMetadata,
           keepCurrentActiveOrganization: true,
         });
@@ -109,7 +111,7 @@ function DebugScreen() {
             id="name_input"
             type="text"
             name="name"
-            placeholder="International Association of ..."
+            placeholder="E.g: International Association of ..."
             required
             className="form-control"
           />
@@ -119,34 +121,41 @@ function DebugScreen() {
           <label htmlFor="slug_input" className="form-label">
             Organization ID *
           </label>
-          <input id="slug_input" type="text" name="slug" placeholder="iax" required className="form-control" />
+          <input id="slug_input" type="text" name="slug" placeholder="E.g: iax" required className="form-control" />
         </fieldset>
 
-        <fieldset className="mb-4">
+        <fieldset className="mb-3">
           <label htmlFor="contact_email_input" className="form-label">
             Contact Email *
           </label>
           <input id="contact_email_input" type="email" name="contactEmail" className="form-control" />
         </fieldset>
 
-        <fieldset className="mb-4">
+        <fieldset className="mb-3">
           <label htmlFor="logo_input" className="form-label">
             Logo URL
           </label>
           <input id="logo_input" type="url" name="logo" className="form-control" />
         </fieldset>
 
-        <button type="submit" disabled={isCreatingOrganization} className="btn btn-primary">
+        <fieldset className="mb-3">
+          <label htmlFor="plan_input" className="form-label">
+            Plan
+          </label>
+          <select id="plan_input" name="plan" className="form-select">
+            <option value="basic">Basic</option>
+            <option value="pro">Pro</option>
+            <option value="custom">Custom</option>
+          </select>
+        </fieldset>
+
+        <button type="submit" disabled={isCreatingOrganization} className="btn btn-primary mt-2">
           Create Organization
         </button>
       </form>
 
-      {process.env.NODE_ENV === "production" && (
-        <>
-          <h4 className="my-4">Version</h4>
-          <p>This instance is running on RecordRanks version {process.env.NEXT_PUBLIC_VERSION || "UNKNOWN"}</p>
-        </>
-      )}
+      <h4 className="my-4">Version</h4>
+      <p>This instance is running on RecordRanks version {process.env.NEXT_PUBLIC_VERSION || "UNKNOWN"}</p>
     </div>
   );
 }

@@ -24,6 +24,7 @@ export type InputPerson = PersonResponse | null;
 export type OrganizationMetadata = {
   private: boolean;
   contactEmail: string;
+  plan: "basic" | "pro" | "custom";
 };
 
 export type OrganizationDetails = Pick<typeof authClient.$Infer.Organization, "id" | "name" | "slug" | "logo"> & {

@@ -1,12 +1,16 @@
 import DonateButton from "~/app/components/DonateButton.tsx";
 import { C } from "~/helpers/constants.ts";
 
-function DonateSection() {
+type Props = {
+  organizationName: string;
+};
+
+function DonateSection({ organizationName }: Props) {
   return (
     <>
       <h3 className="rr-basic-heading">Support RecordRanks</h3>
       <p>
-        {process.env.NEXT_PUBLIC_PROJECT_NAME} is powered by RecordRanks, an{" "}
+        {organizationName} is powered by RecordRanks, an{" "}
         <a href={C.sourceCodeLink} target="_blank" rel="noreferrer">
           open source project
         </a>{" "}

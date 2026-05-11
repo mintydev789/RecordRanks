@@ -107,10 +107,11 @@ export async function authorizeUser(
 ): Promise<FullSession> {
   const hdrs = httpHeaders ?? (await headers());
   const session = await auth.api.getSession({ headers: hdrs });
-  const member = await auth.api.getActiveMember({ headers: hdrs }); // this is optional unless useOrganization = true
-  let organization: OrganizationDetails | undefined;
 
   if (!session) redirect("/login");
+
+  const member = session.session.activeOrganizationId ? await auth.api.getActiveMember({ headers: hdrs }) : undefined;
+  let organization: OrganizationDetails | undefined;
 
   if (useOrganization) {
     if (!session.session.activeOrganizationId || !member) redirect("/"); // go back to org selection

@@ -38,7 +38,7 @@ async function OrganizationHomePage({ params }: Props) {
 
   return (
     <section className="px-3">
-      <h1 className="mb-4 text-center">{process.env.NEXT_PUBLIC_PROJECT_NAME}</h1>
+      <h1 className="mb-4 text-center">{organization.name}</h1>
 
       {IS_CUBING_CONTESTS_INSTANCE && (
         <div className="alert alert-light mb-4" role="alert">
@@ -67,7 +67,7 @@ async function OrganizationHomePage({ params }: Props) {
         </Link>
       </div>
 
-      <DonateSection />
+      <DonateSection organizationName={organization.name} />
 
       <Suspense>
         <BlogSection latestBlogPostsPromise={latestBlogPostsPromise} />
