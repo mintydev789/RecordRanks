@@ -800,6 +800,7 @@ function ContestForm({
           contestType={type!}
           disabled={disabledIfContestPublished}
           newEventsDisabled={disabledIfContestApproved && !isAdmin}
+          isAdmin={isAdmin}
         />
       )}
 

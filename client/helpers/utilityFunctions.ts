@@ -22,7 +22,7 @@ import type { EventFormat, EventWrPair, RoundFormat } from "./types.ts";
 import type { PersonDto } from "./validators/Person.ts";
 
 export function getHasRole(roleToCheck: Role | OrganizationRole, userRoles: string | null | undefined): boolean {
-  return !!userRoles?.split(",").some((r) => r === roleToCheck);
+  return Boolean(userRoles?.split(",").some((r) => r === roleToCheck));
 }
 
 export function getFormattedDate(startDate: Date, endDate?: Date | null): string {

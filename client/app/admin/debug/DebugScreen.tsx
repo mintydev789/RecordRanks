@@ -58,15 +58,17 @@ function DebugScreen() {
           name: parsed.data.name,
           slug: parsed.data.slug,
           logo: parsed.data.logo || undefined,
-          metadata: { 
-            private: false, contactEmail: parsed.data.contactEmail } satisfies OrganizationMetadata,
-          keepCurrentActiveOrganization: true
+          metadata: {
+            private: false,
+            contactEmail: parsed.data.contactEmail,
+          } satisfies OrganizationMetadata,
+          keepCurrentActiveOrganization: true,
         });
 
         if (error) {
           changeErrorMessages([error.message ?? error.statusText]);
         } else {
-          changeSuccessMessage("Successfully created organization")
+          changeSuccessMessage("Successfully created organization");
         }
       });
     }
@@ -138,6 +140,13 @@ function DebugScreen() {
           Create Organization
         </button>
       </form>
+
+      {process.env.NODE_ENV === "production" && (
+        <>
+          <h4 className="my-4">Version</h4>
+          <p>This instance is running on RecordRanks version {process.env.NEXT_PUBLIC_VERSION || "UNKNOWN"}</p>
+        </>
+      )}
     </div>
   );
 }

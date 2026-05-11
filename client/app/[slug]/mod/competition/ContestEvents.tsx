@@ -31,6 +31,7 @@ type Props = {
   contestType: ContestType;
   disabled: boolean;
   newEventsDisabled: boolean;
+  isAdmin: boolean;
 };
 
 function ContestEvents({
@@ -42,10 +43,11 @@ function ContestEvents({
   contestType,
   disabled,
   newEventsDisabled,
+  isAdmin,
 }: Props) {
   const newRoundsDisabled = disabled || (contestType === "meetup" && rounds.length >= 15);
   const filteredEvents: EventResponse[] = events.filter(
-    (e) => e.category !== "removed" && (contestType !== "wca-comp" || e.category !== "wca"),
+    (e) => e.category !== "removed" && (!e.hidden || isAdmin) && (contestType !== "wca-comp" || e.category !== "wca"),
   );
   const contestEvents: { event: EventResponse; rounds: RoundDto[]; totalResults: number }[] = [];
   for (const round of [...rounds].sort((a, b) => a.roundNumber - b.roundNumber)) {

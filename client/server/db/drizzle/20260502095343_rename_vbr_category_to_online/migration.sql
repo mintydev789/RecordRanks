@@ -10,3 +10,12 @@ ALTER TABLE "record_ranks"."results" DROP CONSTRAINT "results_check", ADD CONSTR
           AND "round_id" IS NULL
           AND "ranking" IS NULL
           AND "proceeds" IS NULL));
+INSERT INTO "record_ranks"."regions" ("name", "code", "super_region_code") VALUES
+  ('Multiple Countries (Asia)', 'XA', 'ASIA'),
+  ('Multiple Countries (Europe)', 'XE', 'EUROPE'),
+  ('Multiple Countries (Africa)', 'XF', 'AFRICA'),
+  ('Multiple Countries (Americas)', 'XM', NULL),
+  ('Multiple Countries (North America)', 'XN', 'NORTH_AMERICA'),
+  ('Multiple Countries (Oceania)', 'XO', 'OCEANIA'),
+  ('Multiple Countries (South America)', 'XS', 'SOUTH_AMERICA'),
+  ('Multiple Countries (World)', 'XW', NULL);
