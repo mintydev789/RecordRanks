@@ -41,7 +41,7 @@ confirm
 echo "===> Stopping and removing all containers..."
 
 if [ -f ".env" ]; then
-  sudo docker compose -f docker-compose.supabase.yml down -v --remove-orphans
+  docker compose -f docker-compose.supabase.yml down -v --remove-orphans
 else
   echo "Skipping 'docker compose down' because there's no env-file."
 fi

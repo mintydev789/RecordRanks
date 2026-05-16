@@ -13,14 +13,14 @@ if [[ "$(pwd | tail -c 5)" == "/bin" ]]; then
 fi
 
 source .env
-sudo docker pull "$DOCKER_IMAGE_NAME"
+docker pull "$DOCKER_IMAGE_NAME"
 
 if [ "$1" != "--restart" ] && [ "$1" != "-r" ]; then
   # First start
 
   ./bin/apply-db-migrations.sh &&
 
-  sudo docker compose -f docker-compose.rr.yml up -d
+  docker compose -f docker-compose.rr.yml up -d
 else
   # Restart
   
@@ -38,10 +38,10 @@ else
     fi
   fi
 
-  sudo docker stop rr-nextjs &&
-  sudo docker exec -w /etc/caddy rr-caddy caddy reload &&
+  docker stop rr-nextjs &&
+  docker exec -w /etc/caddy rr-caddy caddy reload &&
 
   ./bin/apply-db-migrations.sh &&
 
-  sudo docker compose -f docker-compose.rr.yml up -d
+  docker compose -f docker-compose.rr.yml up -d
 fi

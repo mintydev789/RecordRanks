@@ -52,7 +52,7 @@ To set up a production `.env` file, follow these steps:
 6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
 7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
 8. Optionally, set the `METADATA_...` values for SEO and the `ANALYTICS_...` values for analytics.
-9. Set `EMAIL_HOST`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
+9. Set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
 10. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
 
 \* Note: for [WCA OAuth](https://www.worldcubeassociation.org/oauth/applications) you will have to set these values when you set it up in your WCA OAuth settings:
@@ -96,7 +96,7 @@ The `docker-compose.rr.yml` file includes a Caddy reverse proxy, which handles p
 
 ### Firewall
 
-If you're using a firewall on your server, make sure the following ports are not being blocked: `80`, `443`, `443/udp`, `465`.
+If you're using a firewall on your server, make sure the following ports are not being blocked: `80`, `443`, `443/udp`, [the port from `EMAIL_PORT`].
 
 ### Starting production server
 
@@ -197,6 +197,7 @@ There are several custom scripts located in the `bin` directory. These should be
 | `test-prod.sh`                  | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
 | `apply-db-migrations.sh`        | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running.      |
 | `supabase-reset.sh`             | Reset Supabase (remove containers and delete DB data and storage).                                               |
+| `supabase-generate-keys.sh`     | Generate Supabase secret keys. This is REQUIRED for production!                                                  |
 | `convert-svg-to-ico-and-png.sh` | Convert SVG file with your icon to an ICO file and a PNG file. The first argument is the path to the SVG file.   |
 | `release-new-version.sh`        | Release new version of RecordRanks (pushes to Codeberg).                                                         |
 | `release-new-image.sh`          | Create Docker image for the Next JS app and publish it.                                                          |
