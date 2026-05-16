@@ -160,3 +160,7 @@ export const makeCollectiveCubingMoveSF = actionClient
 export async function getPublicExportsToKeepSF(): Promise<string> {
   return await getSettingFromDb({ key: "public-exports-to-keep" });
 }
+
+export async function getRulesPageContentSF(): Promise<string | null> {
+  return await getSettingFromDb({ key: "rules-page-content", optional: true });
+}

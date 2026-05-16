@@ -11,7 +11,11 @@ import { C } from "~/helpers/constants.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import { clientGetHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
-import { getModInstructionsSF, getPublicExportsToKeepSF } from "~/server/server-functions/server-functions.ts";
+import {
+  getModInstructionsSF,
+  getPublicExportsToKeepSF,
+  getRulesPageContentSF,
+} from "~/server/server-functions/server-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();
@@ -31,10 +35,10 @@ function Navbar() {
     session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
     () => clientGetHasPermission({ videoBasedResults: ["approve"] }),
   );
-
   const { data: publicExportsToKeep } = useSWR("public-exports-to-keep", () => getPublicExportsToKeepSF(), {
     fallbackData: "0",
   });
+  const { data: rulesPageContent } = useSWR("rules-page-content", () => getRulesPageContentSF(), { fallbackData: "" });
 
   const logOut = async () => {
     // Clear the SWR cache
@@ -150,17 +154,19 @@ function Navbar() {
                 )}
               </ul>
             </li>
-            <li className="nav-item">
-              <Link
-                href={`/${organization.slug}/rules`}
-                onClick={collapseAll}
-                prefetch={false}
-                className={`nav-link ${pathname === `/${organization.slug}/rules` ? "active" : ""}`}
-              >
-                <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
-                Rules
-              </Link>
-            </li>
+            {rulesPageContent && (
+              <li className="nav-item">
+                <Link
+                  href={`/${organization.slug}/rules`}
+                  onClick={collapseAll}
+                  prefetch={false}
+                  className={`nav-link ${pathname === `/${organization.slug}/rules` ? "active" : ""}`}
+                >
+                  <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
+                  Rules
+                </Link>
+              </li>
+            )}
             <li
               onMouseEnter={() => toggleDropdown("more", true)}
               onMouseLeave={() => toggleDropdown("more", false)}

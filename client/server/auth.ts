@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin as adminPlugin, genericOAuth, organization, username } from "better-auth/plugins";
-import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { C, HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { getDefaultOrgSettings } from "~/helpers/default-settings.ts";
 import { getHasRole } from "~/helpers/utilityFunctions.ts";
@@ -17,6 +17,7 @@ import {
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
+import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { regionsTable } from "~/server/db/schema/regions.ts";
 import { settingsTable } from "~/server/db/schema/settings.ts";
 import {
@@ -110,6 +111,40 @@ export const auth = betterAuth({
           await db.insert(regionsTable).values(getDefaultRegions(organization.id));
 
           await db.insert(settingsTable).values(getDefaultOrgSettings(organization.id));
+
+          const recordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"];
+          for (let i = 0; i < recordTypeValues.length; i++) {
+            const recordTypeId = recordTypeValues[i];
+            await db.insert(recordConfigsTable).values([
+              {
+                organizationId: organization.id,
+                recordTypeId,
+                category: "competitions",
+                label: recordTypeId,
+                rank: (i + 1) * 10,
+                color:
+                  recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+              },
+              {
+                organizationId: organization.id,
+                recordTypeId,
+                category: "meetups",
+                label: `M${recordTypeId}`,
+                rank: 100 + (i + 1) * 10,
+                color:
+                  recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+              },
+              {
+                organizationId: organization.id,
+                recordTypeId,
+                category: "online",
+                label: `O${recordTypeId}`,
+                rank: 200 + (i + 1) * 10,
+                color:
+                  recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+              },
+            ]);
+          }
         },
       },
     }),

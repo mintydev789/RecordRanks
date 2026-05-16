@@ -49,11 +49,12 @@ To set up a production `.env` file, follow these steps:
 3. Comment out all variables marked with `for local development` and uncomment variables marked with `for production`.
 4. Set `RR_DB_USERNAME` to a custom username for the DB user.
 5. Set `RR_DB_PASSWORD` to a secure password.
-6. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
-7. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
-8. Optionally, set the `METADATA_...` values for SEO and the `ANALYTICS_...` values for analytics.
-9. Set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
-10. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
+6. Set `BETTER_AUTH_SECRET` to a secure secret.
+7. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
+8. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
+9. Optionally, set the `METADATA_...` values for SEO and the `ANALYTICS_...` values for analytics.
+10. Set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USERNAME` and `EMAIL_PASSWORD` to your transactional email credentials.
+11. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
 
 \* Note: for [WCA OAuth](https://www.worldcubeassociation.org/oauth/applications) you will have to set these values when you set it up in your WCA OAuth settings:
 
