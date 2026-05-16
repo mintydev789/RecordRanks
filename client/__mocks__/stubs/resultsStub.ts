@@ -580,7 +580,7 @@ export const resultsStub: InsertResult[] = [
   // Other results
   {
     // Real result from Cubing Contests
-    organizationId: 'default',
+    organizationId: "default",
     eventId: "333",
     date: new Date(2026, 5, 30), // June 30th, 2026 (the date is different)
     personIds: [9], // Oliver Fritz

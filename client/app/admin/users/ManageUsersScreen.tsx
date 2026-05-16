@@ -11,20 +11,20 @@ import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
-import { type Role, rolesObject } from "~/server/permissions.ts";
+import { getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { rolesObject } from "~/server/permissions.ts";
 
 type Props = {
   users: (typeof authClient.$Infer.Session.user & { providerId: string })[];
 };
 
 function ManageUsersScreen({ users: initUsers }: Props) {
-  const { changeErrorMessages, resetMessages } = useContext(MainContext);
+  const { resetMessages } = useContext(MainContext);
 
   // const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateUserSF);
   const isUpdating = false;
-  const [users, setUsers] = useState(initUsers);
-  const [userId, setUserId] = useState<string>();
+  const [users, _setUsers] = useState(initUsers);
+  const [_userId, setUserId] = useState<string>();
   const [name, setName] = useState(""); // for email + password users this is the same as the username
   const [email, setEmail] = useState("");
   const [isUser, setIsUser] = useState(false);

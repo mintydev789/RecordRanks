@@ -36,11 +36,11 @@ You will have to set up a local `.env` file for releasing your Docker image and 
 
 1. Create `.env` file: `cp .env.example .env`.
 2. Set `PROD_HOSTNAME` to your custom domain name without the protocol (e.g. `mysportsproject.com`).
-3. Set `NEXT_PUBLIC_PROJECT_NAME` to your project name (e.g. `My Sports Project`).
-4. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
-5. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated).
-6. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
-7. Set `NEXT_PUBLIC_EXPORTS_TO_KEEP` to a number above 0 to enable the exports page.
+3. Set `SUPABASE_HOSTNAME` to your Supabase hostname without the protocol (e.g. `supabase.mysportsproject.com`).
+4. Set `NEXT_PUBLIC_PROJECT_NAME` to your project name (e.g. `My Sports Project`).
+5. Set `PROJECT_ID` to an alphanumeric ID for your project, in lowercase (e.g. `mysportsproject`).
+6. Set `NEXT_PUBLIC_AUTH_PROVIDERS` to the authentication methods you would like to use (comma-separated).
+7. Set your Dockerhub username in `DOCKER_IMAGE_NAME` (e.g. `dockerhubuser/$PROJECT_ID-nextjs`).
 
 To set up a production `.env` file, follow these steps:
 

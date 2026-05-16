@@ -29,7 +29,7 @@ const hashForRr =
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { db }: typeof import("~/server/db/provider.ts") = await import("~/server/db/provider.ts");
+    const { db } = await import("~/server/db/provider.ts");
 
     // Seed default global settings
     for (const defaultSetting of defaultGlobalSettings) {
@@ -47,7 +47,7 @@ export async function register() {
 
     // Seed test data
     if (process.env.NODE_ENV !== "production") {
-      const { auth }: typeof import("~/server/auth.ts") = await import("~/server/auth.ts");
+      const { auth } = await import("~/server/auth.ts");
 
       if ((await db.select().from(personsTable)).length === 0) {
         console.log("Seeding test persons...");
@@ -203,8 +203,8 @@ export async function register() {
     // Migrate DB data, if env var is set
     if (process.env.MIGRATE_DB !== "true") return;
 
-    const fs: typeof import("node:fs") = await import("node:fs");
-    // const { writeFile }: typeof import("node:fs/promises") = await import("node:fs/promises");
+    const fs = await import("node:fs");
+    // const { writeFile } = await import("node:fs/promises");
 
     const _unoffEventIdConverter = {
       "666": "666",

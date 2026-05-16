@@ -10,8 +10,9 @@ export const metadata = {
 };
 
 async function ExportPage() {
-  if (process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP === "0")
-    return <p className="fs-4 mx-3 mt-5 text-center">Public exports are disabled</p>;
+  const publicExportsToKeep = await getSettingFromDb({ key: "public-exports-to-keep" });
+
+  if (publicExportsToKeep === "0") return <p className="fs-4 mx-3 mt-5 text-center">Public exports are disabled</p>;
 
   const publicExportsReadme = await getSettingFromDb({ key: "public-exports-readme" });
 

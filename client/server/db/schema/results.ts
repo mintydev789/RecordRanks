@@ -8,7 +8,7 @@ import { rrSchema } from "~/server/db/schema/schema.ts";
 import { tableTimestamps } from "../dbUtils.ts";
 import { organizationsTable, usersTable } from "./auth-schema.ts";
 import { contestsTable, type SelectContest } from "./contests.ts";
-import { eventsTable, type SelectEvent } from "./events.ts";
+import { eventsTable } from "./events.ts";
 import type { SelectPerson } from "./persons.ts";
 import { roundsTable } from "./rounds.ts";
 

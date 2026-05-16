@@ -156,3 +156,7 @@ export const makeCollectiveCubingMoveSF = actionClient
       return { ...updatedSolution, currentUserInteractedLast: true };
     },
   );
+
+export async function getPublicExportsToKeepSF(): Promise<string> {
+  return await getSettingFromDb({ key: "public-exports-to-keep" });
+}

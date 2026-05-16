@@ -8,7 +8,6 @@ import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import type { InputPerson } from "~/helpers/types.ts";
 import { WcaPersonValidator } from "~/helpers/validators/wca/WcaPerson.ts";
-import type { SelectAccessToken } from "~/server/db/schema/access-tokens.ts";
 import type { ContestResponse, SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";
@@ -565,59 +564,6 @@ export function generateCsv(data: any[]): string {
   );
 
   return [headers.map((key) => snakeCase(key)).join(","), ...dataRows].join("\n");
-}
-
-async function hashAndSaltValue(
-  value: Uint8Array<ArrayBuffer>,
-  salt: Uint8Array<ArrayBuffer>,
-): Promise<Buffer<ArrayBuffer>> {
-  const saltedValue = new Uint8Array(value.length + salt.length);
-  saltedValue.set(value, 0);
-  saltedValue.set(salt, value.length);
-
-  const hash = await crypto.subtle.digest("SHA-256", saltedValue);
-  return Buffer.from(hash);
-}
-
-export async function generateAccessToken(): Promise<{ token: string; salt: string; hash: string }> {
-  const tokenBuffer = crypto.getRandomValues(new Uint8Array(32));
-  const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
-
-  const hashBuffer = await hashAndSaltValue(tokenBuffer, saltBuffer);
-
-  const token = Buffer.from(tokenBuffer).toString("hex");
-  const salt = Buffer.from(saltBuffer).toString("hex");
-  const hash = Buffer.from(hashBuffer).toString("hex");
-
-  return { token, salt, hash };
-}
-
-export async function verifyAccessToken(
-  token: string,
-  contestAccessTokens: SelectAccessToken[],
-): Promise<SelectAccessToken | null> {
-  const tokenBuffer = Buffer.from(token, "hex");
-
-  const secureCompare = (a: Buffer<ArrayBuffer>, b: Buffer<ArrayBuffer>) => {
-    if (a.length !== b.length) return false;
-
-    let result = 0;
-    for (let i = 0; i < a.length; i++) result |= a[i] ^ b[i];
-
-    return result === 0;
-  };
-
-  for (const accessToken of contestAccessTokens) {
-    const [salt, expectedHash] = accessToken.tokenHash.split(":");
-    const saltBuffer = Buffer.from(salt, "hex");
-    const expectedHashBuffer = Buffer.from(expectedHash, "hex");
-
-    const receivedHashBuffer = await hashAndSaltValue(tokenBuffer, saltBuffer);
-
-    if (secureCompare(receivedHashBuffer, expectedHashBuffer)) return accessToken;
-  }
-
-  return null;
 }
 
 export function clientGetHasPermission(orgPermissions: OrgPluginPermissions): Promise<boolean> {

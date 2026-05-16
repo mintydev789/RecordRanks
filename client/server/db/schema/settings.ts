@@ -14,6 +14,7 @@ export type SettingKey =
   // page-contents
   | "public-exports-readme"
   // features
+  | "public-exports-to-keep"
   | "collective-cubing-enabled"
 
   ///// Organization settings /////

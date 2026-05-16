@@ -6,7 +6,7 @@ import { C } from "~/helpers/constants.ts";
 import type { SelectRegion } from "~/server/db/schema/regions.ts";
 
 type Props = {
-  regions: Pick<SelectRegion, "code" | "name">[];
+  regions: Pick<SelectRegion, "code" | "name" | "shortName" | "type">[];
 };
 
 function RegionSelect({ regions }: Props) {

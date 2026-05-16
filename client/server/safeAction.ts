@@ -45,7 +45,7 @@ export const actionClient = createSafeActionClient({
   },
 }).use<{ session: FullSession; httpHeaders: ReadonlyHeaders }>(async ({ next, metadata }) => {
   if (process.env.VITEST) {
-    const { authMock }: typeof import("~/__mocks__/auth-mock.ts") = await import("~/__mocks__/auth-mock.ts");
+    const { authMock } = await import("~/__mocks__/auth-mock.ts");
     const ctx = await authMock.$context;
     const authTest = ctx.test;
 

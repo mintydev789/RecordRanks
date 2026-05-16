@@ -23,7 +23,6 @@ if (process.env.NODE_ENV !== "production") loadEnvConfig(process.cwd(), true);
 
 if (!process.env.PROD_HOSTNAME) console.error("PROD_HOSTNAME environment variable not set!");
 if (!process.env.NEXT_PUBLIC_BASE_URL) console.error("NEXT_PUBLIC_BASE_URL environment variable not set!");
-if (!process.env.NEXT_PUBLIC_CONTACT_EMAIL) console.error("NEXT_PUBLIC_CONTACT_EMAIL environment variable not set!");
 
 const transporter = nodemailer.createTransport(nodemailerConnectionOptions);
 

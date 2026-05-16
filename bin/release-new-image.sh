@@ -13,8 +13,7 @@ source .env # needed for the build args
 docker build --build-arg NEXT_PUBLIC_BASE_URL="https://$PROD_HOSTNAME" \
              --build-arg NEXT_PUBLIC_PROJECT_NAME="$NEXT_PUBLIC_PROJECT_NAME" \
              --build-arg NEXT_PUBLIC_AUTH_PROVIDERS="$NEXT_PUBLIC_AUTH_PROVIDERS" \
-             --build-arg NEXT_PUBLIC_EXPORTS_TO_KEEP="$NEXT_PUBLIC_EXPORTS_TO_KEEP" \
-             --build-arg NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL="https://supabase.$PROD_HOSTNAME/storage/v1/object/public/$PUBLIC_BUCKET_NAME" \
+             --build-arg NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL="https://$SUPABASE_HOSTNAME/storage/v1/object/public/$PUBLIC_BUCKET_NAME" \
              --build-arg NEXT_PUBLIC_VERSION="$version" \
              -t "$DOCKER_IMAGE_NAME:$version" ./client &&
 

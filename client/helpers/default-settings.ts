@@ -55,6 +55,12 @@ attempted          = solved + missed
 
   // features
   {
+    key: "public-exports-to-keep",
+    group: "features",
+    value: "0",
+    description: "The number of exports to keep for automated public exports (integer string)",
+  },
+  {
     key: "collective-cubing-enabled",
     group: "features",
     value: "false",

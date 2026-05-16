@@ -866,10 +866,13 @@ export async function getCreators(userIds: string[]): Promise<Creator[]> {
 
 export async function getEvents(
   organizationId: string,
-  { includeHiddenAndRemoved = false }: { includeHiddenAndRemoved?: boolean } = {},
+  {
+    withRules = false,
+    includeHiddenAndRemoved = false,
+  }: { withRules?: boolean; includeHiddenAndRemoved?: boolean } = {},
 ): Promise<EventResponse[]> {
   return await db
-    .select(eventsPublicCols)
+    .select(withRules ? { ...eventsPublicCols, rule: eventsTable.rule } : eventsPublicCols)
     .from(eventsTable)
     .where(
       and(

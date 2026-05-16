@@ -106,7 +106,7 @@ export const updateMemberSF = actionClient
 
 export const linkWcaProfileSF = actionClient
   .metadata({ auth: { useOrganization: false } })
-  .action<PersonResponse>(async ({ ctx: { session } }) => {
+  .action<PersonResponse>(async ({ ctx: { session: _ } }) => {
     throw new Error("NOT IMPLEMENTED");
     // const wcaAccount = await db.query.accounts.findFirst({
     //   columns: { accountId: true },

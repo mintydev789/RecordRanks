@@ -11,7 +11,7 @@ import { C } from "~/helpers/constants.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import { clientGetHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
-import { getModInstructionsSF } from "~/server/server-functions/server-functions.ts";
+import { getModInstructionsSF, getPublicExportsToKeepSF } from "~/server/server-functions/server-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();
@@ -31,6 +31,10 @@ function Navbar() {
     session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
     () => clientGetHasPermission({ videoBasedResults: ["approve"] }),
   );
+
+  const { data: publicExportsToKeep } = useSWR("public-exports-to-keep", () => getPublicExportsToKeepSF(), {
+    fallbackData: "0",
+  });
 
   const logOut = async () => {
     // Clear the SWR cache
@@ -132,7 +136,7 @@ function Navbar() {
                     Rankings
                   </Link>
                 </li>
-                {process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP && process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP !== "0" && (
+                {publicExportsToKeep !== "0" && (
                   <li>
                     <Link
                       href={`/${organization.slug}/export`}
