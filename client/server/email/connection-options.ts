@@ -8,10 +8,12 @@ if (process.env.NODE_ENV === "production") {
   if (!process.env.EMAIL_PASSWORD) console.error("EMAIL_PASSWORD environment variable not set!");
 }
 
+const port = Number(process.env.EMAIL_PORT);
+
 export const nodemailerConnectionOptions: SMTPTransport.Options = {
   host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: process.env.NODE_ENV === "production", // Use true for port 465, false for port 587
+  port,
+  secure: port === 465,
   auth:
     process.env.NODE_ENV === "production" || process.env.EMAIL_USERNAME
       ? {
