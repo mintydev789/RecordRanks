@@ -11,6 +11,7 @@ import type { OrganizationDetails } from "~/helpers/types.ts";
 import { getFormattedTime, getIsUrgent } from "~/helpers/utilityFunctions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { SelectPerson } from "~/server/db/schema/persons.ts";
+import { nodemailerConnectionOptions } from "~/server/email/connection-options.ts";
 import { type LogCode, LogCodes } from "~/server/logger.ts";
 import { orgRolesObject } from "~/server/organization-permissions.ts";
 import { getSettingFromDb, logMessage } from "~/server/server-only-functions.ts";
@@ -22,18 +23,9 @@ if (process.env.NODE_ENV !== "production") loadEnvConfig(process.cwd(), true);
 
 if (!process.env.PROD_HOSTNAME) console.error("PROD_HOSTNAME environment variable not set!");
 if (!process.env.NEXT_PUBLIC_BASE_URL) console.error("NEXT_PUBLIC_BASE_URL environment variable not set!");
+if (!process.env.NEXT_PUBLIC_CONTACT_EMAIL) console.error("NEXT_PUBLIC_CONTACT_EMAIL environment variable not set!");
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: process.env.NODE_ENV === "production", // Use true for port 465, false for port 587
-  auth: process.env.EMAIL_USERNAME
-    ? {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      }
-    : undefined,
-});
+const transporter = nodemailer.createTransport(nodemailerConnectionOptions);
 
 const noReplyEmail: Mail.Address = {
   name: "No Reply",

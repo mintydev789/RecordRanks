@@ -68,6 +68,16 @@ services:
       LOGFLARE_API_BASE_URL: ${LOGFLARE_API_BASE_URL}
       LOGFLARE_PUBLIC_ACCESS_TOKEN: ${LOGFLARE_PUBLIC_ACCESS_TOKEN}
     restart: always
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:3000/api/healthcheck').then((r) => {if (r.status !== 200) throw new Error(r.status)})\""
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
   shared:
