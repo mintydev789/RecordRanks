@@ -1,6 +1,5 @@
 // This simply re-exports the contents of ~/server/db/schema, so they can be imported in the mock DB provider
 
-export * from "~/server/db/schema/access-tokens.ts";
 export * from "~/server/db/schema/auth-schema.ts";
 export * from "~/server/db/schema/collective-solutions.ts";
 export * from "~/server/db/schema/contests.ts";

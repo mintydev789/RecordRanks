@@ -1,17 +1,14 @@
-import type fsType from "node:fs";
 import { eq } from "drizzle-orm";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
 import { defaultGlobalSettings } from "~/helpers/default-settings.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
-import { testPersons } from "~/helpers/test-data/testPersons.ts";
-import { testPosts } from "~/helpers/test-data/testPosts.ts";
-import { testUsers } from "~/helpers/test-data/testUsers.ts";
+import { testPersons } from "~/helpers/test-data/test-persons.ts";
+import { testPosts } from "~/helpers/test-data/test-posts.ts";
+import { testUsers } from "~/helpers/test-data/test-users.ts";
 import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utilityFunctions.ts";
 import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition.ts";
-import type { auth as authType } from "~/server/auth.ts";
-import type { db as dbType } from "~/server/db/provider.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";
 import { eventsTable } from "~/server/db/schema/events.ts";
@@ -32,7 +29,7 @@ const hashForRr =
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { db }: { db: typeof dbType } = await import("~/server/db/provider.ts");
+    const { db }: typeof import("~/server/db/provider.ts") = await import("~/server/db/provider.ts");
 
     // Seed default global settings
     for (const defaultSetting of defaultGlobalSettings) {
@@ -50,7 +47,7 @@ export async function register() {
 
     // Seed test data
     if (process.env.NODE_ENV !== "production") {
-      const { auth }: { auth: typeof authType } = await import("~/server/auth.ts");
+      const { auth }: typeof import("~/server/auth.ts") = await import("~/server/auth.ts");
 
       if ((await db.select().from(personsTable)).length === 0) {
         console.log("Seeding test persons...");
@@ -120,16 +117,9 @@ export async function register() {
           .limit(1);
 
         if (!existingUser) {
-          if (process.env.EMAIL_HOST) {
-            throw new Error(
-              "The EMAIL_HOST environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Comment it out and then uncomment it again after the DB has been seeded.",
-            );
-          }
-
           const { role, emailVerified, ...body } = testUser;
           await auth.api.signUpEmail({ body });
 
-          // Set emailVerified and personId
           const [user] = await db
             .update(usersTable)
             .set({ emailVerified })
@@ -138,7 +128,6 @@ export async function register() {
 
           await db.update(accountsTable).set({ password: hashForRr }).where(eq(accountsTable.userId, user.id));
 
-          // Set role
           if (role) await db.update(usersTable).set({ role }).where(eq(usersTable.id, user.id));
 
           console.log(`Seeded test user: ${testUser.username}`);
@@ -214,8 +203,8 @@ export async function register() {
     // Migrate DB data, if env var is set
     if (process.env.MIGRATE_DB !== "true") return;
 
-    const fs: typeof fsType = await import("node:fs");
-    // const { writeFile }: { writeFile: typeof writeFileType } = await import("node:fs/promises");
+    const fs: typeof import("node:fs") = await import("node:fs");
+    // const { writeFile }: typeof import("node:fs/promises") = await import("node:fs/promises");
 
     const _unoffEventIdConverter = {
       "666": "666",

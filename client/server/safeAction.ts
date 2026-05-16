@@ -45,12 +45,19 @@ export const actionClient = createSafeActionClient({
   },
 }).use<{ session: FullSession; httpHeaders: ReadonlyHeaders }>(async ({ next, metadata }) => {
   if (process.env.VITEST) {
-    if (metadata.auth === null) {
-      return next();
-    } else {
-      const user = await db.query.users.findFirst({ where: { username: process.env.TEST_USER || "admin" } });
-      return next({ ctx: { session: { user } } });
-    }
+    const { authMock }: typeof import("~/__mocks__/auth-mock.ts") = await import("~/__mocks__/auth-mock.ts");
+    const ctx = await authMock.$context;
+    const authTest = ctx.test;
+
+    const testUser = await db.query.users.findFirst({ where: { username: process.env.TEST_USER || "admin" } });
+    const { session, user, headers } = await authTest.login({ userId: testUser!.id });
+    await authMock.api.setActiveOrganization({ headers, body: { organizationSlug: "default" } });
+
+    const { organization, member } = metadata.auth
+      ? await authorizeUser(metadata.auth, headers)
+      : { organization: undefined, member: undefined };
+
+    return next({ ctx: { session: { session, user, organization, member }, httpHeaders: headers } });
   }
 
   const httpHeaders = await headers();

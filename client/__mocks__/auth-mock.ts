@@ -2,12 +2,13 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin as adminPlugin, genericOAuth, organization, username } from "better-auth/plugins";
+import { admin as adminPlugin, genericOAuth, organization, testUtils, username } from "better-auth/plugins";
+import { dbMock as db } from "~/__mocks__/db-mock.ts";
+import { regionsTable, settingsTable } from "~/__mocks__/db-schema.ts";
 import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { getDefaultOrgSettings } from "~/helpers/default-settings.ts";
 import { getHasRole } from "~/helpers/utilityFunctions.ts";
-import { db } from "~/server/db/provider.ts";
 import {
   accountsTable as accounts,
   invitationsTable as invitations,
@@ -17,15 +18,6 @@ import {
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
-import { regionsTable } from "~/server/db/schema/regions.ts";
-import { settingsTable } from "~/server/db/schema/settings.ts";
-import {
-  sendAccountDeletedEmail,
-  sendOrganizationInvitationEmail,
-  sendPasswordChangedEmail,
-  sendResetPasswordEmail,
-  sendVerificationEmail,
-} from "~/server/email/mailer.ts";
 import {
   admin as orgAdminRole,
   organizationAc,
@@ -35,14 +27,8 @@ import {
   videoBasedResultReviewer as orgVideoBasedResultReviewerRole,
 } from "~/server/organization-permissions.ts";
 import { ac, admin, user } from "~/server/permissions.ts";
-import { logMessage } from "~/server/server-only-functions.ts";
 
-if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
-if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");
-
-// MAKE SURE TO UPDATE THE AUTH MOCK ACCORDINGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-export const auth = betterAuth({
+export const authMock = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -57,6 +43,7 @@ export const auth = betterAuth({
     usePlural: true,
   }),
   plugins: [
+    testUtils(),
     nextCookies(),
     username({
       maxUsernameLength: 40,
@@ -81,18 +68,6 @@ export const auth = betterAuth({
       cancelPendingInvitationsOnReInvite: true,
       membershipLimit: 1000, // TO-DO: THIS IS TEMPORARY!!!
       // requireEmailVerificationOnInvitation: TO-DO: MAKE THIS REQUIRED FOR CREDENTIALS AUTH!!!
-      sendInvitationEmail: async (data) => {
-        if (process.env.EMAIL_HOST)
-          logMessage("RR0039", `Sending invitation to ${data.organization.name} to email ${data.email}`);
-
-        sendOrganizationInvitationEmail(data.email, {
-          organizationName: data.organization.name,
-          organizationSlug: data.organization.slug,
-          invitedByUsername: data.inviter.user.name,
-          invitedByEmail: data.inviter.user.email,
-          inviteLink: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation/${data.id}`,
-        });
-      },
       schema: {
         member: {
           additionalFields: {
@@ -142,24 +117,8 @@ export const auth = betterAuth({
     enabled: HAS_CREDENTIAL_AUTH,
     autoSignIn: false,
     requireEmailVerification: true,
-    sendResetPassword: async ({ user, url }) => {
-      if (process.env.EMAIL_HOST) logMessage("RR0031", `Sending reset password email for user with ID ${user.id}`);
-
-      sendResetPasswordEmail(user.email, url);
-    },
-    onPasswordReset: async ({ user }) => {
-      if (process.env.EMAIL_HOST) logMessage("RR0032", `Sending password changed email for user with ID ${user.id}`);
-
-      sendPasswordChangedEmail(user.email);
-    },
   },
-  emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
-      if (process.env.EMAIL_HOST) logMessage("RR0030", `Sending verification email for new user with ID ${user.id}`);
-
-      sendVerificationEmail(user.email, url);
-    },
-  },
+  emailVerification: {},
   user: {
     additionalFields: {
       username: {
@@ -173,11 +132,6 @@ export const auth = betterAuth({
     },
     deleteUser: {
       enabled: true,
-      afterDelete: async (user) => {
-        if (process.env.EMAIL_HOST) logMessage("RR0036", `Sending user deleted email for user with ID ${user.id}`);
-
-        sendAccountDeletedEmail(user.email);
-      },
     },
   },
   account: {

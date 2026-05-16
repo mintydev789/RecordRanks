@@ -1,6 +1,6 @@
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
-import { regionsStub } from "~/__mocks__/stubs/regionsStub.ts";
+import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
 import { getBestAndAverage } from "~/helpers/utilityFunctions.ts";
@@ -51,6 +51,7 @@ import {
   testMeetupMar2028_333bf_2_person_relay_r1,
 } from "./roundsStub.ts";
 
+const regions = getDefaultRegions("default");
 const years = [2024, 2027, 2029];
 const resultsPerYear = 50;
 
@@ -80,11 +81,12 @@ function generateRandom444bfResults(): InsertResult[] {
       else average = attempts[numAttempts === 3 ? 1 : 2].result; // average is the middle attempt result
 
       results.push({
+        organizationId: "default",
         eventId: "444bf",
         date,
         personIds: [personId],
         regionCode,
-        superRegionCode: regionsStub.find((c) => c.code === regionCode)!.superRegionCode,
+        superRegionCode: regions.find((c) => c.code === regionCode)!.superRegionCode,
         attempts,
         best,
         average,
@@ -100,7 +102,10 @@ function generateRandom444bfResults(): InsertResult[] {
   return results;
 }
 
-type MockInsertResult = Omit<InsertResult, "best" | "average" | "recordCategory" | "competitionId" | "roundId">;
+type MockInsertResult = Omit<
+  InsertResult,
+  "organizationId" | "best" | "average" | "recordCategory" | "competitionId" | "roundId"
+>;
 
 function getVideoBasedResult(result: MockInsertResult): InsertResult {
   const event = eventsStub.find((e) => e.eventId === result.eventId)!;
@@ -109,6 +114,7 @@ function getVideoBasedResult(result: MockInsertResult): InsertResult {
 
   return {
     ...result,
+    organizationId: "default",
     best,
     average,
     recordCategory: "online",
@@ -118,7 +124,7 @@ function getVideoBasedResult(result: MockInsertResult): InsertResult {
 
 function getContestResult(
   round: InsertRound & { id: number },
-  result: Omit<MockInsertResult, "eventId" | "date">,
+  result: Omit<MockInsertResult, "organizationId" | "eventId" | "date">,
 ): InsertResult {
   const contest = contestsStub.find((c) => c.competitionId === round.competitionId)!;
   const event = eventsStub.find((e) => e.eventId === round.eventId)!;
@@ -126,6 +132,7 @@ function getContestResult(
 
   return {
     ...result,
+    organizationId: "default",
     eventId: round.eventId,
     date: contest.startDate,
     best,
@@ -573,6 +580,7 @@ export const resultsStub: InsertResult[] = [
   // Other results
   {
     // Real result from Cubing Contests
+    organizationId: 'default',
     eventId: "333",
     date: new Date(2026, 5, 30), // June 30th, 2026 (the date is different)
     personIds: [9], // Oliver Fritz

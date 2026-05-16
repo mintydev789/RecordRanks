@@ -201,7 +201,7 @@ export const createContestResultSF = actionClient
       // Update contest state and participants
       const updateContestObject: Partial<SelectContest> = {};
       if (contest.state === "approved") updateContestObject.state = "ongoing";
-      const participantIds = await getContestParticipantIds(tx, competitionId);
+      const participantIds = await getContestParticipantIds({ tx, competitionId });
       if (participantIds.length !== contest.participants) updateContestObject.participants = participantIds.length;
       // Do update, if some value actually changed
       if (Object.keys(updateContestObject).length > 0)
@@ -356,7 +356,7 @@ export const deleteContestResultSF = actionClient
       if (result.regionalSingleRecord) await setFutureRecords(tx, result, event, "best", recordConfigs);
       if (result.regionalAverageRecord) await setFutureRecords(tx, result, event, "average", recordConfigs);
 
-      const participantIds = await getContestParticipantIds(tx, result.competitionId!);
+      const participantIds = await getContestParticipantIds({ tx, competitionId: result.competitionId! });
       if (participantIds.length !== contest.participants) {
         await tx
           .update(contestsTable)
@@ -702,7 +702,7 @@ async function setResultRecord(
 }
 
 async function setFutureRecords(
-  tx: DbTransactionType,
+  db: DbTransactionType, // the tx object from a Drizzle transaction
   deletedResult: Pick<
     SelectResult,
     | "eventId"
@@ -728,9 +728,9 @@ async function setFutureRecords(
 
   // Set WRs
   if (deletedResult[recordField] === "WR") {
-    const prevWrResult = await getRecordResult(event, bestOrAverage, "WR", category, { tx, recordsUpTo });
+    const prevWrResult = await getRecordResult(event, bestOrAverage, "WR", category, { tx: db, recordsUpTo });
 
-    const newWrIds = await tx
+    const newWrIds = await db
       .execute(sql`
         WITH day_min_times AS (
           SELECT ${table.id}, ${table.date}, ${table[bestOrAverage]},
@@ -758,7 +758,7 @@ async function setFutureRecords(
       // PGLite returns results with { rows: [] }, but Postgres just returns [], hence the different mapping
       .then((val: any) => (process.env.VITEST ? val.rows : val).map(({ id }: any) => id));
 
-    const newWrResults = await tx
+    const newWrResults = await db
       .update(table)
       .set({ [recordField]: "WR" })
       .where(inArray(table.id, newWrIds))
@@ -775,9 +775,9 @@ async function setFutureRecords(
     const crType = (await db.query.regions.findFirst({
       where: { organizationId: event.organizationId, type: "super-region", code: deletedResult.superRegionCode },
     }))!.superRegionRecordType!;
-    const prevCrResult = await getRecordResult(event, bestOrAverage, crType, category, { tx, recordsUpTo });
+    const prevCrResult = await getRecordResult(event, bestOrAverage, crType, category, { tx: db, recordsUpTo });
 
-    const newCrIds = await tx
+    const newCrIds = await db
       .execute(sql`
         WITH day_min_times AS (
           SELECT ${table.id}, ${table.date}, ${table[bestOrAverage]},
@@ -806,7 +806,7 @@ async function setFutureRecords(
       // PGLite returns results with { rows: [] }, but Postgres just returns [], hence the different mapping
       .then((val: any) => (process.env.VITEST ? val.rows : val).map(({ id }: any) => id));
 
-    const newCrResults = await tx
+    const newCrResults = await db
       .update(table)
       .set({ [recordField]: crType })
       .where(inArray(table.id, newCrIds))
@@ -821,12 +821,12 @@ async function setFutureRecords(
   // Set NRs
   if (deletedResult.regionCode) {
     const prevNrResult = await getRecordResult(event, bestOrAverage, "NR", category, {
-      tx,
+      tx: db,
       recordsUpTo,
       regionCode: deletedResult.regionCode,
     });
 
-    const newNrIds = await tx
+    const newNrIds = await db
       .execute(sql`
         WITH day_min_times AS (
           SELECT ${table.id}, ${table.date}, ${table[bestOrAverage]},
@@ -857,7 +857,7 @@ async function setFutureRecords(
         (process.env.VITEST ? val.rows : val).map(({ id }: any) => id),
       );
 
-    const newNrResults = await tx
+    const newNrResults = await db
       .update(table)
       .set({ [recordField]: "NR" })
       .where(inArray(table.id, newNrIds))
@@ -874,7 +874,7 @@ async function setFutureRecords(
 }
 
 async function cancelFutureRecords(
-  tx: DbTransactionType,
+  db: DbTransactionType, // the tx object from a Drizzle transaction
   organizationId: string,
   result: ResultResponse,
   bestOrAverage: "best" | "average",
@@ -901,7 +901,7 @@ async function cancelFutureRecords(
   if (result[recordField] === "WR") {
     const wrLabel = recordConfigs.find((rc) => rc.recordTypeId === "WR")!.label;
     const recordTypes = result.regionCode ? ["WR", crType!, "NR"] : result.superRegionCode ? ["WR", crType!] : ["WR"];
-    const cancelledWrCrNrResults = await tx
+    const cancelledWrCrNrResults = await db
       .update(table)
       .set({ [recordField]: null })
       .where(
@@ -922,7 +922,7 @@ async function cancelFutureRecords(
       logMessage("RR0026", message);
     }
 
-    const wrCrChangedToNrResults = await tx
+    const wrCrChangedToNrResults = await db
       .update(table)
       .set({ [recordField]: "NR" })
       .where(
@@ -942,7 +942,7 @@ async function cancelFutureRecords(
     }
 
     // Has to be done like this, because we can't dynamically determine the CR type to be set
-    const wrResultsToBeChangedToCr = await tx
+    const wrResultsToBeChangedToCr = await db
       .select()
       .from(table)
       .where(and(...baseConditions, eq(table[recordField], "WR"), isNotNull(table.superRegionCode)));
@@ -951,7 +951,7 @@ async function cancelFutureRecords(
         where: { organizationId, type: "super-region", code: r.superRegionCode! },
       }))!.superRegionRecordType!;
       const resultCrLabel = recordConfigs.find((rc) => rc.recordTypeId === resultCrType)!.label;
-      await tx
+      await db
         .update(table)
         .set({ [recordField]: resultCrType })
         .where(eq(table.id, r.id))
@@ -961,7 +961,7 @@ async function cancelFutureRecords(
       logMessage("RR0026", message);
     }
   } else if (result[recordField] !== "NR") {
-    const cancelledCrNrResults = await tx
+    const cancelledCrNrResults = await db
       .update(table)
       .set({ [recordField]: null })
       .where(
@@ -980,7 +980,7 @@ async function cancelFutureRecords(
       logMessage("RR0026", message);
     }
 
-    const crChangedToNrResults = await tx
+    const crChangedToNrResults = await db
       .update(table)
       .set({ [recordField]: "NR" })
       .where(
@@ -997,7 +997,7 @@ async function cancelFutureRecords(
       logMessage("RR0026", message);
     }
   } else {
-    const cancelledNrResults = await tx
+    const cancelledNrResults = await db
       .update(table)
       .set({ [recordField]: null })
       .where(and(...baseConditions, eq(table[recordField], "NR"), eq(table.regionCode, result.regionCode!)))

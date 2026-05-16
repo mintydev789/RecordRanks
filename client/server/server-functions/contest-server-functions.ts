@@ -393,7 +393,7 @@ export const publishContestSF = actionClient
 
       await tx.update(resultsTable).set({ approved: true }).where(eq(resultsTable.competitionId, competitionId));
 
-      const participantIds = await getContestParticipantIds(tx, competitionId);
+      const participantIds = await getContestParticipantIds({ tx, competitionId });
       const personsToBeApproved = await tx.query.persons.findMany({
         where: { id: { in: participantIds }, approved: false },
       });
@@ -510,7 +510,8 @@ export const updateContestSF = actionClient
         updateContestObject.schedule = await getUpdatedSchedule(contest.schedule!, newContestDto.schedule!);
       }
 
-      await updateRounds(tx, prevRounds, rounds, results, {
+      await updateRounds(prevRounds, rounds, results, {
+        tx,
         canAddNewEvents: canApprove || contest.state === "created",
         organizationId: session.organization!.id,
       });
@@ -782,26 +783,33 @@ async function validateAndCleanUpContest(
 }
 
 async function createRounds({
-  tx,
+  tx: db,
   rounds,
   organizationId,
 }: {
-  tx: DbTransactionType;
+  tx: DbTransactionType; // the tx object from a Drizzle transaction
   rounds: RoundDto[];
   organizationId: string;
 }) {
   // The IDs have to be removed, because the rounds could be based on the copy of an existing contest
   const newRounds = rounds.map((r) => ({ organizationId, ...r, id: undefined, open: r.roundNumber === 1 }));
 
-  await tx.insert(roundsTable).values(newRounds);
+  await db.insert(roundsTable).values(newRounds);
 }
 
 async function updateRounds(
-  tx: DbTransactionType,
   prevRounds: SelectRound[],
   newRounds: RoundDto[],
   results: SelectResult[],
-  { canAddNewEvents, organizationId }: { canAddNewEvents: boolean; organizationId: string },
+  {
+    tx: db,
+    canAddNewEvents,
+    organizationId,
+  }: {
+    tx: DbTransactionType; // the tx object from a Drizzle transaction
+    canAddNewEvents: boolean;
+    organizationId: string;
+  },
 ) {
   // Remove deleted rounds
   const roundsToDelete: number[] = [];
@@ -818,7 +826,7 @@ async function updateRounds(
       }
     }
   }
-  if (roundsToDelete.length > 0) await tx.delete(roundsTable).where(inArray(roundsTable.id, roundsToDelete));
+  if (roundsToDelete.length > 0) await db.delete(roundsTable).where(inArray(roundsTable.id, roundsToDelete));
 
   // Add new rounds and update existing rounds
   const roundsToCreate: RoundDto[] = [];
@@ -836,14 +844,14 @@ async function updateRounds(
 
         if (precedingRoundResults.length > 0) {
           // First, set all proceeds values to false, then set the results that proceeded
-          await tx.update(resultsTable).set({ proceeds: false }).where(eq(resultsTable.roundId, precedingRound.id));
+          await db.update(resultsTable).set({ proceeds: false }).where(eq(resultsTable.roundId, precedingRound.id));
 
           const roundFormat = roundFormats.find((rf) => rf.value === precedingRound.format)!;
           const resultsToProceed: number[] = [];
           for (const result of precedingRoundResults)
             if (getResultProceeds(result, precedingRound, roundFormat, results)) resultsToProceed.push(result.id);
 
-          await tx.update(resultsTable).set({ proceeds: true }).where(inArray(resultsTable.id, resultsToProceed));
+          await db.update(resultsTable).set({ proceeds: true }).where(inArray(resultsTable.id, resultsToProceed));
         }
       } else if (!canAddNewEvents) {
         throw new RrActionError("Moderators are not allowed to add new events. Please contact the admin team.");
@@ -873,13 +881,13 @@ async function updateRounds(
 
         // If the round became the final round after a deletion, remove the result proceeds values in that round
         if (newRound.roundTypeId === "f" && sameRoundInPrev.roundTypeId !== "f")
-          await tx.update(resultsTable).set({ proceeds: null }).where(eq(resultsTable.roundId, sameRoundInPrev.id));
+          await db.update(resultsTable).set({ proceeds: null }).where(eq(resultsTable.roundId, sameRoundInPrev.id));
       }
 
-      await tx.update(roundsTable).set(updateRoundObject).where(eq(roundsTable.id, sameRoundInPrev.id));
+      await db.update(roundsTable).set(updateRoundObject).where(eq(roundsTable.id, sameRoundInPrev.id));
     }
   }
-  if (roundsToCreate.length > 0) await createRounds({ tx, rounds: roundsToCreate, organizationId });
+  if (roundsToCreate.length > 0) await createRounds({ tx: db, rounds: roundsToCreate, organizationId });
 }
 
 async function getUpdatedSchedule(prevSchedule: Schedule, newSchedule: Schedule): Promise<Schedule> {

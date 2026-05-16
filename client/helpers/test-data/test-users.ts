@@ -8,21 +8,33 @@ export const testUsers = [
     password,
     role: "admin",
     emailVerified: true,
+    member: {
+      role: "admin",
+      personId: 1,
+    },
   },
-  // {
-  //   email: "mod@example.com",
-  //   username: "mod",
-  //   name: "mod",
-  //   password,
-  //   role: "mod",
-  //   emailVerified: true,
-  // },
+  {
+    email: "mod@example.com",
+    username: "mod",
+    name: "mod",
+    password,
+    role: "user",
+    emailVerified: true,
+    member: {
+      role: "mod",
+      personId: 2,
+    },
+  },
   {
     email: "user@example.com",
     username: "user",
     name: "user",
     password,
     emailVerified: true,
+    member: {
+      role: "member",
+      personId: 3,
+    },
   },
   {
     email: "new_user@example.com",

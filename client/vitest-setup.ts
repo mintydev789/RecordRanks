@@ -1,56 +1,75 @@
+vi.mock("server-only", () => ({}));
+vi.mock("~/server/logger.ts", () => ({ logger: pino() }));
+vi.mock("~/server/db/provider.ts", () => ({ db }));
+vi.mock("~/server/auth.ts", () => ({ auth }));
+
 import { eq, sql } from "drizzle-orm";
 import pino from "pino";
 import { afterEach, beforeAll, vi } from "vitest";
-import { apply as applyDbSchema, mockDb as db } from "~/__mocks__/dbProvider.ts";
+import { authMock as auth } from "~/__mocks__/auth-mock.ts";
+import { apply as applyDbSchema, dbMock as db } from "~/__mocks__/db-mock.ts";
+import {
+  contestsTable,
+  eventsTable,
+  membersTable,
+  personsTable,
+  recordConfigsTable,
+  regionsTable,
+  resultsTable,
+  roundsTable,
+  rrSchema,
+} from "~/__mocks__/db-schema.ts";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { personsStub } from "~/__mocks__/stubs/personsStub.ts";
 import { recordConfigsStub } from "~/__mocks__/stubs/recordConfigsStub.ts";
-import { regionsStub } from "~/__mocks__/stubs/regionsStub.ts";
 import { resultsStub } from "~/__mocks__/stubs/resultsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
-import { testUsers } from "~/helpers/test-data/testUsers.ts";
-import { auth } from "~/server/auth.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
-import { contestsTable } from "~/server/db/schema/contests.ts";
-import { eventsTable } from "~/server/db/schema/events.ts";
-import { personsTable } from "~/server/db/schema/persons.ts";
-import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
-import { regionsTable } from "~/server/db/schema/regions.ts";
-import { resultsTable } from "~/server/db/schema/results.ts";
-import { roundsTable } from "~/server/db/schema/rounds.ts";
-import { rrSchema } from "~/server/db/schema/schema.ts";
-
-vi.mock("server-only", () => ({}));
-
-vi.mock("~/server/logger.ts", () => ({ logger: pino() }));
-
-vi.mock("~/server/db/provider.ts", () => ({ db }));
+import { getDefaultRegions } from "~/helpers/default-regions.ts";
+import { testUsers } from "~/helpers/test-data/test-users";
+import type { OrganizationMetadata } from "~/helpers/types.ts";
 
 beforeAll(async () => {
   await applyDbSchema();
 
+  const ctx = await auth.$context;
+  const authTest = ctx.test;
+
+  const org = authTest.createOrganization!({
+    id: "default",
+    name: "Test Organization",
+    slug: "default",
+    metadata: JSON.stringify({
+      private: false,
+      contactEmail: "admin@example.com",
+      plan: "custom",
+    } satisfies OrganizationMetadata),
+  });
+  await authTest.saveOrganization!(org);
+
+  for (const testUser of testUsers) {
+    const { member: newMember, ...newUser } = testUser;
+    const user = authTest.createUser(newUser);
+    await authTest.saveUser(user);
+
+    if (newMember) {
+      const createdMember = await authTest.addMember!({
+        userId: user.id,
+        organizationId: org.id,
+        role: newMember.role,
+      } as any);
+      await db
+        .update(membersTable)
+        .set({ personId: newMember.personId })
+        .where(eq(membersTable.id, createdMember.id as string));
+    }
+  }
+
   await Promise.all([
     db.insert(recordConfigsTable).values(recordConfigsStub),
     db.insert(eventsTable).values(eventsStub),
-    db.insert(regionsTable).values(regionsStub),
+    db.insert(regionsTable).values(getDefaultRegions("default")),
   ]);
-
-  // Mostly copied from instrumentation.ts
-  for (const testUser of testUsers) {
-    const { role, emailVerified, personId, ...body } = testUser;
-    await auth.api.signUpEmail({ body });
-
-    // Set emailVerified and personId
-    const [user] = await db
-      .update(usersTable)
-      .set({ emailVerified, personId })
-      .where(eq(usersTable.email, testUser.email))
-      .returning();
-
-    // Set role
-    if (role) await db.update(usersTable).set({ role }).where(eq(usersTable.id, user.id));
-  }
 });
 
 afterEach(() => {

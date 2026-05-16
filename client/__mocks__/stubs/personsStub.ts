@@ -74,7 +74,7 @@ export const personsStub: (InsertPerson & { id: number })[] = [
     name: "Gennaro López",
     regionCode: "UY", // Uruguay
   },
-].map((p, index) => ({ ...p, id: index + 1, approved: true }));
+].map((p, index) => ({ organizationId: "default", ...p, id: index + 1, approved: true }));
 // The id is set just for testing purposes; it's left out when seeding the mock DB
 
 export const gbPersonTomDillon = personsStub.find((p) => p.name === "Tom Dillon")!;

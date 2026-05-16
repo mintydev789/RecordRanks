@@ -262,8 +262,14 @@ export async function getContest({
   };
 }
 
-export async function getContestParticipantIds(tx: DbTransactionType, competitionId: string): Promise<number[]> {
-  const results = await tx.query.results.findMany({ columns: { personIds: true }, where: { competitionId } });
+export async function getContestParticipantIds({
+  tx: db,
+  competitionId,
+}: {
+  tx: DbTransactionType;
+  competitionId: string;
+}): Promise<number[]> {
+  const results = await db.query.results.findMany({ columns: { personIds: true }, where: { competitionId } });
 
   const participantIds = new Set<number>();
   for (const result of results) {
@@ -611,7 +617,7 @@ export async function getRankings(
 }
 
 export async function setRankingAndProceedsValues(
-  tx: DbTransactionType,
+  db: DbTransactionType, // the tx object from a Drizzle transaction
   results: ResultResponse[],
   round: RoundResponse,
 ) {
@@ -640,12 +646,12 @@ export async function setRankingAndProceedsValues(
 
     // Update the result in the DB, if something changed
     if (ranking !== sortedResults[i].ranking || proceeds !== sortedResults[i].proceeds)
-      await tx.update(resultsTable).set({ ranking, proceeds }).where(eq(resultsTable.id, sortedResults[i].id));
+      await db.update(resultsTable).set({ ranking, proceeds }).where(eq(resultsTable.id, sortedResults[i].id));
   }
 }
 
 export async function approvePersons(
-  tx: DbTransactionType,
+  db: DbTransactionType, // the tx object from a Drizzle transaction
   personsToBeApproved: Pick<SelectPerson, "id" | "name" | "localizedName" | "regionCode" | "wcaId">[],
 ) {
   const matchedPersonWcaIds: { name: string; wcaId: string }[] = [];
@@ -664,7 +670,7 @@ export async function approvePersons(
     throw new RrActionError(`${matchesSummary}\nResolve this manually on the manage competitors page and try again.`);
   }
 
-  await tx
+  await db
     .update(personsTable)
     .set({ approved: true })
     .where(
