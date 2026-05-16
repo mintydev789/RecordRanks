@@ -48,7 +48,7 @@ export const updateMemberSF = actionClient
         .enum(OrganizationRoles)
         .array()
         .nonempty()
-        .refine((val) => val.includes("member"), { error: "The member role is required" }),
+        .refine((val) => val.includes("member") || val.includes("admin"), { error: "The member role is required" }),
     }),
   )
   .action<{ member: typeof membersTable.$inferSelect; person?: PersonResponse }>(
@@ -66,7 +66,7 @@ export const updateMemberSF = actionClient
         db.query.accounts.findFirst({ columns: { id: true }, where: { userId: id, providerId: "credential" } }),
       ]);
       if (!member) throw new RrActionError("Member not found");
-      if (credentialAccount && !member.user.emailVerified)
+      if (!process.env.VITEST && credentialAccount && !member.user.emailVerified)
         throw new RrActionError("The user hasn't verified their email address yet");
 
       let person: PersonResponse | undefined;

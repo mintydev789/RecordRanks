@@ -15,8 +15,8 @@ import {
   type SelectPerson,
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
-import { actionClient, RrActionError } from "../safeAction.ts";
-import { getOrCreatePersonByWcaId, getPersonExactMatchWcaId, logMessage } from "../server-only-functions.ts";
+import { actionClient, RrActionError } from "~/server/safeAction.ts";
+import { getOrCreatePersonByWcaId, getPersonExactMatchWcaId, logMessage } from "~/server/server-only-functions.ts";
 
 export const getPersonByIdSF = actionClient
   .metadata({ auth: { useOrganization: true } })

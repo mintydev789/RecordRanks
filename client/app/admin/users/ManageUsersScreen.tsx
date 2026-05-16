@@ -2,7 +2,6 @@
 
 import { faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useAction } from "next-safe-action/hooks";
 import { useContext, useMemo, useState } from "react";
 import FiltersContainer from "~/app/components/FiltersContainer.tsx";
 import Form from "~/app/components/form/Form.tsx";
@@ -22,7 +21,8 @@ type Props = {
 function ManageUsersScreen({ users: initUsers }: Props) {
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
-  const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateUserSF);
+  // const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateUserSF);
+  const isUpdating = false;
   const [users, setUsers] = useState(initUsers);
   const [userId, setUserId] = useState<string>();
   const [name, setName] = useState(""); // for email + password users this is the same as the username
@@ -41,20 +41,18 @@ function ManageUsersScreen({ users: initUsers }: Props) {
   }, [search, users]);
 
   const handleSubmit = async () => {
-    const roles: Role[] = [];
-    if (isUser) roles.push("user");
-    if (isAdmin) roles.push("admin");
-
-    const res = await updateUser({ id: userId!, roles });
-
-    if (res.serverError || res.validationErrors) {
-      changeErrorMessages([getActionError(res)]);
-    } else {
-      resetMessages();
-      setUserId(undefined);
-      setName("");
-      setUsers(users.map((u) => (u.id === userId ? { ...res.data!.user, providerId: u.providerId } : u)));
-    }
+    //   const roles: Role[] = [];
+    //   if (isUser) roles.push("user");
+    //   if (isAdmin) roles.push("admin");
+    //   const res = await updateUser({ id: userId!, roles });
+    //   if (res.serverError || res.validationErrors) {
+    //     changeErrorMessages([getActionError(res)]);
+    //   } else {
+    //     resetMessages();
+    //     setUserId(undefined);
+    //     setName("");
+    //     setUsers(users.map((u) => (u.id === userId ? { ...res.data!.user, providerId: u.providerId } : u)));
+    //   }
   };
 
   const onEditUser = (user: typeof authClient.$Infer.Session.user) => {
@@ -88,7 +86,7 @@ function ManageUsersScreen({ users: initUsers }: Props) {
               <FormTextInput title="Email" value={email} setValue={setEmail} disabled />
             </div>
           </div>
-          <h5 className="mt-3 mb-3">Roles</h5>
+          <h5 className="my-3">Roles</h5>
           <FormCheckbox title={rolesObject.user} selected={isUser} setSelected={setIsUser} disabled={isUpdating} />
           <FormCheckbox title={rolesObject.admin} selected={isAdmin} setSelected={setIsAdmin} disabled={isUpdating} />
         </Form>
@@ -139,7 +137,7 @@ function ManageUsersScreen({ users: initUsers }: Props) {
                   <td>{user.providerId}</td>
                   <td>{roles}</td>
                   <td>
-                    <Button onClick={() => onEditUser(user)} className="btn-xs" title="Edit" ariaLabel="Edit">
+                    <Button onClick={() => onEditUser(user)} disabled className="btn-xs" title="Edit" ariaLabel="Edit">
                       <FontAwesomeIcon icon={faPencil} />
                     </Button>
                   </td>
