@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { EventValidator } from "~/helpers/validators/Event.ts";
 import { db } from "~/server/db/provider.ts";
+import { collectiveSolutionsTable } from "~/server/db/schema/collective-solutions.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 import { eventsTable as table } from "~/server/db/schema/events.ts";
@@ -65,6 +66,11 @@ export const updateEventSF = actionClient
 
     const [updatedEvent] = await db.transaction(async (tx) => {
       if (isNewId) {
+        await tx
+          .update(collectiveSolutionsTable)
+          .set({ eventId: newEventDto.eventId })
+          .where(eq(collectiveSolutionsTable.eventId, originalEventId));
+
         const roundsWithEvent = await tx.query.rounds.findMany({
           columns: { competitionId: true },
           where: { eventId: originalEventId },

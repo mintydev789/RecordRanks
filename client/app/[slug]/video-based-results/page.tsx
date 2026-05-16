@@ -2,25 +2,27 @@ import { inArray } from "drizzle-orm";
 import Markdown from "react-markdown";
 import { db } from "~/server/db/provider.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import type { FullResult } from "~/server/db/schema/results.ts";
-import { authorizeUser, getRecordConfigs, getSettingFromDb } from "~/server/server-only-functions.ts";
+import {
+  authorizeUser,
+  getEvents,
+  getRecordConfigs,
+  getRegions,
+  getSettingFromDb,
+} from "~/server/server-only-functions.ts";
 import ManageResultsScreen from "./ManageResultsScreen.tsx";
 
 async function ManageResultsPage() {
-  await authorizeUser({
+  const { organization } = await authorizeUser({
     useOrganization: true,
     orgPermissions: { videoBasedResults: ["update", "approve", "delete"] },
   });
 
-  const [results, recordConfigs, regions, instructions] = await Promise.all([
-    db.query.results.findMany({
-      with: { event: true },
-      where: { competitionId: { isNull: true } },
-      orderBy: { createdAt: "desc" },
-    }),
-    getRecordConfigs({ recordCategory: "online" }),
-    db.select(regionsPublicCols).from(regionsTable),
+  const [results, events, recordConfigs, regions, instructions] = await Promise.all([
+    db.query.results.findMany({ where: { competitionId: { isNull: true } }, orderBy: { createdAt: "desc" } }),
+    getEvents(organization!.id, { includeHiddenAndRemoved: true }),
+    getRecordConfigs(organization!.id, { recordCategory: "online" }),
+    getRegions(organization!.id),
     getSettingFromDb({ key: "video-based-results-instructions" }),
   ]);
 
@@ -44,7 +46,12 @@ async function ManageResultsPage() {
         </div>
       </div>
 
-      <ManageResultsScreen results={results as FullResult[]} recordConfigs={recordConfigs} regions={regions} />
+      <ManageResultsScreen
+        results={results as FullResult[]}
+        events={events}
+        recordConfigs={recordConfigs}
+        regions={regions}
+      />
     </section>
   );
 }

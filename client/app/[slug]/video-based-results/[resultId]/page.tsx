@@ -2,8 +2,13 @@ import z from "zod";
 import ResultsSubmissionForm from "~/app/[slug]/video-based-results/ResultsSubmissionForm.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { db } from "~/server/db/provider.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getCreators, getRecordConfigs, getVideoBasedEvents } from "~/server/server-only-functions.ts";
+import {
+  authorizeUser,
+  getCreators,
+  getRecordConfigs,
+  getRegions,
+  getVideoBasedEvents,
+} from "~/server/server-only-functions.ts";
 
 const ParamsValidator = z.strictObject({
   slug: z.string().nonempty(),
@@ -16,15 +21,15 @@ type Props = {
 
 async function UpdateVideoBasedResultPage({ params }: Props) {
   const { resultId } = ParamsValidator.parse(await params);
-  await authorizeUser({
+  const { organization } = await authorizeUser({
     useOrganization: true,
     orgPermissions: { videoBasedResults: ["update", "approve", "delete"] },
   });
 
   const [events, recordConfigs, regions, result] = await Promise.all([
     getVideoBasedEvents(),
-    getRecordConfigs({ recordCategory: "online" }),
-    db.select(regionsPublicCols).from(regionsTable),
+    getRecordConfigs(organization!.id, { recordCategory: "online" }),
+    getRegions(organization!.id),
     db.query.results.findFirst({ where: { id: resultId } }),
   ]);
 

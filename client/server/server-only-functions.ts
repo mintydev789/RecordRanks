@@ -1,12 +1,11 @@
 import "server-only";
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { camelCase } from "lodash";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import z from "zod";
 import { C } from "~/helpers/constants.ts";
-import { Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import {
@@ -18,8 +17,6 @@ import {
   type OrganizationDetails,
   type RecordCategory,
   RecordCategoryValues,
-  type RecordType,
-  RecordTypeValues,
 } from "~/helpers/types.ts";
 import {
   compareAvgs,
@@ -30,16 +27,21 @@ import {
   getResultProceeds,
 } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
-import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
-import { contestsTable } from "~/server/db/schema/contests.ts";
+import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
 import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import type { FullMemberRequest } from "~/server/db/schema/member-requests.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
-import { recordConfigsPublicCols, recordConfigsTable } from "~/server/db/schema/record-configs.ts";
-import { type ResultResponse, resultsTable } from "~/server/db/schema/results.ts";
-import type { RoundResponse } from "~/server/db/schema/rounds.ts";
+import { type PostResponse, postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
+import {
+  type RecordConfigResponse,
+  recordConfigsPublicCols,
+  recordConfigsTable,
+} from "~/server/db/schema/record-configs.ts";
+import { type RegionResponse, regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
+import { type ResultResponse, resultsPublicCols, resultsTable } from "~/server/db/schema/results.ts";
+import { type RoundResponse, roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
 import type { SettingKey } from "~/server/db/schema/settings.ts";
 import { sendErrorEmail } from "~/server/email/mailer.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
@@ -128,7 +130,7 @@ export async function authorizeUser(
         (Object.keys(orgPermissions).some((key) => key !== "videoBasedResults") ||
           orgPermissions.videoBasedResults?.some((perm) => perm !== "create"))
       ) {
-        throw new RrActionError("You are unauthorized to perform this action");
+        throw new RrActionError("You must have a person linked to your member profile to perform this action");
       }
     }
 
@@ -152,11 +154,11 @@ export async function authorizeUser(
 }
 
 export async function getOrgDetails({
-  session,
+  session: s,
   id,
   slug,
 }: {
-  session: Pick<typeof auth.$Infer.Session.session, "activeOrganizationId"> | undefined;
+  session?: Pick<typeof auth.$Infer.Session.session, "activeOrganizationId">;
   id?: string;
   slug?: string;
 }) {
@@ -170,9 +172,94 @@ export async function getOrgDetails({
       return { ...res, metadata: JSON.parse(res.metadata!) } as OrganizationDetails;
     });
 
-  if (organization.metadata.private && session?.activeOrganizationId !== organization.id) redirect("/login");
+  if (organization.metadata.private) {
+    const session = s ?? (await auth.api.getSession({ headers: await headers() }))?.session;
+
+    if (!session || session.activeOrganizationId !== organization.id) redirect("/login");
+  }
 
   return organization;
+}
+
+export async function getContest({
+  slug,
+  competitionId,
+  eventId,
+}: {
+  slug: string;
+  competitionId: string;
+  eventId?: string;
+}): Promise<{
+  contest: Pick<
+    SelectContest,
+    "competitionId" | "state" | "name" | "shortName" | "type" | "startDate" | "organizerIds" | "schedule"
+  >;
+  events: EventResponse[];
+  rounds: RoundResponse[];
+  results: ResultResponse[];
+  persons: PersonResponse[];
+  recordConfigs: RecordConfigResponse[];
+  regions: RegionResponse[];
+} | null> {
+  const [organization, contest, rounds] = await Promise.all([
+    getOrgDetails({ slug }),
+    db.query.contests.findFirst({
+      columns: {
+        competitionId: true,
+        state: true,
+        name: true,
+        shortName: true,
+        type: true,
+        startDate: true,
+        organizerIds: true,
+        schedule: true,
+      },
+      where: { competitionId },
+    }),
+    // Rounds are further filtered below, once it's known what event is needed
+    db
+      .select(roundsPublicCols)
+      .from(roundsTable)
+      .where(eq(roundsTable.competitionId, competitionId))
+      .orderBy(roundsTable.roundNumber),
+  ]);
+  if (!contest) return null;
+
+  const eventIds = Array.from(new Set(rounds.map((r) => r.eventId)));
+
+  const [events, recordConfigs, regions] = await Promise.all([
+    db
+      .select(eventsPublicCols)
+      .from(eventsTable)
+      .where(inArray(eventsTable.eventId, eventIds))
+      .orderBy(eventsTable.rank),
+    getRecordConfigs(organization.id, { contestType: contest.type }),
+    getRegions(organization.id),
+  ]);
+  if (eventId && !events.some((e) => e.eventId === eventId))
+    throw new RrActionError(`Event with ID ${eventId} not found`);
+
+  const eventIdOrFirst = eventId ?? events[0].eventId;
+
+  const results = await db
+    .select(resultsPublicCols)
+    .from(resultsTable)
+    .where(and(eq(resultsTable.competitionId, competitionId), eq(resultsTable.eventId, eventIdOrFirst)));
+
+  const personIds = Array.from(
+    new Set(results.map((r) => r.personIds).reduce((prev, curr) => [...(prev as []), ...curr], [])),
+  );
+  const persons = await db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, personIds));
+
+  return {
+    contest,
+    events,
+    rounds: rounds.filter((r) => r.eventId === eventIdOrFirst),
+    results,
+    persons,
+    recordConfigs,
+    regions,
+  };
 }
 
 export async function getContestParticipantIds(tx: DbTransactionType, competitionId: string): Promise<number[]> {
@@ -188,27 +275,26 @@ export async function getContestParticipantIds(tx: DbTransactionType, competitio
   return Array.from(participantIds);
 }
 
-export async function getRecordConfigs({
-  recordCategory,
-  contestType,
-}: { recordCategory: RecordCategory; contestType?: never } | { recordCategory?: never; contestType: ContestType }) {
-  const recordConfigs = await db
+export async function getRecordConfigs(
+  organizationId: string,
+  {
+    recordCategory,
+    contestType,
+  }: { recordCategory: RecordCategory; contestType?: never } | { recordCategory?: never; contestType: ContestType },
+) {
+  return await db
     .select(recordConfigsPublicCols)
     .from(recordConfigsTable)
     .where(
-      eq(
-        recordConfigsTable.category,
-        recordCategory ?? (contestType === "online" ? "online" : contestType === "meetup" ? "meetups" : "competitions"),
+      and(
+        eq(recordConfigsTable.organizationId, organizationId),
+        eq(
+          recordConfigsTable.category,
+          recordCategory ??
+            (contestType === "online" ? "online" : contestType === "meetup" ? "meetups" : "competitions"),
+        ),
       ),
     );
-
-  if (recordConfigs.length !== RecordTypeValues.length) {
-    throw new Error(
-      `The records are configured incorrectly. Expected ${RecordTypeValues.length} record configs for the category, but found ${recordConfigs.length}.`,
-    );
-  }
-
-  return recordConfigs;
 }
 
 export async function getVideoBasedEvents() {
@@ -232,35 +318,34 @@ const personsArrayJsonSql = sql`
     )
   )`;
 
-export async function getRecords(
-  eventCategory: string,
-  recordCategory: RecordCategory,
-  eventId?: string,
-  region?: string,
-): Promise<RecordRanking[]> {
+export async function getRecords({
+  organizationId,
+  eventCategory,
+  recordCategory,
+  eventId,
+  regionCode,
+}: {
+  organizationId: string;
+  eventCategory: string;
+  recordCategory: RecordCategory;
+  eventId?: string;
+  regionCode?: string;
+}): Promise<RecordRanking[]> {
   const events = await db.query.events.findMany({
     columns: { eventId: true },
     where: { eventId, hidden: false, category: eventCategory },
   });
 
-  const recordTypes: RecordType[] = ["WR"];
-  const continent = Continents.find((c) => c.code === region);
+  const region = regionCode
+    ? await db.query.regions.findFirst({ where: { organizationId, code: regionCode, type: { ne: "meta-region" } } })
+    : undefined;
 
   // Similar to the code in getRecordResult()
-  if (region) {
-    if (!NonMetaRegionCodeRegex.test(region))
-      throw new RrActionError("Meta region codes are not eligible for regional records");
-
-    if (continent) {
-      recordTypes.push(continent.recordTypeId);
-    } else {
-      const reg = await db.query.regions.findFirst({
-        columns: { superRegionRecordType: true },
-        where: { code: region },
-      });
-      if (!reg?.superRegionRecordType) throw new RrActionError("Super region record type not found");
-      recordTypes.push(reg.superRegionRecordType, "NR");
-    }
+  const recordTypes = ["WR"];
+  if (regionCode) {
+    if (!region) throw new RrActionError("Region not found");
+    recordTypes.push(region.superRegionRecordType!);
+    if (region.type !== "super-region") recordTypes.push("NR");
   }
 
   const records = await db
@@ -276,10 +361,20 @@ export async function getRecords(
       },
     })
     .from(eventsTable)
-    .innerJoin(resultsTable, eq(eventsTable.eventId, resultsTable.eventId))
-    .leftJoin(contestsTable, eq(resultsTable.competitionId, contestsTable.competitionId))
+    .innerJoin(
+      resultsTable,
+      and(eq(eventsTable.organizationId, resultsTable.organizationId), eq(eventsTable.eventId, resultsTable.eventId)),
+    )
+    .leftJoin(
+      contestsTable,
+      and(
+        eq(resultsTable.organizationId, contestsTable.organizationId),
+        eq(resultsTable.competitionId, contestsTable.competitionId),
+      ),
+    )
     .where(
       and(
+        eq(eventsTable.organizationId, organizationId),
         eq(resultsTable.approved, true),
         inArray(
           eventsTable.eventId,
@@ -290,10 +385,10 @@ export async function getRecords(
           inArray(resultsTable.regionalSingleRecord, recordTypes),
           inArray(resultsTable.regionalAverageRecord, recordTypes),
         ),
-        continent && recordTypes.includes(continent.recordTypeId)
-          ? eq(resultsTable.superRegionCode, continent.code)
+        region && recordTypes.includes(region.superRegionRecordType!)
+          ? eq(resultsTable.superRegionCode, region.code)
           : undefined,
-        region && recordTypes.includes("NR") ? eq(resultsTable.regionCode, region) : undefined,
+        recordTypes.includes("NR") ? eq(resultsTable.regionCode, region!.code) : undefined,
       ),
     )
     .orderBy(desc(resultsTable.date));
@@ -322,12 +417,13 @@ export async function getRecords(
 }
 
 export async function getRankings(
+  organizationId: string,
   event: EventResponse,
   type: "single" | "average" | "all-avg-formats",
   recordCategory: RecordCategory | "all",
   {
     show = "persons",
-    region,
+    region: regionCode,
     topN = 100,
   }: {
     show?: "persons" | "results";
@@ -339,9 +435,9 @@ export async function getRankings(
     type: z.enum(["single", "average", "all-avg-formats"]),
     recordCategory: z.enum([...RecordCategoryValues, "all"]),
     show: z.enum(["persons", "results"]).optional(),
-    region: z.string().nonempty().optional(),
+    regionCode: z.string().nonempty().optional(),
     topN: z.int().min(1).max(C.maxRankings),
-  }).parse({ type, recordCategory, show, region, topN });
+  }).parse({ type, recordCategory, show, regionCode, topN });
 
   const bestOrAverage = type === "single" ? "best" : "average";
   const rankedAverageFormat = getRankedAverageFormat(event.defaultRoundFormat);
@@ -349,11 +445,16 @@ export async function getRankings(
     recordCategory === "all" ? sql`` : sql`AND ${resultsTable.recordCategory} = ${recordCategory}`;
   const numberOfAttemptsCondition =
     type === "average" ? sql`AND CARDINALITY(${resultsTable.attempts}) = ${rankedAverageFormat.attempts}` : sql``;
-  const regionCondition = region
-    ? Continents.some((c) => c.code === region)
-      ? sql`AND ${resultsTable.superRegionCode} = ${region}`
-      : sql`AND ${resultsTable.regionCode} = ${region}`
-    : sql``;
+  const region = regionCode
+    ? await db.query.regions.findFirst({ where: { organizationId, code: regionCode, type: { ne: "meta-region" } } })
+    : undefined;
+  if (regionCode && !region) throw new RrActionError("Region not found");
+  const regionCondition =
+    region?.type === "super-region"
+      ? sql`AND ${resultsTable.superRegionCode} = ${regionCode}`
+      : regionCode
+        ? sql`AND ${resultsTable.regionCode} = ${regionCode}`
+        : sql``;
   let rankings: Ranking[];
 
   const mapRankingsData = (val: any[]) =>
@@ -394,7 +495,8 @@ export async function getRankings(
             LEFT JOIN ${contestsTable}
               ON ${resultsTable.competitionId} = ${contestsTable.competitionId},
             UNNEST(${resultsTable.personIds}) AS person_id
-          WHERE ${resultsTable.approved} IS TRUE
+          WHERE ${resultsTable.organizationId} = ${organizationId}
+            AND ${resultsTable.approved} IS TRUE
             AND ${resultsTable.eventId} = ${event.eventId}
             ${recordCategoryCondition}
             AND ${resultsTable[bestOrAverage]} > 0
@@ -452,7 +554,8 @@ export async function getRankings(
             LEFT JOIN ${contestsTable}
               ON ${resultsTable.competitionId} = ${contestsTable.competitionId},
             UNNEST(${resultsTable.attempts}) WITH ORDINALITY AS attempts_data(attempt, attempt_number)
-          WHERE ${resultsTable.approved} IS TRUE
+          WHERE ${resultsTable.organizationId} = ${organizationId}
+            AND ${resultsTable.approved} IS TRUE
             AND ${resultsTable.eventId} = ${event.eventId}
             ${recordCategoryCondition}
             AND CAST(attempts_data.attempt->>'result' AS BIGINT) > 0
@@ -489,7 +592,8 @@ export async function getRankings(
           FROM ${resultsTable}
             LEFT JOIN ${contestsTable}
               ON ${resultsTable.competitionId} = ${contestsTable.competitionId}
-          WHERE ${resultsTable.approved} IS TRUE
+          WHERE ${resultsTable.organizationId} = ${organizationId}
+            AND ${resultsTable.approved} IS TRUE
             AND ${resultsTable.eventId} = ${event.eventId}
             ${recordCategoryCondition}
             AND ${resultsTable.average} > 0
@@ -752,4 +856,48 @@ export async function getCreators(userIds: string[]): Promise<Creator[]> {
     .innerJoin(usersTable, eq(membersTable.userId, usersTable.id))
     .leftJoin(personsTable, eq(membersTable.personId, personsTable.id))
     .where(inArray(membersTable.userId, userIds));
+}
+
+export async function getEvents(
+  organizationId: string,
+  { includeHiddenAndRemoved = false }: { includeHiddenAndRemoved?: boolean } = {},
+): Promise<EventResponse[]> {
+  return await db
+    .select(eventsPublicCols)
+    .from(eventsTable)
+    .where(
+      and(
+        eq(eventsTable.organizationId, organizationId),
+        includeHiddenAndRemoved ? undefined : ne(eventsTable.category, "removed"),
+        includeHiddenAndRemoved ? undefined : eq(eventsTable.hidden, false),
+      ),
+    )
+    .orderBy(eventsTable.rank);
+}
+
+export async function getRegions(organizationId: string): Promise<RegionResponse[]> {
+  return await db.select(regionsPublicCols).from(regionsTable).where(eq(regionsTable.organizationId, organizationId));
+}
+
+export async function getBlogPosts(
+  organizationId: string,
+  {
+    postId,
+  }: {
+    postId?: string;
+  } = {},
+): Promise<(PostResponse & { authorName?: string | null })[]> {
+  const query = db
+    .select({ ...postsPublicCols, authorName: personsTable.name })
+    .from(postsTable)
+    .leftJoin(usersTable, eq(postsTable.createdBy, usersTable.id))
+    .leftJoin(membersTable, eq(usersTable.id, membersTable.userId))
+    .leftJoin(personsTable, eq(membersTable.personId, personsTable.id));
+  const organizationFilter = eq(postsTable.organizationId, organizationId);
+
+  if (postId) {
+    return await query.where(and(organizationFilter, eq(postsTable.postId, postId)));
+  }
+
+  return await query.where(organizationFilter).orderBy(desc(postsTable.date));
 }

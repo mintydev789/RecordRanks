@@ -1,4 +1,4 @@
-import { type ContestType, RecordTypeValues } from "~/helpers/types.ts";
+import type { ContestType } from "~/helpers/types.ts";
 import { C } from "./constants.ts";
 import { eventCategories } from "./eventCategories.ts";
 import type { MultiChoiceOption } from "./types/MultiChoiceOption.ts";
@@ -65,5 +65,3 @@ export const recordCategoryOptions: MultiChoiceOption[] = [
   { value: "meetups", label: "Meetups" },
   { value: "online", label: "Online" },
 ];
-
-export const recordTypeOptions: MultiChoiceOption[] = RecordTypeValues.map((v) => ({ value: v, label: v }));

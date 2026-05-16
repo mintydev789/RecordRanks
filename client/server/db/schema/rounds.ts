@@ -19,14 +19,8 @@ export const roundsTable = rrSchema.table(
       .text()
       .references(() => organizationsTable.id)
       .notNull(),
-    competitionId: d
-      .text()
-      .references(() => contestsTable.competitionId, { onUpdate: "cascade" })
-      .notNull(),
-    eventId: d
-      .text()
-      .references(() => eventsTable.eventId, { onUpdate: "cascade" })
-      .notNull(),
+    competitionId: d.text().notNull(),
+    eventId: d.text().notNull(),
     roundNumber: d.smallint().notNull(),
     roundTypeId: roundTypeEnum().notNull(),
     format: roundFormatEnum().notNull(),
@@ -41,7 +35,21 @@ export const roundsTable = rrSchema.table(
     ...tableTimestamps,
   },
   (table) => [
-    d.unique("competition_id_event_id_round_number").on(table.competitionId, table.eventId, table.roundNumber),
+    d.unique("unique_rounds").on(table.organizationId, table.competitionId, table.eventId, table.roundNumber),
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.competitionId],
+        foreignColumns: [contestsTable.organizationId, contestsTable.competitionId],
+        name: "rounds_competition_id_fk",
+      })
+      .onUpdate("cascade"),
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.eventId],
+        foreignColumns: [eventsTable.organizationId, eventsTable.eventId],
+        name: "rounds_event_id_fk",
+      })
+      .onUpdate("cascade"),
     // Cumulative round IDs can only be set when the round has a time limit
     d.check(
       "rounds_timelimit_check",

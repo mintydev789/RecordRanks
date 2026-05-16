@@ -4,8 +4,12 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getMemberRequestDetails, getSettingFromDb } from "~/server/server-only-functions.ts";
+import {
+  authorizeUser,
+  getMemberRequestDetails,
+  getRegions,
+  getSettingFromDb,
+} from "~/server/server-only-functions.ts";
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
@@ -13,9 +17,13 @@ async function UserSettingsPage() {
 
   const [[person], regions] = await Promise.all([
     member?.personId
-      ? await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, member.personId)).limit(1)
+      ? db
+          .select({ organizationId: personsTable.organizationId, ...personsPublicCols })
+          .from(personsTable)
+          .where(eq(personsTable.id, member.personId))
+          .limit(1)
       : [],
-    db.select(regionsPublicCols).from(regionsTable),
+    member ? getRegions(member.organizationId) : undefined,
   ]);
 
   return (

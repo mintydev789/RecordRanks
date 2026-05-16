@@ -11,18 +11,17 @@ import {
   type SelectPerson,
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getCreators } from "~/server/server-only-functions.ts";
+import { authorizeUser, getCreators, getRegions } from "~/server/server-only-functions.ts";
 
 async function CompetitorsPage() {
-  const { user } = await authorizeUser({
+  const { user, organization } = await authorizeUser({
     useOrganization: true,
     orgPermissions: { persons: ["create", "update", "delete"] },
   });
 
   const [{ success: canApprovePersons }, regions] = await Promise.all([
     auth.api.hasPermission({ headers: await headers(), body: { permissions: { persons: ["approve"] } } }),
-    db.select(regionsPublicCols).from(regionsTable),
+    getRegions(organization!.id),
   ]);
 
   let persons: SelectPerson[] | PersonResponse[] | undefined;

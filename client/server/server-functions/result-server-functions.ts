@@ -4,16 +4,8 @@ import { addDays, differenceInDays, format } from "date-fns";
 import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import z from "zod";
 import { C } from "~/helpers/constants.ts";
-import { ContinentRecordType, Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats, videoBasedFormats } from "~/helpers/roundFormats.ts";
-import {
-  ContinentalRecordTypes,
-  type EventWrPair,
-  type RecordCategory,
-  RecordCategoryValues,
-  type RecordType,
-  type SuperRegionCode,
-} from "~/helpers/types.ts";
+import { type EventWrPair, type RecordCategory, RecordCategoryValues } from "~/helpers/types.ts";
 import {
   compareAvgs,
   compareSingles,
@@ -34,7 +26,7 @@ import { auth } from "~/server/auth.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
 import type { SelectRound } from "~/server/db/schema/rounds.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
-import type { EventResponse, SelectEvent } from "../db/schema/events.ts";
+import type { SelectEvent } from "../db/schema/events.ts";
 import type { SelectPerson } from "../db/schema/persons.ts";
 import type { RecordConfigResponse } from "../db/schema/record-configs.ts";
 import {
@@ -167,7 +159,7 @@ export const createContestResultSF = actionClient
       roundFormat.attempts,
     );
 
-    const recordConfigs = await getRecordConfigs({ contestType: contest.type });
+    const recordConfigs = await getRecordConfigs(session.organization!.id, { contestType: contest.type });
     const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
     const recordCategory: RecordCategory =
       contest.type === "online" ? "online" : contest.type === "meetup" ? "meetups" : "competitions";
@@ -201,8 +193,10 @@ export const createContestResultSF = actionClient
       const [createdResult] = await tx.insert(table).values(newResult).returning();
 
       await setRankingAndProceedsValues(tx, [...roundResults, createdResult], round);
-      if (createdResult.regionalSingleRecord) await cancelFutureRecords(tx, createdResult, "best", recordConfigs);
-      if (createdResult.regionalAverageRecord) await cancelFutureRecords(tx, createdResult, "average", recordConfigs);
+      if (createdResult.regionalSingleRecord)
+        await cancelFutureRecords(tx, session.organization!.id, createdResult, "best", recordConfigs);
+      if (createdResult.regionalAverageRecord)
+        await cancelFutureRecords(tx, session.organization!.id, createdResult, "average", recordConfigs);
 
       // Update contest state and participants
       const updateContestObject: Partial<SelectContest> = {};
@@ -244,7 +238,7 @@ export const updateContestResultSF = actionClient
     if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
     if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
 
-    const recordConfigs = await getRecordConfigs({ contestType: contest.type });
+    const recordConfigs = await getRecordConfigs(session.organization!.id, { contestType: contest.type });
     const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
     newAttempts = await validateTimeLimitAndCutoff(newAttempts, result.personIds, round, roundFormat.attempts);
@@ -294,9 +288,9 @@ export const updateContestResultSF = actionClient
 
       // Cancel future records, if the result got better
       if (updatedResult.regionalSingleRecord && updatedResult.best < result.best)
-        await cancelFutureRecords(tx, updatedResult, "best", recordConfigs);
+        await cancelFutureRecords(tx, session.organization!.id, updatedResult, "best", recordConfigs);
       if (updatedResult.regionalAverageRecord && updatedResult.average < result.average)
-        await cancelFutureRecords(tx, updatedResult, "average", recordConfigs);
+        await cancelFutureRecords(tx, session.organization!.id, updatedResult, "average", recordConfigs);
 
       // Set records that may have been prevented before, if the result got worse
       if (result.regionalSingleRecord && updatedResult.best > result.best)
@@ -347,7 +341,7 @@ export const deleteContestResultSF = actionClient
     if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
     if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
 
-    const recordConfigs = await getRecordConfigs({ contestType: contest.type });
+    const recordConfigs = await getRecordConfigs(session.organization!.id, { contestType: contest.type });
 
     await db.transaction(async (tx) => {
       await tx.delete(table).where(eq(table.id, id));
@@ -397,7 +391,7 @@ export const createVideoBasedResultSF = actionClient
     const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
       db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
       db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
-      getRecordConfigs({ recordCategory: "online" }),
+      getRecordConfigs(session.organization!.id, { recordCategory: "online" }),
       session.member!.personId
         ? db.query.persons.findFirst({ columns: { name: true }, where: { id: session.member!.personId } })
         : undefined,
@@ -468,7 +462,7 @@ export const updateVideoBasedResultSF = actionClient
 
     const [event, recordConfigs] = await Promise.all([
       db.query.events.findFirst({ where: { eventId: result.eventId } }),
-      getRecordConfigs({ recordCategory: "online" }),
+      getRecordConfigs(session.organization!.id, { recordCategory: "online" }),
     ]);
 
     if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
@@ -510,8 +504,10 @@ export const updateVideoBasedResultSF = actionClient
         .returning();
 
       if (approve) {
-        if (updatedResult.regionalSingleRecord) await cancelFutureRecords(tx, updatedResult, "best", recordConfigs);
-        if (updatedResult.regionalAverageRecord) await cancelFutureRecords(tx, updatedResult, "average", recordConfigs);
+        if (updatedResult.regionalSingleRecord)
+          await cancelFutureRecords(tx, session.organization!.id, updatedResult, "best", recordConfigs);
+        if (updatedResult.regionalAverageRecord)
+          await cancelFutureRecords(tx, session.organization!.id, updatedResult, "average", recordConfigs);
 
         const personsToBeApproved = await tx.query.persons.findMany({
           where: { id: { in: result.personIds }, approved: false },
@@ -532,9 +528,9 @@ export const updateVideoBasedResultSF = actionClient
   });
 
 async function getRecordResult(
-  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   bestOrAverage: "best" | "average",
-  recordType: RecordType,
+  recordType: string,
   recordCategory: RecordCategory,
   {
     tx,
@@ -545,16 +541,24 @@ async function getRecordResult(
     tx?: DbTransactionType; // this can optionally be run inside of a transaction
     recordsUpTo: Date;
     excludeResultId?: number;
-    regionCode?: string;
+    regionCode?: string; // only set when recordType = "NR"
   },
 ): Promise<SelectResult | undefined> {
   const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
-  const isCrRecordType = ContinentalRecordTypes.includes(recordType as any);
+  const isCrRecordType = !["WR", "NR"].includes(recordType as any);
   const baseConditions = [
+    eq(table.organizationId, event.organizationId),
     eq(table.eventId, event.eventId),
     eq(table.recordCategory, recordCategory),
     gt(table[bestOrAverage], 0),
-    isCrRecordType ? eq(table.superRegionCode, Continents.find((c) => c.recordTypeId === recordType)!.code) : undefined,
+    isCrRecordType
+      ? eq(
+          table.superRegionCode,
+          (await (tx ?? db).query.regions.findFirst({
+            where: { organizationId: event.organizationId, type: "super-region", superRegionRecordType: recordType },
+          }))!.code,
+        )
+      : undefined,
     regionCode ? eq(table.regionCode, regionCode) : undefined,
   ];
 
@@ -577,13 +581,13 @@ async function getRecordResult(
     .limit(1);
 
   // Similar to the code in getRecords()
-  const recordTypes: RecordType[] = ["WR"];
+  const recordTypes = ["WR"];
   if (recordType === "NR") {
     const reg = await (tx ?? db).query.regions.findFirst({
       columns: { superRegionRecordType: true },
-      where: { code: regionCode },
+      where: { organizationId: event.organizationId, code: regionCode, type: { in: ["country", "region"] } },
     });
-    if (!reg?.superRegionRecordType) throw new RrActionError("Super region record type not found");
+    if (!reg?.superRegionRecordType) throw new RrActionError("Region not found");
     recordTypes.push(reg.superRegionRecordType, recordType);
   } else if (isCrRecordType) {
     recordTypes.push(recordType);
@@ -608,7 +612,7 @@ async function getRecordResult(
 
 async function setResultRecordsAndRegions(
   result: InsertResult,
-  event: EventResponse,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   recordConfigs: RecordConfigResponse[], // must be of the same category
   participants: SelectPerson[],
 ) {
@@ -627,7 +631,7 @@ async function setResultRecordsAndRegions(
 
 async function setResultRecords(
   result: InsertResult,
-  event: EventResponse,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   recordConfigs: RecordConfigResponse[], // must be of the same category
   { excludeResultId }: { excludeResultId?: number } = {},
 ) {
@@ -639,7 +643,7 @@ async function setResultRecords(
 // Updates the specified record field directly in the result object
 async function setResultRecord(
   result: InsertResult,
-  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   bestOrAverage: "best" | "average",
   recordConfigs: RecordConfigResponse[], // must be of the same category
   { excludeResultId }: { excludeResultId?: number } = {},
@@ -666,7 +670,9 @@ async function setResultRecord(
       (result.regionCode && result.regionCode !== wrResult?.regionCode))
   ) {
     // Set CR
-    const crType = ContinentRecordType[result.superRegionCode as SuperRegionCode];
+    const crType = (await db.query.regions.findFirst({
+      where: { organizationId: event.organizationId, type: "super-region", code: result.superRegionCode },
+    }))!.superRegionRecordType!;
     const crResult = await getRecordResult(event, bestOrAverage, crType, category, {
       excludeResultId,
       recordsUpTo: result.date,
@@ -708,7 +714,7 @@ async function setFutureRecords(
     | "regionalSingleRecord"
     | "regionalAverageRecord"
   >,
-  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   bestOrAverage: "best" | "average",
   recordConfigs: RecordConfigResponse[],
 ) {
@@ -731,7 +737,8 @@ async function setFutureRecords(
             MIN(${table[bestOrAverage]}) OVER(PARTITION BY ${table.date}
               ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS day_min_time
           FROM ${table}
-          WHERE ${table[bestOrAverage]} > 0
+          WHERE ${table.organizationId} = ${event.organizationId}
+            AND ${table[bestOrAverage]} > 0
             AND ${table[bestOrAverage]} <= ${prevWrResult ? prevWrResult[bestOrAverage] : C.maxResult}
             AND ${table.eventId} = ${deletedResult.eventId}
             AND ${table.date} >= ${deletedResult.date.toISOString()}
@@ -765,7 +772,9 @@ async function setFutureRecords(
 
   // Set CRs
   if (deletedResult.superRegionCode && deletedResult[recordField] !== "NR") {
-    const crType = ContinentRecordType[deletedResult.superRegionCode as SuperRegionCode];
+    const crType = (await db.query.regions.findFirst({
+      where: { organizationId: event.organizationId, type: "super-region", code: deletedResult.superRegionCode },
+    }))!.superRegionRecordType!;
     const prevCrResult = await getRecordResult(event, bestOrAverage, crType, category, { tx, recordsUpTo });
 
     const newCrIds = await tx
@@ -775,7 +784,8 @@ async function setFutureRecords(
             MIN(${table[bestOrAverage]}) OVER(PARTITION BY ${table.date}
               ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS day_min_time
           FROM ${table}
-          WHERE ${table[bestOrAverage]} > 0
+          WHERE ${table.organizationId} = ${event.organizationId}
+            AND ${table[bestOrAverage]} > 0
             AND ${table[bestOrAverage]} <= ${prevCrResult ? prevCrResult[bestOrAverage] : C.maxResult}
             AND ${table.eventId} = ${deletedResult.eventId}
             AND ${table.date} >= ${deletedResult.date.toISOString()}
@@ -823,7 +833,8 @@ async function setFutureRecords(
             MIN(${table[bestOrAverage]}) OVER(PARTITION BY ${table.date}
               ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS day_min_time
           FROM ${table}
-          WHERE ${table[bestOrAverage]} > 0
+          WHERE ${table.organizationId} = ${event.organizationId}
+            AND ${table[bestOrAverage]} > 0
             AND ${table[bestOrAverage]} <= ${prevNrResult ? prevNrResult[bestOrAverage] : C.maxResult}
             AND ${table.eventId} = ${deletedResult.eventId}
             AND ${table.date} >= ${deletedResult.date.toISOString()}
@@ -864,6 +875,7 @@ async function setFutureRecords(
 
 async function cancelFutureRecords(
   tx: DbTransactionType,
+  organizationId: string,
   result: ResultResponse,
   bestOrAverage: "best" | "average",
   recordConfigs: RecordConfigResponse[],
@@ -871,10 +883,15 @@ async function cancelFutureRecords(
   const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
   const type = bestOrAverage === "best" ? "single" : "average";
   const { category } = recordConfigs[0];
-  const crType = result.superRegionCode ? ContinentRecordType[result.superRegionCode as SuperRegionCode] : undefined;
+  const crType = result.superRegionCode
+    ? (await db.query.regions.findFirst({
+        where: { organizationId, type: "super-region", code: result.superRegionCode },
+      }))!.superRegionRecordType!
+    : undefined;
   const crLabel = recordConfigs.find((rc) => rc.recordTypeId === crType)?.label;
   const nrLabel = recordConfigs.find((rc) => rc.recordTypeId === "NR")!.label;
   const baseConditions = [
+    eq(table.organizationId, organizationId),
     eq(table.eventId, result.eventId),
     gte(table.date, result.date),
     gt(table[bestOrAverage], result[bestOrAverage]),
@@ -890,7 +907,7 @@ async function cancelFutureRecords(
       .where(
         and(
           ...baseConditions,
-          inArray(table[recordField], recordTypes as RecordType[]),
+          inArray(table[recordField], recordTypes),
           result.superRegionCode
             ? or(eq(table.superRegionCode, result.superRegionCode), isNull(table.superRegionCode))
             : isNull(table.superRegionCode),
@@ -930,7 +947,9 @@ async function cancelFutureRecords(
       .from(table)
       .where(and(...baseConditions, eq(table[recordField], "WR"), isNotNull(table.superRegionCode)));
     for (const r of wrResultsToBeChangedToCr) {
-      const resultCrType = ContinentRecordType[r.superRegionCode as SuperRegionCode];
+      const resultCrType = (await db.query.regions.findFirst({
+        where: { organizationId, type: "super-region", code: r.superRegionCode! },
+      }))!.superRegionRecordType!;
       const resultCrLabel = recordConfigs.find((rc) => rc.recordTypeId === resultCrType)!.label;
       await tx
         .update(table)
@@ -941,7 +960,7 @@ async function cancelFutureRecords(
       const message = `CHANGED ${r.eventId} ${type} ${wrLabel} to ${resultCrLabel}: ${r[bestOrAverage]} (country code ${r.regionCode})`;
       logMessage("RR0026", message);
     }
-  } else if (ContinentalRecordTypes.includes(result[recordField] as any)) {
+  } else if (result[recordField] !== "NR") {
     const cancelledCrNrResults = await tx
       .update(table)
       .set({ [recordField]: null })
@@ -977,7 +996,7 @@ async function cancelFutureRecords(
       const message = `CHANGED ${r.eventId} ${type} ${crLabel} to ${nrLabel}: ${r[bestOrAverage]} (country code ${r.regionCode})`;
       logMessage("RR0026", message);
     }
-  } else if (result[recordField] === "NR") {
+  } else {
     const cancelledNrResults = await tx
       .update(table)
       .set({ [recordField]: null })

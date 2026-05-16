@@ -34,7 +34,7 @@ type Account = {
 
 type Props = {
   initPerson: PersonResponse | undefined;
-  regions: RegionResponse[];
+  regions: RegionResponse[] | undefined;
 };
 
 function UserSettingsScreen({ initPerson, regions }: Props) {
@@ -73,26 +73,18 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
     if (session && !accounts) {
       // Get accounts data
       (async () => {
-        const { data, error } = await authClient.listAccounts();
+        const { data: accs, error } = await authClient.listAccounts();
 
         if (error) {
           changeErrorMessages([error.message || error.statusText]);
         } else {
-          setAccounts(data);
+          setAccounts(accs);
 
           if (status === "email-change-success") changeSuccessMessage("Your email has been changed successfully");
 
           if (HAS_WCA_AUTH) {
-            if (status === "signup-success") {
-              changeSuccessMessage(
-                "Your account has been created successfully! Linking your WCA competitor profile...",
-              );
-
-              setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
-              setTimeout(() => linkWcaProfile(), 2000);
-            } else if (data.find((a) => a.providerId === "wca")) {
-              setWcaProfileLinkStatus("enabled");
-            }
+            if (status === "signup-success") changeSuccessMessage("Your account has been created successfully!");
+            if (accs.find((a) => a.providerId === "wca")) setWcaProfileLinkStatus("enabled");
           }
 
           setStatus(null);
@@ -115,7 +107,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
       setWcaProfileLinkStatus("enabled");
     } else {
       changeSuccessMessage(
-        user!.personId ? "Successfully synced WCA competitor profile" : "Successfully linked WCA competitor profile",
+        member!.personId ? "Successfully synced WCA competitor profile" : "Successfully linked WCA competitor profile",
       );
       setWcaProfileLinkStatus("linked");
       setPerson(res.data);
@@ -196,7 +188,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
             </p>
           )}
 
-          {person ? (
+          {person && regions ? (
             <div className="d-flex flex-wrap gap-2">
               <span>Your competitor profile:</span>
               <div className="d-flex gap-2">
@@ -209,7 +201,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
           ) : (
             <p className="mt-4">There is no competitor profile tied to your member profile.</p>
           )}
-          {showLinkWcaProfileButton && (
+          {showLinkWcaProfileButton && member && (
             <Button
               onClick={() => linkWcaProfile()}
               isLoading={wcaProfileLinkStatus === "pending"}
@@ -232,7 +224,8 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
         </>
       )}
 
-      {activeTab === "member-request" && <MemberRequestTab regions={regions} />}
+      {/* If this tab is active, that means the user has an active org and regions are defined */}
+      {activeTab === "member-request" && <MemberRequestTab regions={regions!} />}
     </>
   );
 }

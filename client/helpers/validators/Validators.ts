@@ -11,8 +11,3 @@ export const RegionCodeValidator = z
   .string()
   .min(2, { error: "Invalid region code" })
   .max(2, { error: "Invalid region code" });
-
-export const NonMetaRegionCodeRegex = /^[A-W,Y-Z][A-Z]$/; // exclude region codes starting with X
-export const NonMetaRegionCodeValidator = RegionCodeValidator.regex(NonMetaRegionCodeRegex, {
-  error: "Invalid region code",
-});

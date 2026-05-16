@@ -16,17 +16,19 @@ import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import type { InputPerson } from "~/helpers/types.ts";
 import { getFormattedDate, shortenEventName } from "~/helpers/utilityFunctions.ts";
+import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import type { FullResult } from "~/server/db/schema/results.ts";
 
 type Props = {
   results: FullResult[];
+  events: EventResponse[];
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
 };
 
-function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
+function ManageResultsScreen({ results, events, recordConfigs, regions }: Props) {
   const { slug } = useParams();
 
   const parentRef = useRef<Element>(null);
@@ -108,6 +110,7 @@ function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
               {rowVirtualizer.getVirtualItems().map((virtualItem, index) => {
                 if (filteredResults?.length === 0) return undefined;
                 const result = filteredResults[virtualItem.index];
+                const event = events.find((e) => e.eventId === result.eventId)!;
 
                 return (
                   <tr
@@ -117,7 +120,7 @@ function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
                       transform: `translateY(${virtualItem.start - index * virtualItem.size}px)`,
                     }}
                   >
-                    <td>{result.event ? shortenEventName(result.event.name) : "EVENT NOT FOUND"}</td>
+                    <td>{shortenEventName(event.name)}</td>
                     <td>
                       {result.persons.length > 0 ? (
                         <Competitors persons={result.persons} regions={regions} vertical />
@@ -126,15 +129,15 @@ function ManageResultsScreen({ results, recordConfigs, regions }: Props) {
                       )}
                     </td>
                     <td>
-                      <Time result={result} event={result.event} recordConfigs={recordConfigs} />
+                      <Time result={result} event={event} recordConfigs={recordConfigs} />
                     </td>
                     <td>
                       {result.attempts.length >= 3 && (
-                        <Time result={result} event={result.event} recordConfigs={recordConfigs} average />
+                        <Time result={result} event={event} recordConfigs={recordConfigs} average />
                       )}
                     </td>
                     <td>
-                      <Solves event={result.event} attempts={result.attempts} />
+                      <Solves event={event} attempts={result.attempts} />
                     </td>
                     <td>{getFormattedDate(result.date)}</td>
                     <td>

@@ -5,19 +5,23 @@ import { tableTimestamps } from "~/server/db/dbUtils.ts";
 import { organizationsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 
-export const postsTable = rrSchema.table("posts", {
-  id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
-  organizationId: d
-    .text()
-    .references(() => organizationsTable.id)
-    .notNull(),
-  postId: d.text().notNull().unique(),
-  title: d.text().notNull(),
-  content: d.text().notNull(),
-  date: d.timestamp().defaultNow().notNull(),
-  createdBy: d.text().references(() => usersTable.id, { onDelete: "set null" }),
-  ...tableTimestamps,
-});
+export const postsTable = rrSchema.table(
+  "posts",
+  {
+    id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: d
+      .text()
+      .references(() => organizationsTable.id)
+      .notNull(),
+    postId: d.text().notNull(),
+    title: d.text().notNull(),
+    content: d.text().notNull(),
+    date: d.timestamp().defaultNow().notNull(),
+    createdBy: d.text().references(() => usersTable.id, { onDelete: "set null" }),
+    ...tableTimestamps,
+  },
+  (table) => [d.unique("unique_posts_post_id").on(table.organizationId, table.postId)],
+);
 
 export type InsertPost = typeof postsTable.$inferInsert;
 export type SelectPost = typeof postsTable.$inferSelect;

@@ -4,6 +4,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin as adminPlugin, genericOAuth, organization, username } from "better-auth/plugins";
 import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { getDefaultRegions } from "~/helpers/default-regions.ts";
+import { getDefaultOrgSettings } from "~/helpers/default-settings.ts";
 import { getHasRole } from "~/helpers/utilityFunctions.ts";
 import { db } from "~/server/db/provider.ts";
 import {
@@ -15,6 +17,8 @@ import {
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
+import { regionsTable } from "~/server/db/schema/regions.ts";
+import { settingsTable } from "~/server/db/schema/settings.ts";
 import {
   sendAccountDeletedEmail,
   sendOrganizationInvitationEmail,
@@ -97,6 +101,13 @@ export const auth = betterAuth({
               input: false,
             },
           },
+        },
+      },
+      organizationHooks: {
+        afterCreateOrganization: async ({ organization }) => {
+          await db.insert(regionsTable).values(getDefaultRegions(organization.id));
+
+          await db.insert(settingsTable).values(getDefaultOrgSettings(organization.id));
         },
       },
     }),

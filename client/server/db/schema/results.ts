@@ -2,7 +2,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import * as d from "drizzle-orm/pg-core";
 import { getColumns } from "drizzle-orm/utils";
-import { recordCategoryEnum, recordTypeEnum } from "~/server/db/schema/record-configs.ts";
+import { recordCategoryEnum } from "~/server/db/schema/record-configs.ts";
 import { regionsTable } from "~/server/db/schema/regions.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 import { tableTimestamps } from "../dbUtils.ts";
@@ -26,23 +26,20 @@ export const resultsTable = rrSchema.table(
       .text()
       .references(() => organizationsTable.id)
       .notNull(),
-    eventId: d
-      .text()
-      .references(() => eventsTable.eventId, { onUpdate: "cascade" })
-      .notNull(),
+    eventId: d.text().notNull(),
     date: d.timestamp().notNull(),
     approved: d.boolean().default(false).notNull(),
     personIds: d.integer().array().notNull(),
     // These two are only set if participants are from the same region/super-region
-    regionCode: d.varchar({ length: 2 }).references(() => regionsTable.code, { onUpdate: "cascade" }),
+    regionCode: d.text(),
     superRegionCode: d.text(),
     attempts: d.jsonb().$type<Attempt>().array().notNull(),
     best: d.bigint({ mode: "number" }).notNull(),
     average: d.bigint({ mode: "number" }).notNull(),
     recordCategory: recordCategoryEnum().notNull(),
-    regionalSingleRecord: recordTypeEnum(),
-    regionalAverageRecord: recordTypeEnum(),
-    competitionId: d.text().references(() => contestsTable.competitionId, { onUpdate: "cascade" }), // only used for contest results
+    regionalSingleRecord: d.text(),
+    regionalAverageRecord: d.text(),
+    competitionId: d.text(), // only used for contest results
     roundId: d.integer().references(() => roundsTable.id), // only used for contest results
     ranking: d.integer(), // only used for contest results
     proceeds: d.boolean(), // only used for contest results from non-final rounds
@@ -54,6 +51,34 @@ export const resultsTable = rrSchema.table(
     ...tableTimestamps,
   },
   (table) => [
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.eventId],
+        foreignColumns: [eventsTable.organizationId, eventsTable.eventId],
+        name: "results_event_id_fk",
+      })
+      .onUpdate("cascade"),
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.regionCode],
+        foreignColumns: [regionsTable.organizationId, regionsTable.code],
+        name: "results_region_code_fk",
+      })
+      .onUpdate("cascade"),
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.superRegionCode],
+        foreignColumns: [regionsTable.organizationId, regionsTable.code], // yes, this also refers to regions.code
+        name: "results_super_region_code_fk",
+      })
+      .onUpdate("cascade"),
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.competitionId],
+        foreignColumns: [contestsTable.organizationId, contestsTable.competitionId],
+        name: "results_competition_id_fk",
+      })
+      .onUpdate("cascade"),
     d.check(
       "results_check",
       sql`(${table.competitionId} IS NOT NULL
@@ -73,7 +98,6 @@ export type InsertResult = typeof resultsTable.$inferInsert;
 export type SelectResult = typeof resultsTable.$inferSelect;
 
 export type FullResult = SelectResult & {
-  event: SelectEvent;
   contest?: SelectContest;
   persons: SelectPerson[];
 };

@@ -2,7 +2,6 @@ import "server-only";
 import { getColumns } from "drizzle-orm";
 import { integer, serial, text } from "drizzle-orm/pg-core";
 import { usersTable } from "~/server/db/schema/auth-schema.ts";
-import { eventsTable } from "~/server/db/schema/events.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 import { tableTimestamps } from "../dbUtils.ts";
 
@@ -10,9 +9,7 @@ export const collectiveSolutionStateEnum = rrSchema.enum("state", ["ongoing", "s
 
 export const collectiveSolutionsTable = rrSchema.table("collective_solutions", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  eventId: text()
-    .references(() => eventsTable.eventId, { onUpdate: "cascade" })
-    .notNull(),
+  eventId: text().notNull(),
   attemptNumber: serial().notNull().unique(),
   state: collectiveSolutionStateEnum().default("ongoing").notNull(),
   scramble: text().notNull(),

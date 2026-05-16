@@ -131,7 +131,7 @@ describe("createContestResultSF", () => {
     expect(res.data?.length).toBe(1);
     expect(res.data![0]).toBeDefined();
     expect(res.data![0].regionCode).toBe("GB");
-    expect(res.data![0].superRegionCode).toBe("EUROPE");
+    expect(res.data![0].superRegionCode).toBe("XE");
     expect(res.data![0].best).toBe(10000);
     expect(res.data![0].average).toBe(10100);
     expect(res.data![0].date.getTime()).toBe(new Date(2026, 0, 1).getTime());
@@ -475,7 +475,7 @@ describe("createContestResultSF", () => {
 
         expect(res.data?.length).toBe(1);
         expect(res.data![0].regionCode).toBe("GB");
-        expect(res.data![0].superRegionCode).toBe("EUROPE");
+        expect(res.data![0].superRegionCode).toBe("XE");
         expect(res.data![0].regionalSingleRecord).toBe("ER");
         expect(res.data![0].regionalAverageRecord).toBe("ER");
 
@@ -507,7 +507,7 @@ describe("createContestResultSF", () => {
 
         expect(res.data?.length).toBe(1);
         expect(res.data![0].regionCode).toBeNull();
-        expect(res.data![0].superRegionCode).toBe("EUROPE");
+        expect(res.data![0].superRegionCode).toBe("XE");
         expect(res.data![0].regionalSingleRecord).toBe("ER");
         expect(res.data![0].regionalAverageRecord).toBe("ER");
 
@@ -539,7 +539,7 @@ describe("createContestResultSF", () => {
 
         expect(res.data?.length).toBe(1);
         expect(res.data![0].regionCode).toBe("GB");
-        expect(res.data![0].superRegionCode).toBe("EUROPE");
+        expect(res.data![0].superRegionCode).toBe("XE");
         expect(res.data![0].regionalSingleRecord).toBe("WR");
         expect(res.data![0].regionalAverageRecord).toBe("WR");
 
@@ -586,7 +586,7 @@ describe("createContestResultSF", () => {
 
         expect(res.data?.length).toBe(1);
         expect(res.data![0].regionCode).toBeNull();
-        expect(res.data![0].superRegionCode).toBe("EUROPE");
+        expect(res.data![0].superRegionCode).toBe("XE");
         expect(res.data![0].regionalSingleRecord).toBe("WR");
         expect(res.data![0].regionalAverageRecord).toBe("WR");
 
@@ -932,7 +932,7 @@ describe("createVideoBasedResultSF", () => {
     expect(res.validationErrors).toBeUndefined();
     expect(res.data).toBeDefined();
     expect(res.data!.regionCode).toBe("GB");
-    expect(res.data!.superRegionCode).toBe("EUROPE");
+    expect(res.data!.superRegionCode).toBe("XE");
     expect(res.data!.best).toBe(10000);
     expect(res.data!.average).toBe(10100);
     expect(res.data!.date.getTime()).toBe(date.getTime());
@@ -1125,7 +1125,7 @@ describe("createVideoBasedResultSF", () => {
         });
         expect(res2.data).toBeDefined();
 
-        expect(res2.data!.superRegionCode).toBe("NORTH_AMERICA");
+        expect(res2.data!.superRegionCode).toBe("XN");
         expect(res2.data!.regionalSingleRecord).toBe("NAR");
         expect(res2.data!.regionalAverageRecord).toBe("NAR");
 
@@ -1185,7 +1185,7 @@ describe("createVideoBasedResultSF", () => {
         });
         expect(res2.data).toBeDefined();
 
-        expect(res2.data!.superRegionCode).toBe("ASIA");
+        expect(res2.data!.superRegionCode).toBe("XA");
         expect(res2.data!.regionalSingleRecord).toBe("AsR");
         expect(res2.data!.regionalAverageRecord).toBe("AsR");
 
@@ -1377,7 +1377,7 @@ describe("createVideoBasedResultSF", () => {
           });
           expect(res2.data).toBeDefined();
 
-          expect(res2.data!.superRegionCode).toBe("NORTH_AMERICA");
+          expect(res2.data!.superRegionCode).toBe("XN");
           expect(res2.data!.regionalSingleRecord).toBe("NAR");
           expect(res2.data!.regionalAverageRecord).toBe("NAR");
 
@@ -1404,7 +1404,7 @@ describe("createVideoBasedResultSF", () => {
           });
           expect(res2.data).toBeDefined();
 
-          expect(res2.data!.superRegionCode).toBe("NORTH_AMERICA");
+          expect(res2.data!.superRegionCode).toBe("XN");
           expect(res2.data!.regionalSingleRecord).toBe("NAR");
           expect(res2.data!.regionalAverageRecord).toBe("NAR");
 

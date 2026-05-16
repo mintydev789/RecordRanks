@@ -20,15 +20,12 @@ export const contestsTable = rrSchema.table(
       .text()
       .references(() => organizationsTable.id)
       .notNull(),
-    competitionId: d.text().notNull().unique(),
+    competitionId: d.text().notNull(),
     state: contestStateEnum().default("created").notNull(),
     name: d.text().notNull(),
     shortName: d.varchar({ length: C.maxContestShortName }).notNull(),
     type: contestTypeEnum().notNull(),
-    regionCode: d
-      .varchar({ length: 2 })
-      .references(() => regionsTable.code, { onUpdate: "cascade" })
-      .notNull(),
+    regionCode: d.text().notNull(),
     city: d.text().notNull(),
     venue: d.text().notNull(),
     address: d.text().notNull(),
@@ -49,6 +46,14 @@ export const contestsTable = rrSchema.table(
     ...tableTimestamps,
   },
   (table) => [
+    d.unique("unique_contests_competition_id").on(table.organizationId, table.competitionId),
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.regionCode],
+        foreignColumns: [regionsTable.organizationId, regionsTable.code],
+        name: "contests_region_code_fk",
+      })
+      .onUpdate("cascade"),
     d.check(
       "contests_meetup_check",
       sql`(${table.type} <> 'meetup'

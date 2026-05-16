@@ -3,12 +3,11 @@ import { eq } from "drizzle-orm";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
-import { defaultSettings } from "~/helpers/default-settings.ts";
+import { defaultGlobalSettings } from "~/helpers/default-settings.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { testPersons } from "~/helpers/test-data/testPersons.ts";
 import { testPosts } from "~/helpers/test-data/testPosts.ts";
 import { testUsers } from "~/helpers/test-data/testUsers.ts";
-import { RecordTypeValues } from "~/helpers/types.ts";
 import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utilityFunctions.ts";
 import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition.ts";
 import type { auth as authType } from "~/server/auth.ts";
@@ -35,8 +34,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { db }: { db: typeof dbType } = await import("~/server/db/provider.ts");
 
-    // Seed default settings
-    for (const defaultSetting of defaultSettings) {
+    // Seed default global settings
+    for (const defaultSetting of defaultGlobalSettings) {
       const [existingSetting] = await db
         .select({ id: settingsTable.id })
         .from(settingsTable)
@@ -81,8 +80,9 @@ export async function register() {
 
       // Seed init record configs
       if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
-        for (let i = 0; i < RecordTypeValues.length; i++) {
-          const recordTypeId = RecordTypeValues[i];
+        const recordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"];
+        for (let i = 0; i < recordTypeValues.length; i++) {
+          const recordTypeId = recordTypeValues[i];
           await db.insert(recordConfigsTable).values([
             {
               organizationId: "default",
@@ -429,6 +429,7 @@ export async function register() {
 
     //   const recordMapper = (result: SelectResult, event: Pick<SelectEvent, "format" | "category">) => {
     //     const region = await db.query.regions.findFirst({ where: { code: result.regionCode }});
+    //     // THE Continents OBJECT WAS REMOVED IN VERSION 0.20
     //     const continent = Continents.find((c) => c.code === result.superRegionCode);
     //     const getRecordLabel = (key: "regionalSingleRecord" | "regionalAverageRecord") =>
     //       result.recordCategory === "competitions"

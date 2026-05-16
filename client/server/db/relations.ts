@@ -1,6 +1,5 @@
 import "server-only";
 import { defineRelations } from "drizzle-orm";
-import { accessTokensTable as accessTokens } from "~/server/db/schema/access-tokens.ts";
 import { postsTable as posts } from "~/server/db/schema/posts.ts";
 import { settingsTable as settings } from "~/server/db/schema/settings.ts";
 import {
@@ -37,7 +36,6 @@ export const relations = defineRelations(
     memberRequests,
     events,
     contests,
-    accessTokens,
     rounds,
     results,
     persons,
@@ -120,68 +118,26 @@ export const relations = defineRelations(
         to: r.persons.id,
       }),
     },
-    events: {},
     contests: {
-      region: r.one.regions({
-        from: r.contests.regionCode,
-        to: r.regions.code,
-        optional: false,
-      }),
-      rounds: r.many.rounds(),
       // Relevant issue: https://github.com/drizzle-team/drizzle-orm/issues/4988
       // organizers: r.many.persons({
       //   from: r.contests.organizerIds,
       //   to: r.persons.id,
       // }),
-      accessToken: r.one.accessTokens(),
       creator: r.one.users({
         from: r.contests.createdBy,
         to: r.users.id,
       }),
     },
-    accessTokens: {
-      contest: r.one.contests({
-        from: r.accessTokens.competitionId,
-        to: r.contests.competitionId,
-        optional: false,
-      }),
-      creator: r.one.users({
-        from: r.accessTokens.createdBy,
-        to: r.users.id,
-      }),
-    },
     rounds: {
-      contest: r.one.contests({
-        from: r.rounds.competitionId,
-        to: r.contests.competitionId,
-        optional: false,
-      }),
-      event: r.one.events({
-        from: r.rounds.eventId,
-        to: r.events.eventId,
-        optional: false,
-      }),
       results: r.many.results(),
     },
     results: {
-      event: r.one.events({
-        from: r.results.eventId,
-        to: r.events.eventId,
-        optional: false,
-      }),
       // persons: r.many.persons({
       //   from: r.results.personIds,
       //   to: r.persons.id,
       //   where: { id: { in: r.results.personIds } },
       // }),
-      region: r.one.regions({
-        from: r.results.regionCode,
-        to: r.regions.code,
-      }),
-      contest: r.one.contests({
-        from: r.results.competitionId,
-        to: r.contests.competitionId,
-      }),
       round: r.one.rounds({
         from: r.results.roundId,
         to: r.rounds.id,
@@ -192,25 +148,13 @@ export const relations = defineRelations(
       }),
     },
     persons: {
-      region: r.one.regions({
-        from: r.persons.regionCode,
-        to: r.regions.code,
-        optional: false,
-      }),
       member: r.one.members(),
       creator: r.one.users({
         from: r.persons.createdBy,
         to: r.users.id,
       }),
     },
-    regions: {},
-    recordConfigs: {},
     collectiveSolutions: {
-      event: r.one.events({
-        from: r.collectiveSolutions.eventId,
-        to: r.events.eventId,
-        optional: false,
-      }),
       lastUserWhoInteracted: r.one.users({
         from: r.collectiveSolutions.lastUserWhoInteractedId,
         to: r.users.id,
@@ -222,6 +166,5 @@ export const relations = defineRelations(
         to: r.users.id,
       }),
     },
-    settings: {},
   }),
 );

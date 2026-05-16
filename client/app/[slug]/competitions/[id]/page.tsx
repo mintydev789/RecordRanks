@@ -1,5 +1,5 @@
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import Markdown from "react-markdown";
 import ContestLayout from "~/app/[slug]/competitions/[id]/ContestLayout.tsx";
 import ContestControls from "~/app/[slug]/mod/ContestControls.tsx";
@@ -13,7 +13,7 @@ import { getDateOnly, getFormattedDate } from "~/helpers/utilityFunctions.ts";
 import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
+import { getOrgDetails, getRegions } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{
@@ -24,10 +24,15 @@ type Props = {
 
 async function ContestDetailsPage({ params }: Props) {
   const { slug, id } = await params;
+  const organization = await getOrgDetails({ slug });
 
   const [[contest], regions] = await Promise.all([
-    db.select(contestsPublicCols).from(table).where(eq(table.competitionId, id)).limit(1),
-    db.select(regionsPublicCols).from(regionsTable),
+    db
+      .select(contestsPublicCols)
+      .from(table)
+      .where(and(eq(table.organizationId, organization.id), eq(table.competitionId, id)))
+      .limit(1),
+    getRegions(organization.id),
   ]);
 
   if (!contest) return <LoadingError loadingEntity="contest" />;

@@ -72,18 +72,19 @@ export type EventCategory = (typeof EventCategoryValues)[number];
 export const RecordCategoryValues = ["competitions", "meetups", "online"] as const;
 export type RecordCategory = (typeof RecordCategoryValues)[number];
 
-export const RecordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"] as const;
-export type RecordType = (typeof RecordTypeValues)[number];
-export const ContinentalRecordTypes = ["ER", "NAR", "SAR", "AsR", "AfR", "OcR"] as const satisfies RecordType[];
-
 export const ContestTypeValues = ["comp", "meetup", "online", "wca-comp"] as const;
 export type ContestType = (typeof ContestTypeValues)[number];
 
 export const ContestStateValues = ["created", "approved", "ongoing", "finished", "published", "removed"] as const;
 export type ContestState = (typeof ContestStateValues)[number];
 
-export const SuperRegionCodeValues = ["AFRICA", "ASIA", "EUROPE", "NORTH_AMERICA", "OCEANIA", "SOUTH_AMERICA"] as const;
-export type SuperRegionCode = (typeof SuperRegionCodeValues)[number];
+export const RegionTypeValues = [
+  "country", // actual country in the World (this is important for determining the time zone used for a contest)
+  "region", // the region of a country (e.g. state, county, prefecture, etc.); can be used as region of representation for a person
+  "super-region", // determines the super region record type (e.g. ER, AsR, etc.); can be used as the region for a contest
+  "meta-region", // doesn't correspond to any type of record; can be used as the region for a contest
+] as const;
+export type RegionType = (typeof RegionTypeValues)[number];
 
 export type EventWrPair = {
   eventId: string;

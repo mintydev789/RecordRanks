@@ -4,9 +4,7 @@ import type { PostResponse } from "~/server/db/schema/posts.ts";
 
 type Props = {
   organizationSlug: string;
-  post: PostResponse & {
-    authorName?: string | null;
-  };
+  post: PostResponse & { authorName?: string | null };
 };
 
 function BlogPostCard({ organizationSlug, post }: Props) {

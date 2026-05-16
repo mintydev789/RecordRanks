@@ -14,18 +14,12 @@ import ColorSquare from "~/app/components/UI/ColorSquare.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import { Continents } from "~/helpers/continents.ts";
-import { recordCategoryOptions, recordTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
-import {
-  type ListPageMode,
-  type RecordCategory,
-  RecordCategoryValues,
-  type RecordType,
-  RecordTypeValues,
-} from "~/helpers/types.ts";
+import { recordCategoryOptions } from "~/helpers/multipleChoiceOptions.ts";
+import { type ListPageMode, type RecordCategory, RecordCategoryValues } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import type { RecordConfigDto } from "~/helpers/validators/RecordConfig.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
+import type { SelectRegion } from "~/server/db/schema/regions.ts";
 import {
   createRecordConfigSF,
   updateRecordConfigSF,
@@ -33,9 +27,10 @@ import {
 
 type Props = {
   recordConfigs: RecordConfigResponse[];
+  regions: Pick<SelectRegion, "type" | "superRegionRecordType">[];
 };
 
-function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
+function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: Props) {
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
   const { executeAsync: createRecordConfig, isPending: isCreating } = useAction(createRecordConfigSF);
@@ -45,7 +40,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
 
   const [recordConfigIdUnderEdit, setRecordConfigIdUnderEdit] = useState<number | undefined>();
   const [category, setCategory] = useState<RecordCategory>(RecordCategoryValues[0]);
-  const [recordTypeId, setRecordTypeId] = useState<RecordType>(RecordTypeValues[0]);
+  const [recordTypeId, setRecordTypeId] = useState("WR");
   const [label, setLabel] = useState("");
   const [active, setActive] = useState(true);
   const [rank, setRank] = useState<number | undefined>();
@@ -115,11 +110,12 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
     resetMessages();
   };
 
-  const changeRecordTypeId = (newRecordTypeId: RecordType) => {
+  const changeRecordTypeId = (newRecordTypeId: string) => {
     setRecordTypeId(newRecordTypeId);
 
     if (newRecordTypeId === "WR") setColor(C.color.danger);
-    else if (Continents.some((c) => c.recordTypeId === newRecordTypeId)) setColor(C.color.warning);
+    else if (regions.some((r) => r.type === "super-region" && r.superRegionRecordType === newRecordTypeId))
+      setColor(C.color.warning);
     else if (newRecordTypeId === "NR") setColor(C.color.success);
     else setColor(C.color.primary);
   };
@@ -145,24 +141,17 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs }: Props) {
               />
             </div>
             <div className="col">
-              <FormSelect
+              <FormTextInput
                 title="Record Type"
-                options={recordTypeOptions}
-                selected={recordTypeId}
-                setSelected={changeRecordTypeId as any}
+                value={recordTypeId}
+                setValue={changeRecordTypeId}
                 disabled={isPending}
               />
             </div>
           </div>
           <div className="row mb-3">
             <div className="col">
-              <FormTextInput
-                id="record_config_label"
-                title="Label"
-                value={label}
-                setValue={setLabel}
-                disabled={isPending}
-              />
+              <FormTextInput title="Label" value={label} setValue={setLabel} disabled={isPending} />
             </div>
             <div className="col">
               <FormNumberInput

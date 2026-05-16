@@ -1,17 +1,18 @@
 import { headers } from "next/headers";
 import ResultsSubmissionForm from "~/app/[slug]/video-based-results/ResultsSubmissionForm.tsx";
 import { auth } from "~/server/auth.ts";
-import { db } from "~/server/db/provider.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getRecordConfigs, getVideoBasedEvents } from "~/server/server-only-functions.ts";
+import { authorizeUser, getRecordConfigs, getRegions, getVideoBasedEvents } from "~/server/server-only-functions.ts";
 
 async function SubmitResultsPage() {
-  await authorizeUser({ useOrganization: true, orgPermissions: { videoBasedResults: ["create"] } });
+  const { organization } = await authorizeUser({
+    useOrganization: true,
+    orgPermissions: { videoBasedResults: ["create"] },
+  });
 
   const [events, recordConfigs, regions, { success: isVideoBasedResultReviewer }] = await Promise.all([
     getVideoBasedEvents(),
-    getRecordConfigs({ recordCategory: "online" }),
-    db.select(regionsPublicCols).from(regionsTable),
+    getRecordConfigs(organization!.id, { recordCategory: "online" }),
+    getRegions(organization!.id),
     auth.api.hasPermission({
       headers: await headers(),
       body: { permissions: { videoBasedResults: ["update", "approve", "delete"] } },

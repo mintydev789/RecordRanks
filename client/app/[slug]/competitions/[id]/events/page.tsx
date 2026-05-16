@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import ContestLayout from "~/app/[slug]/competitions/[id]/ContestLayout.tsx";
 import EventTitle from "~/app/components/EventTitle.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
@@ -24,7 +24,10 @@ async function ContestEventsPage({ params }: Props) {
   const roundsData = await db
     .select()
     .from(roundsTable)
-    .innerJoin(eventsTable, eq(roundsTable.eventId, eventsTable.eventId))
+    .innerJoin(
+      eventsTable,
+      and(eq(roundsTable.organizationId, eventsTable.organizationId), eq(roundsTable.eventId, eventsTable.eventId)),
+    )
     .where(eq(roundsTable.competitionId, id))
     .orderBy(asc(eventsTable.rank), asc(roundsTable.roundNumber));
 

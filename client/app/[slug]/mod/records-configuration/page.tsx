@@ -1,18 +1,29 @@
+import { eq } from "drizzle-orm";
 import { db } from "~/server/db/provider.ts";
 import { recordConfigsPublicCols, recordConfigsTable as table } from "~/server/db/schema/record-configs.ts";
-import { authorizeUser } from "~/server/server-only-functions.ts";
+import { authorizeUser, getRegions } from "~/server/server-only-functions.ts";
 import ConfigureRecordsScreen from "./ConfigureRecordsScreen.tsx";
 
 async function RecordsConfigurationPage() {
-  await authorizeUser({ useOrganization: true, orgPermissions: { recordConfigs: ["create-and-update"] } });
+  const { organization } = await authorizeUser({
+    useOrganization: true,
+    orgPermissions: { recordConfigs: ["create-and-update"] },
+  });
 
-  const recordConfigs = await db.select(recordConfigsPublicCols).from(table).orderBy(table.rank);
+  const [recordConfigs, regions] = await Promise.all([
+    db
+      .select(recordConfigsPublicCols)
+      .from(table)
+      .where(eq(table.organizationId, organization!.id))
+      .orderBy(table.rank),
+    getRegions(organization!.id),
+  ]);
 
   return (
     <section>
       <h2 className="mb-4 text-center">Records Configuration</h2>
 
-      <ConfigureRecordsScreen recordConfigs={recordConfigs} />
+      <ConfigureRecordsScreen recordConfigs={recordConfigs} regions={regions} />
     </section>
   );
 }

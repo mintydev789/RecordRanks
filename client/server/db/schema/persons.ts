@@ -6,25 +6,35 @@ import { organizationsTable, usersTable } from "~/server/db/schema/auth-schema.t
 import { regionsTable } from "~/server/db/schema/regions.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 
-export const personsTable = rrSchema.table("persons", {
-  id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
-  organizationId: d
-    .text()
-    .references(() => organizationsTable.id)
-    .notNull(),
-  name: d.text().notNull(),
-  localizedName: d.text(),
-  regionCode: d
-    .varchar({ length: 2 })
-    .references(() => regionsTable.code, { onUpdate: "cascade" })
-    .notNull(),
-  wcaId: d.varchar({ length: 10 }).unique(),
-  approved: d.boolean().default(false).notNull(),
-  // Before the v0.13, createdExternally wasn't a column, and createdBy was just set to undefined if the person was created externally
-  createdBy: d.text().references(() => usersTable.id, { onDelete: "set null" }),
-  createdExternally: d.boolean().default(false).notNull(),
-  ...tableTimestamps,
-});
+export const personsTable = rrSchema.table(
+  "persons",
+  {
+    id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: d
+      .text()
+      .references(() => organizationsTable.id)
+      .notNull(),
+    name: d.text().notNull(),
+    localizedName: d.text(),
+    regionCode: d.text().notNull(),
+    wcaId: d.varchar({ length: 10 }),
+    approved: d.boolean().default(false).notNull(),
+    // Before the v0.13, createdExternally wasn't a column, and createdBy was just set to undefined if the person was created externally
+    createdBy: d.text().references(() => usersTable.id, { onDelete: "set null" }),
+    createdExternally: d.boolean().default(false).notNull(),
+    ...tableTimestamps,
+  },
+  (table) => [
+    d.unique("unique_persons_wca_id").on(table.organizationId, table.wcaId),
+    d
+      .foreignKey({
+        columns: [table.organizationId, table.regionCode],
+        foreignColumns: [regionsTable.organizationId, regionsTable.code],
+        name: "persons_region_code_fk",
+      })
+      .onUpdate("cascade"),
+  ],
+);
 
 export type InsertPerson = typeof personsTable.$inferInsert;
 export type SelectPerson = typeof personsTable.$inferSelect;

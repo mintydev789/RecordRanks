@@ -2,23 +2,21 @@ import DataEntryScreen from "~/app/[slug]/mod/competition/[id]/DataEntryScreen.t
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
-import { getContestSF } from "~/server/server-functions/contest-server-functions.ts";
-import { authorizeUser } from "~/server/server-only-functions.ts";
+import { authorizeUser, getContest } from "~/server/server-only-functions.ts";
 
 type Props = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string; id: string }>;
   searchParams: Promise<{ eventId?: string }>;
 };
 
 async function DataEntryPage({ params, searchParams }: Props) {
-  const { id } = await params;
+  const { slug, id } = await params;
   const { eventId } = await searchParams;
 
-  const res = await getContestSF({ competitionId: id, eventId });
+  const contestData = await getContest({ slug, competitionId: id, eventId });
+  if (!contestData) return <LoadingError loadingEntity="contest results" />;
 
-  if (!res.data) return <LoadingError loadingEntity="contest results" />;
-
-  const { contest, events, rounds, results, persons, recordConfigs, regions } = res.data;
+  const { contest, events, rounds, results, persons, recordConfigs, regions } = contestData;
   const eventIdOrFirst = eventId ?? events[0].eventId;
 
   if (contest.type === "online") {

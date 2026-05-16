@@ -15,8 +15,7 @@ import { RecordCategoryValues } from "~/helpers/types.ts";
 import { shortenEventName } from "~/helpers/utilityFunctions.ts";
 import { db } from "~/server/db/provider.ts";
 import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { getRankings } from "~/server/server-only-functions.ts";
+import { getEvents, getOrgDetails, getRankings, getRegions } from "~/server/server-only-functions.ts";
 
 const ParamsValidator = z.strictObject({
   slug: z.string().nonempty(),
@@ -62,9 +61,10 @@ async function RankingsPage({ params, searchParams }: Props) {
   const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ show, region, topN } as any, (val) => !val));
   const urlSearchParamsWithoutTopN = new URLSearchParams(omitBy({ show, category, region } as any, (val) => !val));
 
+  const organization = await getOrgDetails({ slug });
   const [events, regions] = await Promise.all([
-    db.select(eventsPublicCols).from(table).orderBy(table.rank),
-    db.select(regionsPublicCols).from(regionsTable),
+    getEvents(organization!.id, { includeHiddenAndRemoved: true }),
+    getRegions(organization!.id),
   ]);
 
   const visibleEvents = events.filter((e) => e.category !== "removed" && !e.hidden);
@@ -77,7 +77,7 @@ async function RankingsPage({ params, searchParams }: Props) {
       : "competitions");
   const roundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
 
-  const rankingsPromise = getRankings(event, type, recordCategory, { show, region, topN });
+  const rankingsPromise = getRankings(organization!.id, event, type, recordCategory, { show, region, topN });
 
   return (
     <section>

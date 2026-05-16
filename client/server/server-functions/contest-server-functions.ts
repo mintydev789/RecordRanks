@@ -10,9 +10,7 @@ import { C } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
-  generateAccessToken,
   getDateOnly,
-  getHasRole,
   getMaxAllowedRounds,
   getMemberControlsContest,
   getNameAndLocalizedName,
@@ -21,14 +19,10 @@ import {
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";
-import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
-import { accessTokensTable } from "~/server/db/schema/access-tokens.ts";
-import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
-import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
-import { type RegionResponse, regionsPublicCols, regionsTable, type SelectRegion } from "~/server/db/schema/regions.ts";
-import { type ResultResponse, resultsPublicCols, resultsTable, type SelectResult } from "~/server/db/schema/results.ts";
+import type { SelectRegion } from "~/server/db/schema/regions.ts";
+import { resultsTable, type SelectResult } from "~/server/db/schema/results.ts";
 import { type RoundResponse, roundsPublicCols, roundsTable, type SelectRound } from "~/server/db/schema/rounds.ts";
 import {
   sendContestApprovedEmail,
@@ -40,7 +34,6 @@ import {
 import {
   approvePersons,
   getContestParticipantIds,
-  getRecordConfigs,
   getSettingFromDb,
   logMessage,
 } from "~/server/server-only-functions.ts";
@@ -55,111 +48,30 @@ import { actionClient, RrActionError } from "../safeAction.ts";
 
 const SELECT_AN_EVENT_MSG = "Please select at least one event";
 
-// TO-DO: THIS DOESN'T NEED TO BE A SERVER FUNCTION!!!!! BUT STILL DO VALIDATION IN A NORMAL FUNCTION.
-export const getContestSF = actionClient
-  .metadata({ auth: null })
-  .inputSchema(
-    z.strictObject({
-      competitionId: z.string().nonempty(),
-      eventId: z.string().optional(),
-    }),
-  )
-  .action<{
-    contest: Pick<
-      SelectContest,
-      "competitionId" | "state" | "name" | "shortName" | "type" | "startDate" | "organizerIds" | "schedule"
-    >;
-    events: EventResponse[];
-    rounds: RoundResponse[];
-    results: ResultResponse[];
-    persons: PersonResponse[];
-    recordConfigs: RecordConfigResponse[];
-    regions: RegionResponse[];
-  } | null>(async ({ parsedInput: { competitionId, eventId } }) => {
-    const [contest, rounds, regions] = await Promise.all([
-      db.query.contests.findFirst({
-        columns: {
-          competitionId: true,
-          state: true,
-          name: true,
-          shortName: true,
-          type: true,
-          startDate: true,
-          organizerIds: true,
-          schedule: true,
-        },
-        where: { competitionId },
-      }),
-      // Rounds are further filtered below, once it's known what event is needed
-      db
-        .select(roundsPublicCols)
-        .from(roundsTable)
-        .where(eq(roundsTable.competitionId, competitionId))
-        .orderBy(roundsTable.roundNumber),
-      db.select(regionsPublicCols).from(regionsTable),
-    ]);
-    if (!contest) return null;
-
-    const eventIds = Array.from(new Set(rounds.map((r) => r.eventId)));
-
-    const [events, recordConfigs] = await Promise.all([
-      db
-        .select(eventsPublicCols)
-        .from(eventsTable)
-        .where(inArray(eventsTable.eventId, eventIds))
-        .orderBy(eventsTable.rank),
-      getRecordConfigs({ contestType: contest.type }),
-    ]);
-    if (eventId && !events.some((e) => e.eventId === eventId))
-      throw new RrActionError(`Event with ID ${eventId} not found`);
-
-    const eventIdOrFirst = eventId ?? events[0].eventId;
-
-    const results = await db
-      .select(resultsPublicCols)
-      .from(resultsTable)
-      .where(and(eq(resultsTable.competitionId, competitionId), eq(resultsTable.eventId, eventIdOrFirst)));
-
-    const personIds = Array.from(
-      new Set(results.map((r) => r.personIds).reduce((prev, curr) => [...(prev as []), ...curr], [])),
-    );
-    const persons = await db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, personIds));
-
-    return {
-      contest,
-      events,
-      rounds: rounds.filter((r) => r.eventId === eventIdOrFirst),
-      results,
-      persons,
-      recordConfigs,
-      regions,
-    };
-  });
-
 export const getModContestsSF = actionClient
   .metadata({ auth: { useOrganization: true, orgPermissions: { modDashboard: ["view"] } } })
   .inputSchema(ModDashboardFiltersValidator)
   .action<{ contests: ContestResponse[]; organizerPerson?: PersonResponse }>(
     async ({ parsedInput: { organizerPersonId, state }, ctx: { session, httpHeaders } }) => {
-      const queryFilters = [];
+      const queryFilters: any[] = [eq(table.organizationId, session.organization!.id)];
 
-      const { success: isAdmin } = await auth.api.hasPermission({
+      const { success: canViewAdminDashboard } = await auth.api.hasPermission({
         headers: httpHeaders,
         body: { permissions: { adminDashboard: ["view"] } },
       });
 
       // If it's a moderator, only get their own contests
-      if (!isAdmin) {
+      if (!canViewAdminDashboard) {
         const msg = "Your competitor profile must be tied to your member profile before you can use moderator features";
         if (!session.member!.personId) throw new RrActionError(msg);
 
-        const [userPerson] = await db
+        const [person] = await db
           .select({ id: personsTable.id })
           .from(personsTable)
           .where(eq(personsTable.id, session.member!.personId));
 
-        if (!userPerson) throw new RrActionError(msg);
-        queryFilters.push(arrayContains(table.organizerIds, [userPerson.id]));
+        if (!person) throw new RrActionError(msg);
+        queryFilters.push(arrayContains(table.organizerIds, [person.id]));
       }
 
       let organizerPerson: PersonResponse | undefined;
@@ -167,7 +79,9 @@ export const getModContestsSF = actionClient
         const [person] = await db
           .select(personsPublicCols)
           .from(personsTable)
-          .where(eq(personsTable.id, organizerPersonId));
+          .where(
+            and(eq(personsTable.organizationId, session.organization!.id), eq(personsTable.id, organizerPersonId)),
+          );
 
         if (!person) throw new RrActionError(`Person with ID ${organizerPersonId} not found`);
         queryFilters.push(arrayContains(table.organizerIds, [person.id]));
@@ -229,13 +143,17 @@ export const createContestSF = actionClient
     );
 
     const sameNameContest = await db.query.contests.findFirst({
-      where: { name: newContestDto.name, state: { NOT: "removed" } },
+      where: { organizationId: session.organization!.id, name: newContestDto.name, state: { NOT: "removed" } },
     });
     if (sameNameContest) throw new RrActionError(`A contest with the name ${newContestDto.name} already exists`);
-    const sameShortContest = await db.query.contests.findFirst({
-      where: { shortName: newContestDto.shortName, state: { NOT: "removed" } },
+    const sameShortNameContest = await db.query.contests.findFirst({
+      where: {
+        organizationId: session.organization!.id,
+        shortName: newContestDto.shortName,
+        state: { NOT: "removed" },
+      },
     });
-    if (sameShortContest)
+    if (sameShortNameContest)
       throw new RrActionError(`A contest with the short name ${newContestDto.shortName} already exists`);
 
     const { success: canApprove } = await auth.api.hasPermission({
@@ -243,7 +161,13 @@ export const createContestSF = actionClient
       body: { permissions: { competitions: ["approve"], meetups: ["approve"] } },
     });
 
-    const { region } = await validateAndCleanUpContest(newContestDto, rounds, session.member!.personId!, canApprove);
+    const { region } = await validateAndCleanUpContest(
+      session.organization!.id,
+      newContestDto,
+      rounds,
+      session.member!.personId!,
+      canApprove,
+    );
 
     const creatorPerson = await db.query.persons.findFirst({
       columns: { name: true },
@@ -272,7 +196,7 @@ export const createContestSF = actionClient
       {
         contest: createdContest,
         creator: creatorPerson.name,
-        regionName: NonMetaRegionCodeRegex.test(region.code) ? region.name : undefined,
+        regionName: region.type === "meta-region" ? undefined : region.name,
         organization: session.organization!,
       },
     );
@@ -384,8 +308,6 @@ export const finishContestSF = actionClient
       await tx.update(table).set({ state: "finished" }).where(eq(table.competitionId, competitionId));
 
       await tx.update(roundsTable).set({ open: false }).where(eq(roundsTable.competitionId, competitionId));
-
-      await tx.delete(accessTokensTable).where(eq(accessTokensTable.competitionId, competitionId));
     });
 
     sendContestFinishedEmail(
@@ -546,7 +468,13 @@ export const updateContestSF = actionClient
     if (!["created", "approved", "ongoing"].includes(contest.state))
       throw new RrActionError("Finished contests cannot be edited");
 
-    await validateAndCleanUpContest(newContestDto, rounds, session.member!.personId!, canApprove);
+    await validateAndCleanUpContest(
+      session.organization!.id,
+      newContestDto,
+      rounds,
+      session.member!.personId!,
+      canApprove,
+    );
 
     await db.transaction(async (tx) => {
       const updateContestObject: Partial<SelectContest> = {
@@ -613,8 +541,6 @@ export const removeContestSF = actionClient
     if (contest.participants > 0) throw new RrActionError("You may not remove a contest that has results");
 
     await db.transaction(async (tx) => {
-      await tx.delete(accessTokensTable).where(eq(accessTokensTable.competitionId, competitionId));
-
       const newCompetitionId = `${competitionId}_REMOVED`;
 
       await tx
@@ -701,6 +627,7 @@ export const openRoundSF = actionClient
 //   });
 
 async function validateAndCleanUpContest(
+  organizationId: string,
   contest: ContestDto,
   rounds: RoundDto[],
   userPersonId: number,
@@ -713,8 +640,9 @@ async function validateAndCleanUpContest(
   const [events, region] = await Promise.all([
     db.query.events.findMany({
       columns: { eventId: true, name: true, category: true, format: true },
+      where: { organizationId },
     }),
-    db.query.regions.findFirst({ where: { code: contest.regionCode } }),
+    db.query.regions.findFirst({ where: { organizationId, code: contest.regionCode } }),
   ]);
 
   if (!region) throw new RrActionError(`Invalid region code: ${contest.regionCode}`);

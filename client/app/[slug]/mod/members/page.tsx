@@ -8,7 +8,7 @@ import { C } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
+import { authorizeUser, getRegions } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{
@@ -18,19 +18,19 @@ type Props = {
 
 async function ManageMembersPage({ params }: Props) {
   const { slug } = await params;
+  const { organization } = await authorizeUser({ useOrganization: true, orgRole: "admin" });
 
   const [membersData, regions] = await Promise.all([
-    // This checks whether the user has the required permissions too
     auth.api.listMembers({
       headers: await headers(),
       query: { organizationSlug: slug, sortBy: "createdAt", sortDirection: "desc", limit: C.maxMembers },
     }),
-    db.select(regionsPublicCols).from(regionsTable),
+    getRegions(organization!.id),
   ]);
 
   if (!membersData.members) return <LoadingError loadingEntity="members" />;
 
-  const personIds = Array.from(new Set(membersData.members.filter((u) => u.personId).map((u) => u.personId!)));
+  const personIds = Array.from(new Set(membersData.members.filter((m) => m.personId).map((m) => m.personId!)));
   const persons = await db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, personIds));
 
   return (

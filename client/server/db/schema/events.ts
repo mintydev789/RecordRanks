@@ -10,27 +10,31 @@ export const eventFormatEnum = rrSchema.enum("event_format", EventFormatValues);
 export const roundFormatEnum = rrSchema.enum("round_format", RoundFormatValues);
 export const eventCategoryEnum = rrSchema.enum("event_category", EventCategoryValues);
 
-export const eventsTable = rrSchema.table("events", {
-  id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
-  organizationId: d
-    .text()
-    .references(() => organizationsTable.id)
-    .notNull(),
-  eventId: d.text().notNull().unique(),
-  name: d.text().notNull(),
-  category: d.text().notNull(),
-  rank: d.integer().notNull(),
-  format: eventFormatEnum().notNull(),
-  defaultRoundFormat: roundFormatEnum().notNull(),
-  participants: d.integer().notNull(),
-  submissionsAllowed: d.boolean().notNull(),
-  hasMemo: d.boolean().notNull(),
-  hidden: d.boolean().notNull(),
-  description: d.text(),
-  rule: d.text(),
-  importantInfo: d.text(),
-  ...tableTimestamps,
-});
+export const eventsTable = rrSchema.table(
+  "events",
+  {
+    id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: d
+      .text()
+      .references(() => organizationsTable.id)
+      .notNull(),
+    eventId: d.text().notNull(),
+    name: d.text().notNull(),
+    category: d.text().notNull(),
+    rank: d.integer().notNull(),
+    format: eventFormatEnum().notNull(),
+    defaultRoundFormat: roundFormatEnum().notNull(),
+    participants: d.integer().notNull(),
+    submissionsAllowed: d.boolean().notNull(),
+    hasMemo: d.boolean().notNull(),
+    hidden: d.boolean().notNull(),
+    description: d.text(),
+    rule: d.text(),
+    importantInfo: d.text(),
+    ...tableTimestamps,
+  },
+  (table) => [d.unique("unique_events_event_id").on(table.organizationId, table.eventId)],
+);
 
 export type InsertEvent = typeof eventsTable.$inferInsert;
 export type SelectEvent = typeof eventsTable.$inferSelect;

@@ -11,7 +11,7 @@ CREATE TABLE "record_ranks"."regions" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
--- CUSTOM ADDITION FOR RECORDRANKS!
+-- CUSTOM ADDITION FOR RECORDRANKS! This was replaced in the multi-tenancy migration update
 INSERT INTO "record_ranks"."regions" ("name", "short_name", "code", "super_region_code", "super_region_record_type") VALUES
   ('Afghanistan', NULL, 'AF', 'ASIA', 'AsR'),
   ('Albania', NULL, 'AL', 'EUROPE', 'ER'),

@@ -1,9 +1,5 @@
-import { desc, eq } from "drizzle-orm";
 import BlogPostCard from "~/app/[slug]/posts/BlogPostCard.tsx";
-import { db } from "~/server/db/provider.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
-import { personsTable } from "~/server/db/schema/persons.ts";
-import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
+import { getBlogPosts, getOrgDetails } from "~/server/server-only-functions.ts";
 
 export const metadata = {
   title: "Blog",
@@ -22,12 +18,8 @@ type Props = {
 async function PostsPage({ params }: Props) {
   const { slug } = await params;
 
-  const posts = await db
-    .select({ ...postsPublicCols, authorName: personsTable.name })
-    .from(postsTable)
-    .leftJoin(usersTable, eq(postsTable.createdBy, usersTable.id))
-    .leftJoin(personsTable, eq(usersTable.personId, personsTable.id))
-    .orderBy(desc(postsTable.date));
+  const organization = await getOrgDetails({ slug });
+  const posts = await getBlogPosts(organization.id);
 
   return (
     <section>

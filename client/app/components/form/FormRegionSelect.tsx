@@ -2,14 +2,12 @@
 
 import FormInputLabel from "~/app/components/form/FormInputLabel.tsx";
 import { C } from "~/helpers/constants.ts";
-import { Continents } from "~/helpers/continents.ts";
-import { NonMetaRegionCodeRegex } from "~/helpers/validators/Validators.ts";
 import type { SelectRegion } from "~/server/db/schema/regions.ts";
 
 type Props = {
   regionCode: string | typeof C.notSelectedOption;
   setRegionCode: (value: string | typeof C.notSelectedOption) => void;
-  regions: Pick<SelectRegion, "code" | "name">[];
+  regions: Pick<SelectRegion, "code" | "name" | "shortName" | "type">[];
   nextFocusTargetId?: string;
   continentOptions?: boolean;
   disabled?: boolean;
@@ -45,18 +43,20 @@ function FormRegionSelect({
         {continentOptions ? (
           <>
             <option value={C.notSelectedOption}>All regions</option>
-            {Continents.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
+            {regions
+              .filter((r) => r.type === "super-region")
+              .map((r) => (
+                <option key={r.code} value={r.code}>
+                  {r.shortName}
+                </option>
+              ))}
           </>
         ) : (
           <option value={C.notSelectedOption}>Select region</option>
         )}
 
         {regions
-          .filter((r) => NonMetaRegionCodeRegex.test(r.code))
+          .filter((r) => ["country", "region"].includes(r.type))
           .map((r) => (
             <option key={r.code} value={r.code}>
               {r.name}

@@ -1,14 +1,15 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, desc, eq, exists, inArray } from "drizzle-orm";
 import { Suspense } from "react";
 import ContestsTable from "~/app/components/ContestsTable.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import RegionSelect from "~/app/components/RegionSelect.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import { type SuperRegionCode, SuperRegionCodeValues } from "~/helpers/types.ts";
 import { db } from "~/server/db/provider.ts";
-import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
+import { regionsTable } from "~/server/db/schema/regions.ts";
+import { roundsTable } from "~/server/db/schema/rounds.ts";
+import { getEvents, getOrgDetails, getRegions } from "~/server/server-only-functions.ts";
 
 export const metadata = {
   title: "Contests",
@@ -19,51 +20,69 @@ export const metadata = {
 };
 
 type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
   searchParams: Promise<{
     eventId?: string;
     region?: string;
   }>;
 };
 
-async function ContestsPage({ searchParams }: Props) {
-  const { eventId, region } = await searchParams;
+async function ContestsPage({ params, searchParams }: Props) {
+  const { slug } = await params;
+  const { eventId, region: regionCode } = await searchParams;
 
-  const [events, regions] = await Promise.all([
-    db
-      .select(eventsPublicCols)
-      .from(eventsTable)
-      .where(and(ne(eventsTable.category, "removed"), eq(eventsTable.hidden, false)))
-      .orderBy(eventsTable.rank),
-    db.select(regionsPublicCols).from(regionsTable),
-  ]);
+  const organization = await getOrgDetails({ slug });
+  const [events, regions] = await Promise.all([getEvents(organization!.id), getRegions(organization!.id)]);
 
-  const contestsPromise = db.query.contests.findMany({
-    columns: {
-      competitionId: true,
-      shortName: true,
-      type: true,
-      city: true,
-      regionCode: true,
-      startDate: true,
-      endDate: true,
-      participants: true,
-    },
-    with: {
-      region: region ? { columns: { code: true, superRegionCode: true } } : undefined,
-      rounds: eventId ? { columns: { eventId: true } } : undefined,
-    },
-    where: {
-      state: { notIn: ["created", "removed"] },
-      // Filter by continent or by country
-      region: SuperRegionCodeValues.includes(region as any)
-        ? { superRegionCode: region as SuperRegionCode }
-        : region
-          ? { code: region }
+  const region = regionCode ? regions.find((r) => r.code === regionCode) : undefined;
+  if (regionCode && !region) return <LoadingError loadingEntity="contests" />;
+
+  const contestsPromise = db
+    .select({
+      competitionId: contestsTable.competitionId,
+      shortName: contestsTable.shortName,
+      type: contestsTable.type,
+      city: contestsTable.city,
+      regionCode: contestsTable.regionCode,
+      startDate: contestsTable.startDate,
+      endDate: contestsTable.endDate,
+      participants: contestsTable.participants,
+    })
+    .from(contestsTable)
+    .leftJoin(
+      regionsTable,
+      and(
+        eq(contestsTable.organizationId, regionsTable.organizationId),
+        eq(contestsTable.regionCode, regionsTable.code),
+      ),
+    )
+    .where(
+      and(
+        eq(contestsTable.organizationId, organization.id),
+        inArray(contestsTable.state, ["approved", "ongoing", "finished", "published"]),
+        // Filter by continent or by country
+        region
+          ? eq(region.type === "super-region" ? regionsTable.superRegionCode : contestsTable.regionCode, region.code)
           : undefined,
-      rounds: eventId ? { eventId } : undefined,
-    },
-    orderBy: { startDate: "desc" },
-  });
+        eventId
+          ? exists(
+              db
+                .select()
+                .from(roundsTable)
+                .where(
+                  and(
+                    eq(roundsTable.organizationId, contestsTable.organizationId),
+                    eq(roundsTable.competitionId, contestsTable.competitionId),
+                    eq(roundsTable.eventId, eventId),
+                  ),
+                ),
+            )
+          : undefined,
+      ),
+    )
+    .orderBy(desc(contestsTable.startDate));
 
   return (
     <section>

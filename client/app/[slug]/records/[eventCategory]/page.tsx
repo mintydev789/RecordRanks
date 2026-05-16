@@ -10,9 +10,7 @@ import Tabs from "~/app/components/UI/Tabs.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
-import { db } from "~/server/db/provider.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { getRecords } from "~/server/server-only-functions.ts";
+import { getEvents, getOrgDetails, getRecords, getRegions } from "~/server/server-only-functions.ts";
 
 export const metadata = {
   title: "Records",
@@ -46,16 +44,16 @@ async function RecordsPage({ params, searchParams }: Props) {
 
   const recordCategory = category ?? (eventCategory === "extreme-bld" ? "online" : "competitions");
 
-  const recordsPromise = getRecords(eventCategory, recordCategory, eventId ?? undefined, region ?? undefined);
+  const organization = await getOrgDetails({ slug });
+  const recordsPromise = getRecords({
+    organizationId: organization!.id,
+    eventCategory,
+    recordCategory,
+    eventId: eventId ?? undefined,
+    regionCode: region ?? undefined,
+  });
 
-  const [events, regions] = await Promise.all([
-    db.query.events.findMany({
-      columns: { eventId: true, name: true, category: true, format: true, hidden: true, description: true },
-      where: { hidden: false },
-      orderBy: { rank: "asc" },
-    }),
-    db.select(regionsPublicCols).from(regionsTable),
-  ]);
+  const [events, regions] = await Promise.all([getEvents(organization.id), getRegions(organization.id)]);
 
   const selectedCat = eventCategories.find((ec) => ec.value === eventCategory)!;
   const tabs: NavigationItem[] = eventCategories

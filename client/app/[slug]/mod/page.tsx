@@ -8,10 +8,8 @@ import Loading from "~/app/components/UI/Loading.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { auth } from "~/server/auth.ts";
-import { db } from "~/server/db/provider.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
 import { getModContestsSF } from "~/server/server-functions/contest-server-functions.ts";
-import { authorizeUser } from "~/server/server-only-functions.ts";
+import { authorizeUser, getRegions } from "~/server/server-only-functions.ts";
 import ModDashboardScreen from "./ModDashboardScreen.tsx";
 
 type Props = {
@@ -28,7 +26,7 @@ async function ModeratorDashboardPage({ params, searchParams }: Props) {
 
   const [{ success: isAdminView }, regions] = await Promise.all([
     auth.api.hasPermission({ headers: await headers(), body: { permissions: { adminDashboard: ["view"] } } }),
-    db.select(regionsPublicCols).from(regionsTable),
+    getRegions(organization!.id),
   ]);
 
   return (

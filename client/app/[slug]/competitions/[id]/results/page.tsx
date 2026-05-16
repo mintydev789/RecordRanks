@@ -2,7 +2,7 @@ import ContestLayout from "~/app/[slug]/competitions/[id]/ContestLayout.tsx";
 import EventButtons from "~/app/components/EventButtons.tsx";
 import EventResultsTable from "~/app/components/EventResultsTable.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
-import { getContestSF } from "~/server/server-functions/contest-server-functions.ts";
+import { getContest } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{
@@ -18,11 +18,10 @@ async function ContestResultsPage({ params, searchParams }: Props) {
   const { slug, id } = await params;
   const { eventId } = await searchParams;
 
-  const res = await getContestSF({ competitionId: id, eventId });
+  const contestData = await getContest({ slug, competitionId: id, eventId });
+  if (!contestData) return <LoadingError loadingEntity="contest results" />;
 
-  if (!res.data) return <LoadingError loadingEntity="contest results" />;
-
-  const { contest, events, rounds, results, persons, recordConfigs, regions } = res.data;
+  const { contest, events, rounds, results, persons, recordConfigs, regions } = contestData;
   const event = eventId ? events.find((e) => e.eventId === eventId)! : events[0];
 
   return (
