@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
@@ -46,19 +46,19 @@ export async function register() {
     }
 
     // Seed default organization settings
-    for (const defaultOrgSetting of getDefaultOrgSettings()) {
-      const [existingSetting] = await db
-        .select({ id: settingsTable.id })
-        .from(settingsTable)
-        .where(eq(settingsTable.key, defaultOrgSetting.key))
-        .limit(1);
+    const organizations = await db.query.organizations.findMany({ columns: { id: true, name: true } });
+    for (const { id, name } of organizations) {
+      for (const defaultOrgSetting of getDefaultOrgSettings(id)) {
+        const [existingSetting] = await db
+          .select({ id: settingsTable.id })
+          .from(settingsTable)
+          .where(and(eq(settingsTable.organizationId, id), eq(settingsTable.key, defaultOrgSetting.key)))
+          .limit(1);
 
-      if (!existingSetting) {
-        const organizations = await db.query.organizations.findMany({ columns: { id: true } });
-        for (const { id } of organizations) {
-          await db.insert(settingsTable).values({ ...defaultOrgSetting, organizationId: id });
+        if (!existingSetting) {
+          await db.insert(settingsTable).values(defaultOrgSetting);
+          console.log(`Seeded organization setting for ${name}: ${defaultOrgSetting.group}.${defaultOrgSetting.key}`);
         }
-        console.log(`Seeded organization setting: ${defaultOrgSetting.group}.${defaultOrgSetting.key}`);
       }
     }
 

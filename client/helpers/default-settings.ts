@@ -69,7 +69,7 @@ attempted          = solved + missed
   },
 ];
 
-export function getDefaultOrgSettings(organizationId = "default"): InsertSetting[] {
+export function getDefaultOrgSettings(organizationId: string): InsertSetting[] {
   return [
     {
       key: "video-based-results-contact-email" as const,
