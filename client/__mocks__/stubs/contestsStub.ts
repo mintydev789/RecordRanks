@@ -253,8 +253,8 @@ export const contestsStub: InsertContest[] = [
     endDate: new Date(2028, 3, 1),
   },
 ].map((c) => ({
-  organizationId: "default",
   ...c,
+  organizationId: "default",
   state: "approved",
   shortName: c.name,
   venue: "Venueplace",

@@ -74,7 +74,7 @@ export function logMessage(
     }
 
     if (code === "RR5000" && sendErrorLogEmail) {
-      getSettingFromDb({ key: "error-logs-contact-email", optional: true })
+      getSettingFromDb({ key: "error-logs-contact-email", organizationId: null, optional: true })
         .then((contactEmail) => {
           if (contactEmail) sendErrorEmail(contactEmail, code, message);
         })
@@ -106,7 +106,7 @@ export async function authorizeUser(
         role?: never;
       },
   httpHeaders?: ReadonlyHeaders,
-): Promise<FullSession> {
+): Promise<FullSession & { httpHeaders: ReadonlyHeaders }> {
   const hdrs = httpHeaders ?? (await headers());
   const session = await auth.api.getSession({ headers: hdrs });
 
@@ -150,7 +150,7 @@ export async function authorizeUser(
     }
   }
 
-  return { ...session, member, organization };
+  return { ...session, member, organization, httpHeaders: hdrs };
 }
 
 export async function getOrgDetails({
@@ -303,11 +303,11 @@ export async function getRecordConfigs(
     );
 }
 
-export async function getVideoBasedEvents() {
+export async function getVideoBasedEvents(organizationId: string) {
   const events = await db
     .select(eventsPublicCols)
     .from(eventsTable)
-    .where(eq(eventsTable.submissionsAllowed, true))
+    .where(and(eq(eventsTable.organizationId, organizationId), eq(eventsTable.submissionsAllowed, true)))
     .orderBy(eventsTable.rank);
 
   return events;
@@ -790,16 +790,24 @@ export async function getPersonsForExternalDeviceDataEntry(
   }
 }
 
-export async function getSettingFromDb({ key, optional }: { key: SettingKey; optional?: never }): Promise<string>;
-export async function getSettingFromDb({ key, optional }: { key: SettingKey; optional: true }): Promise<string | null>;
+type Base = { key: SettingKey; organizationId: string | null };
+export async function getSettingFromDb({ key, organizationId, optional }: Base & { optional?: never }): Promise<string>;
 export async function getSettingFromDb({
   key,
+  organizationId,
   optional,
-}: {
-  key: SettingKey;
+}: Base & { optional: true }): Promise<string | null>;
+export async function getSettingFromDb({
+  key,
+  organizationId,
+  optional,
+}: Base & {
   optional?: true;
 }): Promise<string | null> {
-  const setting = await db.query.settings.findFirst({ columns: { value: true }, where: { key } });
+  const setting = await db.query.settings.findFirst({
+    columns: { value: true },
+    where: { key, organizationId: organizationId || { isNull: true } },
+  });
 
   if (!setting?.value) {
     if (optional) return null;

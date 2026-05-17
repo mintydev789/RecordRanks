@@ -49,7 +49,7 @@ export async function POST(_req: NextRequest) {
   // const { data, error } = await storageClient.listBuckets();
   // if (error) return new Response(`Error while fetching list of buckets: ${error.message}`, { status: 500 });
 
-  // const publicExportsReadme = await getSettingFromDb({ key: "public-exports-readme", optional: true });
+  // const publicExportsReadme = await getSettingFromDb({ key: "public-exports-readme", organizationId: null, optional: true });
   // if (!publicExportsReadme)
   //   return new Response("The public exports README is not set in the settings", { status: 500 });
 

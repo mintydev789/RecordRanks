@@ -18,13 +18,17 @@ async function ManageResultsPage() {
     orgPermissions: { videoBasedResults: ["update", "approve", "delete"] },
   });
 
-  const [results, events, recordConfigs, regions, instructions] = await Promise.all([
+  const [results, events, recordConfigs, regions, videoBasedResultsEnabled, instructions] = await Promise.all([
     db.query.results.findMany({ where: { competitionId: { isNull: true } }, orderBy: { createdAt: "desc" } }),
     getEvents(organization!.id, { includeHiddenAndRemoved: true }),
     getRecordConfigs(organization!.id, { recordCategory: "online" }),
     getRegions(organization!.id),
-    getSettingFromDb({ key: "video-based-results-instructions" }),
+    getSettingFromDb({ key: "video-based-results-enabled", organizationId: organization!.id }),
+    getSettingFromDb({ key: "video-based-results-instructions", organizationId: organization!.id }),
   ]);
+
+  if (videoBasedResultsEnabled !== "true")
+    return <p className="fs-4 mx-3 mt-5 text-center">Video-based results are disabled</p>;
 
   const allPersonIds = new Set<number>();
   for (const r of results) for (const pid of r.personIds) allPersonIds.add(pid);

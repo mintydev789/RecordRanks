@@ -4,6 +4,7 @@ import debounce from "lodash/debounce";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useContext, useEffect, useState } from "react";
+import Markdown from "react-markdown";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
 import BestAndAverage from "~/app/components/BestAndAverage";
 import CreatorDetails from "~/app/components/CreatorDetails.tsx";
@@ -19,7 +20,6 @@ import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import { useSession } from "~/helpers/hooks.ts";
 import { type RoundFormatObject, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import type { Creator, EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
@@ -33,9 +33,10 @@ import {
   getWrPairUpToDateSF,
   updateVideoBasedResultSF,
 } from "~/server/server-functions/result-server-functions.ts";
-import Rules from "./video-based-results-rules.mdx";
 
 type Props = {
+  videoBasedResultsRules: string | null;
+  videoBasedResultsContactEmail: string | null;
   events: EventResponse[];
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
@@ -56,6 +57,8 @@ type Props = {
 );
 
 function ResultsSubmissionForm({
+  videoBasedResultsRules,
+  videoBasedResultsContactEmail,
   events,
   recordConfigs,
   regions,
@@ -68,7 +71,6 @@ function ResultsSubmissionForm({
   const pathname = usePathname();
   const { slug } = useParams();
   const searchParams = useSearchParams();
-  const { organization } = useSession();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
   const {
@@ -80,7 +82,6 @@ function ResultsSubmissionForm({
   const { executeAsync: updateResult, isPending: isUpdating } = useAction(updateVideoBasedResultSF);
   const [loadingId, setLoadingId] = useState<"UPDATING" | "APPROVING" | undefined>();
   const [eventWrPair, setEventWrPair] = useState<EventWrPair | undefined>();
-  const [showRules, setShowRules] = useState(false);
   const [event, setEvent] = useState<EventResponse>(
     events.find((e) => e.eventId === (result?.eventId ?? searchParams.get("eventId"))) ?? events[0],
   );
@@ -234,27 +235,16 @@ function ResultsSubmissionForm({
           </p>
         ) : (
           <>
-            <p>
-              Here you can submit results for events that allow submissions. You may submit other people's results too.
-              New results will be included in the rankings after an admin approves them. A result can only be accepted
-              if it has video evidence of the <b>ENTIRE</b> solve (including memorization, if applicable). The video
-              date is used as proof of when the solve was done, an earlier date cannot be used. Make sure that you can
-              be identified from the provided video; if your channel name is not your real name, please include your
-              full name or WCA ID in the description of the video. If you do not have a WCA ID, please contact the
-              admins to have a competitor profile created for you. If you have any questions or suggestions, feel free
-              to send an email to {organization?.metadata.contactEmail}.
-            </p>
-            <div className="d-flex flex-wrap gap-3">
-              <button type="button" className="btn btn-success btn-sm" onClick={() => setShowRules(!showRules)}>
-                {showRules ? "Hide rules" : "Show rules"}
-              </button>
-              <DonateButton />
-            </div>
-            {showRules && (
-              <div className="lh-lg mt-4">
-                <Rules />
+            {videoBasedResultsRules && (
+              <div className="lh-lg my-4 overflow-y-auto border p-2" style={{ maxHeight: "300px" }}>
+                <Markdown>
+                  {videoBasedResultsContactEmail
+                    ? videoBasedResultsRules.replace("{{vbrContactEmail}}", videoBasedResultsContactEmail)
+                    : videoBasedResultsRules}
+                </Markdown>
               </div>
             )}
+            <DonateButton />
           </>
         )}
       </div>

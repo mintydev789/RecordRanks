@@ -26,10 +26,12 @@ export type SettingKey =
   | "rules-page-content"
   | "moderator-instructions-page-content"
   | "moderator-instructions-description"
+  | "video-based-results-rules"
   | "video-based-results-instructions"
   | "member-request-instructions"
   // features
-  | "contest-types";
+  | "contest-types"
+  | "video-based-results-enabled";
 
 export const settingsTable = rrSchema.table(
   "settings",

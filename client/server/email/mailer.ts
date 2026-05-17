@@ -421,7 +421,11 @@ export function sendVideoBasedResultSubmittedEmail(
       creatorPersonName: creatorPersonName ?? "",
     },
     callback: async (html) => {
-      const contactEmail = (await getSettingFromDb({ key: "video-based-results-contact-email", optional: true })) ?? {
+      const contactEmail = (await getSettingFromDb({
+        key: "video-based-results-contact-email",
+        organizationId: organization.id,
+        optional: true,
+      })) ?? {
         name: "Admin",
         address: organization.metadata.contactEmail,
       };
@@ -478,7 +482,7 @@ export function sendMemberRequestSubmittedEmail(
   },
 ) {
   send({
-    templateFileName: "user-request-submitted.hbs",
+    templateFileName: "member-request-submitted.hbs",
     context: {
       projectName,
       name,

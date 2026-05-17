@@ -60,21 +60,23 @@ export const getWrPairUpToDateSF = actionClient
       excludeResultId: z.int().optional(),
     }),
   )
-  .action<EventWrPair>(async ({ parsedInput: { recordCategory, eventId, recordsUpTo, excludeResultId } }) => {
-    const event = await db.query.events.findFirst({ where: { eventId } });
-    if (!event) throw new RrActionError(`Event with ID ${eventId} not found`);
+  .action<EventWrPair>(
+    async ({ parsedInput: { recordCategory, eventId, recordsUpTo, excludeResultId }, ctx: { session } }) => {
+      const event = await db.query.events.findFirst({ where: { organizationId: session.organization!.id, eventId } });
+      if (!event) throw new RrActionError(`Event with ID ${eventId} not found`);
 
-    const singleWrResult = await getRecordResult(event, "best", "WR", recordCategory, {
-      recordsUpTo,
-      excludeResultId,
-    });
-    const averageWrResult = await getRecordResult(event, "average", "WR", recordCategory, {
-      recordsUpTo,
-      excludeResultId,
-    });
+      const singleWrResult = await getRecordResult(event, "best", "WR", recordCategory, {
+        recordsUpTo,
+        excludeResultId,
+      });
+      const averageWrResult = await getRecordResult(event, "average", "WR", recordCategory, {
+        recordsUpTo,
+        excludeResultId,
+      });
 
-    return { eventId, best: singleWrResult?.best, average: averageWrResult?.average };
-  });
+      return { eventId, best: singleWrResult?.best, average: averageWrResult?.average };
+    },
+  );
 
 export const createContestResultSF = actionClient
   // Permissions checked below
@@ -411,8 +413,8 @@ export const createVideoBasedResultSF = actionClient
     const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
     const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
     const newResult: InsertResult = {
-      organizationId: session.organization!.id,
       ...newResultDto,
+      organizationId: session.organization!.id,
       best,
       average,
       recordCategory: "online",

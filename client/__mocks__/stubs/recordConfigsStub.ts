@@ -198,4 +198,4 @@ export const recordConfigsStub: InsertRecordConfig[] = [
     rank: 1, // doesn't matter for tests
     color: "#000000", // doesn't matter for tests
   },
-].map((rc) => ({ organizationId: "default", ...rc }));
+].map((rc) => ({ ...rc, organizationId: "default" }));

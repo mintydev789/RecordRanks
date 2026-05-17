@@ -373,4 +373,4 @@ export const eventsStub: InsertEvent[] = [
     submissionsAllowed: true,
     hidden: false,
   },
-].map((e) => ({ organizationId: "default", ...e }));
+].map((e) => ({ ...e, organizationId: "default" }));

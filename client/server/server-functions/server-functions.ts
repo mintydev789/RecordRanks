@@ -40,10 +40,6 @@ export const getOrgDetailsSF = actionClient
     return await getOrgDetails({ session: session?.session, slug });
   });
 
-export const getModInstructionsSF = actionClient.metadata({ auth: null }).action<string | null>(async () => {
-  return await getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });
-});
-
 export const getCurrentCollectiveCubingSolutionSF = actionClient
   .metadata({ auth: null })
   .action<CurrentCollectiveSolution | null>(async () => {
@@ -157,10 +153,24 @@ export const makeCollectiveCubingMoveSF = actionClient
     },
   );
 
-export async function getPublicExportsToKeepSF(): Promise<string> {
-  return await getSettingFromDb({ key: "public-exports-to-keep" });
-}
+export async function getFeaturesInfoSF(organizationId: string): Promise<{
+  rulesPageEnabled: boolean;
+  modInstructionsPageEnabled: boolean;
+  publicExportsEnabled: boolean;
+  videoBasedResultsEnabled: boolean;
+}> {
+  const [rulesPageContent, modInstructionsPageContent, publicExportsToKeep, videoBasedResultsEnabled] =
+    await Promise.all([
+      getSettingFromDb({ key: "rules-page-content", organizationId, optional: true }),
+      getSettingFromDb({ key: "moderator-instructions-page-content", organizationId, optional: true }),
+      getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
+      getSettingFromDb({ key: "video-based-results-enabled", organizationId }),
+    ]);
 
-export async function getRulesPageContentSF(): Promise<string | null> {
-  return await getSettingFromDb({ key: "rules-page-content", optional: true });
+  return {
+    rulesPageEnabled: Boolean(rulesPageContent),
+    modInstructionsPageEnabled: Boolean(modInstructionsPageContent),
+    publicExportsEnabled: Number(publicExportsToKeep) > 0,
+    videoBasedResultsEnabled: videoBasedResultsEnabled === "true",
+  };
 }

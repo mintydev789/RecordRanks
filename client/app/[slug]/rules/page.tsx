@@ -3,15 +3,24 @@ import Markdown from "react-markdown";
 import EventRules from "~/app/[slug]/rules/EventRules.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { db } from "~/server/db/provider.ts";
-import { getSettingFromDb } from "~/server/server-only-functions.ts";
+import { getOrgDetails, getSettingFromDb } from "~/server/server-only-functions.ts";
 
 export const metadata = {
   title: "Rules",
   description: process.env.METADATA_RULES_DESCRIPTION,
 };
 
-async function RulesPage() {
-  const content = await getSettingFromDb({ key: "rules-page-content" });
+type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
+
+async function RulesPage({ params }: Props) {
+  const { slug } = await params;
+
+  const organization = await getOrgDetails({ slug });
+  const content = await getSettingFromDb({ key: "rules-page-content", organizationId: organization.id });
 
   const columns = {
     eventId: true,

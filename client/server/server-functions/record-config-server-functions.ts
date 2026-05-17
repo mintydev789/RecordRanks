@@ -28,7 +28,7 @@ export const createRecordConfigSF = actionClient
 
     const [createdRecordConfig] = await db
       .insert(table)
-      .values({ organizationId: session.organization!.id, ...newRecordConfigDto })
+      .values({ ...newRecordConfigDto, organizationId: session.organization!.id })
       .returning(recordConfigsPublicCols);
     return createdRecordConfig;
   });

@@ -27,7 +27,7 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
   });
 
   const [events, recordConfigs, regions, result] = await Promise.all([
-    getVideoBasedEvents(),
+    getVideoBasedEvents(organization!.id),
     getRecordConfigs(organization!.id, { recordCategory: "online" }),
     getRegions(organization!.id),
     db.query.results.findFirst({ where: { id: resultId } }),
@@ -43,6 +43,8 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
       <h2 className="text-center">Edit Result</h2>
 
       <ResultsSubmissionForm
+        videoBasedResultsRules={null}
+        videoBasedResultsContactEmail={null}
         events={events}
         recordConfigs={recordConfigs}
         regions={regions}

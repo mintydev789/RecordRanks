@@ -99,7 +99,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
         <SWRConfig
           value={{
             fallback: {
-              [SwrKey.ContestTypes]: getSettingFromDb({ key: "contest-types" }),
+              [SwrKey.ContestTypes]: getSettingFromDb({ key: "contest-types", organizationId: organization!.id }),
             },
           }}
         >

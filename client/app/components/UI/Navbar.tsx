@@ -11,11 +11,7 @@ import { C } from "~/helpers/constants.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import { clientGetHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
-import {
-  getModInstructionsSF,
-  getPublicExportsToKeepSF,
-  getRulesPageContentSF,
-} from "~/server/server-functions/server-functions.ts";
+import { getFeaturesInfoSF } from "~/server/server-functions/server-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();
@@ -23,11 +19,6 @@ function Navbar() {
   const { session, user, member, organization } = useSession();
   const { mutate } = useSWRConfig();
 
-  const { data: moderatorInstructions } = useSWR(["mod-instructions"], () => getModInstructionsSF());
-  const [expanded, setExpanded] = useState(false);
-  const [resultsExpanded, setResultsExpanded] = useState(false);
-  const [moreExpanded, setMoreExpanded] = useState(false);
-  const [userExpanded, setUserExpanded] = useState(false);
   const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
     clientGetHasPermission({ modDashboard: ["view"] }),
   );
@@ -35,10 +26,22 @@ function Navbar() {
     session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
     () => clientGetHasPermission({ videoBasedResults: ["approve"] }),
   );
-  const { data: publicExportsToKeep } = useSWR("public-exports-to-keep", () => getPublicExportsToKeepSF(), {
-    fallbackData: "0",
-  });
-  const { data: rulesPageContent } = useSWR("rules-page-content", () => getRulesPageContentSF(), { fallbackData: "" });
+  const { data: featuresInfo } = useSWR(
+    organization ? ["features-info", organization.id] : null,
+    () => getFeaturesInfoSF(organization!.id),
+    {
+      fallbackData: {
+        rulesPageEnabled: false,
+        modInstructionsPageEnabled: false,
+        publicExportsEnabled: false,
+        videoBasedResultsEnabled: false,
+      },
+    },
+  );
+  const [expanded, setExpanded] = useState(false);
+  const [resultsExpanded, setResultsExpanded] = useState(false);
+  const [moreExpanded, setMoreExpanded] = useState(false);
+  const [userExpanded, setUserExpanded] = useState(false);
 
   const logOut = async () => {
     // Clear the SWR cache
@@ -140,7 +143,7 @@ function Navbar() {
                     Rankings
                   </Link>
                 </li>
-                {publicExportsToKeep !== "0" && (
+                {featuresInfo.publicExportsEnabled && (
                   <li>
                     <Link
                       href={`/${organization.slug}/export`}
@@ -154,7 +157,7 @@ function Navbar() {
                 )}
               </ul>
             </li>
-            {rulesPageContent && (
+            {featuresInfo.rulesPageEnabled && (
               <li className="nav-item">
                 <Link
                   href={`/${organization.slug}/rules`}
@@ -201,7 +204,7 @@ function Navbar() {
                     Blog
                   </Link>
                 </li>
-                {moderatorInstructions && (
+                {featuresInfo.modInstructionsPageEnabled && (
                   <li>
                     <Link
                       href={`/${organization.slug}/moderator-instructions`}
@@ -262,28 +265,32 @@ function Navbar() {
                       </Link>
                     </li>
                   )}
-                  {canApproveVideoBasedResults && (
-                    <li>
-                      <Link
-                        href={`/${organization.slug}/video-based-results`}
-                        prefetch={false}
-                        onClick={collapseAll}
-                        className={`nav-link ${pathname === `/${organization.slug}/video-based-results` ? "active" : ""}`}
-                      >
-                        Video-based results
-                      </Link>
-                    </li>
+                  {featuresInfo.videoBasedResultsEnabled && (
+                    <>
+                      {canApproveVideoBasedResults && (
+                        <li>
+                          <Link
+                            href={`/${organization.slug}/video-based-results`}
+                            prefetch={false}
+                            onClick={collapseAll}
+                            className={`nav-link ${pathname === `/${organization.slug}/video-based-results` ? "active" : ""}`}
+                          >
+                            Video-based results
+                          </Link>
+                        </li>
+                      )}
+                      <li>
+                        <Link
+                          href={`/${organization.slug}/video-based-results/submit`}
+                          prefetch={false}
+                          onClick={collapseAll}
+                          className={`nav-link ${pathname === `/${organization.slug}/video-based-results/submit` ? "active" : ""}`}
+                        >
+                          Submit results
+                        </Link>
+                      </li>
+                    </>
                   )}
-                  <li>
-                    <Link
-                      href={`/${organization.slug}/video-based-results/submit`}
-                      prefetch={false}
-                      onClick={collapseAll}
-                      className={`nav-link ${pathname === `/${organization.slug}/video-based-results/submit` ? "active" : ""}`}
-                    >
-                      Submit results
-                    </Link>
-                  </li>
                   <li>
                     <Link
                       href="/user/settings"

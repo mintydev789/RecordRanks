@@ -16,10 +16,12 @@ type Props = {
 async function AboutPage({ params }: Props) {
   const { slug } = await params;
 
-  const [content, organization] = await Promise.all([
-    getSettingFromDb({ key: "about-page-content", optional: true }),
-    getOrgDetails({ slug }),
-  ]);
+  const organization = await getOrgDetails({ slug });
+  const content = await getSettingFromDb({
+    key: "about-page-content",
+    organizationId: organization.id,
+    optional: true,
+  });
 
   return (
     <section className="px-3 pb-3">

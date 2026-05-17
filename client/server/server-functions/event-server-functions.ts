@@ -34,7 +34,7 @@ export const createEventSF = actionClient
 
     const [createdEvent] = await db
       .insert(table)
-      .values({ organizationId: session.organization!.id, ...newEventDto })
+      .values({ ...newEventDto, organizationId: session.organization!.id })
       .returning();
 
     sendEmail(

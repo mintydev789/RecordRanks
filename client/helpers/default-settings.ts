@@ -58,7 +58,7 @@ attempted          = solved + missed
     key: "public-exports-to-keep",
     group: "features",
     value: "0",
-    description: "The number of exports to keep for automated public exports (integer string)",
+    description: "The number of exports to keep for automated public exports. Value: (integer).",
   },
   {
     key: "collective-cubing-enabled",
@@ -69,7 +69,7 @@ attempted          = solved + missed
   },
 ];
 
-export function getDefaultOrgSettings(organizationId: string): InsertSetting[] {
+export function getDefaultOrgSettings(organizationId = "default"): InsertSetting[] {
   return [
     {
       key: "video-based-results-contact-email" as const,
@@ -112,6 +112,13 @@ export function getDefaultOrgSettings(organizationId: string): InsertSetting[] {
         "Description for the moderator instructions for the section on the home page. Markdown is supported.",
     },
     {
+      key: "video-based-results-rules" as const,
+      group: "page-contents" as const,
+      value: "",
+      description:
+        "Rules shown at the top of the submit video-based result page. Optionally use this to insert the video-based-results-contact-email value: {{vbrContactEmail}}. Markdown is supported.",
+    },
+    {
       key: "video-based-results-instructions" as const,
       group: "page-contents" as const,
       value: `Video-based results can be submitted by any user, but there is a review process involved. Until a video-based result reviewer approves the result, it won't be included in the rankings. The review process works as follows:
@@ -151,6 +158,12 @@ If you see any errors, correct them before submitting. If you see anything that 
       value: "comp",
       description:
         'The list of enabled contest types (comma-separated). Values: comp|meetup|online|wca-comp (e.g. "comp,meetup,online").',
+    },
+    {
+      key: "video-based-results-enabled" as const,
+      group: "features" as const,
+      value: "false",
+      description: "Whether or not the video-based results feature is enabled. Value: true|false.",
     },
   ].map((o) => ({ organizationId, ...o }));
 }

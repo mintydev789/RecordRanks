@@ -18,7 +18,7 @@ async function UserSettingsPage() {
   const [[person], regions] = await Promise.all([
     member?.personId
       ? db
-          .select({ organizationId: personsTable.organizationId, ...personsPublicCols })
+          .select({ ...personsPublicCols, organizationId: personsTable.organizationId })
           .from(personsTable)
           .where(eq(personsTable.id, member.personId))
           .limit(1)
@@ -38,7 +38,9 @@ async function UserSettingsPage() {
             [SwrKey.MemberRequestDetails]: member
               ? getMemberRequestDetails({ memberId: member.id, userId: user.id })
               : undefined,
-            [SwrKey.MemberRequestInstructions]: getSettingFromDb({ key: "member-request-instructions" }),
+            [SwrKey.MemberRequestInstructions]: member
+              ? getSettingFromDb({ key: "member-request-instructions", organizationId: member.organizationId })
+              : undefined,
           },
         }}
       >

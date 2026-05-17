@@ -71,4 +71,4 @@ export const testPosts: InsertPost[] = [
       "Interested in boosting your speedrunning skills? Don't miss your chance to reserve a spot at our next bootcamp, where some of the best speedrunners in the World will share their expertise with those of you aspiring to one day beat them at their own game!",
     date: new Date("2026-04-14T13:00:00.00Z"),
   },
-].map((p) => ({ organizationId: "default", ...p }));
+].map((p) => ({ ...p, organizationId: "default" }));

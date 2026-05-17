@@ -20,18 +20,29 @@ type Props = {
 async function OrganizationHomePage({ params }: Props) {
   const { slug } = await params;
 
-  const [description, organization] = await Promise.all([
-    getSettingFromDb({ key: "home-page-description", optional: true }),
-    getOrgDetails({ slug }),
-  ]);
-
-  const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
-  const modInstructionsPromise = getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });
-  const modInstructionsDescriptionPromise = getSettingFromDb({
-    key: "moderator-instructions-description",
+  const organization = await getOrgDetails({ slug });
+  const description = await getSettingFromDb({
+    key: "home-page-description",
+    organizationId: organization.id,
     optional: true,
   });
-  const collectiveCubingEnabledSettingPromise = getSettingFromDb({ key: "collective-cubing-enabled", optional: true });
+
+  const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
+  const modInstructionsPromise = getSettingFromDb({
+    key: "moderator-instructions-page-content",
+    organizationId: organization.id,
+    optional: true,
+  });
+  const modInstructionsDescriptionPromise = getSettingFromDb({
+    key: "moderator-instructions-description",
+    organizationId: organization.id,
+    optional: true,
+  });
+  const collectiveCubingEnabledSettingPromise = getSettingFromDb({
+    key: "collective-cubing-enabled",
+    organizationId: null,
+    optional: true,
+  });
 
   return (
     <section className="px-3">

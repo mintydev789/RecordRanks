@@ -131,7 +131,7 @@ export const createPersonSF = actionClient
 
       const query = db
         .insert(table)
-        .values({ organizationId: session.organization!.id, ...newPersonDto, createdBy: session.user.id });
+        .values({ ...newPersonDto, organizationId: session.organization!.id, createdBy: session.user.id });
       const [createdPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
       return createdPerson;
     },

@@ -185,7 +185,7 @@ export const createContestSF = actionClient
 
       const [createdContest] = await tx
         .insert(table)
-        .values({ organizationId: session.organization!.id, ...newContestDto, createdBy: session.user.id })
+        .values({ ...newContestDto, organizationId: session.organization!.id, createdBy: session.user.id })
         .returning();
       return createdContest;
     });
@@ -597,36 +597,6 @@ export const openRoundSF = actionClient
     return openedRound;
   });
 
-// export const createAccessTokenSF = actionClient
-//   .metadata({ auth: { useOrganization: true, orgPermissions: { competitions: ["update"], meetups: ["update"] } } })
-//   .inputSchema(
-//     z.strictObject({
-//       competitionId: z.string().nonempty(),
-//     }),
-//   )
-//   .action<string>(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
-//     logMessage("RR0040", `Creating access token for contest with ID ${competitionId}`);
-
-//     const contest = await db.query.contests.findFirst({
-//       columns: { competitionId: true, state: true, organizerIds: true, createdBy: true },
-//       where: { competitionId },
-//     });
-
-//     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-//     if (!getMemberControlsContest(session.member!, contest))
-//       throw new RrActionError("You do not have access rights for this contest");
-//     if (session.user.id !== contest.createdBy && !getHasRole("admin", session.member!.role))
-//       throw new RrActionError("Only the creator of the contest or an admin can generate access tokens");
-//     if (contest.state === "created")
-//       throw new RrActionError("You may not create an access token for a contest that hasn't been approved yet");
-
-//     const { token, salt, hash } = await generateAccessToken();
-
-//     await db.insert(accessTokensTable).values({ tokenHash: `${salt}:${hash}`, competitionId, createdBy: user.id });
-
-//     return token;
-//   });
-
 async function validateAndCleanUpContest(
   organizationId: string,
   contest: ContestDto,
@@ -634,7 +604,7 @@ async function validateAndCleanUpContest(
   userPersonId: number,
   canApprove: boolean,
 ): Promise<{ region: SelectRegion }> {
-  const contestTypes = await getSettingFromDb({ key: "contest-types" });
+  const contestTypes = await getSettingFromDb({ key: "contest-types", organizationId });
   if (!contestTypes.split(",").some((ct) => contest.type === ct))
     throw new RrActionError(`${contest.type} contest type is disabled`);
 

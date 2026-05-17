@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
-import { defaultGlobalSettings } from "~/helpers/default-settings.ts";
+import { defaultGlobalSettings, getDefaultOrgSettings } from "~/helpers/default-settings.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { testPersons } from "~/helpers/test-data/test-persons.ts";
 import { testPosts } from "~/helpers/test-data/test-posts.ts";
@@ -40,8 +40,25 @@ export async function register() {
         .limit(1);
 
       if (!existingSetting) {
-        const [createdSetting] = await db.insert(settingsTable).values(defaultSetting).returning();
-        console.log(`Seeded setting: ${createdSetting.group}.${createdSetting.key}`);
+        await db.insert(settingsTable).values(defaultSetting);
+        console.log(`Seeded setting: ${defaultSetting.group}.${defaultSetting.key}`);
+      }
+    }
+
+    // Seed default organization settings
+    for (const defaultOrgSetting of getDefaultOrgSettings()) {
+      const [existingSetting] = await db
+        .select({ id: settingsTable.id })
+        .from(settingsTable)
+        .where(eq(settingsTable.key, defaultOrgSetting.key))
+        .limit(1);
+
+      if (!existingSetting) {
+        const organizations = await db.query.organizations.findMany({ columns: { id: true } });
+        for (const { id } of organizations) {
+          await db.insert(settingsTable).values({ ...defaultOrgSetting, organizationId: id });
+        }
+        console.log(`Seeded organization setting: ${defaultOrgSetting.group}.${defaultOrgSetting.key}`);
       }
     }
 

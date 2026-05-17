@@ -10,11 +10,12 @@ export const metadata = {
 };
 
 async function ExportPage() {
-  const publicExportsToKeep = await getSettingFromDb({ key: "public-exports-to-keep" });
+  const [publicExportsToKeep, publicExportsReadme] = await Promise.all([
+    getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
+    getSettingFromDb({ key: "public-exports-readme", organizationId: null }),
+  ]);
 
   if (publicExportsToKeep === "0") return <p className="fs-4 mx-3 mt-5 text-center">Public exports are disabled</p>;
-
-  const publicExportsReadme = await getSettingFromDb({ key: "public-exports-readme" });
 
   const exportApiUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/export/${C.publicExportsFormatVersions.at(-1)}/csv`;
   const res = await fetch(`${exportApiUrl}?metadataOnly=true`);

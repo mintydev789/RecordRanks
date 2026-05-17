@@ -1445,5 +1445,5 @@ export function getDefaultRegions(organizationId: string): InsertRegion[] {
     // Meta-regions
     { name: "Multiple Countries (Americas)", shortName: "Americas", code: "XM", type: "meta-region" as const },
     { name: "Multiple Countries (World)", shortName: "World", code: "XW", type: "meta-region" as const },
-  ].map((r) => ({ organizationId, ...r }));
+  ].map((r) => ({ ...r, organizationId }));
 }

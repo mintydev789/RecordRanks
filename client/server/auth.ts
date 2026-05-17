@@ -38,8 +38,16 @@ import {
 import { ac, admin, user } from "~/server/permissions.ts";
 import { logMessage } from "~/server/server-only-functions.ts";
 
-if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
-if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");
+if (process.env.NEXT_PHASE !== "phase-production-build") {
+  if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
+  if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.BETTER_AUTH_SECRET === "secret_thats_long_enough_to_be_accepted_by_better_auth"
+  ) {
+    throw new Error("BETTER_AUTH_SECRET cannot be set to the default value in production!");
+  }
+}
 
 // MAKE SURE TO UPDATE THE AUTH MOCK ACCORDINGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
