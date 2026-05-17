@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { EventValidator } from "~/helpers/validators/Event.ts";
 import { db } from "~/server/db/provider.ts";
@@ -22,13 +22,15 @@ export const createEventSF = actionClient
   .action<SelectEvent>(async ({ parsedInput: { newEventDto }, ctx: { session } }) => {
     logMessage("RR0002", `Creating new event with ID ${newEventDto.eventId}`);
 
-    const sameIdEvent = await db.query.events.findFirst({ where: { eventId: newEventDto.eventId } });
-    if (sameIdEvent) throw new RrActionError(`Event with ID ${newEventDto.eventId} already exists`);
-
     const [sameNameEvent] = await db
       .select()
       .from(table)
-      .where(eq(sql`LOWER(${table.name})`, newEventDto.name.toLowerCase()))
+      .where(
+        and(
+          eq(table.organizationId, session.organization!.id),
+          eq(sql`LOWER(${table.name})`, newEventDto.name.toLowerCase()),
+        ),
+      )
       .limit(1);
     if (sameNameEvent) throw new RrActionError(`Event with name ${newEventDto.name} already exists`);
 
@@ -54,33 +56,43 @@ export const updateEventSF = actionClient
       newEventDto: EventValidator,
     }),
   )
-  .action<SelectEvent>(async ({ parsedInput: { originalEventId, newEventDto } }) => {
+  .action<SelectEvent>(async ({ parsedInput: { originalEventId, newEventDto }, ctx: { session } }) => {
     const isNewId = newEventDto.eventId !== originalEventId;
     logMessage(
       "RR0003",
       `Updating event with ID ${newEventDto.eventId}${isNewId ? ` (new event ID: ${newEventDto.eventId})` : ""}`,
     );
 
-    const [event] = await db.select().from(table).where(eq(table.eventId, originalEventId)).limit(1);
+    const [event] = await db
+      .select()
+      .from(table)
+      .where(and(eq(table.organizationId, session.organization!.id), eq(table.eventId, originalEventId)))
+      .limit(1);
     if (!event) throw new RrActionError(`Event with ID ${originalEventId} not found`);
 
     const [updatedEvent] = await db.transaction(async (tx) => {
       if (isNewId) {
-        await tx
-          .update(collectiveSolutionsTable)
-          .set({ eventId: newEventDto.eventId })
-          .where(eq(collectiveSolutionsTable.eventId, originalEventId));
+        if (session.organization!.id === "default") {
+          await tx
+            .update(collectiveSolutionsTable)
+            .set({ eventId: newEventDto.eventId })
+            .where(eq(collectiveSolutionsTable.eventId, originalEventId));
+        }
 
         const roundsWithEvent = await tx.query.rounds.findMany({
           columns: { competitionId: true },
-          where: { eventId: originalEventId },
+          where: { organizationId: session.organization!.id, eventId: originalEventId },
         });
         const competitionIds = new Set<string>(roundsWithEvent.map((r) => r.competitionId));
 
         if (competitionIds.size > 0) {
           const contestsWithEventInTheSchedule = await tx.query.contests.findMany({
             columns: { id: true, schedule: true },
-            where: { schedule: { isNotNull: true }, competitionId: { in: Array.from(competitionIds) } },
+            where: {
+              organizationId: session.organization!.id,
+              schedule: { isNotNull: true },
+              competitionId: { in: Array.from(competitionIds) },
+            },
           });
 
           const activityCodeRegex = new RegExp(`^${originalEventId}(-r[1-9][0-9]?(-g[1-9][0-9]?(-a[1-9][0-9]?)?)?)?$`);
@@ -100,7 +112,12 @@ export const updateEventSF = actionClient
                 }
               }
             }
-            if (isChanged) await tx.update(contestsTable).set({ schedule }).where(eq(contestsTable.id, id));
+            if (isChanged) {
+              await tx
+                .update(contestsTable)
+                .set({ schedule })
+                .where(and(eq(contestsTable.organizationId, session.organization!.id), eq(contestsTable.id, id)));
+            }
           }
         }
       }
@@ -119,7 +136,7 @@ export const updateEventSF = actionClient
           rule: newEventDto.rule,
           importantInfo: newEventDto.importantInfo,
         })
-        .where(eq(table.eventId, originalEventId))
+        .where(and(eq(table.organizationId, session.organization!.id), eq(table.eventId, originalEventId)))
         .returning();
     });
 

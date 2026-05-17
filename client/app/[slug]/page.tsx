@@ -1,4 +1,4 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
 import Markdown from "react-markdown";
@@ -27,7 +27,12 @@ async function OrganizationHomePage({ params }: Props) {
     optional: true,
   });
 
-  const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
+  const latestBlogPostsPromise = db
+    .select(postsPublicCols)
+    .from(postsTable)
+    .where(eq(postsTable.organizationId, organization.id))
+    .limit(2)
+    .orderBy(desc(postsTable.date));
   const modInstructionsPromise = getSettingFromDb({
     key: "moderator-instructions-page-content",
     organizationId: organization.id,

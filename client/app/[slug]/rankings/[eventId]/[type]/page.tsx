@@ -63,7 +63,7 @@ async function RankingsPage({ params, searchParams }: Props) {
 
   const organization = await getOrgDetails({ slug });
   const [events, regions] = await Promise.all([
-    getEvents(organization!.id, { includeHiddenAndRemoved: true }),
+    getEvents({ organizationId: organization!.id, includeHiddenAndRemoved: true }),
     getRegions(organization!.id),
   ]);
 

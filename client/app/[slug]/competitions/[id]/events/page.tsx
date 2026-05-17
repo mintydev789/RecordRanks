@@ -9,6 +9,7 @@ import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";
 import { eventsTable } from "~/server/db/schema/events.ts";
 import { roundsTable } from "~/server/db/schema/rounds.ts";
+import { getOrgDetails } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{
@@ -20,7 +21,11 @@ type Props = {
 async function ContestEventsPage({ params }: Props) {
   const { slug, id } = await params;
 
-  const [contest] = await db.select(contestsPublicCols).from(table).where(eq(table.competitionId, id));
+  const organization = await getOrgDetails({ slug });
+  const [contest] = await db
+    .select(contestsPublicCols)
+    .from(table)
+    .where(and(eq(table.organizationId, organization.id), eq(table.competitionId, id)));
   const roundsData = await db
     .select()
     .from(roundsTable)
@@ -28,7 +33,7 @@ async function ContestEventsPage({ params }: Props) {
       eventsTable,
       and(eq(roundsTable.organizationId, eventsTable.organizationId), eq(roundsTable.eventId, eventsTable.eventId)),
     )
-    .where(eq(roundsTable.competitionId, id))
+    .where(and(eq(roundsTable.organizationId, organization.id), eq(roundsTable.competitionId, id)))
     .orderBy(asc(eventsTable.rank), asc(roundsTable.roundNumber));
 
   if (!contest || !roundsData) return <LoadingError loadingEntity="contest" />;

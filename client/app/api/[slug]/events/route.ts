@@ -8,7 +8,11 @@ export async function GET(_: NextRequest, { params }: RouteContext<"/api/[slug]/
 
   const organization = await getOrgDetails({ slug: parsedParams.data.slug });
 
-  const events = await getEvents(organization.id, { withRules: true, includeHiddenAndRemoved: true });
+  const events = await getEvents({
+    organizationId: organization.id,
+    columns: "public+rules",
+    includeHiddenAndRemoved: true,
+  });
 
   return Response.json(events);
 }

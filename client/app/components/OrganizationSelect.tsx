@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
+import { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 
@@ -12,6 +13,7 @@ type Props = {
 function OrganizationSelect({ organizations }: Props) {
   const router = useRouter();
   const { changeErrorMessages } = useContext(MainContext);
+  const { mutate } = useSWRConfig();
 
   const selectOrganization = async (organization: typeof authClient.$Infer.Organization) => {
     const { error } = await authClient.organization.setActive({ organizationId: organization.id });
@@ -19,6 +21,12 @@ function OrganizationSelect({ organizations }: Props) {
     if (error) {
       changeErrorMessages([error.message ?? error.statusText]);
     } else {
+      // Clear the SWR cache
+      mutate(
+        () => true, // update all keys
+        undefined, // set cache data to undefined
+        { revalidate: false },
+      );
       router.push(`/${organization.slug}`);
     }
   };

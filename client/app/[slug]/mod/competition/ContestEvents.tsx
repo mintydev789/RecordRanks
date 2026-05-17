@@ -67,14 +67,13 @@ function ContestEvents({
   }
   contestEvents.sort((a, b) => a.event.rank - b.event.rank);
   const remainingEvents: EventResponse[] = filteredEvents.filter(
-    (e) => e.category !== "removed" && !contestEvents.some((ce) => ce.event.eventId === e.eventId),
+    (e) => !contestEvents.some((ce) => ce.event.eventId === e.eventId),
   );
 
   // Disable new events if new rounds are disabled or if there are no more events to add
-  newEventsDisabled =
-    disabled || newEventsDisabled || newRoundsDisabled || contestEvents.length === filteredEvents.length;
+  newEventsDisabled = disabled || newEventsDisabled || newRoundsDisabled || remainingEvents.length === 0;
 
-  const [newEventId, setNewEventId] = useState(remainingEvents[0].eventId);
+  const [newEventId, setNewEventId] = useState(remainingEvents[0]?.eventId ?? undefined);
 
   const newEvent = events.find((e) => e.eventId === newEventId)!;
 

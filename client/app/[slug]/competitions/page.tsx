@@ -34,7 +34,10 @@ async function ContestsPage({ params, searchParams }: Props) {
   const { eventId, region: regionCode } = await searchParams;
 
   const organization = await getOrgDetails({ slug });
-  const [events, regions] = await Promise.all([getEvents(organization!.id), getRegions(organization!.id)]);
+  const [events, regions] = await Promise.all([
+    getEvents({ organizationId: organization!.id }),
+    getRegions(organization!.id),
+  ]);
 
   const region = regionCode ? regions.find((r) => r.code === regionCode) : undefined;
   if (regionCode && !region) return <LoadingError loadingEntity="contests" />;
@@ -89,7 +92,7 @@ async function ContestsPage({ params, searchParams }: Props) {
       <h2 className="mb-4 text-center">All Contests</h2>
 
       {events.length === 0 ? (
-        <LoadingError loadingEntity="contests" />
+        <LoadingError loadingEntity="events" />
       ) : (
         <>
           <div className="mb-3 px-2">

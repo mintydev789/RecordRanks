@@ -53,7 +53,10 @@ async function RecordsPage({ params, searchParams }: Props) {
     regionCode: region ?? undefined,
   });
 
-  const [events, regions] = await Promise.all([getEvents(organization.id), getRegions(organization.id)]);
+  const [events, regions] = await Promise.all([
+    getEvents({ organizationId: organization.id }),
+    getRegions(organization.id),
+  ]);
 
   const selectedCat = eventCategories.find((ec) => ec.value === eventCategory)!;
   const tabs: NavigationItem[] = eventCategories

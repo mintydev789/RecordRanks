@@ -20,7 +20,7 @@ async function ManageResultsPage() {
 
   const [results, events, recordConfigs, regions, videoBasedResultsEnabled, instructions] = await Promise.all([
     db.query.results.findMany({ where: { competitionId: { isNull: true } }, orderBy: { createdAt: "desc" } }),
-    getEvents(organization!.id, { includeHiddenAndRemoved: true }),
+    getEvents({ organizationId: organization!.id, includeHiddenAndRemoved: true }),
     getRecordConfigs(organization!.id, { recordCategory: "online" }),
     getRegions(organization!.id),
     getSettingFromDb({ key: "video-based-results-enabled", organizationId: organization!.id }),

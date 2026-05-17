@@ -46,7 +46,7 @@ async function CreateEditContestPage({ searchParams }: Props) {
 
   try {
     const [events, contest, rounds] = await Promise.all([
-      getEvents(organization!.id, { includeHiddenAndRemoved: true }),
+      getEvents({ organizationId: organization!.id, includeHiddenAndRemoved: true }),
       competitionId
         ? db.query.contests.findFirst({
             columns: canApprove ? undefined : { createdBy: false, createdAt: false, updatedAt: false },
@@ -85,7 +85,9 @@ async function CreateEditContestPage({ searchParams }: Props) {
               )
           : undefined,
         db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, contest.organizerIds)),
-        canApprove && contest.createdBy ? getCreators([contest.createdBy]) : [],
+        canApprove && contest.createdBy
+          ? getCreators({ organizationId: organization!.id, userIds: [contest.createdBy] })
+          : [],
       ]);
       totalResultsByRound = totalResultsByRoundRes;
       organizers = organizersRes;

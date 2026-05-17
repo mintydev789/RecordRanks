@@ -164,7 +164,7 @@ function ContestForm({
     [timezone, startTime, rooms, type],
   );
 
-  const isAdmin = getHasRole("admin", member?.role);
+  const isAdmin = getHasRole("admin", member?.role) || getHasRole("owner", member?.role);
   const modDashboardUrl = isAdmin ? `/${slug}/mod?state=pending` : `/${slug}/mod`;
   const isPending =
     isCreating ||
@@ -501,12 +501,20 @@ function ContestForm({
         <>
           {mode === "new" && process.env.NODE_ENV !== "production" && !type && (
             <div className="d-flex my-3 flex-wrap gap-3">
-              <Button onClick={() => fillWithMockData()} isLoading={isGettingPerson} className="btn-secondary">
-                Set Mock Competition
-              </Button>
-              <Button onClick={() => fillWithMockData("meetup")} isLoading={isGettingPerson} className="btn-secondary">
-                Set Mock Meetup
-              </Button>
+              {contestTypes.includes("comp") && (
+                <Button onClick={() => fillWithMockData()} isLoading={isGettingPerson} className="btn-secondary">
+                  Set Mock Competition
+                </Button>
+              )}
+              {contestTypes.includes("meetup") && (
+                <Button
+                  onClick={() => fillWithMockData("meetup")}
+                  isLoading={isGettingPerson}
+                  className="btn-secondary"
+                >
+                  Set Mock Meetup
+                </Button>
+              )}
             </div>
           )}
           {mode === "edit" && contest && (

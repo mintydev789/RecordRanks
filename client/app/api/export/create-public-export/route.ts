@@ -123,6 +123,7 @@ export async function POST(_req: NextRequest) {
   //   await db
   //     .select({ ...roundsPublicCols, createdAt: roundsTable.createdAt, updatedAt: roundsTable.updatedAt })
   //     .from(roundsTable)
+  //     NOT SURE IF JOINS LIKE THIS ACTUALLY WORK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   //     .leftJoin(
   //       contestsTable,
   //       and(

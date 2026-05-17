@@ -43,6 +43,8 @@ function Navbar() {
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [userExpanded, setUserExpanded] = useState(false);
 
+  const isAdmin = getHasRole("admin", member?.role) || getHasRole("owner", member?.role);
+
   const logOut = async () => {
     // Clear the SWR cache
     mutate(
@@ -256,7 +258,7 @@ function Navbar() {
                   {canAccessModDashboard && (
                     <li>
                       <Link
-                        href={`/${organization.slug}/mod${getHasRole("admin", member.role) ? "?state=pending" : ""}`}
+                        href={`/${organization.slug}/mod${isAdmin ? "?state=pending" : ""}`}
                         prefetch={false}
                         onClick={collapseAll}
                         className={`nav-link ${pathname === `/${organization.slug}/mod` ? "active" : ""}`}

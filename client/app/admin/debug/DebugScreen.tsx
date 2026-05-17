@@ -8,11 +8,13 @@ import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import type { OrganizationMetadata } from "~/helpers/types.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 import { sendDebugEmailSF } from "~/server/server-functions/user-server-functions.ts";
 
 function DebugScreen() {
+  const { member } = useSession();
   const { changeSuccessMessage, changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { executeAsync: sendDebugEmail, isPending: isSendingEmail } = useAction(sendDebugEmailSF);
@@ -156,6 +158,9 @@ function DebugScreen() {
 
       <h4 className="my-4">Version</h4>
       <p>This instance is running on RecordRanks version {process.env.NEXT_PUBLIC_VERSION || "UNKNOWN"}</p>
+
+      <h4 className="my-4">Member data</h4>
+      <code>{JSON.stringify(member, null, 2)}</code>
     </div>
   );
 }

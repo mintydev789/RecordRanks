@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import z from "zod";
 // import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
@@ -72,7 +72,11 @@ export const updateMemberSF = actionClient
       let person: PersonResponse | undefined;
       if (personId) {
         person = (
-          await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, personId)).limit(1)
+          await db
+            .select(personsPublicCols)
+            .from(personsTable)
+            .where(and(eq(personsTable.organizationId, session.organization!.id), eq(personsTable.id, personId)))
+            .limit(1)
         ).at(0);
         if (!person) throw new RrActionError(`Person with ID ${personId} not found`);
       } else if (roles.some((role) => role !== "member")) {

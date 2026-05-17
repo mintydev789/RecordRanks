@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, getColumns, inArray, ne, or, sql } from "drizzle-orm";
 import { camelCase } from "lodash";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import { headers } from "next/headers";
@@ -30,7 +30,7 @@ import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPa
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
-import { type EventResponse, eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";
+import { type EventResponse, eventsPublicCols, eventsTable, type SelectEvent } from "~/server/db/schema/events.ts";
 import type { FullMemberRequest } from "~/server/db/schema/member-requests.ts";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
 import { type PostResponse, postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
@@ -790,20 +790,14 @@ export async function getPersonsForExternalDeviceDataEntry(
   }
 }
 
-type Base = { key: SettingKey; organizationId: string | null };
-export async function getSettingFromDb({ key, organizationId, optional }: Base & { optional?: never }): Promise<string>;
+type GetSettingFromDbBaseParams = { key: SettingKey; organizationId: string | null };
+export async function getSettingFromDb(params: GetSettingFromDbBaseParams & { optional?: never }): Promise<string>;
+export async function getSettingFromDb(params: GetSettingFromDbBaseParams & { optional: true }): Promise<string | null>;
 export async function getSettingFromDb({
   key,
   organizationId,
   optional,
-}: Base & { optional: true }): Promise<string | null>;
-export async function getSettingFromDb({
-  key,
-  organizationId,
-  optional,
-}: Base & {
-  optional?: true;
-}): Promise<string | null> {
+}: GetSettingFromDbBaseParams & { optional?: true }): Promise<string | null> {
   const setting = await db.query.settings.findFirst({
     columns: { value: true },
     where: { key, organizationId: organizationId || { isNull: true } },
@@ -850,7 +844,13 @@ export async function getMemberRequestDetails({
   return { memberRequest: fullMemberRequest ?? null, ownRequestedPersonId: ownCreatedPersons.at(0)?.id };
 }
 
-export async function getCreators(userIds: string[]): Promise<Creator[]> {
+export async function getCreators({
+  organizationId,
+  userIds,
+}: {
+  organizationId: string;
+  userIds: string[];
+}): Promise<Creator[]> {
   if (userIds.length === 0) return [];
 
   return await db
@@ -869,18 +869,27 @@ export async function getCreators(userIds: string[]): Promise<Creator[]> {
     .from(membersTable)
     .innerJoin(usersTable, eq(membersTable.userId, usersTable.id))
     .leftJoin(personsTable, eq(membersTable.personId, personsTable.id))
-    .where(inArray(membersTable.userId, userIds));
+    .where(and(eq(membersTable.organizationId, organizationId), inArray(membersTable.userId, userIds)));
 }
 
+type GetEventsBaseParams = { organizationId: string; includeHiddenAndRemoved?: boolean };
+export async function getEvents(params: GetEventsBaseParams & { columns?: "all" }): Promise<SelectEvent[]>;
 export async function getEvents(
-  organizationId: string,
-  {
-    withRules = false,
-    includeHiddenAndRemoved = false,
-  }: { withRules?: boolean; includeHiddenAndRemoved?: boolean } = {},
-): Promise<EventResponse[]> {
+  params: GetEventsBaseParams & { columns?: "public+rules" },
+): Promise<(EventResponse & Pick<SelectEvent, "rule">)[]>;
+export async function getEvents({
+  organizationId,
+  columns = "public",
+  includeHiddenAndRemoved = false,
+}: GetEventsBaseParams & { columns?: "public" | "public+rules" | "all" }): Promise<EventResponse[]> {
   return await db
-    .select(withRules ? { ...eventsPublicCols, rule: eventsTable.rule } : eventsPublicCols)
+    .select(
+      columns === "all"
+        ? getColumns(eventsTable)
+        : columns === "public+rules"
+          ? { ...eventsPublicCols, rule: eventsTable.rule }
+          : eventsPublicCols,
+    )
     .from(eventsTable)
     .where(
       and(

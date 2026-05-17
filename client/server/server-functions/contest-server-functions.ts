@@ -181,12 +181,13 @@ export const createContestSF = actionClient
     });
 
     const createdContest = await db.transaction(async (tx) => {
-      await createRounds({ tx, rounds, organizationId: session.organization!.id });
-
       const [createdContest] = await tx
         .insert(table)
         .values({ ...newContestDto, organizationId: session.organization!.id, createdBy: session.user.id })
         .returning();
+
+      await createRounds({ tx, rounds, organizationId: session.organization!.id });
+
       return createdContest;
     });
 
@@ -214,7 +215,7 @@ export const approveContestSF = actionClient
 
     const contest = await db.query.contests.findFirst({
       columns: { competitionId: true, name: true, shortName: true, state: true, organizerIds: true, createdBy: true },
-      where: { competitionId },
+      where: { organizationId: session.organization!.id, competitionId },
     });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "created") throw new RrActionError("Contest has already been approved");
@@ -679,7 +680,7 @@ async function validateAndCleanUpContest(
   const organizers = await db
     .select({ id: personsTable.id })
     .from(personsTable)
-    .where(inArray(personsTable.id, contest.organizerIds));
+    .where(and(eq(personsTable.organizationId, organizationId), inArray(personsTable.id, contest.organizerIds)));
   if (organizers.length !== contest.organizerIds.length)
     throw new RrActionError("One of the organizer persons was not found");
 

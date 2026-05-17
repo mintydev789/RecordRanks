@@ -179,12 +179,13 @@ export const createContestResultSF = actionClient
       ranking: 1, // gets set to the correct value below
       createdBy: session.user.id,
     };
+    const isAdmin = getHasRole("admin", session.member!.role) || getHasRole("owner", session.member!.role);
 
     await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
 
     if (
       !process.env.VITEST &&
-      !getHasRole("admin", session.member!.role) &&
+      !isAdmin &&
       (newResult.regionalSingleRecord || newResult.regionalAverageRecord) &&
       differenceInDays(new Date(), newResult.date) > 30
     ) {
@@ -254,12 +255,13 @@ export const updateContestResultSF = actionClient
       regionalSingleRecord: null,
       regionalAverageRecord: null,
     };
+    const isAdmin = getHasRole("admin", session.member!.role) || getHasRole("owner", session.member!.role);
 
     await setResultRecords(newResult, event, recordConfigs, { excludeResultId: id });
 
     if (
       !process.env.VITEST &&
-      !getHasRole("admin", session.member!.role) &&
+      !isAdmin &&
       (result.regionalSingleRecord ||
         result.regionalAverageRecord ||
         newResult.regionalSingleRecord ||
@@ -319,9 +321,11 @@ export const deleteContestResultSF = actionClient
     const result = await db.query.results.findFirst({ where: { id, competitionId: { isNotNull: true } } });
     if (!result) throw new RrActionError(`Result with ID ${id} not found`);
 
+    const isAdmin = getHasRole("admin", session.member!.role) || getHasRole("owner", session.member!.role);
+
     if (
       !process.env.VITEST &&
-      !getHasRole("admin", session.member!.role) &&
+      !isAdmin &&
       (result.regionalSingleRecord || result.regionalAverageRecord) &&
       differenceInDays(new Date(), result.date) > 30
     ) {

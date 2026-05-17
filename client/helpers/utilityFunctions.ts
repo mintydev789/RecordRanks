@@ -579,7 +579,7 @@ export function getMemberControlsContest(
 ) {
   if (!member.personId) return false;
   if (contest.state === "removed") return false;
-  if (getHasRole("admin", member.role)) return true;
+  if (getHasRole("admin", member.role) || getHasRole("owner", member.role)) return true;
 
   const modHasAccess =
     ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(member.personId);

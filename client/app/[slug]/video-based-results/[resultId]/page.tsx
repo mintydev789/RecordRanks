@@ -36,7 +36,9 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
   if (!result) return <LoadingError />;
 
   const participants = await db.query.persons.findMany({ where: { id: { in: result.personIds } } });
-  const creator = result.createdBy ? ((await getCreators([result.createdBy])).at(0) ?? null) : null;
+  const creator = result.createdBy
+    ? ((await getCreators({ organizationId: organization!.id, userIds: [result.createdBy] })).at(0) ?? null)
+    : null;
 
   return (
     <section>

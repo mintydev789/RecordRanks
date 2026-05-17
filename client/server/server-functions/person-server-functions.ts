@@ -138,7 +138,7 @@ export const createPersonSF = actionClient
         }
       }
 
-      await validatePerson(newPersonDto, { ignoreDuplicate, canApprove });
+      await validatePerson(session.organization!.id, newPersonDto, { ignoreDuplicate, canApprove });
 
       const query = db
         .insert(table)
@@ -195,7 +195,7 @@ export const updatePersonSF = actionClient
         );
       }
 
-      await validatePerson(personDto, { excludeId: id, ignoreDuplicate, canApprove });
+      await validatePerson(session.organization!.id, personDto, { excludeId: id, ignoreDuplicate, canApprove });
 
       const query = db.update(table).set(personDto).where(eq(table.id, id));
       const [updatedPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
@@ -307,6 +307,7 @@ export const approvePersonSF = actionClient
   });
 
 async function validatePerson(
+  organizationId: string,
   newPersonDto: PersonDto,
   {
     ignoreDuplicate,
@@ -327,7 +328,7 @@ async function validatePerson(
     const [sameWcaIdPerson] = await db
       .select()
       .from(table)
-      .where(and(eq(table.wcaId, newPersonDto.wcaId), excludeCondition))
+      .where(and(eq(table.organizationId, organizationId), eq(table.wcaId, newPersonDto.wcaId), excludeCondition))
       .limit(1);
 
     if (sameWcaIdPerson) throw new RrActionError("A person with the same WCA ID already exists in the CC database");
@@ -335,7 +336,14 @@ async function validatePerson(
     const [duplicatePerson] = await db
       .select()
       .from(table)
-      .where(and(eq(table.name, newPersonDto.name), eq(table.regionCode, newPersonDto.regionCode), excludeCondition))
+      .where(
+        and(
+          eq(table.organizationId, organizationId),
+          eq(table.name, newPersonDto.name),
+          eq(table.regionCode, newPersonDto.regionCode),
+          excludeCondition,
+        ),
+      )
       .limit(1);
 
     if (duplicatePerson) {
