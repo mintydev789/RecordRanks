@@ -25,9 +25,14 @@ export const getPersonByIdSF = actionClient
       id: z.int().min(1),
     }),
   )
-  .action<PersonResponse>(async ({ parsedInput: { id } }) => {
-    const [person] = await db.select(personsPublicCols).from(table).where(eq(table.id, id));
+  .action<PersonResponse>(async ({ parsedInput: { id }, ctx: { session } }) => {
+    const [person] = await db
+      .select(personsPublicCols)
+      .from(table)
+      .where(and(eq(table.organizationId, session.organization!.id), eq(table.id, id)));
+
     if (!person) throw new RrActionError(`Person with ID ${id} not found`);
+
     return person;
   });
 
@@ -38,14 +43,18 @@ export const getPersonsByNameSF = actionClient
       name: z.string().max(60),
     }),
   )
-  .action<PersonResponse[]>(async ({ parsedInput: { name } }) => {
+  .action<PersonResponse[]>(async ({ parsedInput: { name }, ctx: { session } }) => {
     const simplifiedParts = getSimplifiedString(name)
       .split(" ")
       .map((part) => `%${part}%`);
     const nameQuery = and(...simplifiedParts.map((part) => sql`UNACCENT(${table.name}) ILIKE ${part}`));
     const locNameQuery = and(...simplifiedParts.map((part) => ilike(table.localizedName, part)));
 
-    return await db.select(personsPublicCols).from(table).where(or(nameQuery, locNameQuery)).limit(C.maxPersonMatches);
+    return await db
+      .select(personsPublicCols)
+      .from(table)
+      .where(and(eq(table.organizationId, session.organization!.id), or(nameQuery, locNameQuery)))
+      .limit(C.maxPersonMatches);
   });
 
 export const getOrCreatePersonSF = actionClient
@@ -56,11 +65,13 @@ export const getOrCreatePersonSF = actionClient
       regionCode: z.string().nonempty(),
     }),
   )
-  .action<GetOrCreatePersonObject>(async ({ parsedInput: { name, regionCode } }) => {
+  .action<GetOrCreatePersonObject>(async ({ parsedInput: { name, regionCode }, ctx: { session } }) => {
     const persons = await db
       .select(personsPublicCols)
       .from(table)
-      .where(and(eq(table.name, name), eq(table.regionCode, regionCode)));
+      .where(
+        and(eq(table.organizationId, session.organization!.id), eq(table.name, name), eq(table.regionCode, regionCode)),
+      );
 
     if (persons.length > 1)
       throw new RrActionError(`Multiple people were found with the name ${name} and country ${regionCode}`);
@@ -117,7 +128,7 @@ export const createPersonSF = actionClient
         } else {
           const existingProfile = await db.query.persons.findFirst({
             columns: { id: true },
-            where: { createdBy: session.user.id, wcaId: { isNull: true } },
+            where: { organizationId: session.organization!.id, createdBy: session.user.id, wcaId: { isNull: true } },
           });
           if (existingProfile) {
             throw new RrActionError(
@@ -157,7 +168,7 @@ export const updatePersonSF = actionClient
         auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
       ]);
 
-      const person = await db.query.persons.findFirst({ where: { id } });
+      const person = await db.query.persons.findFirst({ where: { organizationId: session.organization!.id, id } });
       if (!person) throw new RrActionError("Person with the provided ID not found");
       const canUpdateOwnWcaPerson = id === session.member!.personId && person.wcaId && newPersonDto.wcaId;
       const canUpdateOwnCreatedPerson = canUpdate && person.createdBy === session.user.id && !person.approved;
@@ -208,7 +219,7 @@ export const deletePersonSF = actionClient
       auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
     ]);
 
-    const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
+    const person = await db.query.persons.findFirst({ where: { organizationId: session.organization!.id, id } });
     if (!person) throw new RrActionError("Person with the provided ID not found");
     const canDeleteAnyPerson = canDelete && canApprove;
     const canDeleteOwnCreatedPerson = canDelete && person.createdBy === session.user.id && !person.approved;
@@ -252,8 +263,8 @@ export const approvePersonSF = actionClient
       ignoredWcaMatches: z.array(z.string()).default([]),
     }),
   )
-  .action<SelectPerson>(async ({ parsedInput: { id, ignoredWcaMatches } }) => {
-    const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
+  .action<SelectPerson>(async ({ parsedInput: { id, ignoredWcaMatches }, ctx: { session } }) => {
+    const person = await db.query.persons.findFirst({ where: { organizationId: session.organization!.id, id } });
     if (!person) throw new RrActionError("Person not found");
     if (person.approved) throw new RrActionError(`${person.name} has already been approved`);
 

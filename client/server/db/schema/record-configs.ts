@@ -14,7 +14,7 @@ export const recordConfigsTable = rrSchema.table(
     id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
     organizationId: d
       .text()
-      .references(() => organizationsTable.id)
+      .references(() => organizationsTable.id, { onDelete: "cascade" })
       .notNull(),
     recordTypeId: d.text().notNull(),
     category: recordCategoryEnum().notNull(),

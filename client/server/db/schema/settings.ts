@@ -37,7 +37,7 @@ export const settingsTable = rrSchema.table(
   "settings",
   {
     id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
-    organizationId: d.text().references(() => organizationsTable.id),
+    organizationId: d.text().references(() => organizationsTable.id, { onDelete: "cascade" }),
     key: d.text().$type<SettingKey>().notNull(),
     group: d.text().$type<SettingGroup>(),
     value: d.text().notNull(),

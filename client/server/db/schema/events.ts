@@ -16,7 +16,7 @@ export const eventsTable = rrSchema.table(
     id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
     organizationId: d
       .text()
-      .references(() => organizationsTable.id)
+      .references(() => organizationsTable.id, { onDelete: "cascade" })
       .notNull(),
     eventId: d.text().notNull(),
     name: d.text().notNull(),

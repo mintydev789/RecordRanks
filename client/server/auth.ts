@@ -116,43 +116,45 @@ export const auth = betterAuth({
       },
       organizationHooks: {
         afterCreateOrganization: async ({ organization }) => {
-          await db.insert(regionsTable).values(getDefaultRegions(organization.id));
+          await db.transaction(async (tx) => {
+            await tx.insert(regionsTable).values(getDefaultRegions(organization.id));
 
-          await db.insert(settingsTable).values(getDefaultOrgSettings(organization.id));
+            await tx.insert(settingsTable).values(getDefaultOrgSettings(organization.id));
 
-          const recordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"];
-          for (let i = 0; i < recordTypeValues.length; i++) {
-            const recordTypeId = recordTypeValues[i];
-            await db.insert(recordConfigsTable).values([
-              {
-                organizationId: organization.id,
-                recordTypeId,
-                category: "competitions",
-                label: recordTypeId,
-                rank: (i + 1) * 10,
-                color:
-                  recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-              },
-              {
-                organizationId: organization.id,
-                recordTypeId,
-                category: "meetups",
-                label: `M${recordTypeId}`,
-                rank: 100 + (i + 1) * 10,
-                color:
-                  recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-              },
-              {
-                organizationId: organization.id,
-                recordTypeId,
-                category: "online",
-                label: `O${recordTypeId}`,
-                rank: 200 + (i + 1) * 10,
-                color:
-                  recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-              },
-            ]);
-          }
+            const recordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"];
+            for (let i = 0; i < recordTypeValues.length; i++) {
+              const recordTypeId = recordTypeValues[i];
+              await tx.insert(recordConfigsTable).values([
+                {
+                  organizationId: organization.id,
+                  recordTypeId,
+                  category: "competitions",
+                  label: recordTypeId,
+                  rank: (i + 1) * 10,
+                  color:
+                    recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+                },
+                {
+                  organizationId: organization.id,
+                  recordTypeId,
+                  category: "meetups",
+                  label: `M${recordTypeId}`,
+                  rank: 100 + (i + 1) * 10,
+                  color:
+                    recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+                },
+                {
+                  organizationId: organization.id,
+                  recordTypeId,
+                  category: "online",
+                  label: `O${recordTypeId}`,
+                  rank: 200 + (i + 1) * 10,
+                  color:
+                    recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+                },
+              ]);
+            }
+          });
         },
       },
     }),

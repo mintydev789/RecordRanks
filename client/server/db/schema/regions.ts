@@ -14,7 +14,7 @@ export const regionsTable = rrSchema.table(
     id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
     organizationId: d
       .text()
-      .references(() => organizationsTable.id)
+      .references(() => organizationsTable.id, { onDelete: "cascade" })
       .notNull(),
     name: d.text().notNull(),
     shortName: d.text(),

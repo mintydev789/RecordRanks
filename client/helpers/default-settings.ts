@@ -165,5 +165,5 @@ If you see any errors, correct them before submitting. If you see anything that 
       value: "false",
       description: "Whether or not the video-based results feature is enabled. Value: true|false.",
     },
-  ].map((o) => ({ organizationId, ...o }));
+  ].map((o) => ({ ...o, organizationId }));
 }
