@@ -50,7 +50,7 @@ function MemberRequestTab({ regions }: Props) {
     { value: null, label: "Not selected" },
     ...requestableRoles.map((r) => ({ value: r, label: orgRolesObject[r] })),
   ] as const satisfies MultiChoiceOption[];
-  const isAdmin = getHasRole("admin", member?.role);
+  const isAdmin = getHasRole("admin", member?.role) || getHasRole("owner", member?.role);
   const isPending = isCreating || isDeleting;
 
   const handleSubmit = async () => {

@@ -18,7 +18,10 @@ type Props = {
 
 async function ManageMembersPage({ params }: Props) {
   const { slug } = await params;
-  const { organization } = await authorizeUser({ useOrganization: true, orgRole: "admin" });
+  const { organization } = await authorizeUser({
+    useOrganization: true,
+    orgPermissions: { member: ["create", "update", "delete"] },
+  });
 
   const [membersData, regions] = await Promise.all([
     auth.api.listMembers({
