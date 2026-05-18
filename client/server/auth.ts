@@ -1,8 +1,14 @@
 import "server-only";
-import { betterAuth } from "better-auth";
+import { betterAuth, type SocialProviders } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin as adminPlugin, genericOAuth, organization, username } from "better-auth/plugins";
+import {
+  admin as adminPlugin,
+  type GenericOAuthConfig,
+  genericOAuth,
+  organization,
+  username,
+} from "better-auth/plugins";
 import { C, HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { getDefaultOrgSettings } from "~/helpers/default-settings.ts";
@@ -17,7 +23,6 @@ import {
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
-import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { regionsTable } from "~/server/db/schema/regions.ts";
 import { settingsTable } from "~/server/db/schema/settings.ts";
 import {
@@ -89,7 +94,7 @@ export const auth = betterAuth({
       },
       cancelPendingInvitationsOnReInvite: true,
       membershipLimit: 1000, // TO-DO: THIS IS TEMPORARY!!!
-      // requireEmailVerificationOnInvitation: TO-DO: MAKE THIS REQUIRED FOR CREDENTIALS AUTH!!!
+      requireEmailVerificationOnInvitation: true,
       sendInvitationEmail: async (data) => {
         if (process.env.EMAIL_HOST)
           logMessage("RR0039", `Sending invitation to ${data.organization.name} to email ${data.email}`);
@@ -120,40 +125,6 @@ export const auth = betterAuth({
             await tx.insert(regionsTable).values(getDefaultRegions(organization.id));
 
             await tx.insert(settingsTable).values(getDefaultOrgSettings(organization.id));
-
-            const recordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"];
-            for (let i = 0; i < recordTypeValues.length; i++) {
-              const recordTypeId = recordTypeValues[i];
-              await tx.insert(recordConfigsTable).values([
-                {
-                  organizationId: organization.id,
-                  recordTypeId,
-                  category: "competitions",
-                  label: recordTypeId,
-                  rank: (i + 1) * 10,
-                  color:
-                    recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-                },
-                {
-                  organizationId: organization.id,
-                  recordTypeId,
-                  category: "meetups",
-                  label: `M${recordTypeId}`,
-                  rank: 100 + (i + 1) * 10,
-                  color:
-                    recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-                },
-                {
-                  organizationId: organization.id,
-                  recordTypeId,
-                  category: "online",
-                  label: `O${recordTypeId}`,
-                  rank: 200 + (i + 1) * 10,
-                  color:
-                    recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-                },
-              ]);
-            }
           });
         },
       },
@@ -161,7 +132,7 @@ export const auth = betterAuth({
     genericOAuth({
       config: [
         HAS_WCA_AUTH
-          ? {
+          ? ({
               providerId: "wca",
               clientId: process.env.WCA_OAUTH_CLIENT_ID!,
               clientSecret: process.env.WCA_OAUTH_SECRET,
@@ -169,7 +140,7 @@ export const auth = betterAuth({
               // issuer: "https://www.worldcubeassociation.org",
               // requireIssuerValidation: true, // the WCA doesn't support this
               scopes: ["public", "openid", "email", "profile"],
-            }
+            } satisfies GenericOAuthConfig)
           : undefined,
       ].filter((provider) => provider !== undefined),
     }),
@@ -182,7 +153,7 @@ export const auth = betterAuth({
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         }
       : undefined,
-  },
+  } satisfies SocialProviders,
   emailAndPassword: {
     enabled: HAS_CREDENTIAL_AUTH,
     autoSignIn: false,

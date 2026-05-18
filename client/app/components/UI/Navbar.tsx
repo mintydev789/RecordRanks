@@ -55,7 +55,7 @@ function Navbar() {
 
     collapseAll();
     await authClient.signOut();
-    router.push("/");
+    router.push("/login");
   };
 
   const toggleDropdown = (dropdown: "results" | "more" | "user", newValue: boolean) => {

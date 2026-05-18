@@ -92,7 +92,6 @@ export async function register() {
         console.log("Finished seeding test posts");
       }
 
-      // Seed init record configs
       if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
         const recordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"];
         for (let i = 0; i < recordTypeValues.length; i++) {

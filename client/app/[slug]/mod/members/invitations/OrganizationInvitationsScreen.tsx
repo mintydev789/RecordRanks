@@ -2,11 +2,13 @@
 
 import { useContext, useState, useTransition } from "react";
 import useSWR from "swr";
+import z from "zod";
 import Button from "~/app/components/UI/Button.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import type { ListPageMode } from "~/helpers/types.ts";
+import { orgRolesObject } from "~/server/organization-permissions.ts";
 
 function OrganizationInvitationsScreen() {
   const { resetMessages, changeErrorMessages, changeSuccessMessage } = useContext(MainContext);
@@ -17,11 +19,9 @@ function OrganizationInvitationsScreen() {
     isLoading,
     isValidating,
     mutate,
-  } = useSWR(
-    session ? ["organization-invitations", session] : null,
-    () => authClient.organization.listInvitations({ query: { organizationId: session!.activeOrganizationId! } }),
-    { suspense: true },
-  );
+  } = useSWR(session ? ["organization-invitations", session] : null, () => authClient.organization.listInvitations(), {
+    suspense: true,
+  });
   const [mode, setMode] = useState<ListPageMode>("view");
   const [isCreating, startTransition] = useTransition();
 
@@ -37,22 +37,18 @@ function OrganizationInvitationsScreen() {
 
   const submitInvitation = (formData: FormData) => {
     resetMessages();
-    const email = formData.get("email") as string;
 
-    startTransition(async () => {
-      const { data: users, error } = await authClient.admin.listUsers({
-        query: { filterField: "email", filterValue: email, filterOperator: "eq" },
-      });
+    const parsed = z
+      .strictObject({ email: z.email(), role: z.enum(["member", "mod", "admin"]) })
+      .safeParse(Object.fromEntries(formData.entries()));
 
-      if (error) {
-        changeErrorMessages([error.message ?? error.statusText]);
-      } else if (users.total === 0) {
-        changeErrorMessages(["User with the provided email not found. They have to create an account first."]);
-      } else {
+    if (!parsed.success) {
+      changeErrorMessages([z.prettifyError(parsed.error)]);
+    } else {
+      startTransition(async () => {
         const { error } = await authClient.organization.inviteMember({
-          email,
-          role: "member",
-          organizationId: session!.activeOrganizationId!,
+          email: parsed.data.email,
+          role: parsed.data.role,
           resend: true,
         });
 
@@ -63,8 +59,8 @@ function OrganizationInvitationsScreen() {
           mutate();
           setMode("view");
         }
-      }
-    });
+      });
+    }
   };
 
   return (
@@ -89,6 +85,17 @@ function OrganizationInvitationsScreen() {
               required
               className="form-control"
             />
+          </fieldset>
+
+          <fieldset className="mb-3">
+            <label htmlFor="role_input" className="form-label">
+              Role
+            </label>
+            <select id="role_input" name="role" className="form-select">
+              <option value="member">{orgRolesObject.member}</option>
+              <option value="mod">{orgRolesObject.mod}</option>
+              <option value="admin">{orgRolesObject.admin}</option>
+            </select>
           </fieldset>
 
           <div className="d-flex gap-3">
