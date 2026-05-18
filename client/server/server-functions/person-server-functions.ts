@@ -321,9 +321,6 @@ async function validatePerson(
 ) {
   const excludeCondition = excludeId ? ne(table.id, excludeId) : undefined;
 
-  const region = await db.query.regions.findFirst({ where: { code: newPersonDto.regionCode } });
-  if (!region) throw new RrActionError(`Invalid region code: ${newPersonDto.regionCode}`);
-
   if (newPersonDto.wcaId) {
     const [sameWcaIdPerson] = await db
       .select()

@@ -177,7 +177,7 @@ export const createContestSF = actionClient
 
     const organizerMembers = await db.query.members.findMany({
       with: { user: { columns: { email: true } } },
-      where: { personId: { in: newContestDto.organizerIds } },
+      where: { organizationId: session.organization!.id, personId: { in: newContestDto.organizerIds } },
     });
 
     const createdContest = await db.transaction(async (tx) => {
@@ -214,6 +214,7 @@ export const approveContestSF = actionClient
     logMessage("RR0006", `Approving contest ${competitionId}`);
 
     const contest = await db.query.contests.findFirst({
+      with: { creator: { columns: { email: true } } },
       columns: {
         id: true,
         competitionId: true,
@@ -225,11 +226,10 @@ export const approveContestSF = actionClient
       },
       where: { organizationId: session.organization!.id, competitionId },
     });
+
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "created") throw new RrActionError("Contest has already been approved");
-
-    const creatorUser = await db.query.users.findFirst({ columns: { email: true }, where: { id: contest.createdBy! } });
-    if (!creatorUser) throw new RrActionError("Contest creator's user profile not found");
+    if (!contest.creator) throw new RrActionError("Contest creator's user profile not found");
 
     await db.transaction(async (tx) => {
       await tx.update(table).set({ state: "approved" }).where(eq(table.id, contest.id));
@@ -238,7 +238,7 @@ export const approveContestSF = actionClient
       await tx.update(personsTable).set({ approved: true }).where(inArray(personsTable.id, contest.organizerIds));
     });
 
-    sendContestApprovedEmail(creatorUser.email, { contest, organization: session.organization! });
+    sendContestApprovedEmail(contest.creator.email, { contest, organization: session.organization! });
   });
 
 export const finishContestSF = actionClient
@@ -380,6 +380,7 @@ export const publishContestSF = actionClient
 
     const organizationId = session.organization!.id;
     const contest = await db.query.contests.findFirst({
+      with: { creator: { columns: { email: true } } },
       columns: {
         id: true,
         competitionId: true,
@@ -394,12 +395,6 @@ export const publishContestSF = actionClient
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "finished") throw new RrActionError("Contest cannot be published");
 
-    const creatorUser = contest.createdBy
-      ? await db.query.users.findFirst({
-          columns: { email: true },
-          where: { id: contest.createdBy },
-        })
-      : undefined;
     const wcaPersons: { name: string; wcaId: string; countryIso2: string }[] = [];
 
     if (contest.type === "wca-comp") {
@@ -469,7 +464,8 @@ export const publishContestSF = actionClient
       }
     });
 
-    if (creatorUser) sendContestPublishedEmail(creatorUser.email, { contest, organization: session.organization! });
+    if (contest.creator)
+      sendContestPublishedEmail(contest.creator.email, { contest, organization: session.organization! });
   });
 
 export const updateContestSF = actionClient
@@ -559,6 +555,7 @@ export const removeContestSF = actionClient
 
     const organizationId = session.organization!.id;
     const contest = await db.query.contests.findFirst({
+      with: { creator: { columns: { email: true } } },
       columns: {
         id: true,
         competitionId: true,
@@ -587,8 +584,8 @@ export const removeContestSF = actionClient
         .where(and(eq(roundsTable.organizationId, organizationId), eq(roundsTable.competitionId, newCompetitionId)));
     });
 
-    const creatorUser = await db.query.users.findFirst({ columns: { email: true }, where: { id: contest.createdBy! } });
-    if (creatorUser) sendEmail(creatorUser.email, "Contest removed", `Your contest ${contest.name} has been removed.`);
+    if (contest.creator)
+      sendEmail(contest.creator.email, "Contest removed", `Your contest ${contest.name} has been removed.`);
   });
 
 export const openRoundSF = actionClient
@@ -646,13 +643,21 @@ async function validateAndCleanUpContest(
   if (!contestTypes.split(",").some((ct) => contest.type === ct))
     throw new RrActionError(`${contest.type} contest type is disabled`);
 
-  const [events, region] = await Promise.all([
+  const [organizers, events, region] = await Promise.all([
+    db
+      .select({ id: personsTable.id })
+      .from(personsTable)
+      .where(and(eq(personsTable.organizationId, organizationId), inArray(personsTable.id, contest.organizerIds))),
     db.query.events.findMany({
       columns: { eventId: true, name: true, category: true, format: true },
       where: { organizationId },
     }),
     db.query.regions.findFirst({ where: { organizationId, code: contest.regionCode } }),
   ]);
+
+  // Make sure all organizer IDs are valid
+  if (organizers.length !== contest.organizerIds.length)
+    throw new RrActionError("One of the organizer persons was not found");
 
   if (!region) throw new RrActionError(`Invalid region code: ${contest.regionCode}`);
 
@@ -686,8 +691,18 @@ async function validateAndCleanUpContest(
         round.timeLimitCumulativeRoundIds ||
         round.cutoffAttemptResult ||
         round.cutoffNumberOfAttempts)
-    )
+    ) {
       throw new RrActionError("A round of an event with a non-time format cannot have a time limit or cutoff");
+    }
+
+    if (round.timeLimitCumulativeRoundIds) {
+      const cumulativeLimitRounds = await db.query.rounds.findMany({
+        where: { organizationId, id: { in: round.timeLimitCumulativeRoundIds }, competitionId: contest.competitionId },
+      });
+
+      if (cumulativeLimitRounds.length !== round.timeLimitCumulativeRoundIds.length)
+        throw new RrActionError(`One of the cumulative time limit rounds for round ${activityCode} was not found`);
+    }
   }
 
   // Check round numbers and round types
@@ -712,14 +727,6 @@ async function validateAndCleanUpContest(
       }
     }
   }
-
-  // Make sure all organizer IDs are valid
-  const organizers = await db
-    .select({ id: personsTable.id })
-    .from(personsTable)
-    .where(and(eq(personsTable.organizationId, organizationId), inArray(personsTable.id, contest.organizerIds)));
-  if (organizers.length !== contest.organizerIds.length)
-    throw new RrActionError("One of the organizer persons was not found");
 
   const totalEvents = new Set(rounds.map((r) => r.eventId)).size;
 

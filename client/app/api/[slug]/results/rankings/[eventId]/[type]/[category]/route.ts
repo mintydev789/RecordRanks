@@ -28,7 +28,7 @@ export async function GET(
 
   const organization = await getOrgDetails({ slug });
 
-  const event = await db.query.events.findFirst({ where: { eventId } });
+  const event = await db.query.events.findFirst({ where: { organizationId: organization.id, eventId } });
   if (!event) return new Response(`Event with ID ${eventId} not found`, { status: 400 });
 
   const rankings = await getRankings(organization.id, event, type, recordCategory, {

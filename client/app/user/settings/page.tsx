@@ -13,7 +13,7 @@ import {
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
-  const { user, member } = await authorizeUser({ useOrganization: false });
+  const { member } = await authorizeUser({ useOrganization: false });
 
   const [[person], regions] = await Promise.all([
     member?.personId
@@ -35,9 +35,7 @@ async function UserSettingsPage() {
       <SWRConfig
         value={{
           fallback: {
-            [SwrKey.MemberRequestDetails]: member
-              ? getMemberRequestDetails({ memberId: member.id, userId: user.id })
-              : undefined,
+            [SwrKey.MemberRequestDetails]: member ? getMemberRequestDetails({ member }) : undefined,
             [SwrKey.MemberRequestInstructions]: member
               ? getSettingFromDb({ key: "member-request-instructions", organizationId: member.organizationId })
               : undefined,

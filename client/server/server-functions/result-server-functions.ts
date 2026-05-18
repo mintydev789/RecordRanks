@@ -155,12 +155,13 @@ export const createContestResultSF = actionClient
 
     const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
-    newResultDto.attempts = await validateTimeLimitAndCutoff(
-      newResultDto.attempts,
-      newResultDto.personIds,
+    newResultDto.attempts = await validateTimeLimitAndCutoff({
+      organizationId,
+      attempts: newResultDto.attempts,
+      personIds: newResultDto.personIds,
       round,
-      roundFormat.attempts,
-    );
+      expectedNumberOfAttempts: roundFormat.attempts,
+    });
 
     const recordConfigs = await getRecordConfigs(organizationId, { contestType: contest.type });
     const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
@@ -248,7 +249,13 @@ export const updateContestResultSF = actionClient
     const recordConfigs = await getRecordConfigs(organizationId, { contestType: contest.type });
     const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
-    newAttempts = await validateTimeLimitAndCutoff(newAttempts, result.personIds, round, roundFormat.attempts);
+    newAttempts = await validateTimeLimitAndCutoff({
+      organizationId,
+      attempts: newAttempts,
+      personIds: result.personIds,
+      round,
+      expectedNumberOfAttempts: roundFormat.attempts,
+    });
 
     const { best, average } = getBestAndAverage(newAttempts, event.format, roundFormat.value);
     const newResult: SelectResult = {
@@ -399,6 +406,7 @@ export const createVideoBasedResultSF = actionClient
   .action<ResultResponse>(async ({ parsedInput: { newResultDto }, ctx: { session, httpHeaders } }) => {
     logMessage("RR0016", `Creating video-based result: ${JSON.stringify(newResultDto)}`);
 
+    const organizationId = session.organization!.id;
     const { success: canApprove } = await auth.api.hasPermission({
       headers: httpHeaders,
       body: { permissions: { videoBasedResults: ["approve"] } },
@@ -406,11 +414,14 @@ export const createVideoBasedResultSF = actionClient
     await validateVideoBasedResult(newResultDto, { userCanApprove: canApprove });
 
     const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
-      db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
-      db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
-      getRecordConfigs(session.organization!.id, { recordCategory: "online" }),
+      db.query.events.findFirst({ where: { organizationId, eventId: newResultDto.eventId } }),
+      db.query.persons.findMany({ where: { organizationId, id: { in: newResultDto.personIds } } }),
+      getRecordConfigs(organizationId, { recordCategory: "online" }),
       session.member!.personId
-        ? db.query.persons.findFirst({ columns: { name: true }, where: { id: session.member!.personId } })
+        ? db.query.persons.findFirst({
+            columns: { name: true },
+            where: { organizationId, id: session.member!.personId },
+          })
         : undefined,
     ]);
 
@@ -429,7 +440,7 @@ export const createVideoBasedResultSF = actionClient
     const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
     const newResult: InsertResult = {
       ...newResultDto,
-      organizationId: session.organization!.id,
+      organizationId,
       best,
       average,
       recordCategory: "online",
@@ -636,7 +647,9 @@ async function setResultRecordsAndRegions(
   recordConfigs: RecordConfigResponse[], // must be of the same category
   participants: SelectPerson[],
 ) {
-  const regions = await db.query.regions.findMany({ where: { code: { in: participants.map((p) => p.regionCode) } } });
+  const regions = await db.query.regions.findMany({
+    where: { organizationId: event.organizationId, code: { in: participants.map((p) => p.regionCode) } },
+  });
   if (regions.length === 0) throw new Error("Participants' regions not found");
 
   const isSameRegionParticipants = new Set(regions.map((r) => r.code)).size === 1;
@@ -1029,12 +1042,19 @@ async function cancelFutureRecords(
   }
 }
 
-async function validateTimeLimitAndCutoff(
-  attempts: Attempt[],
-  personIds: number[],
-  round: SelectRound,
-  expectedNumberOfAttempts: number,
-): Promise<Attempt[]> {
+async function validateTimeLimitAndCutoff({
+  organizationId,
+  attempts,
+  personIds,
+  round,
+  expectedNumberOfAttempts,
+}: {
+  organizationId: string;
+  attempts: Attempt[];
+  personIds: number[];
+  round: SelectRound;
+  expectedNumberOfAttempts: number;
+}): Promise<Attempt[]> {
   let outputAttempts = attempts;
 
   // Time limit validation
@@ -1046,6 +1066,7 @@ async function validateTimeLimitAndCutoff(
       // Add up all attempt times from the new result and results from other rounds included in the cumulative time limit
       const cumulativeRoundsResults = await db.query.results.findMany({
         where: {
+          organizationId,
           roundId: { in: round.timeLimitCumulativeRoundIds },
           RAW: (t) => sql`CARDINALITY(${t.personIds}) = ${personIds.length}`,
           personIds: { arrayContains: personIds },

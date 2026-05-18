@@ -18,8 +18,7 @@ import {
   type RecordCategory,
   RecordCategoryValues,
 } from "~/helpers/types.ts";
-import { fetchWcaPerson, getActionError, getHasRole } from "~/helpers/utilityFunctions.ts";
-import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
+import { fetchWcaPerson, getHasRole } from "~/helpers/utilityFunctions.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
@@ -40,7 +39,6 @@ import { sendErrorEmail } from "~/server/email/mailer.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
 import type { AdminPluginPermissions, Role } from "~/server/permissions.ts";
 import { RrActionError } from "~/server/safeAction.ts";
-import { updatePersonSF } from "~/server/server-functions/person-server-functions.ts";
 import { getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
 import { auth } from "./auth.ts";
 import type { OrganizationRole, OrgPluginPermissions } from "./organization-permissions.ts";
@@ -194,8 +192,8 @@ export async function getContest({
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
 } | null> {
-  const [organization, contest, rounds] = await Promise.all([
-    getOrgDetails({ slug }),
+  const organization = await getOrgDetails({ slug });
+  const [contest, rounds] = await Promise.all([
     db.query.contests.findFirst({
       columns: {
         competitionId: true,
@@ -207,13 +205,13 @@ export async function getContest({
         organizerIds: true,
         schedule: true,
       },
-      where: { competitionId },
+      where: { organizationId: organization.id, competitionId },
     }),
     // Rounds are further filtered below, once it's known what event is needed
     db
       .select(roundsPublicCols)
       .from(roundsTable)
-      .where(eq(roundsTable.competitionId, competitionId))
+      .where(and(eq(roundsTable.organizationId, organization.id), eq(roundsTable.competitionId, competitionId)))
       .orderBy(roundsTable.roundNumber),
   ]);
   if (!contest) return null;
@@ -224,7 +222,7 @@ export async function getContest({
     db
       .select(eventsPublicCols)
       .from(eventsTable)
-      .where(inArray(eventsTable.eventId, eventIds))
+      .where(and(eq(eventsTable.organizationId, organization.id), inArray(eventsTable.eventId, eventIds)))
       .orderBy(eventsTable.rank),
     getRecordConfigs(organization.id, { contestType: contest.type }),
     getRegions(organization.id),
@@ -237,7 +235,13 @@ export async function getContest({
   const results = await db
     .select(resultsPublicCols)
     .from(resultsTable)
-    .where(and(eq(resultsTable.competitionId, competitionId), eq(resultsTable.eventId, eventIdOrFirst)));
+    .where(
+      and(
+        eq(resultsTable.organizationId, organization.id),
+        eq(resultsTable.competitionId, competitionId),
+        eq(resultsTable.eventId, eventIdOrFirst),
+      ),
+    );
 
   const personIds = Array.from(
     new Set(results.map((r) => r.personIds).reduce((prev, curr) => [...(prev as []), ...curr], [])),
@@ -337,7 +341,7 @@ export async function getRecords({
 }): Promise<RecordRanking[]> {
   const events = await db.query.events.findMany({
     columns: { eventId: true },
-    where: { eventId, hidden: false, category: eventCategory },
+    where: { organizationId, eventId, hidden: false, category: eventCategory },
   });
 
   const region = regionCode
@@ -697,62 +701,62 @@ export async function getOrCreatePersonByWcaId(
   return { person: createdPerson, isNew: true };
 }
 
-export async function syncPersonByWcaId(wcaId: string, personId: number): Promise<PersonResponse> {
-  const person = await db.query.persons.findFirst({ columns: { wcaId: true }, where: { id: personId } });
-  if (!person) throw new RrActionError("Person not found");
-  // This error should theoretically never happen
-  if (person.wcaId !== wcaId) {
-    throw new RrActionError(
-      "The WCA ID is different from the one assigned to the competitor already tied to this user. Please contact the admin team.",
-    );
-  }
+// export async function syncPersonByWcaId(wcaId: string, personId: number): Promise<PersonResponse> {
+//   const person = await db.query.persons.findFirst({ columns: { wcaId: true }, where: { id: personId } });
+//   if (!person) throw new RrActionError("Person not found");
+//   // This error should theoretically never happen
+//   if (person.wcaId !== wcaId) {
+//     throw new RrActionError(
+//       "The WCA ID is different from the one assigned to the competitor already tied to this user. Please contact the admin team.",
+//     );
+//   }
 
-  const wcaPerson = await fetchWcaPerson(wcaId);
-  if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found in the WCA API`);
+//   const wcaPerson = await fetchWcaPerson(wcaId);
+//   if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found in the WCA API`);
 
-  const res = await updatePersonSF({ id: personId, newPersonDto: wcaPerson });
+//   const res = await updatePersonSF({ id: personId, newPersonDto: wcaPerson });
 
-  if (res.serverError || res.validationErrors) throw new RrActionError(getActionError(res));
+//   if (res.serverError || res.validationErrors) throw new RrActionError(getActionError(res));
 
-  return res.data!;
-}
+//   return res.data!;
+// }
 
-export async function getPersonsForExternalDeviceDataEntry(
-  { registrantId, wcaId }: Pick<EnterAttemptPayloadDto, "registrantId" | "wcaId">,
-  { creatorUserId, organizationId }: { creatorUserId: string; organizationId: string },
-): Promise<PersonResponse[]> {
-  if (wcaId) {
-    const wcaIds = wcaId.split(",");
-    const persons: PersonResponse[] = [];
+// export async function getPersonsForExternalDeviceDataEntry(
+//   { registrantId, wcaId }: Pick<EnterAttemptPayloadDto, "registrantId" | "wcaId">,
+//   { creatorUserId, organizationId }: { creatorUserId: string; organizationId: string },
+// ): Promise<PersonResponse[]> {
+//   if (wcaId) {
+//     const wcaIds = wcaId.split(",");
+//     const persons: PersonResponse[] = [];
 
-    for (const wid of wcaIds) {
-      const { person } = await getOrCreatePersonByWcaId(wid.toUpperCase(), {
-        creatorUserId,
-        createdExternally: true,
-        organizationId,
-      });
-      persons.push(person);
-    }
+//     for (const wid of wcaIds) {
+//       const { person } = await getOrCreatePersonByWcaId(wid.toUpperCase(), {
+//         creatorUserId,
+//         createdExternally: true,
+//         organizationId,
+//       });
+//       persons.push(person);
+//     }
 
-    return persons;
-  } else if (typeof registrantId === "number") {
-    const person = await db.query.persons.findFirst({ where: { id: registrantId } });
-    if (!person) throw new Error(`Person with ID ${registrantId} not found`);
-    return [person];
-  } else {
-    const personIds = registrantId!.split(",").map((part) => parseInt(part, 10));
-    const persons = await db.query.persons.findMany({ where: { id: { in: personIds } } });
+//     return persons;
+//   } else if (typeof registrantId === "number") {
+//     const person = await db.query.persons.findFirst({ where: { id: registrantId } });
+//     if (!person) throw new Error(`Person with ID ${registrantId} not found`);
+//     return [person];
+//   } else {
+//     const personIds = registrantId!.split(",").map((part) => parseInt(part, 10));
+//     const persons = await db.query.persons.findMany({ where: { id: { in: personIds } } });
 
-    const personsInPreservedOrder: PersonResponse[] = [];
-    for (const pid of personIds) {
-      const person = persons.find((p) => p.id === pid);
-      if (!person) throw new Error(`Person with ID ${pid} not found`);
-      personsInPreservedOrder.push(person);
-    }
+//     const personsInPreservedOrder: PersonResponse[] = [];
+//     for (const pid of personIds) {
+//       const person = persons.find((p) => p.id === pid);
+//       if (!person) throw new Error(`Person with ID ${pid} not found`);
+//       personsInPreservedOrder.push(person);
+//     }
 
-    return personsInPreservedOrder;
-  }
-}
+//     return personsInPreservedOrder;
+//   }
+// }
 
 type GetSettingFromDbBaseParams = { key: SettingKey; organizationId: string | null };
 export async function getSettingFromDb(params: GetSettingFromDbBaseParams & { optional?: never }): Promise<string>;
@@ -776,11 +780,9 @@ export async function getSettingFromDb({
 }
 
 export async function getMemberRequestDetails({
-  memberId,
-  userId,
+  member,
 }: {
-  memberId: string;
-  userId: string;
+  member: Pick<typeof membersTable.$inferSelect, "id" | "organizationId" | "userId">;
 }): Promise<MemberRequestDetails> {
   const [fullMemberRequest, ownCreatedPersons] = await Promise.all([
     db.query.memberRequests.findFirst({
@@ -790,12 +792,17 @@ export async function getMemberRequestDetails({
           columns: { id: true, name: true, localizedName: true, regionCode: true, wcaId: true, approved: true },
         },
       },
-      where: { memberId },
+      where: { memberId: member.id },
     }) satisfies Promise<FullMemberRequest | undefined>,
     db.query.persons.findMany({
       columns: { id: true },
       // This logic is consistent with updatePersonSF()
-      where: { createdBy: userId, approved: false, wcaId: { isNull: true } },
+      where: {
+        organizationId: member.organizationId,
+        createdBy: member.userId,
+        approved: false,
+        wcaId: { isNull: true },
+      },
     }),
   ]);
 

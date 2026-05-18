@@ -30,7 +30,7 @@ async function UpdateVideoBasedResultPage({ params }: Props) {
     getVideoBasedEvents(organization!.id),
     getRecordConfigs(organization!.id, { recordCategory: "online" }),
     getRegions(organization!.id),
-    db.query.results.findFirst({ where: { id: resultId } }),
+    db.query.results.findFirst({ where: { organizationId: organization!.id, id: resultId } }),
   ]);
 
   if (!result) return <LoadingError />;

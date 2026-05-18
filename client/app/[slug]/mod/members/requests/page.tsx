@@ -16,7 +16,11 @@ async function MemberRequestsPage({ params }: Props) {
 
   const [memberRequests, regions] = await Promise.all([
     db.query.memberRequests.findMany({
-      with: { user: { columns: { id: true, name: true, email: true } }, requestedPerson: true },
+      with: {
+        user: { columns: { id: true, name: true, email: true } },
+        requestedPerson: true,
+      },
+      where: { member: { organizationId: organization!.id } },
     }),
     getRegions(organization!.id),
   ]);

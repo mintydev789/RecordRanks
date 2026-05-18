@@ -61,7 +61,7 @@ export const updateMemberSF = actionClient
       const [member, credentialAccount] = await Promise.all([
         db.query.members.findFirst({
           with: { user: { columns: { name: true, email: true, emailVerified: true } } },
-          where: { id },
+          where: { organizationId: session.organization!.id, id },
         }),
         db.query.accounts.findFirst({ columns: { id: true }, where: { userId: id, providerId: "credential" } }),
       ]);
@@ -178,7 +178,9 @@ export const createOrUpdateMemberRequestSF = actionClient
       if (session.member!.personId)
         throw new RrActionError("There is already a competitor profile linked to your member profile");
 
-      person = await db.query.persons.findFirst({ where: { id: requestedPersonId } });
+      person = await db.query.persons.findFirst({
+        where: { organizationId: session.organization!.id, id: requestedPersonId },
+      });
       if (!person) throw new RrActionError(`Person with ID ${requestedPersonId} not found`);
 
       const memberWithSamePerson = await db.query.members.findFirst({
@@ -211,7 +213,7 @@ export const createOrUpdateMemberRequestSF = actionClient
       });
     }
 
-    return await getMemberRequestDetails({ memberId: session.member!.id, userId: session.user.id });
+    return await getMemberRequestDetails({ member: session.member! });
   });
 
 export const approveMemberRequestSF = actionClient
@@ -223,7 +225,7 @@ export const approveMemberRequestSF = actionClient
         user: { columns: { name: true, email: true } },
         requestedPerson: { columns: { name: true, approved: true } },
       },
-      where: { organizationId: session.organization!.id, id },
+      where: { member: { organizationId: session.organization!.id }, id },
     });
     if (!memberRequest) throw new RrActionError("Member request not found");
     if (memberRequest.requestedPerson?.approved === false)
@@ -267,7 +269,7 @@ export const deleteMemberRequestSF = actionClient
 
     const memberRequest = await db.query.memberRequests.findFirst({
       with: { user: { columns: { email: true } } },
-      where: { organizationId: session.organization!.id, id },
+      where: { member: { organizationId: session.organization!.id }, id },
     });
     if (!memberRequest) throw new RrActionError("Member request not found");
     if (memberRequest.memberId !== session.member?.id && !canDeleteMemberRequests)
