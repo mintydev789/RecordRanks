@@ -223,7 +223,7 @@ export const approveMemberRequestSF = actionClient
         user: { columns: { name: true, email: true } },
         requestedPerson: { columns: { name: true, approved: true } },
       },
-      where: { id },
+      where: { organizationId: session.organization!.id, id },
     });
     if (!memberRequest) throw new RrActionError("Member request not found");
     if (memberRequest.requestedPerson?.approved === false)
@@ -267,7 +267,7 @@ export const deleteMemberRequestSF = actionClient
 
     const memberRequest = await db.query.memberRequests.findFirst({
       with: { user: { columns: { email: true } } },
-      where: { id },
+      where: { organizationId: session.organization!.id, id },
     });
     if (!memberRequest) throw new RrActionError("Member request not found");
     if (memberRequest.memberId !== session.member?.id && !canDeleteMemberRequests)

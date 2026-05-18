@@ -214,7 +214,15 @@ export const approveContestSF = actionClient
     logMessage("RR0006", `Approving contest ${competitionId}`);
 
     const contest = await db.query.contests.findFirst({
-      columns: { competitionId: true, name: true, shortName: true, state: true, organizerIds: true, createdBy: true },
+      columns: {
+        id: true,
+        competitionId: true,
+        name: true,
+        shortName: true,
+        state: true,
+        organizerIds: true,
+        createdBy: true,
+      },
       where: { organizationId: session.organization!.id, competitionId },
     });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
@@ -224,7 +232,7 @@ export const approveContestSF = actionClient
     if (!creatorUser) throw new RrActionError("Contest creator's user profile not found");
 
     await db.transaction(async (tx) => {
-      await tx.update(table).set({ state: "approved" }).where(eq(table.competitionId, competitionId));
+      await tx.update(table).set({ state: "approved" }).where(eq(table.id, contest.id));
 
       // Approve organizer persons
       await tx.update(personsTable).set({ approved: true }).where(inArray(personsTable.id, contest.organizerIds));
@@ -243,8 +251,10 @@ export const finishContestSF = actionClient
   .action(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
     logMessage("RR0007", `Finishing contest ${competitionId}`);
 
+    const organizationId = session.organization!.id;
     const contest = await db.query.contests.findFirst({
       columns: {
+        id: true,
         competitionId: true,
         name: true,
         shortName: true,
@@ -254,7 +264,7 @@ export const finishContestSF = actionClient
         participants: true,
         createdBy: true,
       },
-      where: { competitionId },
+      where: { organizationId, competitionId },
     });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
 
@@ -268,8 +278,8 @@ export const finishContestSF = actionClient
     }
 
     const [rounds, results, organizerMembers] = await Promise.all([
-      db.query.rounds.findMany({ where: { competitionId } }),
-      db.query.results.findMany({ where: { competitionId } }),
+      db.query.rounds.findMany({ where: { organizationId, competitionId } }),
+      db.query.results.findMany({ where: { organizationId, competitionId } }),
       db.query.members.findMany({
         with: { user: { columns: { email: true } } },
         where: { personId: { in: contest.organizerIds } },
@@ -281,7 +291,10 @@ export const finishContestSF = actionClient
       const roundResults = results.filter((r) => r.roundId === id);
 
       if (roundResults.length === 0 || (roundNumber > 1 && roundResults.length < C.minProceedNumber)) {
-        const event = (await db.query.events.findFirst({ columns: { name: true }, where: { eventId } }))!;
+        const event = (await db.query.events.findFirst({
+          columns: { name: true },
+          where: { organizationId, eventId },
+        }))!;
 
         if (roundResults.length === 0) {
           throw new RrActionError(`${event.name} round ${roundNumber} has no results`);
@@ -298,7 +311,7 @@ export const finishContestSF = actionClient
     if (incompleteResult) {
       const event = (await db.query.events.findFirst({
         columns: { name: true },
-        where: { eventId: incompleteResult.eventId },
+        where: { organizationId, eventId: incompleteResult.eventId },
       }))!;
       const round = rounds.find((r) => r.id === incompleteResult.roundId)!;
       throw new RrActionError(`This contest has an unentered attempt in ${event.name} round ${round.roundNumber}`);
@@ -306,9 +319,12 @@ export const finishContestSF = actionClient
 
     // If there are no issues, finish the contest and close all rounds
     await db.transaction(async (tx) => {
-      await tx.update(table).set({ state: "finished" }).where(eq(table.competitionId, competitionId));
+      await tx.update(table).set({ state: "finished" }).where(eq(table.id, contest.id));
 
-      await tx.update(roundsTable).set({ open: false }).where(eq(roundsTable.competitionId, competitionId));
+      await tx
+        .update(roundsTable)
+        .set({ open: false })
+        .where(and(eq(roundsTable.organizationId, organizationId), eq(roundsTable.competitionId, competitionId)));
     });
 
     sendContestFinishedEmail(
@@ -324,21 +340,31 @@ export const unfinishContestSF = actionClient
       competitionId: z.string().nonempty(),
     }),
   )
-  .action(async ({ parsedInput: { competitionId } }) => {
+  .action(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
     logMessage("RR0008", `Un-finishing contest ${competitionId}`);
 
-    const contest = await db.query.contests.findFirst({ columns: { state: true }, where: { competitionId } });
+    const organizationId = session.organization!.id;
+    const contest = await db.query.contests.findFirst({
+      columns: { id: true, state: true },
+      where: { organizationId, competitionId },
+    });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "finished") throw new RrActionError("Contest cannot be un-finished");
 
     // Set contest state back to ongoing and re-open all final rounds
     await db.transaction(async (tx) => {
-      await tx.update(table).set({ state: "ongoing" }).where(eq(table.competitionId, competitionId));
+      await tx.update(table).set({ state: "ongoing" }).where(eq(table.id, contest.id));
 
       await tx
         .update(roundsTable)
         .set({ open: true })
-        .where(and(eq(roundsTable.competitionId, competitionId), eq(roundsTable.roundTypeId, "f")));
+        .where(
+          and(
+            eq(roundsTable.organizationId, organizationId),
+            eq(roundsTable.competitionId, competitionId),
+            eq(roundsTable.roundTypeId, "f"),
+          ),
+        );
     });
   });
 
@@ -352,8 +378,10 @@ export const publishContestSF = actionClient
   .action(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
     logMessage("RR0009", `Publishing contest ${competitionId}`);
 
+    const organizationId = session.organization!.id;
     const contest = await db.query.contests.findFirst({
       columns: {
+        id: true,
         competitionId: true,
         name: true,
         shortName: true,
@@ -361,7 +389,7 @@ export const publishContestSF = actionClient
         state: true,
         createdBy: true,
       },
-      where: { competitionId },
+      where: { organizationId, competitionId },
     });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "finished") throw new RrActionError("Contest cannot be published");
@@ -390,11 +418,18 @@ export const publishContestSF = actionClient
     }
 
     await db.transaction(async (tx) => {
-      await tx.update(table).set({ state: "published" }).where(eq(table.competitionId, competitionId));
+      await tx.update(table).set({ state: "published" }).where(eq(table.id, contest.id));
 
-      await tx.update(resultsTable).set({ approved: true }).where(eq(resultsTable.competitionId, competitionId));
+      await tx
+        .update(resultsTable)
+        .set({ approved: true })
+        .where(and(eq(table.organizationId, session.organization!.id), eq(resultsTable.competitionId, competitionId)));
 
-      const participantIds = await getContestParticipantIds({ tx, competitionId });
+      const participantIds = await getContestParticipantIds({
+        tx,
+        organizationId: session.organization!.id,
+        competitionId,
+      });
       const personsToBeApproved = await tx.query.persons.findMany({
         where: { id: { in: participantIds }, approved: false },
       });
@@ -429,7 +464,7 @@ export const publishContestSF = actionClient
             await tx.update(personsTable).set(updatePersonObject).where(eq(personsTable.id, person.id));
           }
         } else {
-          await approvePersons(tx, personsToBeApproved);
+          await approvePersons(tx, session.organization!.id, personsToBeApproved);
         }
       }
     });
@@ -449,19 +484,20 @@ export const updateContestSF = actionClient
   .action(async ({ parsedInput: { originalCompetitionId, newContestDto, rounds }, ctx: { session, httpHeaders } }) => {
     logMessage("RR0010", `Updating contest ${originalCompetitionId}`);
 
+    const organizationId = session.organization!.id;
     const { success: canApprove } = await auth.api.hasPermission({
       headers: httpHeaders,
       body: { permissions: { competitions: ["approve"], meetups: ["approve"] } },
     });
 
-    const contestPromise = db.query.contests.findFirst({
-      columns: { competitionId: true, type: true, state: true, organizerIds: true, schedule: true },
-      where: { competitionId: originalCompetitionId },
-    });
-    const prevRoundsPromise = db.query.rounds.findMany({ where: { competitionId: originalCompetitionId } });
-    const resultsPromise = db.query.results.findMany({ where: { competitionId: originalCompetitionId } });
-
-    const [contest, prevRounds, results] = await Promise.all([contestPromise, prevRoundsPromise, resultsPromise]);
+    const [contest, prevRounds, results] = await Promise.all([
+      db.query.contests.findFirst({
+        columns: { id: true, competitionId: true, type: true, state: true, organizerIds: true, schedule: true },
+        where: { organizationId, competitionId: originalCompetitionId },
+      }),
+      db.query.rounds.findMany({ where: { organizationId, competitionId: originalCompetitionId } }),
+      db.query.results.findMany({ where: { organizationId, competitionId: originalCompetitionId } }),
+    ]);
 
     if (!contest) throw new RrActionError(`Contest with ID ${originalCompetitionId} not found`);
     if (!getMemberControlsContest(session.member!, contest))
@@ -469,13 +505,7 @@ export const updateContestSF = actionClient
     if (!["created", "approved", "ongoing"].includes(contest.state))
       throw new RrActionError("Finished contests cannot be edited");
 
-    await validateAndCleanUpContest(
-      session.organization!.id,
-      newContestDto,
-      rounds,
-      session.member!.personId!,
-      canApprove,
-    );
+    await validateAndCleanUpContest(organizationId, newContestDto, rounds, session.member!.personId!, canApprove);
 
     await db.transaction(async (tx) => {
       const updateContestObject: Partial<SelectContest> = {
@@ -514,21 +544,23 @@ export const updateContestSF = actionClient
       await updateRounds(prevRounds, rounds, results, {
         tx,
         canAddNewEvents: canApprove || contest.state === "created",
-        organizationId: session.organization!.id,
+        organizationId,
       });
 
-      await tx.update(table).set(updateContestObject).where(eq(table.competitionId, originalCompetitionId));
+      await tx.update(table).set(updateContestObject).where(eq(table.id, contest.id));
     });
   });
 
 export const removeContestSF = actionClient
   .metadata({ auth: { useOrganization: true, orgPermissions: { competitions: ["delete"], meetups: ["delete"] } } })
   .inputSchema(z.strictObject({ competitionId: z.string() }))
-  .action(async ({ parsedInput: { competitionId } }) => {
+  .action(async ({ parsedInput: { competitionId }, ctx: { session } }) => {
     logMessage("RR0011", `Removing contest ${competitionId}`);
 
+    const organizationId = session.organization!.id;
     const contest = await db.query.contests.findFirst({
       columns: {
+        id: true,
         competitionId: true,
         name: true,
         state: true,
@@ -537,21 +569,22 @@ export const removeContestSF = actionClient
         schedule: true,
         createdBy: true,
       },
-      where: { competitionId },
+      where: { organizationId, competitionId },
     });
+
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.participants > 0) throw new RrActionError("You may not remove a contest that has results");
 
     await db.transaction(async (tx) => {
       const newCompetitionId = `${competitionId}_REMOVED`;
 
-      await tx
-        .update(table)
-        .set({ state: "removed", competitionId: newCompetitionId })
-        .where(eq(table.competitionId, competitionId));
+      await tx.update(table).set({ state: "removed", competitionId: newCompetitionId }).where(eq(table.id, contest.id));
 
-      // We search by the new ID here, because the competition ID update cascades through to the rounds
-      await tx.update(roundsTable).set({ open: false }).where(eq(roundsTable.competitionId, newCompetitionId));
+      await tx
+        .update(roundsTable)
+        .set({ open: false })
+        // We search by the new ID here, because the competition ID update cascades through to the rounds
+        .where(and(eq(roundsTable.organizationId, organizationId), eq(roundsTable.competitionId, newCompetitionId)));
     });
 
     const creatorUser = await db.query.users.findFirst({ columns: { email: true }, where: { id: contest.createdBy! } });
@@ -569,10 +602,14 @@ export const openRoundSF = actionClient
   .action<RoundResponse>(async ({ parsedInput: { competitionId, eventId }, ctx: { session } }) => {
     logMessage("RR0012", `Opening next round for event ${eventId} (contest ${competitionId})`);
 
+    const organizationId = session.organization!.id;
     const [contest, rounds, results] = await Promise.all([
-      db.query.contests.findFirst({ columns: { state: true, organizerIds: true }, where: { competitionId } }),
-      db.query.rounds.findMany({ where: { competitionId, eventId }, orderBy: { roundNumber: "asc" } }),
-      db.query.results.findMany({ where: { competitionId, eventId } }),
+      db.query.contests.findFirst({
+        columns: { state: true, organizerIds: true },
+        where: { organizationId, competitionId },
+      }),
+      db.query.rounds.findMany({ where: { organizationId, competitionId, eventId }, orderBy: { roundNumber: "asc" } }),
+      db.query.results.findMany({ where: { organizationId, competitionId, eventId } }),
     ]);
     const prevOpenRound = rounds.find((r) => r.open === true);
 
@@ -763,7 +800,7 @@ async function createRounds({
   organizationId: string;
 }) {
   // The IDs have to be removed, because the rounds could be based on the copy of an existing contest
-  const newRounds = rounds.map((r) => ({ organizationId, ...r, id: undefined, open: r.roundNumber === 1 }));
+  const newRounds = rounds.map((r) => ({ ...r, organizationId, id: undefined, open: r.roundNumber === 1 }));
 
   await db.insert(roundsTable).values(newRounds);
 }

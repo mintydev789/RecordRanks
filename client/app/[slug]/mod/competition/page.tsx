@@ -77,7 +77,8 @@ async function CreateEditContestPage({ searchParams }: Props) {
               .execute(
                 sql`SELECT ${resultsTable.roundId}, COUNT(*) AS total_results
                   FROM ${resultsTable}
-                  WHERE ${resultsTable.competitionId} = ${contest.competitionId}
+                  WHERE ${resultsTable.organizationId} = ${organization!.id}
+                    AND ${resultsTable.competitionId} = ${contest.competitionId}
                   GROUP BY ${resultsTable.roundId}`,
               )
               .then((res) =>

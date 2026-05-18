@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import z from "zod";
 import { C } from "~/helpers/constants.ts";
-import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
+import { getRankedAverageFormat } from "~/helpers/roundFormats.ts";
 import type { Ranking, RecordRanking } from "~/helpers/types/Rankings.ts";
 import {
   type ContestType,
@@ -18,14 +18,7 @@ import {
   type RecordCategory,
   RecordCategoryValues,
 } from "~/helpers/types.ts";
-import {
-  compareAvgs,
-  compareSingles,
-  fetchWcaPerson,
-  getActionError,
-  getHasRole,
-  getResultProceeds,
-} from "~/helpers/utilityFunctions.ts";
+import { fetchWcaPerson, getActionError, getHasRole } from "~/helpers/utilityFunctions.ts";
 import type { EnterAttemptPayloadDto } from "~/helpers/validators/EnterAttemptPayload.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
@@ -264,12 +257,17 @@ export async function getContest({
 
 export async function getContestParticipantIds({
   tx: db,
+  organizationId,
   competitionId,
 }: {
   tx: DbTransactionType;
+  organizationId: string;
   competitionId: string;
 }): Promise<number[]> {
-  const results = await db.query.results.findMany({ columns: { personIds: true }, where: { competitionId } });
+  const results = await db.query.results.findMany({
+    columns: { personIds: true },
+    where: { organizationId, competitionId },
+  });
 
   const participantIds = new Set<number>();
   for (const result of results) {
@@ -499,7 +497,8 @@ export async function getRankings(
             ${resultsTable.discussionLink}
           FROM ${resultsTable}
             LEFT JOIN ${contestsTable}
-              ON ${resultsTable.competitionId} = ${contestsTable.competitionId},
+              ON ${resultsTable.organizationId} = ${contestsTable.organizationId}
+                AND ${resultsTable.competitionId} = ${contestsTable.competitionId},
             UNNEST(${resultsTable.personIds}) AS person_id
           WHERE ${resultsTable.organizationId} = ${organizationId}
             AND ${resultsTable.approved} IS TRUE
@@ -558,7 +557,8 @@ export async function getRankings(
             ${resultsTable.discussionLink}
           FROM ${resultsTable}
             LEFT JOIN ${contestsTable}
-              ON ${resultsTable.competitionId} = ${contestsTable.competitionId},
+              ON ${resultsTable.organizationId} = ${contestsTable.organizationId}
+                AND ${resultsTable.competitionId} = ${contestsTable.competitionId},
             UNNEST(${resultsTable.attempts}) WITH ORDINALITY AS attempts_data(attempt, attempt_number)
           WHERE ${resultsTable.organizationId} = ${organizationId}
             AND ${resultsTable.approved} IS TRUE
@@ -597,7 +597,8 @@ export async function getRankings(
             ${resultsTable.discussionLink}
           FROM ${resultsTable}
             LEFT JOIN ${contestsTable}
-              ON ${resultsTable.competitionId} = ${contestsTable.competitionId}
+              ON ${resultsTable.organizationId} = ${contestsTable.organizationId}
+                AND ${resultsTable.competitionId} = ${contestsTable.competitionId},
           WHERE ${resultsTable.organizationId} = ${organizationId}
             AND ${resultsTable.approved} IS TRUE
             AND ${resultsTable.eventId} = ${event.eventId}
@@ -616,42 +617,9 @@ export async function getRankings(
   return rankings!;
 }
 
-export async function setRankingAndProceedsValues(
-  db: DbTransactionType, // the tx object from a Drizzle transaction
-  results: ResultResponse[],
-  round: RoundResponse,
-) {
-  const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
-  const sortedResults = results.sort(roundFormat.isAverage ? (a, b) => compareAvgs(a, b, true) : compareSingles);
-  let prevResult = sortedResults[0];
-  let ranking = 1;
-
-  for (let i = 0; i < sortedResults.length; i++) {
-    if (i > 0) {
-      // If the previous result was not tied with this one, increase ranking
-      if (
-        (roundFormat.isAverage && compareAvgs(prevResult, sortedResults[i], true) < 0) ||
-        (!roundFormat.isAverage && compareSingles(prevResult, sortedResults[i]) < 0)
-      ) {
-        ranking = i + 1;
-      }
-
-      prevResult = sortedResults[i];
-    }
-
-    // Set proceeds if it's a non-final round and the result proceeds to the next round
-    const proceeds = round.proceedValue
-      ? getResultProceeds({ ...sortedResults[i], ranking }, round, roundFormat, sortedResults)
-      : null;
-
-    // Update the result in the DB, if something changed
-    if (ranking !== sortedResults[i].ranking || proceeds !== sortedResults[i].proceeds)
-      await db.update(resultsTable).set({ ranking, proceeds }).where(eq(resultsTable.id, sortedResults[i].id));
-  }
-}
-
 export async function approvePersons(
   db: DbTransactionType, // the tx object from a Drizzle transaction
+  organizationId: string, // not strictly necessary, but adds an extra safety check
   personsToBeApproved: Pick<SelectPerson, "id" | "name" | "localizedName" | "regionCode" | "wcaId">[],
 ) {
   const matchedPersonWcaIds: { name: string; wcaId: string }[] = [];
@@ -670,15 +638,11 @@ export async function approvePersons(
     throw new RrActionError(`${matchesSummary}\nResolve this manually on the manage competitors page and try again.`);
   }
 
+  const personIds = personsToBeApproved.map((p) => p.id);
   await db
     .update(personsTable)
     .set({ approved: true })
-    .where(
-      inArray(
-        personsTable.id,
-        personsToBeApproved.map((p) => p.id),
-      ),
-    );
+    .where(and(eq(personsTable.organizationId, organizationId), inArray(personsTable.id, personIds)));
 }
 
 export async function getPersonExactMatchWcaId(

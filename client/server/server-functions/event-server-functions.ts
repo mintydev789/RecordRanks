@@ -112,12 +112,7 @@ export const updateEventSF = actionClient
                 }
               }
             }
-            if (isChanged) {
-              await tx
-                .update(contestsTable)
-                .set({ schedule })
-                .where(and(eq(contestsTable.organizationId, session.organization!.id), eq(contestsTable.id, id)));
-            }
+            if (isChanged) await tx.update(contestsTable).set({ schedule }).where(eq(contestsTable.id, id));
           }
         }
       }

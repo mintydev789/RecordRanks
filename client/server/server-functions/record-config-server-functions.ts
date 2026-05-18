@@ -10,7 +10,7 @@ import {
   recordConfigsPublicCols,
   recordConfigsTable as table,
 } from "../db/schema/record-configs.ts";
-import { actionClient } from "../safeAction.ts";
+import { actionClient, RrActionError } from "../safeAction.ts";
 
 export const createRecordConfigSF = actionClient
   .metadata({ auth: { useOrganization: true, orgPermissions: { recordConfigs: ["create-and-update"] } } })
@@ -41,12 +41,18 @@ export const updateRecordConfigSF = actionClient
       newRecordConfigDto: RecordConfigValidator,
     }),
   )
-  .action<RecordConfigResponse>(async ({ parsedInput: { id, newRecordConfigDto } }) => {
+  .action<RecordConfigResponse>(async ({ parsedInput: { id, newRecordConfigDto }, ctx: { session } }) => {
     const { category, recordTypeId, label } = newRecordConfigDto;
     logMessage(
       "RR0028",
       `Updating record config with category ${category}, record type ID ${recordTypeId} and label ${label}`,
     );
+
+    const recordConfig = await db.query.recordConfigs.findFirst({
+      columns: { id: true },
+      where: { id, organizationId: session.organization!.id },
+    });
+    if (!recordConfig) throw new RrActionError("Record config not found");
 
     const [updatedRecordConfig] = await db
       .update(table)
