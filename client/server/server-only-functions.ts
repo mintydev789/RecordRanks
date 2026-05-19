@@ -684,7 +684,11 @@ export async function getOrCreatePersonByWcaId(
     organizationId,
   }: { creatorUserId: string; createdExternally?: boolean; organizationId: string },
 ): Promise<GetOrCreatePersonObject> {
-  const [person] = await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.wcaId, wcaId)).limit(1);
+  const [person] = await db
+    .select(personsPublicCols)
+    .from(personsTable)
+    .where(and(eq(personsTable.organizationId, organizationId), eq(personsTable.wcaId, wcaId)))
+    .limit(1);
   if (person) return { person, isNew: false };
 
   const wcaPerson = await fetchWcaPerson(wcaId);
