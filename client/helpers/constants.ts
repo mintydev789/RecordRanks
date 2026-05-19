@@ -36,6 +36,7 @@ export const C = {
   notSelectedOption: "NOT_SELECTED",
   onlineCompKey: "ONLINE",
   publicExportsFormatVersions: ["v1"],
+  defaultRecordTypeValues: ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"],
   color: {
     rankingHighlight: "#10c010",
     // These are the same as the Bootstrap colors

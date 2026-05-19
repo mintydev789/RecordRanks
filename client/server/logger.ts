@@ -66,6 +66,7 @@ export const LogCodes = {
   RR0026: "cancel future result record",
   RR0027: "create record config",
   RR0028: "update record config",
+  RR0041: "generate record configs",
   // Collective Cubing
   RR0029: "start new solution",
   // Users

@@ -4,6 +4,7 @@ import { faCopy, faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useAction } from "next-safe-action/hooks";
 import { useContext, useState } from "react";
+import GenerateRecordConfigsForm from "~/app/[slug]/mod/records-configuration/GenerateRecordConfigsForm";
 import Form from "~/app/components/form/Form.tsx";
 import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
 import FormNumberInput from "~/app/components/form/FormNumberInput.tsx";
@@ -22,6 +23,7 @@ import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts"
 import type { SelectRegion } from "~/server/db/schema/regions.ts";
 import {
   createRecordConfigSF,
+  generateRecordConfigsSF,
   updateRecordConfigSF,
 } from "~/server/server-functions/record-config-server-functions.ts";
 
@@ -35,7 +37,8 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
 
   const { executeAsync: createRecordConfig, isPending: isCreating } = useAction(createRecordConfigSF);
   const { executeAsync: updateRecordConfig, isPending: isUpdating } = useAction(updateRecordConfigSF);
-  const [mode, setMode] = useState<ListPageMode>("view");
+  const { executeAsync: generateRecordConfigs, isPending: isGenerating } = useAction(generateRecordConfigsSF);
+  const [mode, setMode] = useState<ListPageMode | "generate">("view");
   const [recordConfigs, setRecordConfigs] = useState(initRecordConfigs);
 
   const [recordConfigIdUnderEdit, setRecordConfigIdUnderEdit] = useState<number | undefined>();
@@ -47,6 +50,9 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
   const [color, setColor] = useState<string>(C.color.danger);
 
   const isPending = isCreating || isUpdating;
+  const generatableRecordCategories = RecordCategoryValues.filter(
+    (rcv) => !recordConfigs.some((rc) => rc.category === rcv),
+  );
 
   const handleSubmit = async () => {
     const newRecordConfigDto = {
@@ -105,6 +111,27 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
     setColor(recordConfig.color);
   };
 
+  const onGenerateRecordConfigs = () => {
+    resetMessages();
+    setMode("generate");
+  };
+
+  const submitGeneratedRecordConfigs = async (formData: FormData) => {
+    resetMessages();
+    const res = await generateRecordConfigs(Object.fromEntries(formData.entries()) as any);
+
+    if (res.serverError || res.validationErrors) {
+      changeErrorMessages([getActionError(res)]);
+    } else {
+      changeSuccessMessage("Record types successfully generated");
+      setMode("view");
+
+      const newRecordConfigs = [...recordConfigs, ...res.data!];
+      newRecordConfigs.sort((a, b) => a.rank - b.rank);
+      setRecordConfigs(newRecordConfigs);
+    }
+  };
+
   const cancel = () => {
     setMode("view");
     resetMessages();
@@ -125,13 +152,27 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
       <ToastMessages className="mx-2" />
 
       {mode === "view" ? (
-        <Button onClick={onAddRecordConfig} className="btn-success btn-sm mx-2">
-          Create Record Type
-        </Button>
+        <div className="d-flex mx-2 gap-3">
+          <Button onClick={onAddRecordConfig} className="btn-success btn-sm">
+            Create Record Type
+          </Button>
+          {generatableRecordCategories.length > 0 && (
+            <Button onClick={onGenerateRecordConfigs} className="btn-secondary btn-sm">
+              Generate Record Types
+            </Button>
+          )}
+        </div>
+      ) : mode === "generate" ? (
+        <GenerateRecordConfigsForm
+          recordCategories={generatableRecordCategories}
+          isSubmitting={isGenerating}
+          onSubmit={submitGeneratedRecordConfigs}
+          onCancel={cancel}
+        />
       ) : (
         <Form onSubmit={handleSubmit} onCancel={cancel} hideToasts isLoading={isPending}>
-          <div className="row mb-3">
-            <div className="col">
+          <div className="row">
+            <div className="col-md-6 mb-3">
               <FormSelect
                 title="Record Category"
                 options={recordCategoryOptions}
@@ -140,7 +181,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
                 disabled={isPending}
               />
             </div>
-            <div className="col">
+            <div className="col-md-6 mb-3">
               <FormTextInput
                 title="Record Type"
                 value={recordTypeId}
@@ -149,11 +190,11 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
               />
             </div>
           </div>
-          <div className="row mb-3">
-            <div className="col">
+          <div className="row">
+            <div className="col-md-6 mb-3">
               <FormTextInput title="Label" value={label} setValue={setLabel} disabled={isPending} />
             </div>
-            <div className="col">
+            <div className="col-md-6 mb-3">
               <FormNumberInput
                 title="Rank"
                 tooltip="Only used for ordering the record types on this page"
@@ -163,8 +204,8 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
               />
             </div>
           </div>
-          <div className="row mb-3">
-            <div className="col">
+          <div className="row">
+            <div className="col-md-6 mb-3">
               <label htmlFor="color_input" className="form-label d-block mb-2">
                 Color
               </label>
@@ -176,7 +217,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
                 disabled={isPending}
               />
             </div>
-            <div className="col">
+            <div className="col-md-6 mb-3">
               <FormCheckbox
                 title="Active"
                 selected={active}

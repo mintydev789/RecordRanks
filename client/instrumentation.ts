@@ -93,9 +93,8 @@ export async function register() {
       }
 
       if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
-        const recordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"];
-        for (let i = 0; i < recordTypeValues.length; i++) {
-          const recordTypeId = recordTypeValues[i];
+        for (let i = 0; i < C.defaultRecordTypeValues.length; i++) {
+          const recordTypeId = C.defaultRecordTypeValues[i];
           await db.insert(recordConfigsTable).values([
             {
               organizationId: "default",

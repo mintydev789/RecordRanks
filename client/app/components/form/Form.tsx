@@ -47,7 +47,7 @@ function Form({
       {children}
 
       {(!hideSubmitButton || onCancel) && (
-        <div className="d-flex mt-4 gap-3">
+        <div className="d-flex mt-md-3 gap-3">
           {!hideSubmitButton && (
             <Button
               id="form_submit_button"
