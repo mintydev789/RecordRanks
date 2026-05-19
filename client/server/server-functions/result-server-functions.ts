@@ -17,12 +17,7 @@ import {
   getResultProceeds,
   getRoundDate,
 } from "~/helpers/utilityFunctions.ts";
-import {
-  AttemptsValidator,
-  ResultValidator,
-  type VideoBasedResultDto,
-  VideoBasedResultValidator,
-} from "~/helpers/validators/Result.ts";
+import { AttemptsValidator, ResultValidator, VideoBasedResultValidator } from "~/helpers/validators/Result.ts";
 import { auth } from "~/server/auth.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
 import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";

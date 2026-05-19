@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { use } from "react";
 import EventInformation from "~/app/[slug]/rules/EventInformation.tsx";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
@@ -15,6 +16,7 @@ type Props = {
 
 function EventRules({ eventRulesPromise }: Props) {
   const [eventsWithRules, eventsOnlyWithDescriptions] = use(eventRulesPromise);
+  const { slug }: { slug: string } = useParams();
 
   return (
     <div className="px-3">
@@ -33,7 +35,7 @@ function EventRules({ eventRulesPromise }: Props) {
             relevant WCA Regulations, based on the nature of the event (i.e. one of the articles from A to F).
           </p>
           {eventsWithRules.map((event) => (
-            <EventInformation key={event.eventId} event={event} />
+            <EventInformation organizationSlug={slug} key={event.eventId} event={event} />
           ))}
         </>
       )}
@@ -52,7 +54,7 @@ function EventRules({ eventRulesPromise }: Props) {
             to ensure consistency in how these events are held.
           </p>
           {eventsOnlyWithDescriptions.map((event) => (
-            <EventInformation key={event.eventId} event={event} />
+            <EventInformation organizationSlug={slug} key={event.eventId} event={event} />
           ))}
         </>
       )}

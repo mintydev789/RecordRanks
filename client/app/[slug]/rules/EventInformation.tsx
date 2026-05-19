@@ -4,16 +4,17 @@ import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 
 type Props = {
+  organizationSlug: string;
   event: Pick<SelectEvent, "eventId" | "name" | "category" | "defaultRoundFormat" | "description" | "rule">;
 };
 
-function EventInformation({ event }: Props) {
+function EventInformation({ organizationSlug, event }: Props) {
   const defaultRoundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
   const rankedAverageFormat = roundFormats.find((rf) => rf.value === defaultRoundFormat.rankedAverageFormat)!;
 
   return (
     <div key={event.eventId} className="mt-4">
-      <EventTitle event={event} fontSize="4" showIcon linkToRankings />
+      <EventTitle organizationSlug={organizationSlug} event={event} fontSize="4" showIcon linkToRankings />
       {event.rule && (
         <div style={{ overflowX: "auto" }}>
           <Markdown>{event.rule}</Markdown>

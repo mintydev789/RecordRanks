@@ -4,6 +4,7 @@ import type { EventResponse } from "~/server/db/schema/events.ts";
 import EventIcon from "./EventIcon.tsx";
 
 type Props = {
+  organizationSlug: string;
   event: Pick<EventResponse, "eventId" | "name" | "category" | "description">;
   showIcon?: boolean;
   showDescription?: boolean;
@@ -12,7 +13,15 @@ type Props = {
   fontSize?: "1" | "2" | "3" | "4" | "5" | "6";
 };
 
-function EventTitle({ event, showIcon, showDescription, linkToRankings, noMargin, fontSize = "3" }: Props) {
+function EventTitle({
+  organizationSlug,
+  event,
+  showIcon,
+  showDescription,
+  linkToRankings,
+  noMargin,
+  fontSize = "3",
+}: Props) {
   return (
     <h3 className={`d-flex gap-2 align-items-center fs-${fontSize} ${noMargin ? "m-0" : "ms-2 me-3 mb-3"}`}>
       {showIcon && <EventIcon event={event} />}
@@ -21,7 +30,7 @@ function EventTitle({ event, showIcon, showDescription, linkToRankings, noMargin
         event.name
       ) : (
         <Link
-          href={`/rankings/${event.eventId}/single${typeof linkToRankings === "string" ? linkToRankings : ""}`}
+          href={`/${organizationSlug}/rankings/${event.eventId}/single${typeof linkToRankings === "string" ? linkToRankings : ""}`}
           prefetch={false}
           className="link-body-emphasis link-underline-opacity-0 link-underline-opacity-100-hover"
           style={{ maxWidth: "80vw" }}

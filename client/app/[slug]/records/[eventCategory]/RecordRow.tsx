@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import Competitors from "~/app/components/Competitors.tsx";
 import RankingLinks from "~/app/components/RankingLinks.tsx";
 import Region from "~/app/components/Region.tsx";
@@ -20,6 +21,8 @@ type Props = {
 };
 
 function RecordRow({ type, record, event, regions, mixedRecords, showOnlyPersonWithId }: Props) {
+  const { slug }: { slug: string } = useParams();
+
   const date = getFormattedDate(record.date);
   const personsToDisplay = showOnlyPersonWithId === undefined ? record.persons : [record.persons[showOnlyPersonWithId]];
 
@@ -56,7 +59,7 @@ function RecordRow({ type, record, event, regions, mixedRecords, showOnlyPersonW
             <span className="d-flex gap-2 align-items-center">
               <Region regionCode={record.contest.regionCode} regions={regions} noText />
 
-              <Link href={`/competitions/${record.contest.competitionId}`} prefetch={false}>
+              <Link href={`/${slug}/competitions/${record.contest.competitionId}`} prefetch={false}>
                 {record.contest.shortName}
               </Link>
             </span>

@@ -64,7 +64,15 @@ async function ContestEventsPage({ params }: Props) {
                 <tr key={round.id} className={round.roundNumber > 1 ? "table-active" : ""}>
                   <td>
                     {round.roundNumber === 1 && (
-                      <EventTitle event={event} fontSize="6" noMargin showIcon linkToRankings showDescription />
+                      <EventTitle
+                        organizationSlug={slug}
+                        event={event}
+                        fontSize="6"
+                        noMargin
+                        showIcon
+                        linkToRankings
+                        showDescription
+                      />
                     )}
                   </td>
                   <td>{roundTypes[round.roundTypeId].label}</td>

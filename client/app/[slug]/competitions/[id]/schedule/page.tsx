@@ -39,6 +39,7 @@ async function CompetitionSchedulePage({ params }: Props) {
   return (
     <ContestLayout organizationSlug={slug} contest={contest} activeTab="schedule">
       <Schedule
+        organizationSlug={slug}
         rooms={contest.schedule.venues[0].rooms}
         events={events}
         rounds={rounds}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useQueryState } from "nuqs";
 import { use } from "react";
 import RecordRow from "~/app/[slug]/records/[eventCategory]/RecordRow.tsx";
@@ -16,6 +17,7 @@ type Props = {
 
 function RecordsTable({ recordsPromise, events, regions }: Props) {
   const records = use(recordsPromise);
+  const { slug }: { slug: string } = useParams();
 
   const [category] = useQueryState("category");
   const [eventId] = useQueryState("eventId");
@@ -60,6 +62,7 @@ function RecordsTable({ recordsPromise, events, regions }: Props) {
             return (
               <div key={event.eventId} className="mb-3">
                 <EventTitle
+                  organizationSlug={slug}
                   event={event}
                   showIcon
                   linkToRankings={category ? `?category=${category}` : true}

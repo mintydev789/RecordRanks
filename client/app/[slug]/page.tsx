@@ -58,16 +58,16 @@ async function OrganizationHomePage({ params }: Props) {
       {description && <Markdown>{description}</Markdown>}
 
       <div className="d-flex justify-content-center fs-5 my-4 flex-column flex-md-row gap-3 gap-lg-4 align-items-center">
-        <Link href="/about" prefetch={false} className="rr-homepage-link btn btn-primary">
+        <Link href={`/${slug}/about`} prefetch={false} className="rr-homepage-link btn btn-primary">
           About Us
         </Link>
-        <Link href="/competitions" prefetch={false} className="rr-homepage-link btn btn-primary">
+        <Link href={`/${slug}/competitions`} prefetch={false} className="rr-homepage-link btn btn-primary">
           See All Contests
         </Link>
-        <Link href="/records" prefetch={false} className="rr-homepage-link btn btn-primary">
+        <Link href={`/${slug}/records`} prefetch={false} className="rr-homepage-link btn btn-primary">
           See Current Records
         </Link>
-        <Link href="/rankings" prefetch={false} className="rr-homepage-link btn btn-primary">
+        <Link href={`/${slug}/rankings`} prefetch={false} className="rr-homepage-link btn btn-primary">
           See Rankings
         </Link>
       </div>

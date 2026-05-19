@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { roundTypes } from "~/helpers/roundTypes.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
@@ -22,6 +23,8 @@ type Props = {
 };
 
 function EventResultsTable({ event, rounds, results, persons, recordConfigs, regions }: Props) {
+  const { slug }: { slug: string } = useParams();
+
   // Display finals by default
   const [currRound, setCurrRound] = useState(rounds.at(-1)!);
 
@@ -39,7 +42,7 @@ function EventResultsTable({ event, rounds, results, persons, recordConfigs, reg
   return (
     <div className="my-3">
       <div className="mb-3">
-        <EventTitle event={event} linkToRankings showDescription />
+        <EventTitle organizationSlug={slug} event={event} linkToRankings showDescription />
       </div>
 
       {rounds.length > 1 && (

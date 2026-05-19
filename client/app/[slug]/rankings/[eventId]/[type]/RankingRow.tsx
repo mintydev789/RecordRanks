@@ -3,6 +3,7 @@
 import { faCaretDown, faCaretRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import Competitor from "~/app/components/Competitor.tsx";
 import Competitors from "~/app/components/Competitors.tsx";
@@ -35,6 +36,8 @@ function RankingRow({
   showTeamColumn = false,
   showDetailsColumn = false,
 }: Props) {
+  const { slug }: { slug: string } = useParams();
+
   const [teamExpanded, setTeamExpanded] = useState(false);
 
   const personsToDisplay = showAllTeammates
@@ -61,7 +64,7 @@ function RankingRow({
           <span className="d-flex gap-2 align-items-center">
             <Region regionCode={ranking.contest.regionCode} regions={regions} noText />
 
-            <Link href={`/competitions/${ranking.contest.competitionId}`} prefetch={false}>
+            <Link href={`/${slug}/competitions/${ranking.contest.competitionId}`} prefetch={false}>
               {ranking.contest.shortName}
             </Link>
           </span>

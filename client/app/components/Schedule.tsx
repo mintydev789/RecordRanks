@@ -23,6 +23,7 @@ type DayActivity = RoomActivity & {
 type Day = { date: Date; activities: DayActivity[] };
 
 type Props = {
+  organizationSlug: string;
   rooms: Room[];
   events: EventResponse[];
   rounds: Pick<RoundResponse, "eventId" | "roundNumber" | "roundTypeId" | "format">[];
@@ -31,7 +32,7 @@ type Props = {
   onEditActivity?: (roomId: number, activity: Activity) => void;
 };
 
-function Schedule({ rooms, events, rounds, timezone, onDeleteActivity, onEditActivity }: Props) {
+function Schedule({ organizationSlug, rooms, events, rounds, timezone, onDeleteActivity, onEditActivity }: Props) {
   const allActivities: RoomActivity[] = rooms
     .flatMap((room) =>
       room.activities.map((a) => ({ ...a, room, startTime: new Date(a.startTime), endTime: new Date(a.endTime) })),
@@ -118,6 +119,7 @@ function Schedule({ rooms, events, rounds, timezone, onDeleteActivity, onEditAct
                             <span className="d-flex gap-2 align-items-center">
                               {a.event && (
                                 <EventTitle
+                                  organizationSlug={organizationSlug}
                                   event={a.event}
                                   fontSize="6"
                                   noMargin

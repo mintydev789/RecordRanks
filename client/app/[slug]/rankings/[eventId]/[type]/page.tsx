@@ -192,7 +192,7 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
                 <Link
-                  href={`/rankings/${eventId}/${type}?${
+                  href={`/${slug}/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=competitions`}
                   prefetch={false}
@@ -201,7 +201,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   Competitions
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${type}?${
+                  href={`/${slug}/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=meetups`}
                   prefetch={false}
@@ -210,7 +210,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   Meetups
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${type}?${
+                  href={`/${slug}/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=online`}
                   prefetch={false}
@@ -219,7 +219,7 @@ async function RankingsPage({ params, searchParams }: Props) {
                   Online
                 </Link>
                 <Link
-                  href={`/rankings/${eventId}/${type}?${
+                  href={`/${slug}/rankings/${eventId}/${type}?${
                     urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                   }category=all`}
                   prefetch={false}
@@ -234,7 +234,7 @@ async function RankingsPage({ params, searchParams }: Props) {
 
         {(event.category === "extreme-bld" || event.submissionsAllowed) && (
           <Link
-            href={`/video-based-results/submit?eventId=${eventId}`}
+            href={`/${slug}/video-based-results/submit?eventId=${eventId}`}
             prefetch={false}
             className="btn btn-success btn-sm"
           >
@@ -243,7 +243,7 @@ async function RankingsPage({ params, searchParams }: Props) {
         )}
       </div>
 
-      <EventTitle event={event} showDescription />
+      <EventTitle organizationSlug={slug} event={event} showDescription />
 
       {event.category === "removed" ? (
         <p className="ms-2 text-danger">This is a removed event</p>

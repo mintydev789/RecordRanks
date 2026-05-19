@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import EventImportantInfo from "~/app/[slug]/mod/competition/EventImportantInfo.tsx";
 import AttemptInput from "~/app/components/AttemptInput.tsx";
@@ -45,6 +46,8 @@ function ContestEvents({
   newEventsDisabled,
   isAdmin,
 }: Props) {
+  const { slug }: { slug: string } = useParams();
+
   const newRoundsDisabled = disabled || (contestType === "meetup" && rounds.length >= 15);
   const filteredEvents: EventResponse[] = events.filter(
     (e) => e.category !== "removed" && (!e.hidden || isAdmin) && (contestType !== "wca-comp" || e.category !== "wca"),
@@ -246,7 +249,15 @@ function ContestEvents({
       {contestEvents.map((ce) => (
         <div key={ce.event.eventId} className="mb-3 rounded border bg-body-tertiary px-4 py-3">
           <div className="d-flex justify-content-between mb-3 flex-wrap gap-3 align-items-center">
-            <EventTitle event={ce.event} fontSize="4" linkToRankings noMargin showDescription showIcon />
+            <EventTitle
+              organizationSlug={slug}
+              event={ce.event}
+              fontSize="4"
+              linkToRankings
+              noMargin
+              showDescription
+              showIcon
+            />
 
             {ce.totalResults > 0 ? (
               <p className="mb-0">Total results: {ce.totalResults}</p>

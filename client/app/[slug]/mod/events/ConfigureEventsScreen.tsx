@@ -2,6 +2,7 @@
 
 import { faBrain, faCopy, faEyeSlash, faPencil, faVideo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useParams } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useContext, useState } from "react";
 import EventTitle from "~/app/components/EventTitle.tsx";
@@ -28,6 +29,7 @@ type Props = {
 };
 
 function ConfigureEventsScreen({ events: initEvents }: Props) {
+  const { slug }: { slug: string } = useParams();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
   const { executeAsync: createEvent, isPending: isCreating } = useAction(createEventSF);
@@ -291,7 +293,7 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
               <tr key={event.eventId}>
                 <td>{index + 1}</td>
                 <td>
-                  <EventTitle fontSize="6" event={event} showIcon linkToRankings noMargin />
+                  <EventTitle organizationSlug={slug} fontSize="6" event={event} showIcon linkToRankings noMargin />
                 </td>
                 <td>{event.eventId}</td>
                 <td

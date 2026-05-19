@@ -2,6 +2,7 @@
 
 import { addHours, isValid } from "date-fns";
 import { getTimezoneOffset } from "date-fns-tz";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import FormDatePicker from "~/app/components/form/FormDatePicker.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
@@ -29,6 +30,8 @@ type Props = {
 };
 
 function ScheduleEditor({ rooms, setRooms, venueTimeZone, startDate, contestType, events, rounds, disabled }: Props) {
+  const { slug }: { slug: string } = useParams();
+
   // Room stuff
   const [roomName, setRoomName] = useState("");
   const [roomColor, setRoomColor] = useState("#fff");
@@ -280,6 +283,7 @@ function ScheduleEditor({ rooms, setRooms, venueTimeZone, startDate, contestType
             <h1 className="mb-4 text-center">Schedule</h1>
 
             <Schedule
+              organizationSlug={slug}
               rooms={rooms}
               events={events}
               rounds={rounds}

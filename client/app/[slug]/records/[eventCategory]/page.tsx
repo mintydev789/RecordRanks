@@ -66,7 +66,7 @@ async function RecordsPage({ params, searchParams }: Props) {
       title: ec.title,
       shortTitle: ec.shortTitle,
       value: ec.value,
-      route: `/records/${ec.value}?${urlSearchParams}`,
+      route: `/${slug}/records/${ec.value}?${urlSearchParams}`,
       hidden: ec.value === "removed",
     }));
   const selectedCatEvents = events.filter((e) => e.category === eventCategory);
@@ -92,7 +92,7 @@ async function RecordsPage({ params, searchParams }: Props) {
             {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
             <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
               <Link
-                href={`/records/${eventCategory}?${
+                href={`/${slug}/records/${eventCategory}?${
                   urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                 }category=competitions`}
                 prefetch={false}
@@ -101,7 +101,7 @@ async function RecordsPage({ params, searchParams }: Props) {
                 Competitions
               </Link>
               <Link
-                href={`/records/${eventCategory}/?${
+                href={`/${slug}/records/${eventCategory}/?${
                   urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                 }category=meetups`}
                 prefetch={false}
@@ -110,7 +110,7 @@ async function RecordsPage({ params, searchParams }: Props) {
                 Meetups
               </Link>
               <Link
-                href={`/records/${eventCategory}?${
+                href={`/${slug}/records/${eventCategory}?${
                   urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
                 }category=online`}
                 prefetch={false}
@@ -124,7 +124,7 @@ async function RecordsPage({ params, searchParams }: Props) {
       </div>
 
       {eventCategory === "extremebld" && (
-        <Link href="/video-based-results/submit" prefetch={false} className="btn btn-success btn ms-2">
+        <Link href={`/${slug}/video-based-results/submit`} prefetch={false} className="btn btn-success btn ms-2">
           Submit a result
         </Link>
       )}

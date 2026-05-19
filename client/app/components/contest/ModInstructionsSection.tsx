@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { use } from "react";
 import Markdown from "react-markdown";
 
@@ -10,6 +11,8 @@ type Props = {
 };
 
 function ModInstructionsSection({ modInstructionsPromise, modInstructionsDescriptionPromise }: Props) {
+  const { slug }: { slug: string } = useParams();
+
   const modInstructions = use(modInstructionsPromise);
   if (!modInstructions) return;
 
@@ -21,7 +24,7 @@ function ModInstructionsSection({ modInstructionsPromise, modInstructionsDescrip
 
       {modInstructionsDescription && <Markdown>{modInstructionsDescription}</Markdown>}
 
-      <Link href="/moderator-instructions" prefetch={false} className="btn btn-secondary">
+      <Link href={`/${slug}/moderator-instructions`} prefetch={false} className="btn btn-secondary">
         Moderator Instructions
       </Link>
     </>
