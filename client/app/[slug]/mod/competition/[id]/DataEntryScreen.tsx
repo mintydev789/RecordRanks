@@ -255,18 +255,23 @@ function DataEntryScreen({
   const submitMockResult = async () => {
     let firstUnusedPersonId = 1;
     const resultPersons: PersonResponse[] = [];
-    for (let i = 0; i < currEvent.participants; i++) {
-      while (resultPersons.length === i) {
-        if (firstUnusedPersonId > 50) throw new Error("Unable to find an unused person ID");
-        if (results.some((r) => r.personIds.includes(firstUnusedPersonId))) {
-          firstUnusedPersonId++;
-        } else {
-          const res = await getPersonById({ id: firstUnusedPersonId });
-          if (res.serverError || res.validationErrors) firstUnusedPersonId++;
-          else resultPersons.push(res.data!);
+    const participantsAlreadySelected = selectedPersons.every((p) => p !== null);
+    if (participantsAlreadySelected) {
+      resultPersons.push(...(selectedPersons as any));
+    } else {
+      for (let i = 0; i < currEvent.participants; i++) {
+        while (resultPersons.length === i) {
+          if (firstUnusedPersonId > 50) throw new Error("Unable to find an unused person ID");
+          if (results.some((r) => r.personIds.includes(firstUnusedPersonId))) {
+            firstUnusedPersonId++;
+          } else {
+            const res = await getPersonById({ id: firstUnusedPersonId });
+            if (res.serverError || res.validationErrors) firstUnusedPersonId++;
+            else resultPersons.push(res.data!);
+          }
         }
+        firstUnusedPersonId++;
       }
-      firstUnusedPersonId++;
     }
     const attempts: Attempt[] = [];
     const skillRange = round.timeLimitCentiseconds! * 0.1 + Math.random() ** 2 * round.timeLimitCentiseconds! * 0.9;
@@ -290,7 +295,7 @@ function DataEntryScreen({
     if (res.serverError || res.validationErrors) {
       changeErrorMessages([getActionError(res)]);
     } else {
-      addNewPersonsToList(resultPersons);
+      if (!participantsAlreadySelected) addNewPersonsToList(resultPersons);
       resetSelectedPersonsAndAttempts();
       setResults(res.data!);
       // Assuming that the mock result couldn't have affected any records

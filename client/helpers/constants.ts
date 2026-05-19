@@ -17,7 +17,7 @@ export const C = {
   maxContestShortName: 32,
   defaultTimeLimit: 10 * 60 * 100, // 10 minutes
   minCompetitorLimit: 5,
-  minCompetitorsForNonWca: 3,
+  minCompetitorsForNonWca: 2,
   maxConfirmationCodeAttempts: 3,
   minProceedNumber: 2,
   maxProceedPercentage: 75,

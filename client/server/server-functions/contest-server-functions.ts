@@ -418,7 +418,9 @@ export const publishContestSF = actionClient
       await tx
         .update(resultsTable)
         .set({ approved: true })
-        .where(and(eq(table.organizationId, session.organization!.id), eq(resultsTable.competitionId, competitionId)));
+        .where(
+          and(eq(resultsTable.organizationId, session.organization!.id), eq(resultsTable.competitionId, competitionId)),
+        );
 
       const participantIds = await getContestParticipantIds({
         tx,
