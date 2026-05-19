@@ -1,5 +1,4 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { headers } from "next/headers";
 import { SWRConfig } from "swr";
 import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
@@ -14,28 +13,25 @@ import { roundsPublicCols, roundsTable } from "~/server/db/schema/rounds.ts";
 import { authorizeUser, getCreators, getEvents, getRegions, getSettingFromDb } from "~/server/server-only-functions.ts";
 import ContestForm from "./ContestForm.tsx";
 
+const SearchParamsValidator = z.strictObject({
+  editId: z.string().nonempty().optional(),
+  copyId: z.string().nonempty().optional(),
+});
+
 type Props = {
-  searchParams: Promise<{
-    editId?: string;
-    copyId?: string;
-  }>;
+  searchParams: Promise<z.infer<typeof SearchParamsValidator>>;
 };
 
 async function CreateEditContestPage({ searchParams }: Props) {
-  const { editId, copyId } = z
-    .strictObject({
-      editId: z.string().nonempty().optional(),
-      copyId: z.string().nonempty().optional(),
-    })
-    .parse(await searchParams);
-  const { member, organization } = await authorizeUser({
+  const { editId, copyId } = SearchParamsValidator.parse(await searchParams);
+  const { member, organization, httpHeaders } = await authorizeUser({
     useOrganization: true,
     orgPermissions: { competitions: ["create", "update"], meetups: ["create", "update"] },
   });
 
   const [{ success: canApprove }, regions] = await Promise.all([
     auth.api.hasPermission({
-      headers: await headers(),
+      headers: httpHeaders,
       body: { permissions: { competitions: ["approve"], meetups: ["approve"] } },
     }),
     getRegions(organization!.id),
@@ -73,7 +69,8 @@ async function CreateEditContestPage({ searchParams }: Props) {
 
       const [totalResultsByRoundRes, organizersRes, [creatorRes]] = await Promise.all([
         contest.participants > 0
-          ? db
+          ? // TO-DO: USE A DRIZZLE AGGREGATION QUERY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            db
               .execute(
                 sql`SELECT ${resultsTable.roundId}, COUNT(*) AS total_results
                   FROM ${resultsTable}

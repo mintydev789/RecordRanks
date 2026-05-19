@@ -26,7 +26,7 @@ async function ManageMembersPage({ params }: Props) {
   const [membersData, regions] = await Promise.all([
     auth.api.listMembers({
       headers: await headers(),
-      query: { organizationSlug: slug, sortBy: "createdAt", sortDirection: "desc", limit: C.maxMembers },
+      query: { organizationId: organization!.id, sortBy: "createdAt", sortDirection: "desc", limit: C.maxMembers },
     }),
     getRegions(organization!.id),
   ]);

@@ -228,28 +228,22 @@ export const deletePersonSF = actionClient
     if (!canDeleteAnyPerson && !canDeleteOwnCreatedPerson && !canDeleteOwnRequestedPerson)
       throw new RrActionError("You are unauthorized to delete this person");
 
-    const member = await db.query.members.findFirst({
-      with: { user: { columns: { name: true } } },
-      where: { personId: person.id },
-    });
-    if (member) {
-      throw new RrActionError(
-        `You may not delete a person tied to a member profile. This person is tied to the member ${member.user.name}.`,
-      );
-    }
-
-    const result = await db.query.results.findFirst({ where: { personIds: { arrayContains: [person.id] } } });
-    if (result) {
-      throw new RrActionError(
-        `You may not delete a person who has a result. This person has a result in ${result.eventId}${result.competitionId ? ` at ${result.competitionId}` : " (video-based result)"}.`,
-      );
-    }
-
-    const organizedContest = await db.query.contests.findFirst({ where: { organizerIds: { arrayContains: [id] } } });
-    if (organizedContest) {
-      throw new RrActionError(
-        `You may not delete a person who has organized a contest. This person was an organizer at ${organizedContest.competitionId}.`,
-      );
+    const res = await getPersonIsTiedToSomething(id);
+    if (res) {
+      switch (res.tiedTo) {
+        case "result":
+          throw new RrActionError(`You may not delete a person that has a result. ${res.details}`);
+        case "organizedContest":
+          throw new RrActionError(`You may not delete a person that has organized a contest. ${res.details}`);
+        case "member":
+          throw new RrActionError(`You may not delete a person tied to a member profile. ${res.details}`);
+        case "memberRequest":
+          throw new RrActionError(
+            `You may not delete a person that was requested as a competitor profile. ${res.details}`,
+          );
+        default:
+          throw new Error(`Unknown object type: ${res.tiedTo}`);
+      }
     }
 
     await db.delete(table).where(eq(table.id, id));
@@ -268,26 +262,10 @@ export const approvePersonSF = actionClient
     if (!person) throw new RrActionError("Person not found");
     if (person.approved) throw new RrActionError(`${person.name} has already been approved`);
 
-    const result = await db.query.results.findFirst({
-      columns: { id: true },
-      where: { personIds: { arrayContains: [id] } },
-    });
-    if (!result) {
-      const organizedContest = await db.query.contests.findFirst({
-        columns: { id: true },
-        where: { organizerIds: { arrayContains: [id] } },
-      });
-      if (!organizedContest) {
-        const memberRequest = await db.query.memberRequests.findFirst({
-          columns: { id: true },
-          where: { requestedPersonId: id },
-        });
-        if (!memberRequest) {
-          throw new RrActionError(
-            `${person.name} has no results, hasn't organized any contests and hasn't been requested as a competitor profile by a user. They could have been added by accident.`,
-          );
-        }
-      }
+    if ((await getPersonIsTiedToSomething(id)) === null) {
+      throw new RrActionError(
+        `${person.name} has no results, hasn't organized any contests and isn't tied to a member profile. They could have been added by accident, so they can be safely deleted.`,
+      );
     }
 
     if (!person.wcaId) {
@@ -354,4 +332,44 @@ async function validatePerson(
       );
     }
   }
+}
+
+async function getPersonIsTiedToSomething(personId: number): Promise<{
+  tiedTo: "result" | "organizedContest" | "member" | "memberRequest";
+  details: string;
+} | null> {
+  const result = await db.query.results.findFirst({ where: { personIds: { arrayContains: [personId] } } });
+  if (result) {
+    return {
+      tiedTo: "result",
+      details: `This person has a result in ${result.eventId}${result.competitionId ? ` at ${result.competitionId}` : " (video-based result)"}.`,
+    };
+  }
+
+  const organizedContest = await db.query.contests.findFirst({
+    columns: { competitionId: true },
+    where: { organizerIds: { arrayContains: [personId] } },
+  });
+  if (organizedContest)
+    return { tiedTo: "organizedContest", details: `This person is an organizer at ${organizedContest.competitionId}.` };
+
+  const member = await db.query.members.findFirst({
+    with: { user: { columns: { name: true } } },
+    where: { personId },
+  });
+  if (member) return { tiedTo: "member", details: `This person is tied to the member ${member.user.name}.` };
+
+  const memberRequest = await db.query.memberRequests.findFirst({
+    with: { user: { columns: { name: true } } },
+    columns: { id: true },
+    where: { requestedPersonId: personId },
+  });
+  if (memberRequest) {
+    return {
+      tiedTo: "memberRequest",
+      details: `This person was requested by member ${memberRequest.user.name}.`,
+    };
+  }
+
+  return null;
 }

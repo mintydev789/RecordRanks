@@ -411,7 +411,12 @@ export const createVideoBasedResultSF = actionClient
       headers: httpHeaders,
       body: { permissions: { videoBasedResults: ["approve"] } },
     });
-    await validateVideoBasedResult(newResultDto, { userCanApprove: canApprove });
+
+    if (!canApprove) {
+      if (!newResultDto.videoLink) throw new RrActionError("Please enter a video link");
+      if (newResultDto.attempts.some((a) => a.result === C.maxTime))
+        throw new RrActionError("You are not authorized to set unknown time");
+    }
 
     const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
       db.query.events.findFirst({ where: { organizationId, eventId: newResultDto.eventId } }),
@@ -479,6 +484,7 @@ export const updateVideoBasedResultSF = actionClient
   .action<ResultResponse>(async ({ parsedInput: { id, newResultDto, approve }, ctx: { session } }) => {
     const organizationId = session.organization!.id;
     const result = await db.query.results.findFirst({
+      with: { creator: { columns: { email: true } } },
       where: { organizationId, id, competitionId: { isNull: true } },
     });
     if (!result) throw new RrActionError(`Result with ID ${id} not found`);
@@ -486,10 +492,6 @@ export const updateVideoBasedResultSF = actionClient
       throw new RrActionError("Editing approved results is currently not supported. Please contact a sysadmin.");
 
     logMessage("RR0017", `Updating video-based result with ID ${id}: ${JSON.stringify(newResultDto)}`);
-
-    await validateVideoBasedResult(newResultDto, {
-      userCanApprove: true, // already checked in the action client permissions
-    });
 
     const [event, recordConfigs] = await Promise.all([
       db.query.events.findFirst({ where: { organizationId, eventId: result.eventId } }),
@@ -545,11 +547,8 @@ export const updateVideoBasedResultSF = actionClient
         });
         await approvePersons(tx, organizationId, personsToBeApproved);
 
-        const creatorUser = result.createdBy
-          ? await tx.query.users.findFirst({ columns: { email: true }, where: { id: result.createdBy } })
-          : undefined;
-        if (creatorUser)
-          sendVideoBasedResultApprovedEmail(creatorUser.email, { event, organization: session.organization! });
+        if (result.creator)
+          sendVideoBasedResultApprovedEmail(result.creator.email, { event, organization: session.organization! });
       }
 
       return updatedResult;
@@ -650,7 +649,7 @@ async function setResultRecordsAndRegions(
   const regions = await db.query.regions.findMany({
     where: { organizationId: event.organizationId, code: { in: participants.map((p) => p.regionCode) } },
   });
-  if (regions.length === 0) throw new Error("Participants' regions not found");
+  if (regions.length === 0) throw new RrActionError("Participants' regions not found");
 
   const isSameRegionParticipants = new Set(regions.map((r) => r.code)).size === 1;
   const isSameSuperRegionParticipants =
@@ -1111,18 +1110,6 @@ async function validateTimeLimitAndCutoff({
   }
 
   return outputAttempts;
-}
-
-async function validateVideoBasedResult(
-  newResultDto: Pick<VideoBasedResultDto, "attempts" | "videoLink">,
-  { userCanApprove }: { userCanApprove: boolean },
-) {
-  // Disallow video-based-result-reviewer-only features
-  if (!userCanApprove) {
-    if (!newResultDto.videoLink) throw new RrActionError("Please enter a video link");
-    if (newResultDto.attempts.some((a) => a.result === C.maxTime))
-      throw new RrActionError("You are not authorized to set unknown time");
-  }
 }
 
 async function setRankingAndProceedsValues(

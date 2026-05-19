@@ -173,11 +173,11 @@ export async function getOrgDetails({
 }
 
 export async function getContest({
-  slug,
+  organizationId,
   competitionId,
   eventId,
 }: {
-  slug: string;
+  organizationId: string;
   competitionId: string;
   eventId?: string;
 }): Promise<{
@@ -192,7 +192,6 @@ export async function getContest({
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
 } | null> {
-  const organization = await getOrgDetails({ slug });
   const [contest, rounds] = await Promise.all([
     db.query.contests.findFirst({
       columns: {
@@ -205,13 +204,13 @@ export async function getContest({
         organizerIds: true,
         schedule: true,
       },
-      where: { organizationId: organization.id, competitionId },
+      where: { organizationId, competitionId },
     }),
     // Rounds are further filtered below, once it's known what event is needed
     db
       .select(roundsPublicCols)
       .from(roundsTable)
-      .where(and(eq(roundsTable.organizationId, organization.id), eq(roundsTable.competitionId, competitionId)))
+      .where(and(eq(roundsTable.organizationId, organizationId), eq(roundsTable.competitionId, competitionId)))
       .orderBy(roundsTable.roundNumber),
   ]);
   if (!contest) return null;
@@ -222,10 +221,10 @@ export async function getContest({
     db
       .select(eventsPublicCols)
       .from(eventsTable)
-      .where(and(eq(eventsTable.organizationId, organization.id), inArray(eventsTable.eventId, eventIds)))
+      .where(and(eq(eventsTable.organizationId, organizationId), inArray(eventsTable.eventId, eventIds)))
       .orderBy(eventsTable.rank),
-    getRecordConfigs(organization.id, { contestType: contest.type }),
-    getRegions(organization.id),
+    getRecordConfigs(organizationId, { contestType: contest.type }),
+    getRegions(organizationId),
   ]);
   if (eventId && !events.some((e) => e.eventId === eventId))
     throw new RrActionError(`Event with ID ${eventId} not found`);
@@ -237,7 +236,7 @@ export async function getContest({
     .from(resultsTable)
     .where(
       and(
-        eq(resultsTable.organizationId, organization.id),
+        eq(resultsTable.organizationId, organizationId),
         eq(resultsTable.competitionId, competitionId),
         eq(resultsTable.eventId, eventIdOrFirst),
       ),
@@ -695,7 +694,7 @@ export async function getOrCreatePersonByWcaId(
 
   const [createdPerson] = await db
     .insert(personsTable)
-    .values({ organizationId, ...wcaPerson, approved: true, createdBy: creatorUserId, createdExternally })
+    .values({ ...wcaPerson, organizationId, approved: true, createdBy: creatorUserId, createdExternally })
     .returning(personsPublicCols);
 
   return { person: createdPerson, isNew: true };
@@ -878,22 +877,25 @@ export async function getRegions(organizationId: string): Promise<RegionResponse
 
 export async function getBlogPosts(
   organizationId: string,
-  {
-    postId,
-  }: {
-    postId?: string;
-  } = {},
+  { postId, limit }: { postId?: string; limit?: never } | { postId?: never; limit?: number } = {},
 ): Promise<(PostResponse & { authorName?: string | null })[]> {
   const query = db
     .select({ ...postsPublicCols, authorName: personsTable.name })
     .from(postsTable)
     .leftJoin(usersTable, eq(postsTable.createdBy, usersTable.id))
-    .leftJoin(membersTable, eq(usersTable.id, membersTable.userId))
+    .leftJoin(
+      membersTable,
+      and(eq(membersTable.organizationId, organizationId), eq(usersTable.id, membersTable.userId)),
+    )
     .leftJoin(personsTable, eq(membersTable.personId, personsTable.id));
   const organizationFilter = eq(postsTable.organizationId, organizationId);
 
   if (postId) {
     return await query.where(and(organizationFilter, eq(postsTable.postId, postId)));
+  }
+
+  if (limit) {
+    return await query.where(organizationFilter).limit(limit).orderBy(desc(postsTable.date));
   }
 
   return await query.where(organizationFilter).orderBy(desc(postsTable.date));

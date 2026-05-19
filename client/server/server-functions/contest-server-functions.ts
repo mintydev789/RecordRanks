@@ -177,7 +177,7 @@ export const createContestSF = actionClient
 
     const organizerMembers = await db.query.members.findMany({
       with: { user: { columns: { email: true } } },
-      where: { organizationId: session.organization!.id, personId: { in: newContestDto.organizerIds } },
+      where: { personId: { in: newContestDto.organizerIds } },
     });
 
     const createdContest = await db.transaction(async (tx) => {

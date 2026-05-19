@@ -6,7 +6,7 @@ import BlogPostCard from "~/app/[slug]/posts/BlogPostCard.tsx";
 import type { PostResponse } from "~/server/db/schema/posts.ts";
 
 type Props = {
-  latestBlogPostsPromise: Promise<PostResponse[]>;
+  latestBlogPostsPromise: Promise<(PostResponse & { authorName?: string | null })[]>;
 };
 
 function BlogSection({ latestBlogPostsPromise }: Props) {

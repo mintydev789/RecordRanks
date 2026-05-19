@@ -2,7 +2,7 @@ import DataEntryScreen from "~/app/[slug]/mod/competition/[id]/DataEntryScreen.t
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
-import { authorizeUser, getContest } from "~/server/server-only-functions.ts";
+import { authorizeUser, getContest, getOrgDetails } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{ slug: string; id: string }>;
@@ -13,7 +13,8 @@ async function DataEntryPage({ params, searchParams }: Props) {
   const { slug, id } = await params;
   const { eventId } = await searchParams;
 
-  const contestData = await getContest({ slug, competitionId: id, eventId });
+  const organization = await getOrgDetails({ slug });
+  const contestData = await getContest({ organizationId: organization.id, competitionId: id, eventId });
   if (!contestData) return <LoadingError loadingEntity="contest results" />;
 
   const { contest, events, rounds, results, persons, recordConfigs, regions } = contestData;

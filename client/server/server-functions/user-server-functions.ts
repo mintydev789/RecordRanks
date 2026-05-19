@@ -101,9 +101,6 @@ export const updateMemberSF = actionClient
         .where(eq(membersTable.id, id))
         .returning();
 
-      // Log out user to avoid stale session data
-      await auth.api.revokeUserSessions({ body: { userId: member.userId }, headers: httpHeaders });
-
       return { member: updatedMember, person };
     },
   );

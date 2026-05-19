@@ -1,4 +1,3 @@
-import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
 import Markdown from "react-markdown";
@@ -7,9 +6,7 @@ import CollectiveCubing from "~/app/components/contest/CollectiveCubing.tsx";
 import DonateSection from "~/app/components/contest/DonateSection.tsx";
 import ModInstructionsSection from "~/app/components/contest/ModInstructionsSection.tsx";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
-import { db } from "~/server/db/provider.ts";
-import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
-import { getOrgDetails, getSettingFromDb } from "~/server/server-only-functions.ts";
+import { getBlogPosts, getOrgDetails, getSettingFromDb } from "~/server/server-only-functions.ts";
 
 type Props = {
   params: Promise<{
@@ -27,12 +24,7 @@ async function OrganizationHomePage({ params }: Props) {
     optional: true,
   });
 
-  const latestBlogPostsPromise = db
-    .select(postsPublicCols)
-    .from(postsTable)
-    .where(eq(postsTable.organizationId, organization.id))
-    .limit(2)
-    .orderBy(desc(postsTable.date));
+  const latestBlogPostsPromise = getBlogPosts(organization.id, { limit: 2 });
   const modInstructionsPromise = getSettingFromDb({
     key: "moderator-instructions-page-content",
     organizationId: organization.id,

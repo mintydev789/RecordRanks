@@ -131,7 +131,7 @@ export const updateEventSF = actionClient
           rule: newEventDto.rule,
           importantInfo: newEventDto.importantInfo,
         })
-        .where(and(eq(table.organizationId, session.organization!.id), eq(table.eventId, originalEventId)))
+        .where(eq(table.id, event.id))
         .returning();
     });
 
