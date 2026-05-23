@@ -152,7 +152,7 @@ export async function getOrgDetails({
   session?: Pick<typeof auth.$Infer.Session.session, "activeOrganizationId">;
   id?: string;
   slug?: string;
-}) {
+}): Promise<OrganizationDetails> {
   const organization = await db.query.organizations
     .findFirst({
       columns: { id: true, name: true, slug: true, logo: true, metadata: true },

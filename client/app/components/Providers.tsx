@@ -1,12 +1,13 @@
 "use client";
 
-import { useParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { useEffect, useState } from "react";
 import { SWRConfig } from "swr";
 import Footer from "~/app/components/UI/Footer.tsx";
 import Navbar from "~/app/components/UI/Navbar.tsx";
 import { MainContext, type Theme } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { getActionError } from "~/helpers/utilityFunctions.ts";
 
 type Props = {
@@ -15,7 +16,7 @@ type Props = {
 
 function Providers({ children }: Props) {
   const pathname = usePathname();
-  const { slug } = useParams();
+  const { organization } = useSession();
 
   const [theme, setTheme] = useState<Theme>("dark");
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
@@ -82,9 +83,9 @@ function Providers({ children }: Props) {
               resetMessages,
             }}
           >
-            {slug && <Navbar />}
+            {organization && <Navbar />}
             <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
-            {slug && <Footer />}
+            {organization && <Footer />}
           </MainContext.Provider>
         </NuqsAdapter>
       </SWRConfig>

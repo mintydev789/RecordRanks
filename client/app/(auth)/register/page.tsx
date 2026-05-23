@@ -2,25 +2,35 @@
 
 import Link from "next/link";
 import { useContext, useState, useTransition } from "react";
+import useSWR from "swr";
 import z from "zod";
 import Form from "~/app/components/form/Form.tsx";
+import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { HAS_CREDENTIAL_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { SwrKey } from "~/helpers/swr-keys.ts";
 import { RegistrationFormValidator } from "~/helpers/validators/Auth.ts";
+import { getPrivacyPolicySF } from "~/server/server-functions/server-functions.ts";
 
 function RegisterPage() {
   if (!HAS_CREDENTIAL_AUTH) return <p className="text-center">EMAIL + PASSWORD AUTHENTICATION IS NOT SUPPORTED</p>;
 
   const { changeErrorMessages, changeSuccessMessage } = useContext(MainContext);
 
+  const { data: privacyPolicy, isLoading: isLoadingPrivacyPolicy } = useSWR(SwrKey.PrivacyPolicy, () =>
+    getPrivacyPolicySF(),
+  );
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isPrivacyPolicyUnderstood, setIsPrivacyPolicyUnderstood] = useState(false);
+  const [isSubmitting, startTransition] = useTransition();
+
+  const isPending = isSubmitting || isLoadingPrivacyPolicy;
 
   const handleSubmit = () => {
     const parsed = RegistrationFormValidator.safeParse({
@@ -59,14 +69,19 @@ function RegisterPage() {
     <section>
       <h2 className="mb-4 text-center">Register</h2>
 
-      <Form buttonText="Register" onSubmit={handleSubmit} isLoading={isPending} disableControls={isSubmitted}>
+      <Form
+        buttonText="Register"
+        onSubmit={handleSubmit}
+        isLoading={isSubmitting}
+        disableControls={isSubmitted || isPending || (!!privacyPolicy?.data && !isPrivacyPolicyUnderstood)}
+      >
         <FormTextInput
           title="Username"
           value={username}
           setValue={setUsername}
           nextFocusTargetId="email"
           autoFocus
-          disabled={isSubmitted}
+          disabled={isSubmitted || isPending}
           className="mb-2"
         />
         <FormTextInput
@@ -75,7 +90,7 @@ function RegisterPage() {
           value={email}
           setValue={setEmail}
           nextFocusTargetId="password"
-          disabled={isSubmitted}
+          disabled={isSubmitted || isPending}
           className="mb-2"
         />
         <FormTextInput
@@ -85,7 +100,7 @@ function RegisterPage() {
           setValue={setPassword}
           nextFocusTargetId="password_repeat"
           password
-          disabled={isSubmitted}
+          disabled={isSubmitted || isPending}
           className="mb-2"
         />
         <FormTextInput
@@ -94,9 +109,29 @@ function RegisterPage() {
           value={passwordRepeat}
           setValue={setPasswordRepeat}
           nextFocusTargetId="form_submit_button"
-          disabled={isSubmitted}
+          disabled={isSubmitted || isPending}
           password
         />
+        {privacyPolicy?.data && (
+          <div className="d-flex mt-3 gap-2">
+            <FormCheckbox
+              title="I accept the"
+              selected={isPrivacyPolicyUnderstood}
+              setSelected={setIsPrivacyPolicyUnderstood}
+              disabled={isSubmitted || isPending}
+              noMargin
+            />
+            {z.url().safeParse(privacyPolicy.data).success ? (
+              <a href={privacyPolicy.data} target="_blank" rel="noopener">
+                Privacy Policy
+              </a>
+            ) : (
+              <Link href="/privacy" target="_blank" prefetch={false}>
+                Privacy Policy
+              </Link>
+            )}
+          </div>
+        )}
       </Form>
 
       <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>

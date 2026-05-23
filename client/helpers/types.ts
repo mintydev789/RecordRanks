@@ -101,3 +101,11 @@ export type MemberRequestDetails = {
   memberRequest: FullMemberRequest | null;
   ownRequestedPersonId?: number;
 };
+
+export type FeaturesInfo = {
+  rulesPageEnabled: boolean;
+  modInstructionsPageEnabled: boolean;
+  publicExportsEnabled: boolean;
+  videoBasedResultsEnabled: boolean;
+  privacyPolicy: "disabled" | "policy-contents" | string;
+};

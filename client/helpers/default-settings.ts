@@ -11,6 +11,12 @@ export const defaultGlobalSettings: InsertSetting[] = [
 
   // page-contents
   {
+    key: "privacy-policy",
+    group: "page-contents",
+    value: "",
+    description: "The contents of the privacy policy page. Leave empty to disable. Markdown is supported.",
+  },
+  {
     key: "public-exports-readme",
     group: "page-contents",
     value: `# ${process.env.NEXT_PUBLIC_PROJECT_NAME} Database Export Readme
@@ -101,8 +107,7 @@ export function getDefaultOrgSettings(organizationId: string): InsertSetting[] {
       key: "moderator-instructions-page-content" as const,
       group: "page-contents" as const,
       value: "",
-      description:
-        "Page content for the moderator instructions page. If left empty, that page will be disabled. Markdown is supported.",
+      description: "Page content for the moderator instructions page. Leave empty to disable. Markdown is supported.",
     },
     {
       key: "moderator-instructions-description" as const,

@@ -8,16 +8,17 @@ import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
-import { useSession } from "~/helpers/hooks.ts";
+import { useFeaturesInfo, useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import { clientGetHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
-import { getFeaturesInfoSF } from "~/server/server-functions/server-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { session, user, member, organization } = useSession();
   const { mutate } = useSWRConfig();
+  const { rulesPageEnabled, modInstructionsPageEnabled, videoBasedResultsEnabled, publicExportsEnabled } =
+    useFeaturesInfo(organization?.id);
 
   const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
     clientGetHasPermission({ modDashboard: ["view"] }),
@@ -25,18 +26,6 @@ function Navbar() {
   const { data: canApproveVideoBasedResults } = useSWR(
     session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
     () => clientGetHasPermission({ videoBasedResults: ["approve"] }),
-  );
-  const { data: featuresInfo } = useSWR(
-    organization ? ["features-info", organization.id] : null,
-    () => getFeaturesInfoSF(organization!.id),
-    {
-      fallbackData: {
-        rulesPageEnabled: false,
-        modInstructionsPageEnabled: false,
-        publicExportsEnabled: false,
-        videoBasedResultsEnabled: false,
-      },
-    },
   );
   const [expanded, setExpanded] = useState(false);
   const [resultsExpanded, setResultsExpanded] = useState(false);
@@ -145,7 +134,7 @@ function Navbar() {
                     Rankings
                   </Link>
                 </li>
-                {featuresInfo.publicExportsEnabled && (
+                {publicExportsEnabled && (
                   <li>
                     <Link
                       href={`/${organization.slug}/export`}
@@ -159,7 +148,7 @@ function Navbar() {
                 )}
               </ul>
             </li>
-            {featuresInfo.rulesPageEnabled && (
+            {rulesPageEnabled && (
               <li className="nav-item">
                 <Link
                   href={`/${organization.slug}/rules`}
@@ -206,7 +195,7 @@ function Navbar() {
                     Blog
                   </Link>
                 </li>
-                {featuresInfo.modInstructionsPageEnabled && (
+                {modInstructionsPageEnabled && (
                   <li>
                     <Link
                       href={`/${organization.slug}/moderator-instructions`}
@@ -267,7 +256,7 @@ function Navbar() {
                       </Link>
                     </li>
                   )}
-                  {featuresInfo.videoBasedResultsEnabled && (
+                  {videoBasedResultsEnabled && (
                     <>
                       {canApproveVideoBasedResults && (
                         <li>

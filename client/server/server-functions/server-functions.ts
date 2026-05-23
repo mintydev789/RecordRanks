@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { nxnMoves } from "~/helpers/types/NxNMove.ts";
-import type { OrganizationDetails } from "~/helpers/types.ts";
+import type { FeaturesInfo, OrganizationDetails } from "~/helpers/types.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import {
@@ -32,12 +32,19 @@ export const logErrorSF = actionClient
 export const getOrgDetailsSF = actionClient
   .metadata({ auth: null })
   .inputSchema(
-    z.strictObject({
-      slug: z.string().nonempty(),
-    }),
+    z.union([
+      z.strictObject({
+        id: z.string().nonempty().optional(),
+        slug: z.never().optional(),
+      }),
+      z.strictObject({
+        id: z.never().optional(),
+        slug: z.string().nonempty().optional(),
+      }),
+    ]),
   )
-  .action<OrganizationDetails>(async ({ parsedInput: { slug }, ctx: { session } }) => {
-    return await getOrgDetails({ session: session?.session, slug });
+  .action<OrganizationDetails>(async ({ parsedInput: { id, slug }, ctx: { session } }) => {
+    return await getOrgDetails({ session: session?.session, id, slug });
   });
 
 export const getCurrentCollectiveCubingSolutionSF = actionClient
@@ -153,18 +160,14 @@ export const makeCollectiveCubingMoveSF = actionClient
     },
   );
 
-export async function getFeaturesInfoSF(organizationId: string): Promise<{
-  rulesPageEnabled: boolean;
-  modInstructionsPageEnabled: boolean;
-  publicExportsEnabled: boolean;
-  videoBasedResultsEnabled: boolean;
-}> {
-  const [rulesPageContent, modInstructionsPageContent, publicExportsToKeep, videoBasedResultsEnabled] =
+export async function getFeaturesInfoSF(organizationId: string): Promise<FeaturesInfo> {
+  const [rulesPageContent, modInstructionsPageContent, publicExportsToKeep, videoBasedResultsEnabled, privacyPolicy] =
     await Promise.all([
       getSettingFromDb({ key: "rules-page-content", organizationId, optional: true }),
       getSettingFromDb({ key: "moderator-instructions-page-content", organizationId, optional: true }),
-      getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
       getSettingFromDb({ key: "video-based-results-enabled", organizationId }),
+      getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
+      getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true }),
     ]);
 
   return {
@@ -172,5 +175,14 @@ export async function getFeaturesInfoSF(organizationId: string): Promise<{
     modInstructionsPageEnabled: Boolean(modInstructionsPageContent),
     publicExportsEnabled: Number(publicExportsToKeep) > 0,
     videoBasedResultsEnabled: videoBasedResultsEnabled === "true",
+    privacyPolicy: !privacyPolicy
+      ? "disabled"
+      : z.url().safeParse(privacyPolicy).success
+        ? privacyPolicy
+        : "policy-contents",
   };
 }
+
+export const getPrivacyPolicySF = actionClient.metadata({ auth: null }).action<string | null>(async () => {
+  return await getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true });
+});

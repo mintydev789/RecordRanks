@@ -12,6 +12,7 @@ export type SettingKey =
   // default
   | "error-logs-contact-email"
   // page-contents
+  | "privacy-policy"
   | "public-exports-readme"
   // features
   | "public-exports-to-keep"
