@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import Markdown from "react-markdown";
 import z from "zod";
 import { getSettingFromDb } from "~/server/server-only-functions.ts";
 
 async function PrivacyPage() {
+  await connection();
+
   const privacyPolicy = await getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true });
 
   if (!privacyPolicy) return <p className="fs-4 mx-3 mt-5 text-center">The privacy policy page is disabled</p>;
