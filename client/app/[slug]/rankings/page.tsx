@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { eventCategories } from "~/helpers/eventCategories.ts";
 import { db } from "~/server/db/provider.ts";
 import { getOrgDetails } from "~/server/server-only-functions.ts";
 
@@ -12,14 +13,16 @@ async function RankingsRedirectPage({ params }: Props) {
   const { slug } = await params;
 
   const organization = await getOrgDetails({ slug });
-  const firstEvent = await db.query.events.findFirst({
-    columns: { eventId: true },
-    // TO-DO: MAKE THIS DYNAMICALLY USE THE FIRST EVENT CATEGORY!!!
-    where: { organizationId: organization.id, hidden: false, category: "unofficial" },
+  const events = await db.query.events.findMany({
+    columns: { eventId: true, category: true },
+    where: { organizationId: organization.id, hidden: false },
     orderBy: { rank: "asc" },
   });
 
-  if (!firstEvent) return <p>There are currently no events</p>;
+  if (events.length === 0) return <p>There are currently no events</p>;
+
+  const firstCategory = eventCategories.find((ec) => events.some((e) => e.category === ec.value))!.value;
+  const firstEvent = events.find((e) => e.category === firstCategory)!;
 
   redirect(`/${slug}/rankings/${firstEvent.eventId}/single`, "replace");
 }
