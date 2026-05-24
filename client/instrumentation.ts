@@ -455,7 +455,7 @@ export async function register() {
     //       (temp as any).best = getFormattedTime(result.best, { event: event as any });
     //     } else {
     //       (temp as any).regionalAverageRecord = getRecordLabel("regionalAverageRecord");
-    //       (temp as any).average = getFormattedTime(result.average, { event: event as any });
+    //       (temp as any).average = getFormattedTime(result.average, { event: event as any, isAverage: true });
     //     }
 
     //     return temp;

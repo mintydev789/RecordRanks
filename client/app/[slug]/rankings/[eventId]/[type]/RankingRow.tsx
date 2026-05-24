@@ -52,7 +52,7 @@ function RankingRow({
       <td>
         <Competitors persons={personsToDisplay} regions={regions} noFlag={!showAllTeammates} />
       </td>
-      <td>{getFormattedTime(ranking.result, { event, showMultiPoints: true })}</td>
+      <td>{getFormattedTime(ranking.result, { event, showMultiPoints: true, isAverage: type === "average" })}</td>
       {!showAllTeammates && (
         <td>
           <Region regionCode={personsToDisplay[0].regionCode} regions={regions} shorten />

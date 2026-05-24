@@ -224,7 +224,7 @@ describe(getAttempt.name, () => {
     });
   });
 
-  describe("parse Time attempts", () => {
+  describe("parse number attempts", () => {
     it("parses 36 move FMC correctly", () => {
       const output = getAttempt(dummyAtt, mockNumberEvent, "36", roundOpts);
       expect(output.result).toBe(36);
@@ -371,21 +371,25 @@ describe(getFormattedTime.name, () => {
     });
   });
 
-  describe("format numbers (FMC)", () => {
+  describe("format numbers (number format event)", () => {
     it("formats 37 correctly", () => {
       expect(getFormattedTime(37, { event: mockNumberEvent })).toBe("37");
     });
 
     it("formats 41.33 correctly", () => {
-      expect(getFormattedTime(4133, { event: mockNumberEvent })).toBe("41.33");
+      expect(getFormattedTime(4133, { event: mockNumberEvent, isAverage: true })).toBe("41.33");
     });
 
     it("formats 40.00 correctly", () => {
-      expect(getFormattedTime(4000, { event: mockNumberEvent })).toBe("40.00");
+      expect(getFormattedTime(4000, { event: mockNumberEvent, isAverage: true })).toBe("40.00");
+    });
+
+    it("formats 9.67 average correctly", () => {
+      expect(getFormattedTime(967, { event: mockNumberEvent, isAverage: true })).toBe("9.67");
     });
 
     it("formats 39.66 without formatting correctly", () => {
-      expect(getFormattedTime(3966, { event: mockNumberEvent, noDelimiterChars: true })).toBe("3966");
+      expect(getFormattedTime(3966, { event: mockNumberEvent, noDelimiterChars: true, isAverage: true })).toBe("3966");
     });
   });
 
@@ -718,8 +722,8 @@ describe(setResultWorldRecords.name, () => {
   const mockBLDWrPair: EventWrPair = { eventId: "333bf", best: 2217, average: 2795 };
 
   it("sets new 3x3x3 records correctly", () => {
-    const event = eventsStub.find((e) => e.eventId === "333") as EventResponse;
-    const stubResult = resultsStub.find((r) => r.eventId === "333") as ResultResponse;
+    const event = eventsStub.find((e) => e.eventId === "333") as any as EventResponse;
+    const stubResult = resultsStub.find((r) => r.eventId === "333") as any as ResultResponse;
     const result = setResultWorldRecords(stubResult, event, mock333WrPair);
 
     expect(result.best).toBe(686);
@@ -729,8 +733,8 @@ describe(setResultWorldRecords.name, () => {
   });
 
   it("updates 3x3x3 BLD single record correctly", () => {
-    const event = eventsStub.find((e) => e.eventId === "333bf") as EventResponse;
-    const stubResult = resultsStub.find((r) => r.eventId === "333bf") as ResultResponse;
+    const event = eventsStub.find((e) => e.eventId === "333bf") as any as EventResponse;
+    const stubResult = resultsStub.find((r) => r.eventId === "333bf") as any as ResultResponse;
     const result = setResultWorldRecords(stubResult, event, mockBLDWrPair);
 
     expect(result.regionalSingleRecord).toBe("WR");
@@ -738,8 +742,8 @@ describe(setResultWorldRecords.name, () => {
   });
 
   it("doesn't set avg records when the # of attempts doesn't match the default format's # of attempts", () => {
-    const event = eventsStub.find((e) => e.eventId === "222") as EventResponse;
-    const stubResult = resultsStub.find((r) => r.eventId === "222") as ResultResponse;
+    const event = eventsStub.find((e) => e.eventId === "222") as any as EventResponse;
+    const stubResult = resultsStub.find((r) => r.eventId === "222") as any as ResultResponse;
     const result = setResultWorldRecords(stubResult, event, mock222WrPair);
 
     expect(result.best).toBe(100);

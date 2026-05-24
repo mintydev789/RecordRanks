@@ -42,10 +42,12 @@ function RecordRow({ type, record, event, regions, mixedRecords, showOnlyPersonW
       <td>
         {!showOnlyPersonWithId &&
           (["single", "single-and-avg"].includes(type) || !mixedRecords) &&
-          getFormattedTime(type === "average" ? record.average : record.best, { event })}
+          getFormattedTime(type === "average" ? record.average : record.best, { event, isAverage: type === "average" })}
       </td>
       {mixedRecords && (
-        <td>{["average", "single-and-avg"].includes(type) && getFormattedTime(record.average, { event })}</td>
+        <td>
+          {["average", "single-and-avg"].includes(type) && getFormattedTime(record.average, { event, isAverage: true })}
+        </td>
       )}
       {!mixedRecords && (
         <td>

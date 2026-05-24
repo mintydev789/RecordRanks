@@ -412,7 +412,7 @@ export function sendVideoBasedResultSubmittedEmail(
         (result.regionalSingleRecord ? ` (${result.regionalSingleRecord})` : ""),
       average:
         result.average !== 0
-          ? getFormattedTime(result.average, { event }) +
+          ? getFormattedTime(result.average, { event, isAverage: true }) +
             (result.regionalAverageRecord ? ` (${result.regionalAverageRecord})` : "")
           : "",
       videoLink: result.videoLink!,

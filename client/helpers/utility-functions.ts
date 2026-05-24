@@ -289,17 +289,20 @@ export function getFormattedTime(
     showMultiPoints = false,
     showDecimals = true,
     alwaysShowMinutes = false,
+    isAverage = false,
   }: {
     event?: Pick<EventResponse, "category" | "format">;
     noDelimiterChars?: boolean;
     showMultiPoints?: boolean;
     showDecimals?: boolean; // if the time is >= 1 hour, they won't be shown regardless of this value
     alwaysShowMinutes?: boolean;
+    isAverage?: boolean;
   } = {
     noDelimiterChars: false,
     showMultiPoints: false,
     showDecimals: true,
     alwaysShowMinutes: false,
+    isAverage: false,
   },
 ): string {
   if (time === 0) {
@@ -311,8 +314,7 @@ export function getFormattedTime(
   } else if (time === C.maxTime) {
     return "Unknown";
   } else if (event?.format === "number") {
-    // FM singles are limited to 999 moves, so if it's more than that, it must be the mean. Format it accordingly.
-    if (time > C.maxNumberFormatValue && !noDelimiterChars) return (time / 100).toFixed(2);
+    if (isAverage && !noDelimiterChars) return (time / 100).toFixed(2);
     else return time.toString();
   } else {
     let centiseconds: number;
