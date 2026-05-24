@@ -16,7 +16,7 @@ import { cutoffAttemptsOptions, roundProceedOptions } from "~/helpers/multipleCh
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
 import { type ContestType, type RoundFormat, type RoundProceed, RoundTypeValues } from "~/helpers/types.ts";
-import { getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
+import { getRoundFormatOptions } from "~/helpers/utility-functions.ts";
 import type { RoundDto } from "~/helpers/validators/Round.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt } from "~/server/db/schema/results.ts";

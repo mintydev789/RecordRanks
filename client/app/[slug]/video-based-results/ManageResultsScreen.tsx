@@ -15,7 +15,7 @@ import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import type { InputPerson } from "~/helpers/types.ts";
-import { getFormattedDate, shortenEventName } from "~/helpers/utilityFunctions.ts";
+import { getFormattedDate, shortenEventName } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";

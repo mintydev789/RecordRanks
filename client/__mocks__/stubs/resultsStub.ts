@@ -3,7 +3,7 @@ import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
-import { getBestAndAverage } from "~/helpers/utilityFunctions.ts";
+import { getBestAndAverage } from "~/helpers/utility-functions.ts";
 import type { Attempt, InsertResult } from "~/server/db/schema/results.ts";
 import type { InsertRound } from "~/server/db/schema/rounds.ts";
 import {

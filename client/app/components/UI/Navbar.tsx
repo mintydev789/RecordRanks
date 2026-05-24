@@ -10,7 +10,7 @@ import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import { useFeaturesInfo, useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
-import { clientGetHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
+import { clientGetHasPermission, getHasRole } from "~/helpers/utility-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();

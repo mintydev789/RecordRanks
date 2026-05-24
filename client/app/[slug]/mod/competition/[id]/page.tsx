@@ -1,7 +1,7 @@
 import DataEntryScreen from "~/app/[slug]/mod/competition/[id]/DataEntryScreen.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import { getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
+import { getMemberControlsContest } from "~/helpers/utility-functions.ts";
 import { authorizeUser, getContest, getOrgDetails } from "~/server/server-only-functions.ts";
 
 type Props = {

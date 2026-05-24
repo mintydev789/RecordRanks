@@ -8,7 +8,7 @@ import Footer from "~/app/components/UI/Footer.tsx";
 import Navbar from "~/app/components/UI/Navbar.tsx";
 import { MainContext, type Theme } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 
 type Props = {
   children: React.ReactNode;

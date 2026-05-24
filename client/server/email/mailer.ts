@@ -8,7 +8,7 @@ import type Mail from "nodemailer/lib/mailer/index";
 import { C } from "~/helpers/constants.ts";
 import { videoBasedFormats } from "~/helpers/roundFormats.ts";
 import type { OrganizationDetails } from "~/helpers/types.ts";
-import { getFormattedTime, getIsUrgent } from "~/helpers/utilityFunctions.ts";
+import { getFormattedTime, getIsUrgent } from "~/helpers/utility-functions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { SelectPerson } from "~/server/db/schema/persons.ts";
 import { nodemailerConnectionOptions } from "~/server/email/connection-options.ts";

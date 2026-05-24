@@ -15,7 +15,7 @@ import {
   getMemberControlsContest,
   getNameAndLocalizedName,
   getResultProceeds,
-} from "~/helpers/utilityFunctions.ts";
+} from "~/helpers/utility-functions.ts";
 import { type ContestDto, ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
 import { type RoundDto, RoundValidator } from "~/helpers/validators/Round.ts";

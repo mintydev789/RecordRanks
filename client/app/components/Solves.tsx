@@ -1,4 +1,4 @@
-import { getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import { getFormattedTime } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt } from "~/server/db/schema/results.ts";
 

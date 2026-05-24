@@ -19,7 +19,7 @@ import { eventCategories } from "~/helpers/eventCategories.ts";
 import { eventCategoryOptions, eventFormatOptions } from "~/helpers/multipleChoiceOptions.ts";
 import { getRankedAverageFormat, roundFormats } from "~/helpers/roundFormats.ts";
 import type { EventFormat, ListPageMode, RoundFormat } from "~/helpers/types.ts";
-import { getActionError, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getRoundFormatOptions } from "~/helpers/utility-functions.ts";
 import type { EventDto } from "~/helpers/validators/Event.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 import { createEventSF, updateEventSF } from "~/server/server-functions/event-server-functions.ts";

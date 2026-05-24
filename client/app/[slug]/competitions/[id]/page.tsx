@@ -9,7 +9,7 @@ import Region from "~/app/components/Region.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import WcaCompAdditionalDetails from "~/app/components/WcaCompAdditionalDetails.tsx";
-import { getDateOnly, getFormattedDate } from "~/helpers/utilityFunctions.ts";
+import { getDateOnly, getFormattedDate } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";

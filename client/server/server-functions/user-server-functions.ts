@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import z from "zod";
-import { fetchWcaPerson, getActionError } from "~/helpers/utilityFunctions.ts";
+import { fetchWcaPerson, getActionError } from "~/helpers/utility-functions.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";

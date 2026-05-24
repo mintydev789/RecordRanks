@@ -12,7 +12,7 @@ import Loading from "~/app/components/UI/Loading.tsx";
 import Tooltip from "~/app/components/UI/Tooltip.tsx";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
-import { shortenEventName } from "~/helpers/utilityFunctions.ts";
+import { shortenEventName } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events.ts";
 import { getEvents, getOrgDetails, getRankings, getRegions } from "~/server/server-only-functions.ts";

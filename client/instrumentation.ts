@@ -7,7 +7,7 @@ import { roundFormats } from "~/helpers/roundFormats.ts";
 import { testPersons } from "~/helpers/test-data/test-persons.ts";
 import { testPosts } from "~/helpers/test-data/test-posts.ts";
 import { testUsers } from "~/helpers/test-data/test-users.ts";
-import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utilityFunctions.ts";
+import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utility-functions.ts";
 import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";

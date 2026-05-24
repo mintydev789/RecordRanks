@@ -3,7 +3,7 @@ import z from "zod";
 import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import type { Activity } from "~/helpers/types/Schedule.ts";
 import { ContestTypeValues } from "~/helpers/types.ts";
-import { getDateOnly } from "~/helpers/utilityFunctions.ts";
+import { getDateOnly } from "~/helpers/utility-functions.ts";
 import { ColorValidator, RegionCodeValidator } from "~/helpers/validators/Validators.ts";
 
 const ActivityValidator = z.lazy((): any =>

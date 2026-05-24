@@ -10,7 +10,7 @@ import {
   getBestAndAverage,
   getFormattedTime,
   setResultWorldRecords,
-} from "~/helpers/utilityFunctions.ts";
+} from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results";
 

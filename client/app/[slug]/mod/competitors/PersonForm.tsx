@@ -12,7 +12,7 @@ import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { Creator } from "~/helpers/types.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 import type { PersonDto } from "~/helpers/validators/Person.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";

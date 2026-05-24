@@ -22,7 +22,7 @@ import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { type RoundFormatObject, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import type { Creator, EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
-import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";

@@ -29,7 +29,7 @@ import {
   getMaxAllowedRounds,
   getRoundDate,
   shortenEventName,
-} from "~/helpers/utilityFunctions.ts";
+} from "~/helpers/utility-functions.ts";
 import { type ResultDto, ResultValidator } from "~/helpers/validators/Result.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";

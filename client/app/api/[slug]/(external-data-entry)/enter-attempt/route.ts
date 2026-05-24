@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 // import { roundFormats } from "~/helpers/roundFormats";
-// import { getActionError, verifyAccessToken } from "~/helpers/utilityFunctions.ts";
+// import { getActionError, verifyAccessToken } from "~/helpers/utility-functions.ts";
 // import { type EnterAttemptPayloadDto, EnterAttemptPayloadValidator } from "~/helpers/validators/EnterAttemptPayload.tsx";
 // import { db } from "~/server/db/provider.ts";
 // import type { Attempt } from "~/server/db/schema/results.ts";

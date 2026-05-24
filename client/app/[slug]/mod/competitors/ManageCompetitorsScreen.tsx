@@ -19,7 +19,7 @@ import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import type { MultiChoiceOption } from "~/helpers/types/MultiChoiceOption.ts";
 import type { Creator, ListPageMode } from "~/helpers/types.ts";
-import { getActionError, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getSimplifiedString } from "~/helpers/utility-functions.ts";
 import type { PersonResponse, SelectPerson } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { approvePersonSF, deletePersonSF } from "~/server/server-functions/person-server-functions.ts";

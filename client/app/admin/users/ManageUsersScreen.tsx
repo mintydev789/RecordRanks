@@ -11,7 +11,7 @@ import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import { getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { getHasRole, getSimplifiedString } from "~/helpers/utility-functions.ts";
 import { rolesObject } from "~/server/permissions.ts";
 
 type Props = {

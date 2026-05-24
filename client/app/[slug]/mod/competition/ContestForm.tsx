@@ -36,7 +36,7 @@ import {
   getDateOnly,
   getHasRole,
   getIsUrgent,
-} from "~/helpers/utilityFunctions.ts";
+} from "~/helpers/utility-functions.ts";
 import { ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
 import type { RoundDto } from "~/helpers/validators/Round.ts";

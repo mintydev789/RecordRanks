@@ -15,7 +15,7 @@ import { HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { orgRolesObject } from "~/server/organization-permissions.ts";

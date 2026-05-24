@@ -4,7 +4,7 @@
 // import JSZip from "jszip";
 import type { NextRequest } from "next/server";
 // import { C } from "~/helpers/constants.ts";
-// import { generateCsv } from "~/helpers/utilityFunctions.ts";
+// import { generateCsv } from "~/helpers/utility-functions.ts";
 // import { db } from "~/server/db/provider.ts";
 // import { contestsPublicCols, contestsTable } from "~/server/db/schema/contests.ts";
 // import { eventsPublicCols, eventsTable } from "~/server/db/schema/events.ts";

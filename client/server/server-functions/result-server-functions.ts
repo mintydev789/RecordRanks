@@ -16,7 +16,7 @@ import {
   getMemberControlsContest,
   getResultProceeds,
   getRoundDate,
-} from "~/helpers/utilityFunctions.ts";
+} from "~/helpers/utility-functions.ts";
 import { AttemptsValidator, ResultValidator, VideoBasedResultValidator } from "~/helpers/validators/Result.ts";
 import { auth } from "~/server/auth.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";

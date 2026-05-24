@@ -9,7 +9,7 @@ import { useModDashboardQueryState } from "~/app/[slug]/mod/ModDashboardFilters.
 import ModFilters from "~/app/[slug]/mod/ModFilters.tsx";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Region from "~/app/components/Region.tsx";
-import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
+import { getFormattedDate } from "~/helpers/utility-functions.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { getModContestsSF } from "~/server/server-functions/contest-server-functions.ts";
 import ContestControls from "./ContestControls.tsx";

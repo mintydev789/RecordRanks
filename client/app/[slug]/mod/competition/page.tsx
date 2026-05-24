@@ -4,7 +4,7 @@ import z from "zod";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import type { Creator } from "~/helpers/types.ts";
-import { getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
+import { getMemberControlsContest } from "~/helpers/utility-functions.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { type PersonResponse, personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";

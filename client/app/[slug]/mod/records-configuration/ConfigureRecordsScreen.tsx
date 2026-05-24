@@ -17,7 +17,7 @@ import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { recordCategoryOptions } from "~/helpers/multipleChoiceOptions.ts";
 import { type ListPageMode, type RecordCategory, RecordCategoryValues } from "~/helpers/types.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 import type { RecordConfigDto } from "~/helpers/validators/RecordConfig.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
 import type { SelectRegion } from "~/server/db/schema/regions.ts";

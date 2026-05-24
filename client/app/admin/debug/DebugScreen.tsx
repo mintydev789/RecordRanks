@@ -10,7 +10,7 @@ import { authClient } from "~/helpers/authClient.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import type { OrganizationMetadata } from "~/helpers/types.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 import { sendDebugEmailSF } from "~/server/server-functions/user-server-functions.ts";
 
 function DebugScreen() {

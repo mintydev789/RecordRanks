@@ -18,7 +18,7 @@ import {
   type RecordCategory,
   RecordCategoryValues,
 } from "~/helpers/types.ts";
-import { fetchWcaPerson, getHasRole } from "~/helpers/utilityFunctions.ts";
+import { fetchWcaPerson, getHasRole, getNameAndLocalizedName } from "~/helpers/utility-functions.ts";
 import { type DbTransactionType, db } from "~/server/db/provider.ts";
 import { membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
@@ -39,7 +39,6 @@ import { sendErrorEmail } from "~/server/email/mailer.ts";
 import { type LogCode, logger } from "~/server/logger.ts";
 import type { AdminPluginPermissions, Role } from "~/server/permissions.ts";
 import { RrActionError } from "~/server/safeAction.ts";
-import { getNameAndLocalizedName } from "../helpers/utilityFunctions.ts";
 import { auth } from "./auth.ts";
 import type { OrganizationRole, OrgPluginPermissions } from "./organization-permissions.ts";
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { C } from "~/helpers/constants.ts";
-import { getAlwaysShowDecimals, getAttempt, getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import { getAlwaysShowDecimals, getAttempt, getFormattedTime } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { Attempt } from "~/server/db/schema/results.ts";
 import FormNumberInput from "./form/FormNumberInput.tsx";

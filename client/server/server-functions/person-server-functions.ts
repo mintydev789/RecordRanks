@@ -4,7 +4,7 @@ import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { C } from "~/helpers/constants.ts";
 import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
-import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utility-functions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";

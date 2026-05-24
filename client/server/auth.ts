@@ -12,7 +12,7 @@ import {
 import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { getDefaultOrgSettings } from "~/helpers/default-settings.ts";
-import { getHasRole } from "~/helpers/utilityFunctions.ts";
+import { getHasRole } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   accountsTable as accounts,

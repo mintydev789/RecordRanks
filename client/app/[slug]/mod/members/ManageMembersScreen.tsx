@@ -15,7 +15,7 @@ import type { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { InputPerson } from "~/helpers/types.ts";
-import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utility-functions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { type OrganizationRole, orgRolesObject } from "~/server/organization-permissions.ts";

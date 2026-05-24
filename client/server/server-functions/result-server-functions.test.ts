@@ -24,7 +24,7 @@ import {
   testMeetupFeb2023_333bf_2_person_relay_r1,
   testMeetupMar2023_333bf_2_person_relay_r1,
 } from "~/__mocks__/stubs/roundsStub.ts";
-import { getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import { getFormattedTime } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   createContestResultSF,

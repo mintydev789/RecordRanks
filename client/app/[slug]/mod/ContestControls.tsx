@@ -11,7 +11,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
-import { clientGetHasPermission, getActionError, getMemberControlsContest } from "~/helpers/utilityFunctions.ts";
+import { clientGetHasPermission, getActionError, getMemberControlsContest } from "~/helpers/utility-functions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import {
   approveContestSF,

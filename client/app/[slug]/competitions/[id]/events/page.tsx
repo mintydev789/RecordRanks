@@ -4,7 +4,7 @@ import EventTitle from "~/app/components/EventTitle.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { roundTypes } from "~/helpers/roundTypes.ts";
-import { getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import { getFormattedTime } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import { contestsPublicCols, contestsTable as table } from "~/server/db/schema/contests.ts";
 import { eventsTable } from "~/server/db/schema/events.ts";
