@@ -704,26 +704,6 @@ export async function getOrCreatePersonByWcaId(
   return { person: createdPerson, isNew: true };
 }
 
-// export async function syncPersonByWcaId(wcaId: string, personId: number): Promise<PersonResponse> {
-//   const person = await db.query.persons.findFirst({ columns: { wcaId: true }, where: { id: personId } });
-//   if (!person) throw new RrActionError("Person not found");
-//   // This error should theoretically never happen
-//   if (person.wcaId !== wcaId) {
-//     throw new RrActionError(
-//       "The WCA ID is different from the one assigned to the competitor already tied to this user. Please contact the admin team.",
-//     );
-//   }
-
-//   const wcaPerson = await fetchWcaPerson(wcaId);
-//   if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found in the WCA API`);
-
-//   const res = await updatePersonSF({ id: personId, newPersonDto: wcaPerson });
-
-//   if (res.serverError || res.validationErrors) throw new RrActionError(getActionError(res));
-
-//   return res.data!;
-// }
-
 // export async function getPersonsForExternalDeviceDataEntry(
 //   { registrantId, wcaId }: Pick<EnterAttemptPayloadDto, "registrantId" | "wcaId">,
 //   { creatorUserId, organizationId }: { creatorUserId: string; organizationId: string },

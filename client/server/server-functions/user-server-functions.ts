@@ -3,7 +3,8 @@
 import { and, eq } from "drizzle-orm";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import z from "zod";
-// import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
+import { fetchWcaPerson, getActionError } from "~/helpers/utilityFunctions.ts";
+import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import { membersTable, type usersTable as table } from "~/server/db/schema/auth-schema.ts";
@@ -12,13 +13,8 @@ import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson
 import { sendEmail, sendMemberRequestSubmittedEmail, sendMemberRolesChangedEmail } from "~/server/email/mailer.ts";
 import { type OrganizationRole, OrganizationRoles, requestableRoles } from "~/server/organization-permissions.ts";
 import { actionClient, RrActionError } from "~/server/safeAction.ts";
-import { deletePersonSF } from "~/server/server-functions/person-server-functions.ts";
-import {
-  getMemberRequestDetails,
-  // getOrCreatePersonByWcaId,
-  logMessage,
-  // syncPersonByWcaId,
-} from "~/server/server-only-functions.ts";
+import { deletePersonSF, updatePersonSF } from "~/server/server-functions/person-server-functions.ts";
+import { getMemberRequestDetails, getOrCreatePersonByWcaId, logMessage } from "~/server/server-only-functions.ts";
 
 export const sendDebugEmailSF = actionClient
   .metadata({ auth: { useOrganization: false, role: "admin" } })
@@ -106,40 +102,63 @@ export const updateMemberSF = actionClient
   );
 
 export const linkWcaProfileSF = actionClient
-  .metadata({ auth: { useOrganization: false } })
-  .action<PersonResponse>(async ({ ctx: { session: _ } }) => {
-    throw new Error("NOT IMPLEMENTED");
-    // const wcaAccount = await db.query.accounts.findFirst({
-    //   columns: { accountId: true },
-    //   where: { userId: session.user.id, providerId: "wca" },
-    // });
-    // if (!wcaAccount) throw new RrActionError("Only users using WCA login can link their own WCA competitor profiles");
+  .metadata({ auth: { useOrganization: true } })
+  .action<PersonResponse>(async ({ ctx: { session, httpHeaders } }) => {
+    const wcaAccount = await db.query.accounts.findFirst({
+      columns: { accountId: true },
+      where: { userId: session.user.id, providerId: "wca" },
+    });
+    if (!wcaAccount) throw new RrActionError("Only users using WCA login can link their own WCA competitor profiles");
+    if (!session.organization) throw new RrActionError("Please activate a space first");
 
-    // const res = await auth.api.accountInfo({ query: { accountId: wcaAccount.accountId }, headers: await headers() });
-    // if (!res) throw new RrActionError("Unable to retrieve account information from the WCA");
+    const res = await auth.api.accountInfo({ query: { accountId: wcaAccount.accountId }, headers: httpHeaders });
+    if (!res) throw new RrActionError("Unable to retrieve account information from the WCA");
 
-    // const parsed = z
-    //   // This doesn't include the full schema of the user information the WCA returns
-    //   .object({
-    //     preferred_username: WcaIdValidator, // if the WCA user has no WCA ID, this will throw a validation error
-    //   })
-    //   .safeParse(res.data);
-    // if (!parsed.success) throw new RrActionError(z.prettifyError(parsed.error));
+    const parsed = z
+      // This doesn't include the full schema of the user information the WCA returns
+      .object({
+        preferred_username: WcaIdValidator, // if the WCA user has no WCA ID, this will throw a validation error
+      })
+      .safeParse(res.data);
+    if (!parsed.success) throw new RrActionError(z.prettifyError(parsed.error));
 
-    // const wcaId = parsed.data.preferred_username;
-    // const person = session.user.personId
-    //   ? await syncPersonByWcaId(wcaId, session.user.personId)
-    //   : (await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id })).person;
+    const wcaId = parsed.data.preferred_username;
+    let person: PersonResponse | undefined;
 
-    // try {
-    //   await db.update(table).set({ personId: person.id }).where(eq(table.id, session.user.id));
-    // } catch {
-    //   throw new RrActionError(
-    //     "Error while linking competitor profile. This competitor may already be tied to another user. Please contact the admin team.",
-    //   );
-    // }
+    if (session.member!.personId) {
+      // Sync existing person
+      const existingPerson = await db.query.persons.findFirst({
+        columns: { wcaId: true },
+        where: { id: session.member!.personId, wcaId },
+      });
+      if (!existingPerson) throw new RrActionError("Person not found. Please contact the admin team.");
 
-    // return person;
+      const wcaPerson = await fetchWcaPerson(wcaId);
+      if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found in the WCA API`);
+
+      const res = await updatePersonSF({ id: session.member!.personId, newPersonDto: wcaPerson });
+
+      if (res.serverError || res.validationErrors) throw new RrActionError(getActionError(res));
+      person = res.data!;
+    } else {
+      // Create new person
+      person = (
+        await getOrCreatePersonByWcaId(wcaId, {
+          creatorUserId: session.user.id,
+          organizationId: session.organization.id,
+        })
+      ).person;
+    }
+
+    try {
+      await db.update(membersTable).set({ personId: person.id }).where(eq(membersTable.id, session.member!.id));
+    } catch {
+      throw new RrActionError(
+        "Error while linking competitor profile. This competitor may already be tied to another user. Please contact the admin team.",
+      );
+    }
+
+    return person;
   });
 
 export const createOrUpdateMemberRequestSF = actionClient

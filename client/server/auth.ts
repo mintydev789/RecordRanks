@@ -140,6 +140,7 @@ export const auth = betterAuth({
               // issuer: "https://www.worldcubeassociation.org",
               // requireIssuerValidation: true, // the WCA doesn't support this
               scopes: ["public", "openid", "email", "profile"],
+              mapProfileToUser: async (profile) => ({ ...profile, emailVerified: true }),
             } satisfies GenericOAuthConfig)
           : undefined,
       ].filter((provider) => provider !== undefined),

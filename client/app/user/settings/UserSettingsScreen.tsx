@@ -98,6 +98,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   }, [isPending, session]);
 
   const linkWcaProfile = async () => {
+    resetMessages();
     setWcaProfileLinkStatus("pending");
 
     const res = await linkWcaProfileSF();
@@ -116,6 +117,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
 
   const initiateEmailChange = () => {
     startEmailChange(async () => {
+      resetMessages();
       const { error } = await authClient.changeEmail({
         newEmail,
         callbackURL: "/user/settings?status=email-change-success",
@@ -215,7 +217,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
             </Button>
           )}
 
-          <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-3">
+          <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-5">
             Delete Account
           </Button>
           <p className="mt-2" style={{ fontSize: "0.85rem" }}>
