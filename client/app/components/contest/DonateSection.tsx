@@ -1,16 +1,19 @@
 import DonateButton from "~/app/components/DonateButton.tsx";
 import { C } from "~/helpers/constants.ts";
+import type { OrganizationDetails } from "~/helpers/types.ts";
 
 type Props = {
-  organizationName: string;
+  organization: OrganizationDetails;
 };
 
-function DonateSection({ organizationName }: Props) {
+function DonateSection({ organization }: Props) {
+  if (organization.metadata.plan !== "basic") return;
+
   return (
     <>
       <h3 className="rr-basic-heading">Support RecordRanks</h3>
       <p>
-        {organizationName} is powered by RecordRanks, an{" "}
+        {organization.name} is powered by RecordRanks, an{" "}
         <a href={C.sourceCodeLink} target="_blank" rel="noreferrer">
           open source project
         </a>{" "}
@@ -21,6 +24,30 @@ function DonateSection({ organizationName }: Props) {
         without creating an account. All contributions directly support the development of RecordRanks.
       </p>
       <DonateButton />
+
+      <h4 className="mt-4">Goals</h4>
+      <p>
+        Prioritize RR feature: <strong>Personal Records</strong>
+      </p>
+      <div
+        role="progressbar"
+        className="progress mb-2"
+        style={{ height: "1.3rem" }}
+        aria-label="Goal progress"
+        aria-valuenow={17}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="progress-bar progress-bar-striped progress-bar-animated fs-6 fw-semibold bg-success"
+          style={{ width: "17%" }}
+        >
+          17%
+        </div>
+      </div>
+      <p className="mt-3">
+        When this goal is reached, the Personal Records feature will be prioritized to be implemented into RecordRanks.
+      </p>
     </>
   );
 }

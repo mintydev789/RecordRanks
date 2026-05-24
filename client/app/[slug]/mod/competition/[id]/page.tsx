@@ -25,7 +25,11 @@ async function DataEntryPage({ params, searchParams }: Props) {
       useOrganization: true,
       orgPermissions: { onlineComps: ["submit-own-result"] },
     });
-    if (!member!.personId || !["approved", "ongoing"].includes(contest.state))
+    if (!member!.personId)
+      return (
+        <LoadingError reason="You must have a competitor profile linked to your member profile to submit results" />
+      );
+    if (!["approved", "ongoing"].includes(contest.state))
       return <LoadingError reason="You are unauthorized to submit results for this contest" />;
   } else {
     const { member } = await authorizeUser({

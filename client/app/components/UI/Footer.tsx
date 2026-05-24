@@ -21,7 +21,7 @@ function Footer() {
   return (
     <footer className="d-flex justify-content-center min-vw-100 fs-5 column-gap-2 column-gap-sm-3 container flex-wrap bg-body-tertiary py-3 text-center align-items-center">
       <div className="d-flex column-gap-1 flex-wrap align-items-center">
-        <span>Powered by</span>
+        {organization?.metadata.plan !== "custom" && <span>Powered by</span>}
         <a
           href={`${C.recordRanksLink}?utm_source=rr${organization ? `&utm_campaign=${kebabCase(removeAccents(organization.name))}` : ""}`}
           target="_blank"

@@ -72,7 +72,7 @@ async function OrganizationHomePage({ params }: Props) {
         </Link>
       </div>
 
-      <DonateSection organizationName={organization.name} />
+      <DonateSection organization={organization} />
 
       <Suspense>
         <BlogSection latestBlogPostsPromise={latestBlogPostsPromise} />
