@@ -4,10 +4,11 @@ import { faBars, faBook, faCalendarDays, faRankingStar, faStar, faUser } from "@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
+import { MainContext } from "~/helpers/contexts.ts";
 import { useFeaturesInfo, useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import { clientGetHasPermission, getHasRole } from "~/helpers/utility-functions.ts";
@@ -19,6 +20,7 @@ function Navbar() {
   const { mutate } = useSWRConfig();
   const { rulesPageEnabled, modInstructionsPageEnabled, videoBasedResultsEnabled, publicExportsEnabled } =
     useFeaturesInfo();
+  const { changeErrorMessages } = useContext(MainContext);
 
   const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
     clientGetHasPermission({ modDashboard: ["view"] }),
@@ -45,6 +47,13 @@ function Navbar() {
     collapseAll();
     await authClient.signOut();
     router.push("/login");
+  };
+
+  const exitOrganization = async () => {
+    const { error } = await authClient.organization.setActive({ organizationId: null });
+
+    if (error) changeErrorMessages([error.message ?? error.statusText]);
+    else router.push("/");
   };
 
   const toggleDropdown = (dropdown: "results" | "more" | "user", newValue: boolean) => {
@@ -291,6 +300,11 @@ function Navbar() {
                     >
                       Settings
                     </Link>
+                  </li>
+                  <li>
+                    <button type="button" onClick={exitOrganization} className="nav-link">
+                      Exit space
+                    </button>
                   </li>
                   <li>
                     <button type="button" onClick={logOut} className="nav-link">

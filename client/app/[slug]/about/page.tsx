@@ -33,7 +33,7 @@ async function AboutPage({ params }: Props) {
         </div>
       )}
 
-      <DonateSection organizationName={organization.name} />
+      <DonateSection organization={organization} />
     </section>
   );
 }
