@@ -32,6 +32,7 @@ export async function GET(req: NextRequest, { params }: RouteContext<"/api/[slug
   const metadata = JSON.parse(organization.metadata) as OrganizationMetadata;
   if (metadata.plan === "basic")
     return new Response("Basic plan spaces don't have automated public exports", { status: 400 });
+  if (metadata.private) return new Response("Private spaces don't have automated public exports", { status: 400 });
 
   const storageClient = new StorageClient(process.env.SUPABASE_STORAGE_URL, {
     apikey: process.env.SERVICE_ROLE_KEY,

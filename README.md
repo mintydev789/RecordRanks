@@ -97,7 +97,7 @@ The `docker-compose.rr.yml` file includes a Caddy reverse proxy, which handles p
 
 ### Firewall
 
-If you're using a firewall on your server, make sure the following ports are not being blocked: `80`, `443`, `443/udp`, [the port from `EMAIL_PORT`].
+If you're using a firewall on your server, make sure the following ports are not being blocked: `80`, `443`, `443/udp`, <the port from `EMAIL_PORT`>.
 
 ### Starting production server
 

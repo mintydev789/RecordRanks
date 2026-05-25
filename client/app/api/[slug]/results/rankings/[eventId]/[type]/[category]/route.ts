@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import z from "zod";
-import { RecordCategoryValues } from "~/helpers/types.ts";
+import { type ContestType, RecordCategoryValues } from "~/helpers/types.ts";
 import { db } from "~/server/db/provider.ts";
-import { getOrgDetails, getRankings } from "~/server/server-only-functions.ts";
+import { getOrgDetails, getRankings, getSettingFromDb } from "~/server/server-only-functions.ts";
 
 export async function GET(
   req: NextRequest,
@@ -27,6 +27,20 @@ export async function GET(
   const topN = searchParams.get("topN");
 
   const organization = await getOrgDetails({ slug });
+
+  if (recordCategory !== "all") {
+    const contestTypes = (await getSettingFromDb({ key: "contest-types", organizationId: organization.id }))!.split(
+      ",",
+    ) as ContestType[];
+    const errorResponse = new Response("This record category is disabled for this space", { status: 400 });
+    if (recordCategory === "competitions") {
+      if (!contestTypes.includes("comp") && !contestTypes.includes("wca-comp")) return errorResponse;
+    } else if (recordCategory === "meetups") {
+      if (!contestTypes.includes("meetup")) return errorResponse;
+    } else if (recordCategory === "online") {
+      if (!contestTypes.includes("online")) return errorResponse;
+    }
+  }
 
   const event = await db.query.events.findFirst({ where: { organizationId: organization.id, eventId } });
   if (!event) return new Response(`Event with ID ${eventId} not found`, { status: 400 });

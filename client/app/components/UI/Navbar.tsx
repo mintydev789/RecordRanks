@@ -20,7 +20,7 @@ function Navbar() {
   const { mutate } = useSWRConfig();
   const { rulesPageEnabled, modInstructionsPageEnabled, videoBasedResultsEnabled, publicExportsEnabled } =
     useFeaturesInfo();
-  const { changeErrorMessages } = useContext(MainContext);
+  const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
   const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
     clientGetHasPermission({ modDashboard: ["view"] }),
@@ -37,23 +37,35 @@ function Navbar() {
   const isAdmin = getHasRole("admin", member?.role) || getHasRole("owner", member?.role);
 
   const logOut = async () => {
+    resetMessages();
+    collapseAll();
+    await authClient.signOut();
+
     // Clear the SWR cache
     mutate(
       () => true, // update all keys
       undefined, // set cache data to undefined
       { revalidate: false },
     );
-
-    collapseAll();
-    await authClient.signOut();
     router.push("/login");
   };
 
   const exitOrganization = async () => {
+    resetMessages();
+    collapseAll();
     const { error } = await authClient.organization.setActive({ organizationId: null });
 
-    if (error) changeErrorMessages([error.message ?? error.statusText]);
-    else router.push("/");
+    if (error) {
+      changeErrorMessages([error.message ?? error.statusText]);
+    } else {
+      // Clear the SWR cache
+      mutate(
+        () => true, // update all keys
+        undefined, // set cache data to undefined
+        { revalidate: false },
+      );
+      router.push("/");
+    }
   };
 
   const toggleDropdown = (dropdown: "results" | "more" | "user", newValue: boolean) => {

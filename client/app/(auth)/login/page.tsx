@@ -124,7 +124,7 @@ function LoginPage() {
       <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
         {HAS_CREDENTIAL_AUTH && <Link href="/register">Sign up using email</Link>}
 
-        <div className="d-flex mt-4 gap-3 align-items-center">
+        <div className="d-flex mt-4 flex-wrap gap-3 align-items-center">
           {HAS_WCA_AUTH && (
             <Button
               onClick={signInWithWca}
