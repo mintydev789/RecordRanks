@@ -38,10 +38,7 @@ function DonateSection({ organization }: Props) {
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div
-          className="progress-bar progress-bar-striped progress-bar-animated fs-6 fw-semibold bg-success"
-          style={{ width: "17%" }}
-        >
+        <div className="progress-bar fs-6 fw-semibold bg-success" style={{ width: "17%" }}>
           17%
         </div>
       </div>

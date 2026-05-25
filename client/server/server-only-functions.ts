@@ -103,12 +103,12 @@ export async function authorizeUser(
   if (!session) redirect("/login");
 
   const member = session.session.activeOrganizationId ? await auth.api.getActiveMember({ headers: hdrs }) : undefined;
-  let organization: OrganizationDetails | undefined;
+  const organization = session.session.activeOrganizationId
+    ? await getOrgDetails({ session: session.session, id: session.session.activeOrganizationId })
+    : undefined;
 
   if (useOrganization) {
     if (!session.session.activeOrganizationId || !member) redirect("/"); // go back to org selection
-
-    organization = await getOrgDetails({ session: session.session, id: member.organizationId });
 
     if (orgPermissions) {
       const { success } = await auth.api.hasPermission({ headers: hdrs, body: { permissions: orgPermissions } });
@@ -158,7 +158,7 @@ export async function getOrgDetails({
       where: id ? { id } : { slug },
     })
     .then((res) => {
-      if (!res) throw new RrActionError("Organization not found");
+      if (!res) throw new RrActionError("Space not found");
       return { ...res, metadata: JSON.parse(res.metadata!) } as OrganizationDetails;
     });
 

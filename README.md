@@ -165,21 +165,22 @@ You can then place any assets you want to be publicly accessible via the URL in 
 To enable automatic public exports that run at regular intervals, you have to set up a cron job with Supabase:
 
 1. Open Supabase Studio and go to Integrations -> Vault -> Secrets.
-2. Add secret "service_role_key" with the value being the same as `SERVICE_ROLE_KEY` in your `.env` file.
-3. Add secret "base_url" with the value being the same as `NEXT_PUBLIC_BASE_URL` in your `.env` file.
+2. Add secret `service_role_key` with the value being the same as `SERVICE_ROLE_KEY` in your production `.env` file.
+3. Add secret `base_url` with the value being the same as `NEXT_PUBLIC_BASE_URL` in your production `.env` file.
 4. Go to SQL Editor and run the query "Schedule public export cron job".
 
 **NOTE**: while this cron job will be visible in Integrations -> Cron, it cannot be edited directly, due to the complex value of the authorization header; only activated and deactivated. To change the cron job, delete it and create it again following step 4.
 
-To test this locally with `test-prod.sh`, use `http://rr-nextjs:<NEXTJS_PORT>` as the base URL value in Supabase Vault, temporarily add `shared` network to the `supabase-db` container in `docker-compose.supabase.yml`, change the value of `SUPABASE_PUBLIC_URL` to `http://supabase-kong:<KONG_HTTP_PORT>` in the `.env` file and restart the `supabase-db` container. You can also test it with the normal local dev environment using this command:
+To test this locally with `test-prod.sh`, use `http://rr-nextjs:<NEXTJS_PORT>` as the `base_url` value in Supabase Vault, temporarily add `shared` network to the `supabase-db` container in `docker-compose.supabase.yml`, change the value of `SUPABASE_PUBLIC_URL` to `http://supabase-kong:<KONG_HTTP_PORT>` in the `.env` file and restart the `supabase-db` container. You can also test it with the normal local dev environment using this command:
 
 ```sh
+# Make sure to replace <NEXTJS_PORT> with your Next JS container port (3000 by default)
 curl -X POST -H "Authorization: Bearer <SERVICE_ROLE_KEY>" http://localhost:<NEXTJS_PORT>/api/export/create-public-export
 ```
 
 For debugging you can look at the history of cron job runs in Integrations -> Cron and at the contents of the `net` schema in Table Editor.
 
-The export files can be imported with Supabase, but keep in mind that they don't include the data for some internal columns. The import process for each table is as follows:
+The export files can be imported with Supabase, but keep in mind that they don't include the data for some internal columns, including `organization_id`. The import process for each table is as follows:
 
 1. Go to "SQL Editor" and run the "Public exports pre-import helper" snippet (THIS DELETES DATA).
 2. Go to "Table Editor" and select schema `record_ranks`.
@@ -245,7 +246,9 @@ docker exec -it supabase-db psql postgresql://supabase_admin:${POSTGRES_PASSWORD
 To get the list of events, use the endpoint below:
 
 ```
-/api/events
+/api/[slug]/events
+
+slug (optional) = URL slug for the space (this parameter can be omitted)
 ```
 
 ### Rankings
@@ -253,8 +256,9 @@ To get the list of events, use the endpoint below:
 To get the rankings, use the endpoint below:
 
 ```
-/api/results/rankings/[eventId]/[type]/[category]?show=[show]&region=[region]&topN=[topN]
+/api/[slug]/results/rankings/[eventId]/[type]/[category]?show=[show]&region=[region]&topN=[topN]
 
+slug (optional)   = URL slug for the space (this parameter can be omitted)
 eventId           = ID of the event
 type              = "single" for top single rankings; "average" for top average rankings; "all-avg-formats" for top average rankings, including Mo3 and Ao5 formats
 category          = record category; accepts values: "competitions" | "meetups" | "online" | "all"

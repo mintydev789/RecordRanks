@@ -18,7 +18,7 @@ function Navbar() {
   const { session, user, member, organization } = useSession();
   const { mutate } = useSWRConfig();
   const { rulesPageEnabled, modInstructionsPageEnabled, videoBasedResultsEnabled, publicExportsEnabled } =
-    useFeaturesInfo(organization?.id);
+    useFeaturesInfo();
 
   const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
     clientGetHasPermission({ modDashboard: ["view"] }),

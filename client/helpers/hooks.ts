@@ -32,19 +32,21 @@ export function useSession(): Partial<FullSession> {
   return data ?? {};
 }
 
-export function useFeaturesInfo(organizationId: string | undefined): FeaturesInfo {
+export function useFeaturesInfo(): FeaturesInfo {
+  const fallbackData = {
+    rulesPageEnabled: false,
+    modInstructionsPageEnabled: false,
+    videoBasedResultsEnabled: false,
+    publicExportsEnabled: false,
+    privacyPolicy: "disabled" as const,
+  };
+
+  const { organization } = useSession();
+
   const { data: featuresInfo } = useSWR(
-    organizationId ? ["features-info", organizationId] : null,
-    () => getFeaturesInfoSF(organizationId!),
-    {
-      fallbackData: {
-        rulesPageEnabled: false,
-        modInstructionsPageEnabled: false,
-        videoBasedResultsEnabled: false,
-        publicExportsEnabled: false,
-        privacyPolicy: "disabled" as const,
-      },
-    },
+    organization ? ["features-info", organization.id] : null,
+    () => getFeaturesInfoSF().then((res) => res.data ?? fallbackData),
+    { fallbackData },
   );
 
   return featuresInfo;

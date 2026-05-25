@@ -160,28 +160,31 @@ export const makeCollectiveCubingMoveSF = actionClient
     },
   );
 
-export async function getFeaturesInfoSF(organizationId: string): Promise<FeaturesInfo> {
-  const [rulesPageContent, modInstructionsPageContent, publicExportsToKeep, videoBasedResultsEnabled, privacyPolicy] =
-    await Promise.all([
-      getSettingFromDb({ key: "rules-page-content", organizationId, optional: true }),
-      getSettingFromDb({ key: "moderator-instructions-page-content", organizationId, optional: true }),
-      getSettingFromDb({ key: "video-based-results-enabled", organizationId }),
-      getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
-      getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true }),
-    ]);
+export const getFeaturesInfoSF = actionClient
+  .metadata({ auth: { useOrganization: true } })
+  .action<FeaturesInfo>(async ({ ctx: { session } }) => {
+    const organizationId = session.organization!.id;
+    const [rulesPageContent, modInstructionsPageContent, videoBasedResultsEnabled, publicExportsToKeep, privacyPolicy] =
+      await Promise.all([
+        getSettingFromDb({ key: "rules-page-content", organizationId, optional: true }),
+        getSettingFromDb({ key: "moderator-instructions-page-content", organizationId, optional: true }),
+        getSettingFromDb({ key: "video-based-results-enabled", organizationId }),
+        getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
+        getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true }),
+      ]);
 
-  return {
-    rulesPageEnabled: Boolean(rulesPageContent),
-    modInstructionsPageEnabled: Boolean(modInstructionsPageContent),
-    publicExportsEnabled: Number(publicExportsToKeep) > 0,
-    videoBasedResultsEnabled: videoBasedResultsEnabled === "true",
-    privacyPolicy: !privacyPolicy
-      ? "disabled"
-      : z.url().safeParse(privacyPolicy).success
-        ? privacyPolicy
-        : "policy-contents",
-  };
-}
+    return {
+      rulesPageEnabled: Boolean(rulesPageContent),
+      modInstructionsPageEnabled: Boolean(modInstructionsPageContent),
+      publicExportsEnabled: session.organization!.metadata.plan !== "basic" && Number(publicExportsToKeep) > 0,
+      videoBasedResultsEnabled: videoBasedResultsEnabled === "true",
+      privacyPolicy: !privacyPolicy
+        ? "disabled"
+        : z.url().safeParse(privacyPolicy).success
+          ? privacyPolicy
+          : "policy-contents",
+    };
+  });
 
 export const getPrivacyPolicySF = actionClient.metadata({ auth: null }).action<string | null>(async () => {
   return await getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true });
