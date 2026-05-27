@@ -90,7 +90,6 @@ function Navbar() {
     setUserExpanded(false);
   };
 
-  // TO-DO: FIX NO NAVBAR FLASHING BEFORE HYDRATION!
   if (!organization) return;
 
   return (
@@ -129,7 +128,7 @@ function Navbar() {
               <button
                 type="button"
                 onClick={() => toggleDropdown("results", !resultsExpanded)}
-                className={`nav-link dropdown-toggle ${/^\/[a-z0-9]+\/(rankings|records|export)/.test(pathname) ? "active" : ""}`}
+                className={`nav-link dropdown-toggle ${new RegExp(`^/${organization.slug}/(rankings|records|export)`).test(pathname) ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faRankingStar} size="xs" className="me-2" />
                 Results
@@ -140,7 +139,7 @@ function Navbar() {
                     href={`/${organization.slug}/records`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/[a-z0-9]+\/records\//.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${new RegExp(`^/${organization.slug}/records/`).test(pathname) ? "active" : ""}`}
                   >
                     Records
                   </Link>
@@ -150,7 +149,7 @@ function Navbar() {
                     href={`/${organization.slug}/rankings`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/[a-z0-9]+\/rankings\//.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${new RegExp(`^/${organization.slug}/rankings/`).test(pathname) ? "active" : ""}`}
                   >
                     Rankings
                   </Link>
@@ -211,7 +210,7 @@ function Navbar() {
                     href={`/${organization.slug}/posts`}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/[a-z0-9]+\/posts/.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${new RegExp(`^/${organization.slug}/posts`).test(pathname) ? "active" : ""}`}
                   >
                     Blog
                   </Link>

@@ -153,9 +153,9 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
 
       {mode === "view" ? (
         <div className="d-flex mx-2 gap-3">
-          <Button onClick={onAddRecordConfig} className="btn-success btn-sm">
+          {/* <Button onClick={onAddRecordConfig} className="btn-success btn-sm">
             Create Record Type
-          </Button>
+          </Button> */}
           {generatableRecordCategories.length > 0 && (
             <Button onClick={onGenerateRecordConfigs} className="btn-secondary btn-sm">
               Generate Record Types
@@ -178,7 +178,8 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
                 options={recordCategoryOptions}
                 selected={category}
                 setSelected={setCategory as any}
-                disabled={isPending}
+                // disabled={isPending}
+                disabled
               />
             </div>
             <div className="col-md-6 mb-3">
@@ -186,7 +187,8 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
                 title="Record Type"
                 value={recordTypeId}
                 setValue={changeRecordTypeId}
-                disabled={isPending}
+                // disabled={isPending}
+                disabled
               />
             </div>
           </div>

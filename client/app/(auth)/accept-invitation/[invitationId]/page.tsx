@@ -53,7 +53,7 @@ function AcceptInvitationPage() {
 
       <ToastMessages />
 
-      <p className="fs-5 mb-4 text-center">Click the button below to accept the invitation.</p>
+      <p className="fs-5 mb-4 text-center">Click one of the buttons below to accept or reject the invitation.</p>
 
       <div className="d-flex justify-content-center gap-3">
         <Button onClick={() => acceptInvitation()} isLoading={isAccepting} disabled={isPending} className="btn-success">

@@ -132,7 +132,7 @@ function LoginPage() {
               isLoading={isPendingWcaSignIn}
               className="d-block px-4"
             >
-              <div className="d-flex gap-2 align-items-center">
+              <div className="d-flex gap-2 text-nowrap align-items-center">
                 <Image src="/wca_logo.svg" height={30} width={30} alt="WCA" />
                 Sign in with WCA
               </div>

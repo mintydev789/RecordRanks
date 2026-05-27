@@ -63,9 +63,11 @@ function Footer() {
           />
         </svg>
       </a>
-      <Link href={`/${slug}/about`} prefetch={false} className="text-light-emphasis">
-        About
-      </Link>
+      {slug && (
+        <Link href={`/${slug}/about`} prefetch={false} className="text-light-emphasis">
+          About
+        </Link>
+      )}
       {privacyPolicy !== "disabled" &&
         (privacyPolicy === "policy-contents" ? (
           <Link href="/privacy" target="_blank" prefetch={false} className="text-light-emphasis">

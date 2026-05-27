@@ -161,23 +161,40 @@ export const makeCollectiveCubingMoveSF = actionClient
   );
 
 export const getFeaturesInfoSF = actionClient
-  .metadata({ auth: { useOrganization: true } })
-  .action<FeaturesInfo>(async ({ ctx: { session } }) => {
-    const organizationId = session.organization!.id;
-    const [rulesPageContent, modInstructionsPageContent, videoBasedResultsEnabled, publicExportsToKeep, privacyPolicy] =
-      await Promise.all([
-        getSettingFromDb({ key: "rules-page-content", organizationId, optional: true }),
-        getSettingFromDb({ key: "moderator-instructions-page-content", organizationId, optional: true }),
-        getSettingFromDb({ key: "video-based-results-enabled", organizationId }),
-        getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
-        getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true }),
-      ]);
+  .metadata({ auth: null })
+  .inputSchema(z.strictObject({ organizationId: z.string().nonempty().optional() }))
+  .action<FeaturesInfo>(async ({ parsedInput: { organizationId }, ctx: { session } }) => {
+    if (
+      organizationId &&
+      session.session.activeOrganizationId &&
+      organizationId !== session.session.activeOrganizationId
+    ) {
+      throw new RrActionError("You are not authorized to access this organization");
+    }
+
+    const [
+      organization,
+      rulesPageContent,
+      modInstructionsPageContent,
+      videoBasedResultsEnabled,
+      publicExportsToKeep,
+      privacyPolicy,
+    ] = await Promise.all([
+      organizationId ? getOrgDetails({ session: session.session, id: organizationId }) : undefined,
+      organizationId ? getSettingFromDb({ key: "rules-page-content", organizationId, optional: true }) : undefined,
+      organizationId
+        ? getSettingFromDb({ key: "moderator-instructions-page-content", organizationId, optional: true })
+        : undefined,
+      organizationId ? getSettingFromDb({ key: "video-based-results-enabled", organizationId }) : undefined,
+      getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
+      getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true }),
+    ]);
 
     return {
       rulesPageEnabled: Boolean(rulesPageContent),
       modInstructionsPageEnabled: Boolean(modInstructionsPageContent),
-      publicExportsEnabled: session.organization!.metadata.plan !== "basic" && Number(publicExportsToKeep) > 0,
       videoBasedResultsEnabled: videoBasedResultsEnabled === "true",
+      publicExportsEnabled: !!organization && organization.metadata.plan !== "basic" && Number(publicExportsToKeep) > 0,
       privacyPolicy: !privacyPolicy
         ? "disabled"
         : z.url().safeParse(privacyPolicy).success

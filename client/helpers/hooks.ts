@@ -2,16 +2,16 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import type { FeaturesInfo, FullSession } from "~/helpers/types.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 import { getFeaturesInfoSF, getOrgDetailsSF } from "~/server/server-functions/server-functions.ts";
 
 export function useSession(): Partial<FullSession> {
   const { slug }: { slug?: string } = useParams();
+  const { data: session } = authClient.useSession();
 
   const { data } = useSWR(
-    ["user-full-session", slug],
+    ["user-full-session", slug, session?.session.id, session?.session.activeOrganizationId],
     async () => {
-      const { data: session } = await authClient.getSession();
-
       const [memberRes, orgDetailsRes] = await Promise.all([
         session?.session.activeOrganizationId ? authClient.organization.getActiveMember() : undefined,
         session?.session.activeOrganizationId
@@ -27,9 +27,13 @@ export function useSession(): Partial<FullSession> {
         organization: orgDetailsRes?.data,
       };
     },
-    { revalidateOnFocus: true, dedupingInterval: 60_000 },
+    {
+      suspense: true,
+      fallbackData: { session: undefined, user: undefined, member: undefined, organization: undefined },
+    },
   );
-  return data ?? {};
+
+  return data;
 }
 
 export function useFeaturesInfo(): FeaturesInfo {
@@ -44,8 +48,12 @@ export function useFeaturesInfo(): FeaturesInfo {
   const { organization } = useSession();
 
   const { data: featuresInfo } = useSWR(
-    organization ? ["features-info", organization.id] : null,
-    () => getFeaturesInfoSF().then((res) => res.data ?? fallbackData),
+    ["features-info", organization?.id],
+    () =>
+      getFeaturesInfoSF({ organizationId: organization?.id }).then((res) => {
+        if (res.serverError || res.validationErrors) console.error(getActionError(res));
+        return res.data ?? fallbackData;
+      }),
     { fallbackData },
   );
 

@@ -107,6 +107,7 @@ export const authMock = betterAuth({
               discoveryUrl: "https://www.worldcubeassociation.org/.well-known/openid-configuration",
               // issuer: "https://www.worldcubeassociation.org",
               // requireIssuerValidation: true, // the WCA doesn't support this
+              mapProfileToUser: async (profile) => ({ ...profile, emailVerified: true }),
               scopes: ["public", "openid", "email", "profile"],
             } satisfies GenericOAuthConfig)
           : undefined,
