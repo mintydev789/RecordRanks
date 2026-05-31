@@ -194,7 +194,7 @@ function DataEntryScreen({
       newResult.average < eventWrPair.average
     ) {
       const res = await getWrPairUpToDate({
-        recordCategory: contest.type === "meetup" ? "meetups" : "competitions",
+        recordCategory: contest.type === "online" ? "online" : contest.type === "meetup" ? "meetups" : "competitions",
         eventId,
         recordsUpTo: getRoundDate(round, contest),
       });
