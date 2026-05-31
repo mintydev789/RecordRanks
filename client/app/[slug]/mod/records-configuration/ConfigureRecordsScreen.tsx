@@ -84,18 +84,18 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
     }
   };
 
-  const onAddRecordConfig = () => {
-    resetMessages();
-    setMode("add");
+  // const onAddRecordConfig = () => {
+  //   resetMessages();
+  //   setMode("add");
 
-    setRecordConfigIdUnderEdit(undefined);
-    setCategory("competitions");
-    setRecordTypeId("WR");
-    setLabel("");
-    setActive(true);
-    setRank(undefined);
-    setColor(C.color.danger);
-  };
+  //   setRecordConfigIdUnderEdit(undefined);
+  //   setCategory("competitions");
+  //   setRecordTypeId("WR");
+  //   setLabel("");
+  //   setActive(true);
+  //   setRank(undefined);
+  //   setColor(C.color.danger);
+  // };
 
   const onEditRecordConfig = (recordConfig: RecordConfigResponse, clone = false) => {
     window.scrollTo(0, 0);
