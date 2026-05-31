@@ -530,7 +530,7 @@ function ContestForm({
               )}
               {isAdmin && (
                 <>
-                  {contest.state === "finished" && (
+                  {["finished", "published"].includes(contest.state) && (
                     <Button
                       type="button"
                       onClick={() => onUnfinishContest()}

@@ -349,7 +349,8 @@ export const unfinishContestSF = actionClient
       where: { organizationId, competitionId },
     });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-    if (contest.state !== "finished") throw new RrActionError("Contest cannot be un-finished");
+    if (!["finished", "published"].includes(contest.state))
+      throw new RrActionError("Only finished and published contests can be un-finished");
 
     // Set contest state back to ongoing and re-open all final rounds
     await db.transaction(async (tx) => {
