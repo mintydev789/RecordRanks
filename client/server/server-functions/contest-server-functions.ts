@@ -345,7 +345,7 @@ export const unfinishContestSF = actionClient
 
     const organizationId = session.organization!.id;
     const contest = await db.query.contests.findFirst({
-      columns: { id: true, state: true },
+      columns: { id: true, name: true, shortName: true, state: true },
       where: { organizationId, competitionId },
     });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
@@ -367,6 +367,12 @@ export const unfinishContestSF = actionClient
           ),
         );
     });
+
+    sendEmail(
+      session.organization!.metadata.contactEmail,
+      `Contest un-finished: ${contest.shortName}`,
+      `Contest ${contest.name} has been un-finished by ${session.user.name}. This may have been done to correct some of the data.`,
+    );
   });
 
 export const publishContestSF = actionClient
