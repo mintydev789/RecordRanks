@@ -271,6 +271,7 @@ export const finishContestSF = actionClient
     if (!getMemberControlsContest(session.member!, contest))
       throw new RrActionError("You do not have access rights for this contest");
     if (contest.state !== "ongoing") throw new RrActionError("Contest cannot be finished");
+    if (contest.participants === 0) throw new RrActionError("This contest doesn't have any results");
     if (
       IS_CUBING_CONTESTS_INSTANCE &&
       contest.type !== "wca-comp" &&

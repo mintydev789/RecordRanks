@@ -24,7 +24,7 @@ SELECT
   'default' AS "organization_id",
   "id" AS "user_id",
   CASE WHEN "role" = 'user' THEN 'member' ELSE "role" END AS "role",
-  NOW() AS "created_at",
+  "created_at",
   "person_id"
 FROM "record_ranks"."users";
 --> statement-breakpoint
