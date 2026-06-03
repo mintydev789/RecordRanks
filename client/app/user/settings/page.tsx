@@ -17,11 +17,7 @@ async function UserSettingsPage() {
 
   const [[person], regions] = await Promise.all([
     member?.personId
-      ? db
-          .select({ ...personsPublicCols, organizationId: personsTable.organizationId })
-          .from(personsTable)
-          .where(eq(personsTable.id, member.personId))
-          .limit(1)
+      ? db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, member.personId)).limit(1)
       : [],
     member ? getRegions(member.organizationId) : undefined,
   ]);

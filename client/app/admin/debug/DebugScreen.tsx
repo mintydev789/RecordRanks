@@ -65,6 +65,7 @@ function DebugScreen() {
             private: false,
             contactEmail: parsed.data.contactEmail,
             plan: parsed.data.plan,
+            showDonationLinks: parsed.data.plan === "basic",
           } satisfies OrganizationMetadata,
           keepCurrentActiveOrganization: true,
         });

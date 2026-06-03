@@ -20,6 +20,7 @@ import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import { type RoundFormatObject, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import type { Creator, EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
 import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utility-functions.ts";
@@ -71,6 +72,7 @@ function ResultsSubmissionForm({
   const pathname = usePathname();
   const { slug } = useParams();
   const searchParams = useSearchParams();
+  const { organization } = useSession();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
   const {
@@ -244,7 +246,7 @@ function ResultsSubmissionForm({
                 </Markdown>
               </div>
             )}
-            <DonateButton />
+            {organization!.metadata.showDonationLinks && <DonateButton />}
           </>
         )}
       </div>

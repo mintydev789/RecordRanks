@@ -43,6 +43,7 @@ beforeAll(async () => {
       private: false,
       contactEmail: "admin@example.com",
       plan: "custom",
+      showDonationLinks: false,
     } satisfies OrganizationMetadata),
   });
   await authTest.saveOrganization!(org);

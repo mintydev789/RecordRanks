@@ -7,7 +7,7 @@ type Props = {
 };
 
 function DonateSection({ organization }: Props) {
-  if (organization.metadata.plan !== "basic") return;
+  if (!organization.metadata.showDonationLinks) return;
 
   return (
     <>
@@ -38,8 +38,8 @@ function DonateSection({ organization }: Props) {
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <div className="progress-bar fs-6 fw-semibold bg-success" style={{ width: "17%" }}>
-          17%
+        <div className="progress-bar fs-6 fw-semibold bg-success" style={{ width: "20%" }}>
+          20%
         </div>
       </div>
       <p className="mt-3">

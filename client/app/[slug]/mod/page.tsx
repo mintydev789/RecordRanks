@@ -82,7 +82,7 @@ async function ModeratorDashboardPage({ params, searchParams }: Props) {
               </a>
             )
           )}
-          <DonateButton />
+          {organization!.metadata.showDonationLinks && <DonateButton />}
         </div>
       </div>
 

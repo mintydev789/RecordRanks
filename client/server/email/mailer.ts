@@ -329,6 +329,7 @@ export function sendContestFinishedEmail(
     templateFileName: "contest-finished.hbs",
     context: {
       projectName,
+      // If this is set, a donation link will be included in the email
       organizationName: organization.metadata.plan === "basic" ? organization.name : "",
       contestName: contest.name,
       contestUrl: `${baseUrl}/${organization.slug}/competitions/${contest.competitionId}`,
