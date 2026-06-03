@@ -619,9 +619,16 @@ export async function getRankings(
   return rankings!;
 }
 
+/**
+ * Approves a list of persons, while checking for exact name and country matches with WCA competitors (if the person has a WCA ID).
+ *
+ * @param db - The tx object from a Drizzle transaction.
+ * @param organizationId - Not strictly necessary, but adds an extra safety check.
+ * @param personsToBeApproved - Array of persons to be approved.
+ */
 export async function approvePersons(
-  db: DbTransactionType, // the tx object from a Drizzle transaction
-  organizationId: string, // not strictly necessary, but adds an extra safety check
+  db: DbTransactionType,
+  organizationId: string,
   personsToBeApproved: Pick<SelectPerson, "id" | "name" | "localizedName" | "regionCode" | "wcaId">[],
 ) {
   const matchedPersonWcaIds: { name: string; wcaId: string }[] = [];
@@ -873,13 +880,9 @@ export async function getBlogPosts(
     .leftJoin(personsTable, eq(membersTable.personId, personsTable.id));
   const organizationFilter = eq(postsTable.organizationId, organizationId);
 
-  if (postId) {
-    return await query.where(and(organizationFilter, eq(postsTable.postId, postId)));
-  }
+  if (postId) return await query.where(and(organizationFilter, eq(postsTable.postId, postId)));
 
-  if (limit) {
-    return await query.where(organizationFilter).limit(limit).orderBy(desc(postsTable.date));
-  }
+  if (limit) return await query.where(organizationFilter).limit(limit).orderBy(desc(postsTable.date));
 
   return await query.where(organizationFilter).orderBy(desc(postsTable.date));
 }

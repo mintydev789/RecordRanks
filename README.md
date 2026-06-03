@@ -240,6 +240,23 @@ To access the DB container with admin privileges directly, use this command (mak
 docker exec -it supabase-db psql postgresql://supabase_admin:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}
 ```
 
+### Testing email sending
+
+To test email sending, use [Smtp4Dev](https://smtp4dev.com/) locally:
+
+```sh
+docker compose -f docker-compose.smtp4dev.yml up -d
+```
+
+Make sure your email environment variables are set to the following values:
+
+```sh
+EMAIL_HOST="localhost"
+EMAIL_PORT=25
+EMAIL_USERNAME=""
+EMAIL_PASSWORD=""
+```
+
 ## API endpoints
 
 ### Events
