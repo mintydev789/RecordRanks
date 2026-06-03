@@ -6,7 +6,7 @@ import { and, arrayContains, desc, eq, gte, inArray, lt, notInArray, or } from "
 import { find as findTimezone } from "geo-tz";
 import z from "zod";
 import { ModDashboardFiltersValidator } from "~/app/[slug]/mod/ModDashboardFilters.ts";
-import { C } from "~/helpers/constants.ts";
+import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import type { Schedule } from "~/helpers/types/Schedule.ts";
 import {
@@ -271,7 +271,11 @@ export const finishContestSF = actionClient
     if (!getMemberControlsContest(session.member!, contest))
       throw new RrActionError("You do not have access rights for this contest");
     if (contest.state !== "ongoing") throw new RrActionError("Contest cannot be finished");
-    if (["meetup", "comp"].includes(contest.type) && contest.participants < C.minCompetitorsForNonWca) {
+    if (
+      IS_CUBING_CONTESTS_INSTANCE &&
+      contest.type !== "wca-comp" &&
+      contest.participants < C.minCompetitorsForNonWca
+    ) {
       throw new RrActionError(
         `A meetup or unofficial competition may not have fewer than ${C.minCompetitorsForNonWca} competitors`,
       );
