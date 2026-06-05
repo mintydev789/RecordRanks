@@ -321,3 +321,11 @@ JSON payload: {
 }
 ```
 -->
+
+### Healthcheck
+
+To see the current healthcheck status, use the endpoint below:
+
+```
+/api/healthcheck
+```
