@@ -11,8 +11,8 @@ async function checkDatabase() {
     const latencyMs = Date.now() - start;
 
     return { healthy: true, latencyMs };
-  } catch (error) {
-    return { healthy: false, error: error instanceof Error ? error.message : "Unknown DB connection error" };
+  } catch (error: any) {
+    return { healthy: false, error: "message" in error ? error.message : "Unknown DB connection error" };
   }
 }
 
@@ -24,8 +24,8 @@ async function checkNodemailer() {
     const latencyMs = Date.now() - start;
 
     return { healthy: true, latencyMs };
-  } catch (error) {
-    return { healthy: false, error: error instanceof Error ? error.message : "Unknown Nodemailer error" };
+  } catch (error: any) {
+    return { healthy: false, error: "message" in error ? error.message : "Unknown Nodemailer error" };
   }
 }
 
@@ -45,16 +45,37 @@ async function checkMemory() {
   };
 }
 
+async function checkHomePage() {
+  try {
+    const start = Date.now();
+    const response = await fetch(process.env.NEXT_PUBLIC_BASE_URL!, { signal: AbortSignal.timeout(5000) });
+    const latencyMs = Date.now() - start;
+
+    if (!response.ok) {
+      return {
+        healthy: false,
+        error: `Home page check failed: HTTP ${response.status}`,
+        status: response.status,
+      };
+    }
+
+    return { healthy: true, latencyMs };
+  } catch (error: any) {
+    return { healthy: false, error: "message" in error ? error.message : "Home page check error" };
+  }
+}
+
 export async function GET() {
   await connection();
 
-  const [dbStatus, nodemailerStatus, memoryStatus] = await Promise.all([
+  const [dbStatus, nodemailerStatus, memoryStatus, homePageStatus] = await Promise.all([
     checkDatabase(),
     checkNodemailer(),
     checkMemory(),
+    checkHomePage(),
   ]);
 
-  const allHealthy = dbStatus.healthy && nodemailerStatus.healthy && memoryStatus.healthy;
+  const allHealthy = dbStatus.healthy && nodemailerStatus.healthy && memoryStatus.healthy && homePageStatus.healthy;
 
   return NextResponse.json(
     {
@@ -65,6 +86,7 @@ export async function GET() {
         database: dbStatus,
         nodemailer: nodemailerStatus,
         memory: memoryStatus,
+        homePage: homePageStatus,
       },
     },
     { status: allHealthy ? 200 : 503 },
