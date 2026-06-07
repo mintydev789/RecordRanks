@@ -49,6 +49,7 @@ async function checkHomePage() {
   try {
     const start = Date.now();
     const response = await fetch(process.env.NEXT_PUBLIC_BASE_URL!, { signal: AbortSignal.timeout(5000) });
+    await response.text(); // waits for the entire stream to complete
     const latencyMs = Date.now() - start;
 
     if (!response.ok) {
