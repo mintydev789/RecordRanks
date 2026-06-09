@@ -1,5 +1,4 @@
 import { inArray } from "drizzle-orm";
-import { headers } from "next/headers";
 import ManageMembersScreen from "~/app/[slug]/mod/members/ManageMembersScreen.tsx";
 import { getTabs } from "~/app/[slug]/mod/members/tabs.ts";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
@@ -17,32 +16,37 @@ type Props = {
 };
 
 async function ManageMembersPage({ params }: Props) {
-  const { slug } = await params;
-  const { organization } = await authorizeUser({
-    useOrganization: true,
-    orgPermissions: { member: ["create", "update", "delete"] },
-  });
+  try {
+    const { slug } = await params;
+    const { organization, httpHeaders } = await authorizeUser({
+      useOrganization: true,
+      orgPermissions: { member: ["create", "update", "delete"] },
+    });
 
-  const [membersData, regions] = await Promise.all([
-    auth.api.listMembers({
-      headers: await headers(),
-      query: { organizationId: organization!.id, sortBy: "createdAt", sortDirection: "desc", limit: C.maxMembers },
-    }),
-    getRegions(organization!.id),
-  ]);
+    const [membersData, regions] = await Promise.all([
+      auth.api.listMembers({
+        headers: httpHeaders,
+        query: { organizationId: organization!.id, sortBy: "createdAt", sortDirection: "desc", limit: C.maxMembers },
+      }),
+      getRegions(organization!.id),
+    ]);
+    console.log(membersData);
 
-  if (!membersData.members) return <LoadingError loadingEntity="members" />;
+    if (!membersData.members) return <LoadingError loadingEntity="members" />;
 
-  const personIds = Array.from(new Set(membersData.members.filter((m) => m.personId).map((m) => m.personId!)));
-  const persons = await db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, personIds));
+    const personIds = Array.from(new Set(membersData.members.filter((m) => m.personId).map((m) => m.personId!)));
+    const persons = await db.select(personsPublicCols).from(personsTable).where(inArray(personsTable.id, personIds));
 
-  return (
-    <>
-      <Tabs tabs={getTabs(slug)} activeTab="members" forServerSidePage />
+    return (
+      <>
+        <Tabs tabs={getTabs(slug)} activeTab="members" forServerSidePage />
 
-      <ManageMembersScreen members={membersData.members} memberPersons={persons} regions={regions} />
-    </>
-  );
+        <ManageMembersScreen members={membersData.members} memberPersons={persons} regions={regions} />
+      </>
+    );
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 export default ManageMembersPage;

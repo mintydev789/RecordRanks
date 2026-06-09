@@ -26,9 +26,11 @@ SELECT
   CONCAT('migrated_', "id") AS "id",
   'default' AS "organization_id",
   "id" AS "user_id",
-  CASE WHEN "role" = 'user' THEN 'member' ELSE "role" END AS "role",
+  CASE WHEN "role" LIKE '%user%' THEN 'member' ELSE "role" END AS "role",
   "created_at",
   "person_id"
 FROM "record_ranks"."users";
+--> statement-breakpoint
+UPDATE "record_ranks"."users" SET "role" = 'user' WHERE "role" <> 'admin';
 --> statement-breakpoint
 ALTER TABLE "record_ranks"."users" DROP COLUMN "person_id";
