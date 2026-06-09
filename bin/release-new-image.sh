@@ -6,7 +6,7 @@ source .env # needed for the build args
 
 cyan='\033[0;36m'
 nc='\033[0m' # no color
-version=$(git tag | sort -t "." -k1,1n -k2,2n -k3,3n | tail -n 1)
+version=$(git tag --sort=creatordate | tail -n 1)
 image="$DOCKER_IMAGE_NAME:$version"
 
 echo -e "${cyan}Releasing image $image to Dockerhub...${nc}\n"

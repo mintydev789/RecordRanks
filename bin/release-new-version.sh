@@ -24,7 +24,7 @@ fi
 cyan='\033[0;36m'
 nc='\033[0m' # no color
 
-git tag | sort -t "." -k1,1n -k2,2n -k3,3n | tail
+git tag --sort=creatordate | tail
 echo -e "\n${cyan}Please give the new version tag:${nc}"
 read new_version
 
