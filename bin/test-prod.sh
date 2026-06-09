@@ -6,10 +6,7 @@
 
 # $1 - (optional) --cleanup/-c - just bring the containers down without restarting
 
-if [[ "$(pwd | tail -c 5)" == "/bin" ]]; then
-  echo "Please run this script from the repo's root directory"
-  exit 1
-fi
+cd "$(dirname "$0")/.."
 
 docker compose -f docker-compose.rr.yml down
 

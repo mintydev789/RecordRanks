@@ -1,13 +1,10 @@
 #!/bin/bash
 
-if [ ! -d "./client" ]; then
-  echo "Error: client directory not found (this script must be run from the project root directory)"
-  exit 1
-fi
+cd "$(dirname "$0")/.."
 
 if [ ! -f "$1" ]; then
   echo "Error: icon file not found. Please provide a valid path to the SVG icon file as the first argument."
-  exit 2
+  exit 1
 fi
 
 # Note that the README references these exact file paths

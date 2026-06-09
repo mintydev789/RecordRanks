@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd "$(dirname "$0")/.."
+
 source .env # needed for the build args
 
 cyan='\033[0;36m'

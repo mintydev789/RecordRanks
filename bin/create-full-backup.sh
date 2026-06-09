@@ -1,9 +1,6 @@
 #!/bin/bash
 
-if [ ! -d "./volumes" ]; then
-  echo "Error: volumes directory not found (this script must be run from the project root directory)"
-  exit 1
-fi
+cd "$(dirname "$0")/.."
 
 cyan='\033[0;36m'
 nc='\033[0m' # no color
