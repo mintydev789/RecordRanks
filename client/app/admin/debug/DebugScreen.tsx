@@ -162,6 +162,19 @@ function DebugScreen() {
 
       <h4 className="my-4">Member data</h4>
       <code>{JSON.stringify(member, null, 2)}</code>
+
+      <h4 className="my-4">Environment variables</h4>
+      <code>
+        NEXT_PUBLIC_BASE_URL={process.env.NEXT_PUBLIC_BASE_URL}
+        <br />
+        NEXT_PUBLIC_PROJECT_NAME={process.env.NEXT_PUBLIC_PROJECT_NAME}
+        <br />
+        NEXT_PUBLIC_AUTH_PROVIDERS={process.env.NEXT_PUBLIC_PROJECT_NAME}
+        <br />
+        NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL={process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}
+        <br />
+        NEXT_PUBLIC_MULTITENANCY_ENABLED={process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED}
+      </code>
     </div>
   );
 }
