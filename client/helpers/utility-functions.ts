@@ -594,5 +594,5 @@ export function slugPath(slug: string, path: string): string {
     return `/${slug}${path}`;
   }
 
-  return path;
+  return path || "/";
 }

@@ -35,12 +35,10 @@ export function proxy(request: NextRequest) {
         url.pathname,
       );
     // api\/events|api\/results\/rankings
-    console.log(url.pathname, request.url, isPathWithSlug, process.env.NEXT_PUBLIC_BASE_URL!)
+    console.log(url.pathname, url.host, request.url, isPathWithSlug);
 
     if (isPathWithSlug) {
-      return NextResponse.rewrite(
-        request.url.replace(process.env.NEXT_PUBLIC_BASE_URL!, `${process.env.NEXT_PUBLIC_BASE_URL}/default`),
-      );
+      return NextResponse.rewrite(request.url.replace(url.host, `${url.host}/default`));
     }
   }
 }
