@@ -17,6 +17,7 @@ if [[ "$1" != "--cleanup" && "$1" != "-c" ]]; then
                --build-arg NEXT_PUBLIC_PROJECT_NAME="$NEXT_PUBLIC_PROJECT_NAME" \
                --build-arg NEXT_PUBLIC_AUTH_PROVIDERS="$NEXT_PUBLIC_AUTH_PROVIDERS" \
                --build-arg NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL="$NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL" \
+               --build-arg NEXT_PUBLIC_MULTITENANCY_ENABLED="$NEXT_PUBLIC_MULTITENANCY_ENABLED" \
                -t "$DOCKER_IMAGE_NAME" ./client &&
 
   ./bin/apply-db-migrations.sh &&
