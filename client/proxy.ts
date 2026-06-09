@@ -28,7 +28,6 @@ export function proxy(request: NextRequest) {
   //   });
   // }
 
-    console.log(url.pathname, process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED, process.env.NEXT_PUBLIC_BASE_URL!)
   if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true") {
     const isPathWithSlug =
       url.pathname === "/" ||
@@ -36,10 +35,11 @@ export function proxy(request: NextRequest) {
         url.pathname,
       );
     // api\/events|api\/results\/rankings
+    console.log(url.pathname, request.url, isPathWithSlug, process.env.NEXT_PUBLIC_BASE_URL!)
 
     if (isPathWithSlug) {
       return NextResponse.rewrite(
-        request.url.replace(process.env.NEXT_PUBLIC_BASE_URL!, `${process.env.NEXT_PUBLIC_BASE_URL!}/default`),
+        request.url.replace(process.env.NEXT_PUBLIC_BASE_URL!, `${process.env.NEXT_PUBLIC_BASE_URL}/default`),
       );
     }
   }
