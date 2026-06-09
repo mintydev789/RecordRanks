@@ -7,9 +7,6 @@ ALTER TABLE "record_ranks"."regions" ADD COLUMN "organization_id" text NOT NULL 
 ALTER TABLE "record_ranks"."results" ADD COLUMN "organization_id" text NOT NULL DEFAULT 'default';--> statement-breakpoint
 ALTER TABLE "record_ranks"."rounds" ADD COLUMN "organization_id" text NOT NULL DEFAULT 'default';--> statement-breakpoint
 -- CUSTOM ADDITION FOR RECORDRANKS: {
-INSERT INTO "record_ranks"."organizations" ("id", "name", "slug", "created_at", "metadata") VALUES
-  ('default', 'Default Organization', 'default', NOW(), '{"private":false,"contactEmail":"","plan":"custom","showDonationLinks":true}');
---> statement-breakpoint
 ALTER TABLE "record_ranks"."contests" ALTER COLUMN "organization_id" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "record_ranks"."events" ALTER COLUMN "organization_id" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "record_ranks"."persons" ALTER COLUMN "organization_id" DROP DEFAULT;--> statement-breakpoint

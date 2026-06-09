@@ -18,6 +18,9 @@ ALTER TABLE "record_ranks"."member_requests" ADD CONSTRAINT "member_requests_req
 UPDATE "record_ranks"."settings" SET "key" = 'member-request-instructions' WHERE "key" = 'user-request-instructions';--> statement-breakpoint
 
 -- CUSTOM ADDITION FOR RECORDRANKS!
+INSERT INTO "record_ranks"."organizations" ("id", "name", "slug", "created_at", "metadata") VALUES
+  ('default', 'Default Organization', 'default', NOW(), '{"private":false,"contactEmail":"","plan":"custom","showDonationLinks":true}');
+--> statement-breakpoint
 INSERT INTO "record_ranks"."members" ("id", "organization_id", "user_id", "role", "created_at", "person_id")
 SELECT
   CONCAT('migrated_', "id") AS "id",
