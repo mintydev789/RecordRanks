@@ -10,6 +10,7 @@ import Tabs from "~/app/components/UI/Tabs.tsx";
 import { eventCategories } from "~/helpers/eventCategories.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
+import { slugPath } from "~/helpers/utility-functions.ts";
 import { getEvents, getOrgDetails, getRecords, getRegions } from "~/server/server-only-functions.ts";
 
 export const metadata = {
@@ -66,7 +67,7 @@ async function RecordsPage({ params, searchParams }: Props) {
       title: ec.title,
       shortTitle: ec.shortTitle,
       value: ec.value,
-      route: `/${slug}/records/${ec.value}?${urlSearchParams}`,
+      route: slugPath(slug, `/records/${ec.value}?${urlSearchParams}`),
       hidden: ec.value === "removed",
     }));
   const selectedCatEvents = events.filter((e) => e.category === eventCategory);
@@ -92,27 +93,36 @@ async function RecordsPage({ params, searchParams }: Props) {
             {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
             <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
               <Link
-                href={`/${slug}/records/${eventCategory}?${
-                  urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                }category=competitions`}
+                href={slugPath(
+                  slug,
+                  `/records/${eventCategory}?${
+                    urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                  }category=competitions`,
+                )}
                 prefetch={false}
                 className={`btn btn-primary ${recordCategory === "competitions" ? "active" : ""}`}
               >
                 Competitions
               </Link>
               <Link
-                href={`/${slug}/records/${eventCategory}/?${
-                  urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                }category=meetups`}
+                href={slugPath(
+                  slug,
+                  `/records/${eventCategory}/?${
+                    urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                  }category=meetups`,
+                )}
                 prefetch={false}
                 className={`btn btn-primary ${recordCategory === "meetups" ? "active" : ""}`}
               >
                 Meetups
               </Link>
               <Link
-                href={`/${slug}/records/${eventCategory}?${
-                  urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                }category=online`}
+                href={slugPath(
+                  slug,
+                  `/records/${eventCategory}?${
+                    urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                  }category=online`,
+                )}
                 prefetch={false}
                 className={`btn btn-primary ${recordCategory === "online" ? "active" : ""}`}
               >
@@ -124,7 +134,11 @@ async function RecordsPage({ params, searchParams }: Props) {
       </div>
 
       {eventCategory === "extremebld" && (
-        <Link href={`/${slug}/video-based-results/submit`} prefetch={false} className="btn btn-success btn ms-2">
+        <Link
+          href={slugPath(slug, "/video-based-results/submit")}
+          prefetch={false}
+          className="btn btn-success btn ms-2"
+        >
           Submit a result
         </Link>
       )}

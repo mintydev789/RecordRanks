@@ -12,7 +12,7 @@ import Loading from "~/app/components/UI/Loading.tsx";
 import Tooltip from "~/app/components/UI/Tooltip.tsx";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
-import { shortenEventName } from "~/helpers/utility-functions.ts";
+import { shortenEventName, slugPath } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events.ts";
 import { getEvents, getOrgDetails, getRankings, getRegions } from "~/server/server-only-functions.ts";
@@ -88,7 +88,7 @@ async function RankingsPage({ params, searchParams }: Props) {
         <EventButtons
           events={visibleEvents}
           eventIdOverride={eventId}
-          pathTemplate={`/${slug}/rankings/__EVENT_ID__/${type}`}
+          pathTemplate={slugPath(slug, `/rankings/__EVENT_ID__/${type}`)}
         />
 
         {/* Similar code to the records page */}
@@ -109,21 +109,21 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Type">
                 <Link
-                  href={`/${slug}/rankings/${eventId}/single?${urlSearchParams}`}
+                  href={slugPath(slug, `/rankings/${eventId}/single?${urlSearchParams}`)}
                   prefetch={false}
                   className={`btn btn-primary ${type === "single" ? "active" : ""}`}
                 >
                   Single
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/average?${urlSearchParams}`}
+                  href={slugPath(slug, `/rankings/${eventId}/average?${urlSearchParams}`)}
                   prefetch={false}
                   className={`btn btn-primary ${type === "average" ? "active" : ""}`}
                 >
                   {roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"}
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/all-avg-formats?${urlSearchParams}`}
+                  href={slugPath(slug, `/rankings/${eventId}/all-avg-formats?${urlSearchParams}`)}
                   prefetch={false}
                   className={`btn btn-primary ${type === "all-avg-formats" ? "active" : ""}`}
                 >
@@ -137,16 +137,19 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Show">
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${urlSearchParamsWithoutShow}`}
+                  href={slugPath(slug, `/rankings/${eventId}/${type}?${urlSearchParamsWithoutShow}`)}
                   prefetch={false}
                   className={`btn btn-primary ${!show ? "active" : ""}`}
                 >
                   Top Persons
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${
-                    urlSearchParamsWithoutShow.toString() ? `${urlSearchParamsWithoutShow}&` : ""
-                  }show=results`}
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutShow.toString() ? `${urlSearchParamsWithoutShow}&` : ""
+                    }show=results`,
+                  )}
                   prefetch={false}
                   className={`btn btn-primary ${show ? "active" : ""}`}
                 >
@@ -160,25 +163,31 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Top">
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${urlSearchParamsWithoutTopN}`}
+                  href={slugPath(slug, `/rankings/${eventId}/${type}?${urlSearchParamsWithoutTopN}`)}
                   prefetch={false}
                   className={`btn btn-primary ${!topN || topN === 100 ? "active" : ""}`}
                 >
                   100
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${
-                    urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
-                  }topN=1000`}
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
+                    }topN=1000`,
+                  )}
                   prefetch={false}
                   className={`btn btn-primary ${topN === 1000 ? "active" : ""}`}
                 >
                   1000
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${
-                    urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
-                  }topN=10000`}
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
+                    }topN=10000`,
+                  )}
                   prefetch={false}
                   className={`btn btn-primary ${topN === 10000 ? "active" : ""}`}
                 >
@@ -192,36 +201,48 @@ async function RankingsPage({ params, searchParams }: Props) {
               {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
               <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${
-                    urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                  }category=competitions`}
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=competitions`,
+                  )}
                   prefetch={false}
                   className={`btn btn-primary ${recordCategory === "competitions" ? "active" : ""}`}
                 >
                   Competitions
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${
-                    urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                  }category=meetups`}
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=meetups`,
+                  )}
                   prefetch={false}
                   className={`btn btn-primary ${recordCategory === "meetups" ? "active" : ""}`}
                 >
                   Meetups
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${
-                    urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                  }category=online`}
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=online`,
+                  )}
                   prefetch={false}
                   className={`btn btn-primary ${recordCategory === "online" ? "active" : ""}`}
                 >
                   Online
                 </Link>
                 <Link
-                  href={`/${slug}/rankings/${eventId}/${type}?${
-                    urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
-                  }category=all`}
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=all`,
+                  )}
                   prefetch={false}
                   className={`btn btn-primary ${recordCategory === "all" ? "active" : ""}`}
                 >
@@ -234,7 +255,7 @@ async function RankingsPage({ params, searchParams }: Props) {
 
         {(event.category === "extreme-bld" || event.submissionsAllowed) && (
           <Link
-            href={`/${slug}/video-based-results/submit?eventId=${eventId}`}
+            href={slugPath(slug, `/video-based-results/submit?eventId=${eventId}`)}
             prefetch={false}
             className="btn btn-success btn-sm"
           >

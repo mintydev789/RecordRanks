@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Tooltip from "~/app/components/UI/Tooltip.tsx";
+import { slugPath } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import EventIcon from "./EventIcon.tsx";
 
@@ -30,7 +31,10 @@ function EventTitle({
         event.name
       ) : (
         <Link
-          href={`/${organizationSlug}/rankings/${event.eventId}/single${typeof linkToRankings === "string" ? linkToRankings : ""}`}
+          href={slugPath(
+            organizationSlug,
+            `/rankings/${event.eventId}/single${typeof linkToRankings === "string" ? linkToRankings : ""}`,
+          )}
           prefetch={false}
           className="link-body-emphasis link-underline-opacity-0 link-underline-opacity-100-hover"
           style={{ maxWidth: "80vw" }}

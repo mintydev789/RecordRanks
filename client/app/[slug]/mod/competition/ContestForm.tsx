@@ -36,6 +36,7 @@ import {
   getDateOnly,
   getHasRole,
   getIsUrgent,
+  slugPath,
 } from "~/helpers/utility-functions.ts";
 import { ContestValidator } from "~/helpers/validators/Contest.ts";
 import { CoordinatesValidator } from "~/helpers/validators/Coordinates.ts";
@@ -83,7 +84,7 @@ function ContestForm({
   creator,
 }: Props) {
   const router = useRouter();
-  const { slug } = useParams();
+  const { slug }: { slug: string } = useParams();
   const { member } = useSession();
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
@@ -165,7 +166,7 @@ function ContestForm({
   );
 
   const isAdmin = getHasRole("admin", member?.role) || getHasRole("owner", member?.role);
-  const modDashboardUrl = isAdmin ? `/${slug}/mod?state=pending` : `/${slug}/mod`;
+  const modDashboardUrl = slugPath(slug, isAdmin ? "/mod?state=pending" : "/mod");
   const isPending =
     isCreating ||
     isUpdating ||
@@ -521,7 +522,7 @@ function ContestForm({
             <div className="d-flex mt-3 mb-3 flex-wrap gap-3">
               {contest.type !== "wca-comp" && (
                 <Link
-                  href={`/${slug}/mod/competition?copyId=${contest.competitionId}`}
+                  href={slugPath(slug, `/mod/competition?copyId=${contest.competitionId}`)}
                   prefetch={false}
                   className="btn btn-primary"
                 >

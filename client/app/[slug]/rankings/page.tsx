@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { eventCategories } from "~/helpers/eventCategories.ts";
+import { slugPath } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import { getOrgDetails } from "~/server/server-only-functions.ts";
 
@@ -24,7 +25,7 @@ async function RankingsRedirectPage({ params }: Props) {
   const firstCategory = eventCategories.find((ec) => events.some((e) => e.category === ec.value))!.value;
   const firstEvent = events.find((e) => e.category === firstCategory)!;
 
-  redirect(`/${slug}/rankings/${firstEvent.eventId}/single`, "replace");
+  redirect(slugPath(slug, `/rankings/${firstEvent.eventId}/single`), "replace");
 }
 
 export default RankingsRedirectPage;

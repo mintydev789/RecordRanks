@@ -9,7 +9,7 @@ import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Region from "~/app/components/Region.tsx";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import type { ContestType } from "~/helpers/types.ts";
-import { getFormattedDate } from "~/helpers/utility-functions.ts";
+import { getFormattedDate, slugPath } from "~/helpers/utility-functions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
@@ -53,7 +53,7 @@ function ContestsTable({ contestsPromise, regions }: Props) {
                     />
 
                     <Link
-                      href={`/${slug}/competitions/${contest.competitionId}`}
+                      href={slugPath(slug, `/competitions/${contest.competitionId}`)}
                       prefetch={false}
                       className="link-primary"
                     >
@@ -108,7 +108,7 @@ function ContestsTable({ contestsPromise, regions }: Props) {
                 <td>{getFormattedDate(contest.startDate, contest.endDate)}</td>
                 <td>
                   <Link
-                    href={`/${slug}/competitions/${contest.competitionId}`}
+                    href={slugPath(slug, `/competitions/${contest.competitionId}`)}
                     prefetch={false}
                     className="link-primary"
                   >

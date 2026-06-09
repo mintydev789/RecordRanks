@@ -11,7 +11,12 @@ import Button from "~/app/components/UI/Button.tsx";
 import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
-import { clientGetHasPermission, getActionError, getMemberControlsContest } from "~/helpers/utility-functions.ts";
+import {
+  clientGetHasPermission,
+  getActionError,
+  getMemberControlsContest,
+  slugPath,
+} from "~/helpers/utility-functions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import {
   approveContestSF,
@@ -35,7 +40,7 @@ type Props = {
 
 function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
   const router = useRouter();
-  const { slug } = useParams();
+  const { slug }: { slug: string } = useParams();
   const { session, member } = useSession();
   const { changeErrorMessages } = useContext(MainContext);
 
@@ -100,7 +105,7 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
           {userControlsContest &&
             (canPublishContests || ["created", "approved", "ongoing"].includes(contest.state)) && (
               <Link
-                href={`/${slug}/mod/competition?editId=${contest.competitionId}`}
+                href={slugPath(slug, `/mod/competition?editId=${contest.competitionId}`)}
                 prefetch={false}
                 className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
                 title="Edit"
@@ -111,7 +116,7 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
             )}
           {userControlsContest && contest.type !== "wca-comp" && (
             <Link
-              href={`/${slug}/mod/competition?copyId=${contest?.competitionId}`}
+              href={slugPath(slug, `/mod/competition?copyId=${contest.competitionId}`)}
               prefetch={false}
               className={`btn btn-primary ${smallButtons ? "btn-xs" : ""}`}
               title="Clone"
@@ -123,7 +128,7 @@ function ContestControls({ contest, forPage, onUpdateContestState }: Props) {
           {((hasAccessToResults && ["approved", "ongoing"].includes(contest.state)) ||
             (canPublishContests && contest.state === "finished")) && (
             <Link
-              href={`/${slug}/mod/competition/${contest.competitionId}`}
+              href={slugPath(slug, `/mod/competition/${contest.competitionId}`)}
               prefetch={false}
               className={`btn btn-success ${smallButtons ? "btn-xs" : ""}`}
             >

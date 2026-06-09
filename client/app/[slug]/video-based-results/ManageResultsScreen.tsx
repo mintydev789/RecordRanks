@@ -15,7 +15,7 @@ import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import type { InputPerson } from "~/helpers/types.ts";
-import { getFormattedDate, shortenEventName } from "~/helpers/utility-functions.ts";
+import { getFormattedDate, shortenEventName, slugPath } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
@@ -29,7 +29,7 @@ type Props = {
 };
 
 function ManageResultsScreen({ results, events, recordConfigs, regions }: Props) {
-  const { slug } = useParams();
+  const { slug }: { slug: string } = useParams();
 
   const parentRef = useRef<Element>(null);
   const [persons, setPersons] = useState<InputPerson[]>([null]);
@@ -61,7 +61,7 @@ function ManageResultsScreen({ results, events, recordConfigs, regions }: Props)
       <div className="px-2">
         <ToastMessages />
 
-        <Link href={`/${slug}/mod/competitors`} prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
+        <Link href={slugPath(slug, "/mod/competitors")} prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
           Manage competitors
         </Link>
 
@@ -145,7 +145,7 @@ function ManageResultsScreen({ results, events, recordConfigs, regions }: Props)
                     </td>
                     <td>
                       <Link
-                        href={`/${slug}/video-based-results/${result.id}`}
+                        href={slugPath(slug, `/video-based-results/${result.id}`)}
                         prefetch={false}
                         className="btn btn-primary btn-xs"
                         title="Edit"

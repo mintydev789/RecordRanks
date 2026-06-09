@@ -23,7 +23,7 @@ import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import { type RoundFormatObject, videoBasedFormats } from "~/helpers/roundFormats.ts";
 import type { Creator, EventWrPair, InputPerson, RoundFormat } from "~/helpers/types.ts";
-import { getActionError, getBlankCompetitors, getRoundFormatOptions } from "~/helpers/utility-functions.ts";
+import { getActionError, getBlankCompetitors, getRoundFormatOptions, slugPath } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
@@ -70,7 +70,7 @@ function ResultsSubmissionForm({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { slug } = useParams();
+  const { slug }: { slug: string } = useParams();
   const searchParams = useSearchParams();
   const { organization } = useSession();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
@@ -170,7 +170,7 @@ function ResultsSubmissionForm({
         setLoadingId(undefined);
       } else {
         changeSuccessMessage(approve ? "Result successfully approved" : "Result successfully updated");
-        setTimeout(() => router.push(`/${slug}/video-based-results`), 1000);
+        setTimeout(() => router.push(slugPath(slug, "/video-based-results")), 1000);
       }
     }
   };

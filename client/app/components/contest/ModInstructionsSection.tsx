@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { use } from "react";
 import Markdown from "react-markdown";
+import { slugPath } from "~/helpers/utility-functions.ts";
 
 type Props = {
   modInstructionsPromise: Promise<string | null>;
@@ -24,7 +25,7 @@ function ModInstructionsSection({ modInstructionsPromise, modInstructionsDescrip
 
       {modInstructionsDescription && <Markdown>{modInstructionsDescription}</Markdown>}
 
-      <Link href={`/${slug}/moderator-instructions`} prefetch={false} className="btn btn-secondary">
+      <Link href={slugPath(slug, "/moderator-instructions")} prefetch={false} className="btn btn-secondary">
         Moderator Instructions
       </Link>
     </>

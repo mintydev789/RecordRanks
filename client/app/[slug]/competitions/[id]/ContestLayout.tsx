@@ -1,4 +1,5 @@
 import Tabs from "~/app/components/UI/Tabs.tsx";
+import { slugPath } from "~/helpers/utility-functions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 
 type Props = {
@@ -13,22 +14,22 @@ function ContestLayout({ organizationSlug, contest, activeTab, children }: Props
     {
       title: "Details",
       value: "details",
-      route: `/${organizationSlug}/competitions/${contest.competitionId}`,
+      route: slugPath(organizationSlug, `/competitions/${contest.competitionId}`),
     },
     {
       title: "Results",
       value: "results",
-      route: `/${organizationSlug}/competitions/${contest.competitionId}/results`,
+      route: slugPath(organizationSlug, `/competitions/${contest.competitionId}/results`),
     },
     {
       title: "Events",
       value: "events",
-      route: `/${organizationSlug}/competitions/${contest.competitionId}/events`,
+      route: slugPath(organizationSlug, `/competitions/${contest.competitionId}/events`),
     },
     {
       title: "Schedule",
       value: "schedule",
-      route: `/${organizationSlug}/competitions/${contest.competitionId}/schedule`,
+      route: slugPath(organizationSlug, `/competitions/${contest.competitionId}/schedule`),
       hidden: contest.type === "meetup",
     },
   ];

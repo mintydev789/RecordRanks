@@ -588,3 +588,11 @@ export function getMemberControlsContest(
     ["created", "approved", "ongoing"].includes(contest.state) && contest.organizerIds.includes(member.personId);
   return modHasAccess;
 }
+
+export function slugPath(slug: string, path: string): string {
+  if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED === "true") {
+    return `/${slug}${path}`;
+  }
+
+  return path;
+}

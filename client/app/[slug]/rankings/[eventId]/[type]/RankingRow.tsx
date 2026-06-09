@@ -11,7 +11,7 @@ import RankingLinks from "~/app/components/RankingLinks.tsx";
 import Region from "~/app/components/Region.tsx";
 import Solves from "~/app/components/Solves.tsx";
 import type { Ranking } from "~/helpers/types/Rankings.ts";
-import { getFormattedDate, getFormattedTime } from "~/helpers/utility-functions.ts";
+import { getFormattedDate, getFormattedTime, slugPath } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
@@ -64,7 +64,7 @@ function RankingRow({
           <span className="d-flex gap-2 align-items-center">
             <Region regionCode={ranking.contest.regionCode} regions={regions} noText />
 
-            <Link href={`/${slug}/competitions/${ranking.contest.competitionId}`} prefetch={false}>
+            <Link href={slugPath(slug, `/competitions/${ranking.contest.competitionId}`)} prefetch={false}>
               {ranking.contest.shortName}
             </Link>
           </span>

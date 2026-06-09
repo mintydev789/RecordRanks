@@ -11,9 +11,10 @@ import { remove as removeAccents } from "remove-accents";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { useFeaturesInfo, useSession } from "~/helpers/hooks.ts";
+import { slugPath } from "~/helpers/utility-functions.ts";
 
 function Footer() {
-  const { slug } = useParams();
+  const { slug }: { slug: string } = useParams();
   const { organization } = useSession();
   const { theme, setTheme } = useContext(MainContext);
   const { privacyPolicy } = useFeaturesInfo();
@@ -64,7 +65,7 @@ function Footer() {
         </svg>
       </a>
       {slug && (
-        <Link href={`/${slug}/about`} prefetch={false} className="text-light-emphasis">
+        <Link href={slugPath(slug, "/about")} prefetch={false} className="text-light-emphasis">
           About
         </Link>
       )}

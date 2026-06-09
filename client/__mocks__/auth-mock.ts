@@ -51,7 +51,6 @@ export const authMock = betterAuth({
   }),
   plugins: [
     testUtils(),
-    nextCookies(),
     username({
       maxUsernameLength: 40,
       usernameValidator: (username) => /^[0-9a-zA-Z-_.]*$/.test(username),
@@ -113,6 +112,7 @@ export const authMock = betterAuth({
           : undefined,
       ].filter((provider) => provider !== undefined),
     }),
+    nextCookies(),
   ],
   socialProviders: {
     google: HAS_GOOGLE_AUTH

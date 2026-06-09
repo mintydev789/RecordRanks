@@ -71,7 +71,6 @@ export const auth = betterAuth({
     usePlural: true,
   }),
   plugins: [
-    nextCookies(),
     username({
       maxUsernameLength: 40,
       usernameValidator: (username) => /^[0-9a-zA-Z-_.]*$/.test(username),
@@ -145,6 +144,7 @@ export const auth = betterAuth({
           : undefined,
       ].filter((provider) => provider !== undefined),
     }),
+    nextCookies(),
   ],
   socialProviders: {
     google: HAS_GOOGLE_AUTH

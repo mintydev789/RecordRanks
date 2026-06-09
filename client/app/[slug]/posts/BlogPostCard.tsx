@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getFormattedDate } from "~/helpers/utility-functions.ts";
+import { getFormattedDate, slugPath } from "~/helpers/utility-functions.ts";
 import type { PostResponse } from "~/server/db/schema/posts.ts";
 
 type Props = {
@@ -25,7 +25,7 @@ function BlogPostCard({ organizationSlug, post }: Props) {
           </p>
         )}
 
-        <Link href={`/${organizationSlug}/posts/${post.postId}`} prefetch={false} className="btn btn-primary">
+        <Link href={slugPath(organizationSlug, `/posts/${post.postId}`)} prefetch={false} className="btn btn-primary">
           Read more
         </Link>
       </div>

@@ -9,7 +9,7 @@ import { useModDashboardQueryState } from "~/app/[slug]/mod/ModDashboardFilters.
 import ModFilters from "~/app/[slug]/mod/ModFilters.tsx";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Region from "~/app/components/Region.tsx";
-import { getFormattedDate } from "~/helpers/utility-functions.ts";
+import { getFormattedDate, slugPath } from "~/helpers/utility-functions.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import { getModContestsSF } from "~/server/server-functions/contest-server-functions.ts";
 import ContestControls from "./ContestControls.tsx";
@@ -20,7 +20,7 @@ type Props = {
 };
 
 function ModDashboardScreen({ regions, isAdminView }: Props) {
-  const { slug } = useParams();
+  const { slug }: { slug: string } = useParams();
   const [filters] = useModDashboardQueryState();
   const { data, isLoading, isValidating, mutate } = useSWR(["mod", filters], () => getModContestsSF(filters), {
     revalidateOnMount: false,
@@ -74,7 +74,7 @@ function ModDashboardScreen({ regions, isAdminView }: Props) {
                   <td>{getFormattedDate(contest.startDate, contest.endDate)}</td>
                   <td>
                     <Link
-                      href={`/${slug}/competitions/${contest.competitionId}`}
+                      href={slugPath(slug, `/competitions/${contest.competitionId}`)}
                       prefetch={false}
                       className="link-primary"
                     >

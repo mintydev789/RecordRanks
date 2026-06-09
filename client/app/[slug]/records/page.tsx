@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { eventCategories } from "~/helpers/eventCategories.ts";
+import { slugPath } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import { getOrgDetails } from "~/server/server-only-functions.ts";
 
@@ -23,7 +24,7 @@ async function RecordsRedirectPage({ params }: Props) {
 
   const firstCategory = eventCategories.find((ec) => events.some((e) => e.category === ec.value))!.value;
 
-  redirect(`/${slug}/records/${firstCategory}`, "replace");
+  redirect(slugPath(slug, `/records/${firstCategory}`), "replace");
 }
 
 export default RecordsRedirectPage;
