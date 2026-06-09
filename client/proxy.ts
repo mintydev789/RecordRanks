@@ -28,6 +28,7 @@ export function proxy(request: NextRequest) {
   //   });
   // }
 
+    console.log(url.pathname, process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED, process.env.NEXT_PUBLIC_BASE_URL!)
   if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true") {
     const isPathWithSlug =
       url.pathname === "/" ||
