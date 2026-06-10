@@ -166,7 +166,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
           {user.image && (
             <img
               src={user.image}
-              alt={user.name}
+              alt={`${user.name} avatar`}
               style={{ maxWidth: "min(90%, 400px)", marginTop: "0.8rem", marginBottom: "2rem" }}
             />
           )}
@@ -178,12 +178,14 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
           <p className="mb-2">
             Email address: <b>{user.email}</b>
           </p>
-          <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
-            <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
-            <Button onClick={() => initiateEmailChange()} isLoading={isInitiatingEmailChange} disabled={isPending}>
-              Change email
-            </Button>
-          </div>
+          {!accounts?.some((a) => a.providerId === "wca") && (
+            <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
+              <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
+              <Button onClick={() => initiateEmailChange()} isLoading={isInitiatingEmailChange} disabled={isPending}>
+                Change email
+              </Button>
+            </div>
+          )}
           {roles && (
             <p className="mt-3">
               Your role: <strong>{roles}</strong>.

@@ -206,12 +206,25 @@ export const auth = betterAuth({
       enabled: false,
     },
   },
-  // hooks: {
-  //   after: createAuthMiddleware(async (ctx) => {
-  //           if (ctx.path.startsWith("/sign-up")) {
-  //     if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true")
-  //       await auth.api.addMember({ body: { userId: ctx.context., role: ["member"], organizationId: "default" } });
-  //           }
-  //       }),
-  // }
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          if (user.emailVerified && process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true") {
+            auth.api.addMember({ body: { userId: user.id, role: ["member"], organizationId: "default" } });
+          }
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true") {
+            return { data: { ...session, activeOrganizationId: "default" } };
+          }
+          return { data: session };
+        },
+      },
+    },
+  },
 });

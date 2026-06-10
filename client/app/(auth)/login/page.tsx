@@ -55,20 +55,8 @@ function LoginPage() {
           ? await authClient.signIn.email({ email: username, password })
           : await authClient.signIn.username({ username, password });
 
-        if (error) {
-          changeErrorMessages([error.message || error.statusText]);
-        } else {
-          if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true") {
-            const { error } = await authClient.organization.setActive({ organizationId: "default" });
-
-            if (error) {
-              changeErrorMessages([error.message ?? error.statusText]);
-              return;
-            }
-          }
-
-          router.replace(redirectUrl);
-        }
+        if (error) changeErrorMessages([error.message || error.statusText]);
+        else router.replace(redirectUrl);
       });
     }
   };
