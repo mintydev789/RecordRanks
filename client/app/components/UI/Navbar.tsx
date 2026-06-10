@@ -95,7 +95,7 @@ function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary">
       <div className="container-md position-relative">
-        <Link href={slugPath(organization.slug, "")} prefetch={false} className="navbar-brand">
+        <Link href={slugPath(organization.slug, "") || "/"} prefetch={false} className="navbar-brand">
           {organization.logo ? <img src={organization.logo} height={45} width={45} alt="Home" /> : "Home"}
         </Link>
         <button

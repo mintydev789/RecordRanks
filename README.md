@@ -64,7 +64,7 @@ To set up a production `.env` file, follow these steps:
 
 ### Icon
 
-RecordRanks does not have a default icon available, so before you publish your Docker image, you'll have to create your own at `client/app/favicon.ico` (used by the browser) and `client/public/favicon.png` (used in the navbar). Use the dedicated script to generate both files (see the Scripts section). These files are gitignored in this repo, but they get included in the Docker image when you build it.
+To generate an icon, place an `icon.svg` file in the `client` directory (this file is git-ignored). The ICO file will be generated automatically when the Docker image is built and included in the image.
 
 ### Down for maintenance page
 
@@ -194,17 +194,18 @@ Note: due to limitations with the CSV format, empty string values are represente
 
 There are several custom scripts located in the `bin` directory. These should be executed from the root of the project with `./bin/<script>`.
 
-| Script                          | Description                                                                                                      |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `start-prod.sh`                 | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                        |
-| `test-prod.sh`                  | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
-| `apply-db-migrations.sh`        | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running.      |
-| `supabase-reset.sh`             | Reset Supabase (remove containers and delete DB data and storage).                                               |
-| `supabase-generate-keys.sh`     | Generate Supabase secret keys. This is REQUIRED for production!                                                  |
-| `convert-svg-to-ico-and-png.sh` | Convert SVG file with your icon to an ICO file and a PNG file. The first argument is the path to the SVG file.   |
-| `release-new-version.sh`        | Release new version of RecordRanks (pushes to Codeberg).                                                         |
-| `release-new-image.sh`          | Create Docker image for the Next JS app and publish it.                                                          |
-| `create-full-backup.sh`         | Create encrypted backup of the Supabase database and storage.                                                    |
+| Script                      | Description                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `start-prod.sh`             | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                        |
+| `test-prod.sh`              | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
+| `apply-db-migrations.sh`    | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running.      |
+| `supabase-reset.sh`         | Reset Supabase (remove containers and delete DB data and storage).                                               |
+| `supabase-generate-keys.sh` | Generate Supabase secret keys. This is REQUIRED for production!                                                  |
+| `release-new-version.sh`    | Release new version of RecordRanks (pushes to Codeberg).                                                         |
+| `release-new-image.sh`      | Create Docker image for the Next JS app and publish it.                                                          |
+| `create-full-backup.sh`     | Create encrypted backup of the Supabase database and storage.                                                    |
+
+There is also a `convert-svg-to-ico.sh` script in the `client` directory to convert an SVG file with the icon to an ICO file. The first argument is the path to the SVG file; the second argument is the path to the output ICO file (defaults to `./app/favicon.ico`). This script runs automatically on Docker image build.
 
 ## Development
 

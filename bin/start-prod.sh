@@ -21,7 +21,7 @@ if [ "$1" != "--restart" ] && [ "$1" != "-r" ]; then
 else
   # Restart
   
-  if [ "$(command -v apt)" != "" ]; then
+  if [ -n "$(command -v apt)" ]; then
     sudo apt update &&
     sudo apt dist-upgrade
   fi

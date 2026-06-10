@@ -45,9 +45,9 @@ volumes/storage
 
 # Other
 down-for-maintenance-page.html
+client/icon.svg
 client/app/favicon.ico
 client/app/robots.txt
-client/public/favicon.png
 
 # (TEMPORARY!!!!!!!!!!!!!!! ALSO REMOVE THE SAME DIRECTORY FROM .dockerignore!!!!)
 client/dump
