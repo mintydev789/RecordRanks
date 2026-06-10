@@ -176,6 +176,10 @@ export const auth = betterAuth({
 
       sendVerificationEmail(user.email, url);
     },
+    afterEmailVerification: async (user) => {
+      if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true")
+        await auth.api.addMember({ body: { userId: user.id, role: ["member"], organizationId: "default" } });
+    },
   },
   user: {
     additionalFields: {
@@ -202,4 +206,12 @@ export const auth = betterAuth({
       enabled: false,
     },
   },
+  // hooks: {
+  //   after: createAuthMiddleware(async (ctx) => {
+  //           if (ctx.path.startsWith("/sign-up")) {
+  //     if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true")
+  //       await auth.api.addMember({ body: { userId: ctx.context., role: ["member"], organizationId: "default" } });
+  //           }
+  //       }),
+  // }
 });

@@ -128,7 +128,12 @@ export const authMock = betterAuth({
     autoSignIn: false,
     requireEmailVerification: true,
   },
-  emailVerification: {},
+  emailVerification: {
+    afterEmailVerification: async (user) => {
+      if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true")
+        await authMock.api.addMember({ body: { userId: user.id, role: ["member"], organizationId: "default" } });
+    },
+  },
   user: {
     additionalFields: {
       username: {

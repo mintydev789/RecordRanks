@@ -312,11 +312,13 @@ function Navbar() {
                       Settings
                     </Link>
                   </li>
-                  <li>
-                    <button type="button" onClick={exitOrganization} className="nav-link">
-                      Exit space
-                    </button>
-                  </li>
+                  {process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED === "true" && (
+                    <li>
+                      <button type="button" onClick={exitOrganization} className="nav-link">
+                        Exit space
+                      </button>
+                    </li>
+                  )}
                   <li>
                     <button type="button" onClick={logOut} className="nav-link">
                       Log out
