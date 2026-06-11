@@ -25,7 +25,6 @@ export const C = {
   maxTotalMeetupEvents: 15, // this is hardcoded on the rules page
   maxPersonMatches: 6,
   maxRankings: 100_000,
-  maxMembers: 5000,
   wcaApiBaseUrl: "https://api.worldcubeassociation.org",
   wcaV0ApiBaseUrl: "https://www.worldcubeassociation.org/api/v0",
   wcaIdRegex: /[0-9]{4}[A-Z]{4}[0-9]{2}/,

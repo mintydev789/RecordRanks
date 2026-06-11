@@ -600,7 +600,7 @@ export async function getRankings(
           FROM ${resultsTable}
             LEFT JOIN ${contestsTable}
               ON ${resultsTable.organizationId} = ${contestsTable.organizationId}
-                AND ${resultsTable.competitionId} = ${contestsTable.competitionId},
+                AND ${resultsTable.competitionId} = ${contestsTable.competitionId}
           WHERE ${resultsTable.organizationId} = ${organizationId}
             AND ${resultsTable.approved} IS TRUE
             AND ${resultsTable.eventId} = ${event.eventId}

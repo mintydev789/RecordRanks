@@ -166,7 +166,6 @@ function ManageMembersScreen({ members: initMembers, memberPersons: initMemberPe
 
         <p className="mb-2">
           Number of members:&nbsp;<b>{filteredMembers.length}</b>
-          {filteredMembers.length === C.maxMembers ? " (reached limit; please contact the development team)" : ""}
         </p>
       </div>
 

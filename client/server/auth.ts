@@ -92,7 +92,7 @@ export const auth = betterAuth({
         member: orgMemberRole,
       },
       cancelPendingInvitationsOnReInvite: true,
-      membershipLimit: 1000, // TO-DO: THIS IS TEMPORARY!!!
+      membershipLimit: 100_000, // TO-DO: THIS IS TEMPORARY!!!
       requireEmailVerificationOnInvitation: true,
       sendInvitationEmail: async (data) => {
         if (process.env.EMAIL_HOST)
