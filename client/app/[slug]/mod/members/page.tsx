@@ -23,6 +23,7 @@ async function ManageMembersPage({ params }: Props) {
       orgPermissions: { member: ["create", "update", "delete"] },
     });
 
+    console.log("TEST", organization);
     const [membersData, regions] = await Promise.all([
       auth.api.listMembers({
         headers: httpHeaders,
