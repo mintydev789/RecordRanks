@@ -267,7 +267,7 @@ To get the list of events, use the endpoint below:
 ```
 /api/[slug]/events
 
-slug (optional) = URL slug for the space (this parameter can be omitted)
+slug (optional) = URL slug for the space (this parameter can be omitted to use the default space)
 ```
 
 ### Rankings
@@ -277,7 +277,7 @@ To get the rankings, use the endpoint below:
 ```
 /api/[slug]/results/rankings/[eventId]/[type]/[category]?show=[show]&region=[region]&topN=[topN]
 
-slug (optional)   = URL slug for the space (this parameter can be omitted)
+slug (optional)   = URL slug for the space (this parameter can be omitted to use the default space)
 eventId           = ID of the event
 type              = "single" for top single rankings; "average" for top average rankings; "all-avg-formats" for top average rankings, including Mo3 and Ao5 formats
 category          = record category; accepts values: "competitions" | "meetups" | "online" | "all"

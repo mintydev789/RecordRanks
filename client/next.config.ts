@@ -9,16 +9,6 @@ const nextConfig: NextConfig = withMDX({
   pageExtensions: ["md", "mdx", "tsx", "ts", "jsx", "js", "mjs", "json"],
   redirects() {
     return Promise.resolve([
-      {
-        source: "/api/events",
-        destination: "/api/default/events",
-        permanent: false,
-      },
-      {
-        source: "/api/results/rankings/:eventId/:type/:category",
-        destination: "/api/default/results/rankings/:eventId/:type/:category",
-        permanent: false,
-      },
       // This is to override Better Auth's default behavior when redirecting after an error
       // https://github.com/better-auth/better-auth/issues/5467
       {

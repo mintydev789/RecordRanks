@@ -236,8 +236,8 @@ services:
       - supabase
       - shared
     restart: unless-stopped
-    # ports:
-    #   - ${LOGFLARE_PORT}:4000
+    ports:
+      - 127.0.0.1:${LOGFLARE_PORT}:4000
     # Uncomment to use Big Query backend for analytics
     # volumes:
     #   - type: bind
