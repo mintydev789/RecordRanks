@@ -1,7 +1,7 @@
 export const C = {
   cubingContestsHostname: "cubingcontests.com",
   recordRanksLink: "https://recordranks.com/",
-  sourceCodeLink: "https://codeberg.org/mintydev/RecordRanks",
+  sourceCodeLink: "https://github.com/mintydev789/RecordRanks",
   rrDonationLink: "https://ko-fi.com/mintydev",
   discordServerLink: "https://discord.gg/7rRMQA8jnU",
   fetchDebounceTimeout: 750, // the timeout in ms between doing repetitive fetch requests that need to be limited
