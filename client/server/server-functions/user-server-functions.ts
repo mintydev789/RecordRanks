@@ -1,34 +1,30 @@
 "use server";
 
-import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
+import { and, eq } from "drizzle-orm";
+import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 import z from "zod";
+import { fetchWcaPerson, getActionError } from "~/helpers/utility-functions.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
-import { usersTable as table } from "~/server/db/schema/auth-schema.ts";
+import { membersTable, type usersTable as table } from "~/server/db/schema/auth-schema.ts";
+import { memberRequestsTable } from "~/server/db/schema/member-requests";
 import { type PersonResponse, personsPublicCols, personsTable, type SelectPerson } from "~/server/db/schema/persons.ts";
-import { type FullUserRequest, userRequestsTable } from "~/server/db/schema/user-requests.ts";
-import { sendEmail, sendRolesChangedEmail, sendUserRequestSubmittedEmail } from "~/server/email/mailer.ts";
-import { type Role, Roles, requestableRoles } from "~/server/permissions.ts";
+import { sendEmail, sendMemberRequestSubmittedEmail, sendMemberRolesChangedEmail } from "~/server/email/mailer.ts";
+import { type OrganizationRole, OrganizationRoles, requestableRoles } from "~/server/organization-permissions.ts";
 import { actionClient, RrActionError } from "~/server/safeAction.ts";
-import { deletePersonSF } from "~/server/server-functions/person-server-functions.ts";
-import {
-  getOrCreatePersonByWcaId,
-  getUserRequestDetails,
-  logMessage,
-  syncPersonByWcaId,
-} from "~/server/server-only-functions.ts";
+import { deletePersonSF, updatePersonSF } from "~/server/server-functions/person-server-functions.ts";
+import { getMemberRequestDetails, getOrCreatePersonByWcaId, logMessage } from "~/server/server-only-functions.ts";
 
 export const sendDebugEmailSF = actionClient
-  .metadata({ permissions: { adminDashboard: ["view"] } })
+  .metadata({ auth: { useOrganization: false, role: "admin" } })
   .inputSchema(z.strictObject({ emailAddress: z.email() }))
   .action(async ({ parsedInput: { emailAddress } }) => {
     sendEmail(emailAddress, "Debug email", "This is a debug email for testing. You can safely ignore this.");
   });
 
 export const logUserDeletedSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: false } })
   .inputSchema(
     z.strictObject({
       id: z.string().nonempty(),
@@ -38,60 +34,84 @@ export const logUserDeletedSF = actionClient
     logMessage("RR0034", `Deleting user with ID ${id}`);
   });
 
-export const updateUserSF = actionClient
-  .metadata({ permissions: { user: ["set-role"] } })
+export const updateMemberSF = actionClient
+  .metadata({ auth: { useOrganization: true, orgPermissions: { member: ["update"] } } })
   .inputSchema(
     z.strictObject({
       id: z.string(),
       personId: z.int().min(1).nullable().default(null),
-      roles: z.enum(Roles).array().nonempty(),
+      roles: z
+        .enum(OrganizationRoles)
+        .array()
+        .nonempty()
+        .refine((val) => val.includes("member") || val.includes("admin"), { error: "The member role is required" }),
     }),
   )
-  .action<{ user: typeof auth.$Infer.Session.user; person?: PersonResponse }>(
-    async ({ parsedInput: { id, personId, roles } }) => {
-      logMessage("RR0033", `Updating user with ID ${id} (new person ID: ${personId}; new roles: ${roles.join(", ")})`);
+  .action<{ member: typeof membersTable.$inferSelect; person?: PersonResponse }>(
+    async ({ parsedInput: { id, personId, roles }, ctx: { session, httpHeaders } }) => {
+      logMessage(
+        "RR0033",
+        `Updating member with ID ${id} (new person ID: ${personId}; new roles: ${roles.join(", ")})`,
+      );
 
-      const [hdrs, user, credentialAccount] = await Promise.all([
-        headers(),
-        db.query.users.findFirst({ where: { id } }),
+      const [member, credentialAccount] = await Promise.all([
+        db.query.members.findFirst({
+          with: { user: { columns: { name: true, email: true, emailVerified: true } } },
+          where: { organizationId: session.organization!.id, id },
+        }),
         db.query.accounts.findFirst({ columns: { id: true }, where: { userId: id, providerId: "credential" } }),
       ]);
-      if (!user) throw new RrActionError("User not found");
-      if (credentialAccount && !user.emailVerified)
-        throw new RrActionError("This user hasn't verified their email address yet");
+      if (!member) throw new RrActionError("Member not found");
+      if (!process.env.VITEST && credentialAccount && !member.user.emailVerified)
+        throw new RrActionError("The user hasn't verified their email address yet");
 
       let person: PersonResponse | undefined;
       if (personId) {
         person = (
-          await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, personId)).limit(1)
+          await db
+            .select(personsPublicCols)
+            .from(personsTable)
+            .where(and(eq(personsTable.organizationId, session.organization!.id), eq(personsTable.id, personId)))
+            .limit(1)
         ).at(0);
         if (!person) throw new RrActionError(`Person with ID ${personId} not found`);
-      } else if (roles.some((role) => role !== "user")) {
-        throw new RrActionError("Privileged users must have a person tied to their account");
+      } else if (roles.some((role) => role !== "member")) {
+        throw new RrActionError("Privileged members must have a person tied to their profile");
       }
 
-      const rolesAreDifferent = user.role!.split(",").sort().join(",") !== roles.sort().join(",");
-      if (rolesAreDifferent) await changeUserRoles(user, roles, person?.name);
+      const rolesAreDifferent = member.role!.split(",").sort().join(",") !== roles.sort().join(",");
+      if (rolesAreDifferent) {
+        await changeMemberRoles({
+          memberId: id,
+          roles,
+          personName: person?.name,
+          user: member.user,
+          organization: session.organization!,
+          httpHeaders,
+        });
+      }
 
-      const [updatedUser] = await db.update(table).set({ personId }).where(eq(table.id, user.id)).returning();
+      const [updatedMember] = await db
+        .update(membersTable)
+        .set({ personId })
+        .where(eq(membersTable.id, id))
+        .returning();
 
-      // Log out user to avoid stale session data
-      await auth.api.revokeUserSessions({ body: { userId: user.id }, headers: hdrs });
-
-      return { user: updatedUser, person };
+      return { member: updatedMember, person };
     },
   );
 
 export const linkWcaProfileSF = actionClient
-  .metadata({ permissions: null })
-  .action<PersonResponse>(async ({ ctx: { session } }) => {
+  .metadata({ auth: { useOrganization: true } })
+  .action<PersonResponse>(async ({ ctx: { session, httpHeaders } }) => {
     const wcaAccount = await db.query.accounts.findFirst({
       columns: { accountId: true },
       where: { userId: session.user.id, providerId: "wca" },
     });
     if (!wcaAccount) throw new RrActionError("Only users using WCA login can link their own WCA competitor profiles");
+    if (!session.organization) throw new RrActionError("Please activate a space first");
 
-    const res = await auth.api.accountInfo({ query: { accountId: wcaAccount.accountId }, headers: await headers() });
+    const res = await auth.api.accountInfo({ query: { accountId: wcaAccount.accountId }, headers: httpHeaders });
     if (!res) throw new RrActionError("Unable to retrieve account information from the WCA");
 
     const parsed = z
@@ -103,12 +123,35 @@ export const linkWcaProfileSF = actionClient
     if (!parsed.success) throw new RrActionError(z.prettifyError(parsed.error));
 
     const wcaId = parsed.data.preferred_username;
-    const person = session.user.personId
-      ? await syncPersonByWcaId(wcaId, session.user.personId)
-      : (await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id })).person;
+    let person: PersonResponse | undefined;
+
+    if (session.member!.personId) {
+      // Sync existing person
+      const existingPerson = await db.query.persons.findFirst({
+        columns: { wcaId: true },
+        where: { id: session.member!.personId, wcaId },
+      });
+      if (!existingPerson) throw new RrActionError("Person not found. Please contact the admin team.");
+
+      const wcaPerson = await fetchWcaPerson(wcaId);
+      if (!wcaPerson) throw new RrActionError(`Person with WCA ID ${wcaId} not found in the WCA API`);
+
+      const res = await updatePersonSF({ id: session.member!.personId, newPersonDto: wcaPerson });
+
+      if (res.serverError || res.validationErrors) throw new RrActionError(getActionError(res));
+      person = res.data!;
+    } else {
+      // Create new person
+      person = (
+        await getOrCreatePersonByWcaId(wcaId, {
+          creatorUserId: session.user.id,
+          organizationId: session.organization.id,
+        })
+      ).person;
+    }
 
     try {
-      await db.update(table).set({ personId: person.id }).where(eq(table.id, session.user.id));
+      await db.update(membersTable).set({ personId: person.id }).where(eq(membersTable.id, session.member!.id));
     } catch {
       throw new RrActionError(
         "Error while linking competitor profile. This competitor may already be tied to another user. Please contact the admin team.",
@@ -118,8 +161,8 @@ export const linkWcaProfileSF = actionClient
     return person;
   });
 
-export const createOrUpdateUserRequestSF = actionClient
-  .metadata({ permissions: null })
+export const createOrUpdateMemberRequestSF = actionClient
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       requestedPersonId: z.int().nullable(),
@@ -127,148 +170,170 @@ export const createOrUpdateUserRequestSF = actionClient
       comment: z.string().nonempty().nullable(),
     }),
   )
-  .action(
-    async ({
-      parsedInput: { requestedPersonId, requestedRole, comment },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      if (!requestedPersonId && !requestedRole && !comment)
-        throw new RrActionError("You cannot submit an empty user request");
-      if (requestedRole && !requestedPersonId && !user.personId)
-        throw new RrActionError("To request a role you must also request a competitor profile");
-      if (requestedRole && user.role !== "user")
-        throw new RrActionError(
-          "You already have a role. Please contact the admin team if you would like to change it.",
-        );
+  .action(async ({ parsedInput: { requestedPersonId, requestedRole, comment }, ctx: { session } }) => {
+    if (!requestedPersonId && !requestedRole && !comment) throw new RrActionError("You cannot submit an empty request");
+    if (requestedRole && !requestedPersonId && !session.member!.personId)
+      throw new RrActionError("To request a role you must also request a competitor profile");
+    if (requestedRole && session.member!.role !== "member")
+      throw new RrActionError("You already have a role. Please contact the admin team if you would like to change it.");
 
-      const userRequest = await db.query.userRequests.findFirst({ where: { userId: user.id } });
-      if (userRequest?.requestedPersonId && requestedPersonId !== userRequest.requestedPersonId) {
-        throw new RrActionError(
-          "You cannot change your requested person. If you made a mistake before, please delete your request and submit again.",
-        );
-      }
-
-      logMessage(
-        "RR0037",
-        `${userRequest ? "Updating" : "Creating"} user request for user with ID ${user.id}: person ID ${requestedPersonId}, role ${requestedRole}, comment ${comment}`,
+    const memberRequest = await db.query.memberRequests.findFirst({ where: { memberId: session.member!.id } });
+    if (memberRequest?.requestedPersonId && requestedPersonId !== memberRequest.requestedPersonId) {
+      throw new RrActionError(
+        "You cannot change your requested person. If you made a mistake before, please delete your request and submit again.",
       );
+    }
 
-      let person: SelectPerson | undefined;
-      if (requestedPersonId !== null) {
-        if (user.personId) throw new RrActionError("There is already a competitor profile linked to your account");
+    logMessage(
+      "RR0037",
+      `${memberRequest ? "Updating" : "Creating"} member request for member with ID ${session.member!.id}: person ID ${requestedPersonId}, role ${requestedRole}, comment ${comment}`,
+    );
 
-        person = await db.query.persons.findFirst({ where: { id: requestedPersonId } });
-        if (!person) throw new RrActionError(`Person with ID ${requestedPersonId} not found`);
+    let person: SelectPerson | undefined;
+    if (requestedPersonId !== null) {
+      if (session.member!.personId)
+        throw new RrActionError("There is already a competitor profile linked to your member profile");
 
-        const userWithSamePerson = await db.query.users.findFirst({
-          columns: { personId: true },
-          where: { personId: requestedPersonId },
-        });
-        if (userWithSamePerson) {
-          throw new RrActionError(
-            "The requested person is already tied to a user. If this is a mistake, please contact the admin team.",
-          );
-        }
+      person = await db.query.persons.findFirst({
+        where: { organizationId: session.organization!.id, id: requestedPersonId },
+      });
+      if (!person) throw new RrActionError(`Person with ID ${requestedPersonId} not found`);
+
+      const memberWithSamePerson = await db.query.members.findFirst({
+        columns: { personId: true },
+        where: { personId: requestedPersonId },
+      });
+      if (memberWithSamePerson) {
+        throw new RrActionError(
+          "The requested competitor profile is already claimed. If this is a mistake, please contact the admin team.",
+        );
       }
+    }
 
-      await db
-        .insert(userRequestsTable)
-        .values({ userId: user.id, requestedPersonId, requestedRole, comment })
-        .onConflictDoUpdate({
-          target: userRequestsTable.userId,
-          set: { requestedPersonId, requestedRole, comment },
-        });
+    await db
+      .insert(memberRequestsTable)
+      .values({ memberId: session.member!.id, requestedPersonId, requestedRole, comment })
+      .onConflictDoUpdate({
+        target: memberRequestsTable.memberId,
+        set: { requestedPersonId, requestedRole, comment },
+      });
 
-      // If it's a new request, send an email notification
-      if (!userRequest) sendUserRequestSubmittedEmail(user.email, user.name, person, requestedRole, comment);
+    // If it's a new request, send an email notification
+    if (!memberRequest) {
+      sendMemberRequestSubmittedEmail(session.user.email, {
+        name: session.user.name,
+        requestedPerson: person,
+        requestedRole,
+        comment,
+        organization: session.organization!,
+      });
+    }
 
-      return (await getUserRequestDetails(user.id)) as { userRequest: FullUserRequest; ownRequestedPersonId?: number };
-    },
-  );
-
-export const approveUserRequestSF = actionClient
-  .metadata({ permissions: { user: ["list"] } })
-  .inputSchema(z.int())
-  .action(async ({ parsedInput: id }) => {
-    const userRequest = await db.query.userRequests.findFirst({
-      with: {
-        user: { columns: { id: true, name: true, email: true, personId: true } },
-        requestedPerson: { columns: { name: true, approved: true } },
-      },
-      where: { id },
-    });
-    if (!userRequest) throw new RrActionError("User request not found");
-    if (userRequest.requestedPerson?.approved === false)
-      throw new RrActionError("Please review and approve the competitor profile on the manage competitors page first");
-
-    if (userRequest.requestedRole)
-      await changeUserRoles(userRequest.user, [userRequest.requestedRole], userRequest.requestedPerson?.name);
-
-    await db.transaction(async (tx) => {
-      await tx.update(table).set({ personId: userRequest.requestedPersonId }).where(eq(table.id, userRequest.userId));
-
-      await tx.delete(userRequestsTable).where(eq(userRequestsTable.id, id));
-    });
-
-    sendEmail(userRequest.user.email, "User request approved", "Your user request has been approved.");
+    return await getMemberRequestDetails({ member: session.member! });
   });
 
-export const deleteUserRequestSF = actionClient
-  .metadata({ permissions: null })
+export const approveMemberRequestSF = actionClient
+  .metadata({ auth: { useOrganization: true, orgPermissions: { memberRequests: ["approve"] } } })
   .inputSchema(z.int())
-  .action(async ({ parsedInput: id, ctx: { session } }) => {
-    logMessage("RR0038", `Deleting user request for user with ID ${session.user.id}`);
+  .action(async ({ parsedInput: id, ctx: { session, httpHeaders } }) => {
+    const memberRequest = await db.query.memberRequests.findFirst({
+      with: {
+        user: { columns: { name: true, email: true } },
+        requestedPerson: { columns: { name: true, approved: true } },
+      },
+      where: { member: { organizationId: session.organization!.id }, id },
+    });
+    if (!memberRequest) throw new RrActionError("Member request not found");
+    if (memberRequest.requestedPerson?.approved === false)
+      throw new RrActionError("Please review and approve the competitor profile on the manage competitors page first");
 
-    const { success: canManageUserRequests } = await auth.api.userHasPermission({
-      body: { userId: session.user.id, permissions: { user: ["list"] } },
+    if (memberRequest.requestedRole) {
+      await changeMemberRoles({
+        memberId: memberRequest.memberId,
+        roles: [memberRequest.requestedRole],
+        personName: memberRequest.requestedPerson?.name,
+        user: memberRequest.user,
+        organization: session.organization!,
+        httpHeaders,
+      });
+    }
+
+    await db.transaction(async (tx) => {
+      if (memberRequest.requestedPersonId) {
+        await tx
+          .update(membersTable)
+          .set({ personId: memberRequest.requestedPersonId })
+          .where(eq(membersTable.id, memberRequest.memberId));
+      }
+
+      await tx.delete(memberRequestsTable).where(eq(memberRequestsTable.id, id));
     });
 
-    const userRequest = await db.query.userRequests.findFirst({
+    sendEmail(memberRequest.user.email, "Member request approved", "Your member request has been approved.");
+  });
+
+export const deleteMemberRequestSF = actionClient
+  .metadata({ auth: { useOrganization: true } })
+  .inputSchema(z.int())
+  .action(async ({ parsedInput: id, ctx: { session, httpHeaders } }) => {
+    logMessage("RR0038", `Deleting member request for user with ID ${session.user.id}`);
+
+    const { success: canDeleteMemberRequests } = await auth.api.hasPermission({
+      headers: httpHeaders,
+      body: { permissions: { memberRequests: ["delete"] } },
+    });
+
+    const memberRequest = await db.query.memberRequests.findFirst({
       with: { user: { columns: { email: true } } },
-      where: { id },
+      where: { member: { organizationId: session.organization!.id }, id },
     });
-    if (!userRequest) throw new RrActionError("User request not found");
-    if (userRequest.userId !== session.user.id && !canManageUserRequests)
-      throw new RrActionError("You are unauthorized to delete this user request");
+    if (!memberRequest) throw new RrActionError("Member request not found");
+    if (memberRequest.memberId !== session.member?.id && !canDeleteMemberRequests)
+      throw new RrActionError("You are unauthorized to delete this request");
 
     // Delete competitor profile, if it was simply created by the user and isn't used anywhere else
-    if (userRequest.requestedPersonId) {
+    if (memberRequest.requestedPersonId) {
       try {
-        await deletePersonSF({ id: userRequest.requestedPersonId });
+        await deletePersonSF({ id: memberRequest.requestedPersonId });
       } catch (err) {
         if (!(err instanceof RrActionError)) throw err;
       }
     }
 
-    await db.delete(userRequestsTable).where(eq(userRequestsTable.id, id));
+    await db.delete(memberRequestsTable).where(eq(memberRequestsTable.id, id));
 
-    if (userRequest.userId !== session.user.id)
+    if (memberRequest.memberId !== session.member?.id) {
       sendEmail(
-        userRequest.user.email,
-        "User request rejected",
-        "Your user request has been rejected by the admin team.",
+        memberRequest.user.email,
+        "Member request rejected",
+        "Your member request has been rejected by the admin team.",
       );
+    }
   });
 
-async function changeUserRoles(
-  user: Pick<typeof auth.$Infer.Session.user, "id" | "name" | "email">,
-  roles: Role[],
-  personName: string | undefined,
-) {
-  await auth.api.setRole({ body: { userId: user.id, role: roles }, headers: await headers() });
+async function changeMemberRoles({
+  memberId,
+  roles,
+  personName,
+  user,
+  organization,
+  httpHeaders,
+}: {
+  memberId: string;
+  roles: OrganizationRole[];
+  personName: string | undefined;
+  user: Pick<typeof table.$inferSelect, "name" | "email">;
+  organization: Pick<typeof auth.$Infer.Organization, "name" | "metadata">;
+  httpHeaders: ReadonlyHeaders;
+}) {
+  await auth.api.updateMemberRole({ headers: httpHeaders, body: { memberId, role: roles } });
 
-  const { success: canAccessModDashboard } = await auth.api.userHasPermission({
-    body: { userId: user.id, permissions: { modDashboard: ["view"] } },
-  });
-
-  sendRolesChangedEmail(user.email, roles, { canAccessModDashboard });
+  sendMemberRolesChangedEmail(user.email, { organizationName: organization.name, roles });
 
   if (roles.includes("admin")) {
     sendEmail(
-      process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
-      "Important: New admin user",
+      organization.metadata.contactEmail,
+      "Important: New admin member",
       `User ${user.name}${personName ? ` (competitor ${personName})` : ""} has been given the admin role.`,
     );
   }

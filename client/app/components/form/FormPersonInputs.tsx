@@ -1,7 +1,7 @@
 "use client";
 
 import debounce from "lodash/debounce";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useContext, useState } from "react";
 import Competitor from "~/app/components/Competitor.tsx";
@@ -9,7 +9,7 @@ import Loading from "~/app/components/UI/Loading.tsx";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import type { InputPerson } from "~/helpers/types.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError, slugPath } from "~/helpers/utility-functions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 import {
@@ -55,6 +55,7 @@ function FormPersonInputs({
   showWcaId = false,
 }: Props) {
   const router = useRouter();
+  const { slug }: { slug: string } = useParams();
   const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
   // The null element represents the option "add new person" and is only an option given to an admin/moderator
@@ -171,11 +172,11 @@ function FormPersonInputs({
         setFocusedInput(null);
 
         if (addNewPersonMode === "from-new-tab") {
-          open("/mod/competitors", "_blank");
+          open(slugPath(slug, "/mod/competitors"), "_blank");
         } else if (!redirectToOnAddPerson) {
-          router.push("/mod/competitors");
+          router.push(slugPath(slug, "/mod/competitors"));
         } else {
-          router.push(`/mod/competitors?redirect=${redirectToOnAddPerson}`);
+          router.push(slugPath(slug, `/mod/competitors?redirect=${redirectToOnAddPerson}`));
         }
       } else {
         const newSelectedPerson = matchedPersons[selectionIndex];

@@ -1,6 +1,6 @@
 import "@cubing/icons";
 import { CubingIcons } from "@cubing/icons/js";
-import { shortenEventName } from "~/helpers/utilityFunctions.ts";
+import { shortenEventName } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 
 type Props = {

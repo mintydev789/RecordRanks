@@ -3,12 +3,13 @@
 import { faCircle, faDiamond, faSquare, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { use } from "react";
 import ContestTypeBadge from "~/app/components/ContestTypeBadge.tsx";
 import Region from "~/app/components/Region.tsx";
 import { contestTypeOptions } from "~/helpers/multipleChoiceOptions.ts";
 import type { ContestType } from "~/helpers/types.ts";
-import { getFormattedDate } from "~/helpers/utilityFunctions.ts";
+import { getFormattedDate, slugPath } from "~/helpers/utility-functions.ts";
 import type { ContestResponse } from "~/server/db/schema/contests.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
 
@@ -24,6 +25,7 @@ type Props = {
 
 function ContestsTable({ contestsPromise, regions }: Props) {
   const contests = use(contestsPromise);
+  const { slug }: { slug: string } = useParams();
 
   const getShapeIcon = (type: ContestType) => (type === "comp" ? faSquare : type === "meetup" ? faDiamond : faCircle);
 
@@ -50,7 +52,11 @@ function ContestsTable({ contestsPromise, regions }: Props) {
                       style={{ minWidth: "0.5rem", width: "0.5rem", color: contestType?.color }}
                     />
 
-                    <Link href={`/competitions/${contest.competitionId}`} prefetch={false} className="link-primary">
+                    <Link
+                      href={slugPath(slug, `/competitions/${contest.competitionId}`)}
+                      prefetch={false}
+                      className="link-primary"
+                    >
                       {contest.shortName}
                     </Link>
                   </div>
@@ -101,7 +107,11 @@ function ContestsTable({ contestsPromise, regions }: Props) {
               <tr key={contest.competitionId}>
                 <td>{getFormattedDate(contest.startDate, contest.endDate)}</td>
                 <td>
-                  <Link href={`/competitions/${contest.competitionId}`} prefetch={false} className="link-primary">
+                  <Link
+                    href={slugPath(slug, `/competitions/${contest.competitionId}`)}
+                    prefetch={false}
+                    className="link-primary"
+                  >
                     {contest.shortName}
                   </Link>
                 </td>

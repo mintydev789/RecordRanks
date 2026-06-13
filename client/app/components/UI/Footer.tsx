@@ -2,20 +2,33 @@
 
 import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { kebabCase } from "lodash";
 import Image from "next/image";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useContext } from "react";
+import { remove as removeAccents } from "remove-accents";
 import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useFeaturesInfo, useSession } from "~/helpers/hooks.ts";
+import { slugPath } from "~/helpers/utility-functions.ts";
 
 function Footer() {
+  const { slug }: { slug: string } = useParams();
+  const { organization } = useSession();
   const { theme, setTheme } = useContext(MainContext);
+  const { privacyPolicy } = useFeaturesInfo();
 
   return (
     <footer className="d-flex justify-content-center min-vw-100 fs-5 column-gap-2 column-gap-sm-3 container flex-wrap bg-body-tertiary py-3 text-center align-items-center">
       <div className="d-flex column-gap-1 flex-wrap align-items-center">
-        <span>Powered by</span>
-        <a href={C.recordRanksLink} target="_blank" rel="noopener" className="rr-button">
+        {organization?.metadata.plan !== "custom" && <span>Powered by</span>}
+        <a
+          href={`${C.recordRanksLink}?utm_source=rr${organization ? `&utm_campaign=${kebabCase(removeAccents(organization.name))}` : ""}`}
+          target="_blank"
+          rel="noopener"
+          className="rr-button"
+        >
           {theme === "light" ? (
             <Image src="/recordranks_logo_transparent_light.png" height={40} width={177} alt="RecordRanks" />
           ) : (
@@ -51,9 +64,21 @@ function Footer() {
           />
         </svg>
       </a>
-      <Link href="/about" prefetch={false} className="text-light-emphasis">
-        About
-      </Link>
+      {slug && (
+        <Link href={slugPath(slug, "/about")} prefetch={false} className="text-light-emphasis">
+          About
+        </Link>
+      )}
+      {privacyPolicy !== "disabled" &&
+        (privacyPolicy === "policy-contents" ? (
+          <Link href="/privacy" target="_blank" prefetch={false} className="text-light-emphasis">
+            Privacy
+          </Link>
+        ) : (
+          <a href={privacyPolicy} target="_blank" rel="noopener" className="text-light-emphasis">
+            Privacy
+          </a>
+        ))}
       <button
         type="button"
         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

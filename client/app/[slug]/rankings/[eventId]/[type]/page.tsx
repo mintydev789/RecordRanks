@@ -1,0 +1,282 @@
+import { eq } from "drizzle-orm";
+import omitBy from "lodash/omitBy";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+import z from "zod";
+import RankingsTable from "~/app/[slug]/rankings/[eventId]/[type]/RankingsTable.tsx";
+import EventButtons from "~/app/components/EventButtons.tsx";
+import EventTitle from "~/app/components/EventTitle.tsx";
+import RegionSelect from "~/app/components/RegionSelect.tsx";
+import Loading from "~/app/components/UI/Loading.tsx";
+import Tooltip from "~/app/components/UI/Tooltip.tsx";
+import { roundFormats } from "~/helpers/roundFormats.ts";
+import { RecordCategoryValues } from "~/helpers/types.ts";
+import { shortenEventName, slugPath } from "~/helpers/utility-functions.ts";
+import { db } from "~/server/db/provider.ts";
+import { eventsPublicCols, eventsTable as table } from "~/server/db/schema/events.ts";
+import { getEvents, getOrgDetails, getRankings, getRegions } from "~/server/server-only-functions.ts";
+
+const ParamsValidator = z.strictObject({
+  slug: z.string().nonempty(),
+  eventId: z.string().nonempty(),
+  type: z.enum(["single", "average", "all-avg-formats"]),
+});
+const SearchParamsValidator = z.strictObject({
+  show: z.literal("results").optional(),
+  category: z.enum([...RecordCategoryValues, "all"]).optional(),
+  region: z.string().nonempty().optional(),
+  topN: z
+    .string()
+    .optional()
+    .refine((val) => val === undefined || !Number.isNaN(Number(val)), { error: "Invalid topN number" })
+    .transform((val) => (typeof val === "string" ? parseInt(val, 10) : val)),
+});
+
+type Props = {
+  params: Promise<z.infer<typeof ParamsValidator>>;
+  searchParams: Promise<z.infer<typeof SearchParamsValidator>>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { eventId } = await params;
+
+  const [event] = await db.select(eventsPublicCols).from(table).where(eq(table.eventId, eventId!));
+
+  return {
+    title: `${shortenEventName(event.name)} Rankings`,
+    description: process.env.METADATA_RANKINGS_DESCRIPTION,
+    openGraph: {
+      images: [`${process.env.NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL}/assets/screenshots/rankings.jpg`],
+    },
+  };
+}
+
+async function RankingsPage({ params, searchParams }: Props) {
+  const { slug, eventId, type } = ParamsValidator.parse(await params);
+  const { show, category, region, topN } = SearchParamsValidator.parse(await searchParams);
+
+  const urlSearchParams = new URLSearchParams(omitBy({ show, category, region, topN } as any, (val) => !val));
+  const urlSearchParamsWithoutShow = new URLSearchParams(omitBy({ category, region, topN } as any, (val) => !val));
+  const urlSearchParamsWithoutCategory = new URLSearchParams(omitBy({ show, region, topN } as any, (val) => !val));
+  const urlSearchParamsWithoutTopN = new URLSearchParams(omitBy({ show, category, region } as any, (val) => !val));
+
+  const organization = await getOrgDetails({ slug });
+  const [events, regions] = await Promise.all([
+    getEvents({ organizationId: organization!.id, includeHiddenAndRemoved: true }),
+    getRegions(organization!.id),
+  ]);
+
+  const visibleEvents = events.filter((e) => e.category !== "removed" && !e.hidden);
+  const event = events.find((e) => e.eventId === eventId);
+  if (!event) return <p className="fs-4 mx-3 mt-5 text-center">Event not found</p>;
+  const recordCategory =
+    category ??
+    (event.category === "extreme-bld" || (event.category !== "unofficial" && event.submissionsAllowed)
+      ? "online"
+      : "competitions");
+  const roundFormat = roundFormats.find((rf) => rf.value === event.defaultRoundFormat)!;
+
+  const rankingsPromise = getRankings(organization!.id, event, type, recordCategory, { show, region, topN });
+
+  return (
+    <section>
+      <h2 className="mb-3 text-center">Rankings</h2>
+
+      <div className="mb-3 px-2">
+        <h4>Event</h4>
+        <EventButtons
+          events={visibleEvents}
+          eventIdOverride={eventId}
+          pathTemplate={slugPath(slug, `/rankings/__EVENT_ID__/${type}`)}
+        />
+
+        {/* Similar code to the records page */}
+        <div className="d-flex mb-4 flex-wrap gap-3">
+          <RegionSelect regions={regions} />
+
+          <div className="d-flex flex-wrap gap-3">
+            <div>
+              <h5 className="d-flex gap-1">
+                Type
+                {type === "all-avg-formats" && (
+                  <Tooltip
+                    id="type_tooltip"
+                    text="Includes both Mo3 and Ao5 results, even if they don't match the ranked average format"
+                  />
+                )}
+              </h5>
+              {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
+              <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Type">
+                <Link
+                  href={slugPath(slug, `/rankings/${eventId}/single?${urlSearchParams}`)}
+                  prefetch={false}
+                  className={`btn btn-primary ${type === "single" ? "active" : ""}`}
+                >
+                  Single
+                </Link>
+                <Link
+                  href={slugPath(slug, `/rankings/${eventId}/average?${urlSearchParams}`)}
+                  prefetch={false}
+                  className={`btn btn-primary ${type === "average" ? "active" : ""}`}
+                >
+                  {roundFormat.bestAndWorstAttemptsToExclude > 0 ? "Average" : "Mean"}
+                </Link>
+                <Link
+                  href={slugPath(slug, `/rankings/${eventId}/all-avg-formats?${urlSearchParams}`)}
+                  prefetch={false}
+                  className={`btn btn-primary ${type === "all-avg-formats" ? "active" : ""}`}
+                >
+                  All Avgs
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <h5>Show</h5>
+              {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
+              <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Show">
+                <Link
+                  href={slugPath(slug, `/rankings/${eventId}/${type}?${urlSearchParamsWithoutShow}`)}
+                  prefetch={false}
+                  className={`btn btn-primary ${!show ? "active" : ""}`}
+                >
+                  Top Persons
+                </Link>
+                <Link
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutShow.toString() ? `${urlSearchParamsWithoutShow}&` : ""
+                    }show=results`,
+                  )}
+                  prefetch={false}
+                  className={`btn btn-primary ${show ? "active" : ""}`}
+                >
+                  Top Results
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <h5>Top</h5>
+              {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
+              <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Top">
+                <Link
+                  href={slugPath(slug, `/rankings/${eventId}/${type}?${urlSearchParamsWithoutTopN}`)}
+                  prefetch={false}
+                  className={`btn btn-primary ${!topN || topN === 100 ? "active" : ""}`}
+                >
+                  100
+                </Link>
+                <Link
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
+                    }topN=1000`,
+                  )}
+                  prefetch={false}
+                  className={`btn btn-primary ${topN === 1000 ? "active" : ""}`}
+                >
+                  1000
+                </Link>
+                <Link
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutTopN.toString() ? `${urlSearchParamsWithoutTopN}&` : ""
+                    }topN=10000`,
+                  )}
+                  prefetch={false}
+                  className={`btn btn-primary ${topN === 10000 ? "active" : ""}`}
+                >
+                  10000
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <h5>Category</h5>
+              {/* biome-ignore lint/a11y/useSemanticElements: this is the most suitable way to make a button group */}
+              <div className="btn-group btn-group-sm mt-2" role="group" aria-label="Contest Type">
+                <Link
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=competitions`,
+                  )}
+                  prefetch={false}
+                  className={`btn btn-primary ${recordCategory === "competitions" ? "active" : ""}`}
+                >
+                  Competitions
+                </Link>
+                <Link
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=meetups`,
+                  )}
+                  prefetch={false}
+                  className={`btn btn-primary ${recordCategory === "meetups" ? "active" : ""}`}
+                >
+                  Meetups
+                </Link>
+                <Link
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=online`,
+                  )}
+                  prefetch={false}
+                  className={`btn btn-primary ${recordCategory === "online" ? "active" : ""}`}
+                >
+                  Online
+                </Link>
+                <Link
+                  href={slugPath(
+                    slug,
+                    `/rankings/${eventId}/${type}?${
+                      urlSearchParamsWithoutCategory.toString() ? `${urlSearchParamsWithoutCategory}&` : ""
+                    }category=all`,
+                  )}
+                  prefetch={false}
+                  className={`btn btn-primary ${recordCategory === "all" ? "active" : ""}`}
+                >
+                  All
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {(event.category === "extreme-bld" || event.submissionsAllowed) && (
+          <Link
+            href={slugPath(slug, `/video-based-results/submit?eventId=${eventId}`)}
+            prefetch={false}
+            className="btn btn-success btn-sm"
+          >
+            Submit a result
+          </Link>
+        )}
+      </div>
+
+      <EventTitle organizationSlug={slug} event={event} showDescription />
+
+      {event.category === "removed" ? (
+        <p className="ms-2 text-danger">This is a removed event</p>
+      ) : event.hidden ? (
+        <p className="ms-2 text-danger">This is a hidden event</p>
+      ) : undefined}
+
+      <Suspense fallback={<Loading />}>
+        <RankingsTable rankingsPromise={rankingsPromise} event={event} regions={regions} type={type} show={show} />
+      </Suspense>
+    </section>
+  );
+}
+
+export default RankingsPage;

@@ -7,13 +7,14 @@ import nodemailer from "nodemailer";
 import type Mail from "nodemailer/lib/mailer/index";
 import { C } from "~/helpers/constants.ts";
 import { videoBasedFormats } from "~/helpers/roundFormats.ts";
-import { getFormattedTime, getIsUrgent } from "~/helpers/utilityFunctions.ts";
+import type { OrganizationDetails } from "~/helpers/types.ts";
+import { getFormattedTime, getIsUrgent } from "~/helpers/utility-functions.ts";
 import type { SelectContest } from "~/server/db/schema/contests.ts";
 import type { SelectPerson } from "~/server/db/schema/persons.ts";
 import { nodemailerConnectionOptions } from "~/server/email/connection-options.ts";
 import { type LogCode, LogCodes } from "~/server/logger.ts";
-import { rolesObject } from "~/server/permissions.ts";
-import { logMessage } from "~/server/server-only-functions.ts";
+import { orgRolesObject } from "~/server/organization-permissions.ts";
+import { getSettingFromDb, logMessage } from "~/server/server-only-functions.ts";
 import type { SelectEvent } from "../db/schema/events.ts";
 import type { ResultResponse } from "../db/schema/results.ts";
 
@@ -22,17 +23,12 @@ if (process.env.NODE_ENV !== "production") loadEnvConfig(process.cwd(), true);
 
 if (!process.env.PROD_HOSTNAME) console.error("PROD_HOSTNAME environment variable not set!");
 if (!process.env.NEXT_PUBLIC_BASE_URL) console.error("NEXT_PUBLIC_BASE_URL environment variable not set!");
-if (!process.env.NEXT_PUBLIC_CONTACT_EMAIL) console.error("NEXT_PUBLIC_CONTACT_EMAIL environment variable not set!");
 
 const transporter = nodemailer.createTransport(nodemailerConnectionOptions);
 
 const noReplyEmail: Mail.Address = {
   name: "No Reply",
   address: `no-reply@${process.env.PROD_HOSTNAME}`,
-};
-const adminEmail: Mail.Address = {
-  name: "Admin",
-  address: process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
 };
 const contestsEmail: Mail.Address = {
   name: "Contests",
@@ -188,18 +184,46 @@ export function sendAccountDeletedEmail(to: string) {
   });
 }
 
-export function sendRolesChangedEmail(
+export function sendOrganizationInvitationEmail(
   to: string,
-  roles: string[],
-  { canAccessModDashboard }: { canAccessModDashboard: boolean },
+  details: {
+    organizationName: string;
+    organizationSlug: string;
+    invitedByUsername: string;
+    invitedByEmail: string;
+    inviteLink: string;
+  },
+) {
+  send({
+    templateFileName: "organization-invitation.hbs",
+    context: {
+      baseUrl,
+      orgBaseUrl: `${baseUrl}/${details.organizationSlug}`,
+      projectName,
+      ...details,
+    },
+    callback: async (html) => {
+      await transporter.sendMail({
+        from: noReplyEmail,
+        to,
+        subject: `Invitation to ${details.organizationName}`,
+        html,
+      });
+    },
+  });
+}
+
+export function sendMemberRolesChangedEmail(
+  to: string,
+  { roles, organizationName }: { roles: string[]; organizationName: string },
 ) {
   send({
     templateFileName: "roles-changed.hbs",
     context: {
       baseUrl,
       projectName,
-      roles: roles.map((r) => (rolesObject as any)[r]).join(", "),
-      canAccessModDashboard,
+      organizationName,
+      roles: roles.map((r) => (orgRolesObject as any)[r]).join(", "),
     },
     callback: async (html) => {
       await transporter.sendMail({
@@ -214,9 +238,12 @@ export function sendRolesChangedEmail(
 
 export function sendContestSubmittedEmail(
   recipients: string[],
-  contest: SelectContest,
-  creator: string,
-  regionName: string | undefined,
+  {
+    contest,
+    creator,
+    regionName,
+    organization,
+  }: { contest: SelectContest; creator: string; regionName: string | undefined; organization: OrganizationDetails },
 ) {
   const urgent = getIsUrgent(new Date(contest.startDate));
 
@@ -229,13 +256,15 @@ export function sendContestSubmittedEmail(
       contestName: contest.name,
       contestType: contest.type,
       wcaCompetition: contest.type === "wca-comp",
-      contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
+      contestUrl: `${baseUrl}/${organization.slug}/competitions/${contest.competitionId}`,
+      rulesUrl: `${baseUrl}/${organization.slug}/rules`,
       creator,
       startDate: contest.startDate.toDateString(),
       location: regionName ? `${contest.city}, ${regionName}` : "",
       urgent,
     },
     callback: async (html) => {
+      const adminEmail = { name: "Admin", address: organization.metadata.contactEmail };
       const subject = `${urgent ? "Urgent: " : ""}Contest submitted: ${contest.shortName}`;
 
       if (recipients.length > 0) {
@@ -263,14 +292,17 @@ export function sendContestSubmittedEmail(
 
 export function sendContestApprovedEmail(
   to: string,
-  contest: Pick<SelectContest, "competitionId" | "name" | "shortName">,
+  {
+    contest,
+    organization,
+  }: { contest: Pick<SelectContest, "competitionId" | "name" | "shortName">; organization: OrganizationDetails },
 ) {
   send({
     templateFileName: "contest-approved.hbs",
     context: {
       projectName,
       contestName: contest.name,
-      contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
+      contestUrl: `${baseUrl}/${organization.slug}/competitions/${contest.competitionId}`,
     },
     callback: async (html) => {
       await transporter.sendMail({
@@ -285,20 +317,27 @@ export function sendContestApprovedEmail(
 
 export function sendContestFinishedEmail(
   recipients: string[],
-  contest: Pick<SelectContest, "competitionId" | "name" | "shortName" | "type" | "participants">,
-  creator: string,
+  {
+    contest,
+    organization,
+  }: {
+    contest: Pick<SelectContest, "competitionId" | "name" | "shortName" | "type" | "participants">;
+    organization: OrganizationDetails;
+  },
 ) {
   send({
     templateFileName: "contest-finished.hbs",
     context: {
       projectName,
+      // If this is set, a donation link will be included in the email
+      organizationName: organization.metadata.plan === "basic" ? organization.name : "",
       contestName: contest.name,
-      contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
-      creator,
+      contestUrl: `${baseUrl}/${organization.slug}/competitions/${contest.competitionId}`,
       rrDonationLink: C.rrDonationLink,
       isUnofficialCompetition: contest.type === "comp",
     },
     callback: async (html) => {
+      const adminEmail = { name: "Admin", address: organization.metadata.contactEmail };
       const subject = `Contest finished: ${contest.shortName}`;
 
       if (recipients.length > 0) {
@@ -324,14 +363,17 @@ export function sendContestFinishedEmail(
 
 export function sendContestPublishedEmail(
   to: string,
-  contest: Pick<SelectContest, "competitionId" | "name" | "shortName">,
+  {
+    contest,
+    organization,
+  }: { contest: Pick<SelectContest, "competitionId" | "name" | "shortName">; organization: OrganizationDetails },
 ) {
   send({
     templateFileName: "contest-published.hbs",
     context: {
       projectName,
       contestName: contest.name,
-      contestUrl: `${baseUrl}/competitions/${contest.competitionId}`,
+      contestUrl: `${baseUrl}/${organization.slug}/competitions/${contest.competitionId}`,
     },
     callback: async (html) => {
       await transporter.sendMail({
@@ -346,16 +388,23 @@ export function sendContestPublishedEmail(
 
 export function sendVideoBasedResultSubmittedEmail(
   to: string,
-  videoBasedResultsContactEmail: string | null,
-  event: SelectEvent,
-  result: ResultResponse,
-  creatorName: string,
-  creatorPersonName: string | undefined,
+  {
+    event,
+    result,
+    creatorName,
+    creatorPersonName,
+    organization,
+  }: {
+    event: SelectEvent;
+    result: ResultResponse;
+    creatorName: string;
+    creatorPersonName: string | undefined;
+    organization: OrganizationDetails;
+  },
 ) {
   send({
     templateFileName: "video-based-result-submitted.hbs",
     context: {
-      baseUrl,
       projectName,
       eventName: event.name,
       roundFormat: videoBasedFormats.find((rf) => rf.attempts === result.attempts.length)!.label,
@@ -364,7 +413,7 @@ export function sendVideoBasedResultSubmittedEmail(
         (result.regionalSingleRecord ? ` (${result.regionalSingleRecord})` : ""),
       average:
         result.average !== 0
-          ? getFormattedTime(result.average, { event }) +
+          ? getFormattedTime(result.average, { event, isAverage: true }) +
             (result.regionalAverageRecord ? ` (${result.regionalAverageRecord})` : "")
           : "",
       videoLink: result.videoLink!,
@@ -373,11 +422,20 @@ export function sendVideoBasedResultSubmittedEmail(
       creatorPersonName: creatorPersonName ?? "",
     },
     callback: async (html) => {
+      const contactEmail = (await getSettingFromDb({
+        key: "video-based-results-contact-email",
+        organizationId: organization.id,
+        optional: true,
+      })) ?? {
+        name: "Admin",
+        address: organization.metadata.contactEmail,
+      };
+
       await transporter.sendMail({
         from: resultsEmail,
-        replyTo: videoBasedResultsContactEmail ?? adminEmail,
+        replyTo: contactEmail,
         to,
-        bcc: videoBasedResultsContactEmail ?? adminEmail,
+        bcc: contactEmail,
         subject: `Result submitted: ${event.name}`,
         html,
       });
@@ -385,11 +443,14 @@ export function sendVideoBasedResultSubmittedEmail(
   });
 }
 
-export function sendVideoBasedResultApprovedEmail(to: string, event: SelectEvent) {
+export function sendVideoBasedResultApprovedEmail(
+  to: string,
+  { event, organization }: { event: SelectEvent; organization: OrganizationDetails },
+) {
   send({
     templateFileName: "video-based-result-approved.hbs",
     context: {
-      baseUrl,
+      orgBaseUrl: `${baseUrl}/${organization.slug}`,
       projectName,
       eventId: event.eventId,
       eventName: event.name,
@@ -405,15 +466,24 @@ export function sendVideoBasedResultApprovedEmail(to: string, event: SelectEvent
   });
 }
 
-export function sendUserRequestSubmittedEmail(
+export function sendMemberRequestSubmittedEmail(
   to: string,
-  name: string,
-  requestedPerson: Pick<SelectPerson, "id" | "name"> | undefined,
-  requestedRole: string | null,
-  comment: string | null,
+  {
+    name,
+    requestedPerson,
+    requestedRole,
+    comment,
+    organization,
+  }: {
+    name: string;
+    requestedPerson: Pick<SelectPerson, "id" | "name"> | undefined;
+    requestedRole: string | null;
+    comment: string | null;
+    organization: OrganizationDetails;
+  },
 ) {
   send({
-    templateFileName: "user-request-submitted.hbs",
+    templateFileName: "member-request-submitted.hbs",
     context: {
       projectName,
       name,
@@ -423,6 +493,8 @@ export function sendUserRequestSubmittedEmail(
       comment: comment ?? "",
     },
     callback: async (html) => {
+      const adminEmail = { name: "Admin", address: organization.metadata.contactEmail };
+
       await transporter.sendMail({
         from: noReplyEmail,
         replyTo: adminEmail,

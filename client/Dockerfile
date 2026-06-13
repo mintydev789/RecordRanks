@@ -29,6 +29,21 @@ COPY package.json5 pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 # ============================================
+# Custom RecordRanks stage to generate ICO file
+# ============================================
+
+FROM base AS ico-generator
+
+# Set working directory
+WORKDIR /app
+
+RUN apt update && apt install -y inkscape imagemagick
+
+COPY convert-svg-to-ico.sh icon.svg ./
+
+RUN ./convert-svg-to-ico.sh ./icon.svg ./favicon.ico
+
+# ============================================
 # Stage 2: Build Next.js application in standalone mode
 # ============================================
 
@@ -45,13 +60,15 @@ COPY --from=dependencies /app/node_modules ./node_modules
 # Copy application source code
 COPY . .
 
+# Copy ICO file from ico-generator stage (yes, the path ends up as /app/app/favicon.ico)
+COPY --from=ico-generator /app/favicon.ico ./app/
+
 ENV NODE_ENV=production
 ARG NEXT_PUBLIC_BASE_URL
 ARG NEXT_PUBLIC_PROJECT_NAME
-ARG NEXT_PUBLIC_CONTACT_EMAIL
 ARG NEXT_PUBLIC_AUTH_PROVIDERS
-ARG NEXT_PUBLIC_EXPORTS_TO_KEEP
 ARG NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL
+ARG NEXT_PUBLIC_MULTITENANCY_ENABLED
 ARG NEXT_PUBLIC_VERSION
 
 # Next.js collects completely anonymous telemetry data about general usage.

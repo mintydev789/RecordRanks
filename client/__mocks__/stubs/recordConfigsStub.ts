@@ -4,7 +4,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   // Competition result records
   {
     recordTypeId: "WR",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XWR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -12,7 +12,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "ER",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XER",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -20,7 +20,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "OcR",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XOcR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -28,7 +28,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AsR",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XAsR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -36,7 +36,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NAR",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XNAR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -44,7 +44,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "SAR",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XSAR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -52,7 +52,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AfR",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XAfR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -60,7 +60,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NR",
-    category: "competitions",
+    category: "competitions" as const,
     label: "XNR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -70,7 +70,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   // Meetup result records
   {
     recordTypeId: "WR",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MWR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -78,7 +78,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "ER",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MER",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -86,7 +86,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "OcR",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MOcR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -94,7 +94,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AsR",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MAsR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -102,7 +102,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NAR",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MNAR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -110,7 +110,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "SAR",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MSAR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -118,7 +118,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AfR",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MAfR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -126,7 +126,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NR",
-    category: "meetups",
+    category: "meetups" as const,
     label: "MNR",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -136,7 +136,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   // Video-based result records
   {
     recordTypeId: "WR",
-    category: "online",
+    category: "online" as const,
     label: "WB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -144,7 +144,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "ER",
-    category: "online",
+    category: "online" as const,
     label: "EB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -152,7 +152,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "OcR",
-    category: "online",
+    category: "online" as const,
     label: "OcB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -160,7 +160,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AsR",
-    category: "online",
+    category: "online" as const,
     label: "AsB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -168,7 +168,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NAR",
-    category: "online",
+    category: "online" as const,
     label: "NAB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -176,7 +176,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "SAR",
-    category: "online",
+    category: "online" as const,
     label: "SAB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -184,7 +184,7 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "AfR",
-    category: "online",
+    category: "online" as const,
     label: "AfB",
     active: true,
     rank: 1, // doesn't matter for tests
@@ -192,10 +192,10 @@ export const recordConfigsStub: InsertRecordConfig[] = [
   },
   {
     recordTypeId: "NR",
-    category: "online",
+    category: "online" as const,
     label: "NB",
     active: true,
     rank: 1, // doesn't matter for tests
     color: "#000000", // doesn't matter for tests
   },
-];
+].map((rc) => ({ ...rc, organizationId: "default" }));

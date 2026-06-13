@@ -2,46 +2,32 @@
 
 import { faPencil } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useAction } from "next-safe-action/hooks";
 import { useContext, useMemo, useState } from "react";
-import Competitor from "~/app/components/Competitor.tsx";
 import FiltersContainer from "~/app/components/FiltersContainer.tsx";
 import Form from "~/app/components/form/Form.tsx";
-import FormCheckbox from "~/app/components/form/FormCheckbox";
-import FormPersonInputs from "~/app/components/form/FormPersonInputs.tsx";
+import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import type { authClient } from "~/helpers/authClient.ts";
-import { C } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
-import type { InputPerson } from "~/helpers/types.ts";
-import { getActionError, getHasRole, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
-import type { PersonResponse } from "~/server/db/schema/persons.ts";
-import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { type Role, rolesObject } from "~/server/permissions.ts";
-import { updateUserSF } from "~/server/server-functions/user-server-functions.ts";
+import { getHasRole, getSimplifiedString } from "~/helpers/utility-functions.ts";
+import { rolesObject } from "~/server/permissions.ts";
 
 type Props = {
   users: (typeof authClient.$Infer.Session.user & { providerId: string })[];
-  userPersons: PersonResponse[];
-  regions: RegionResponse[];
 };
 
-function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, regions }: Props) {
-  const { changeErrorMessages, resetMessages } = useContext(MainContext);
+function ManageUsersScreen({ users: initUsers }: Props) {
+  const { resetMessages } = useContext(MainContext);
 
-  const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateUserSF);
-  const [users, setUsers] = useState(initUsers);
-  const [userPersons, setUserPersons] = useState(initUserPersons);
-  const [userId, setUserId] = useState<string>();
+  // const { executeAsync: updateUser, isPending: isUpdating } = useAction(updateUserSF);
+  const isUpdating = false;
+  const [users, _setUsers] = useState(initUsers);
+  const [_userId, setUserId] = useState<string>();
   const [name, setName] = useState(""); // for email + password users this is the same as the username
   const [email, setEmail] = useState("");
-  const [personNames, setPersonNames] = useState([""]);
-  const [persons, setPersons] = useState<InputPerson[]>([null]);
   const [isUser, setIsUser] = useState(false);
-  const [isMod, setIsMod] = useState(false);
-  const [isVideoBasedResultReviewer, setIsVideoBasedResultReviewer] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -50,36 +36,23 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
 
     return users.filter(
       (u) =>
-        u.name.toLocaleLowerCase().includes(simplifiedSearch) ||
-        u.email.toLocaleLowerCase().includes(simplifiedSearch) ||
-        getSimplifiedString(userPersons.find((p) => p.id === u.personId)?.name ?? "").includes(simplifiedSearch),
+        u.name.toLocaleLowerCase().includes(simplifiedSearch) || u.email.toLocaleLowerCase().includes(simplifiedSearch),
     );
-  }, [search, users, userPersons]);
+  }, [search, users]);
 
   const handleSubmit = async () => {
-    if (persons[0] === null && personNames[0].trim() !== "") {
-      changeErrorMessages(["The competitor has not been entered. Either enter them or clear the input."]);
-      return;
-    }
-
-    const roles: Role[] = [];
-    if (isUser) roles.push("user");
-    if (isMod) roles.push("mod");
-    if (isVideoBasedResultReviewer) roles.push("videoBasedResultReviewer");
-    if (isAdmin) roles.push("admin");
-
-    const res = await updateUser({ id: userId!, personId: persons[0]?.id, roles });
-
-    if (res.serverError || res.validationErrors) {
-      changeErrorMessages([getActionError(res)]);
-    } else {
-      resetMessages();
-      setUserId(undefined);
-      setName("");
-      setUsers(users.map((u) => (u.id === userId ? { ...res.data!.user, providerId: u.providerId } : u)));
-      const { person } = res.data!;
-      if (person && !userPersons.some((p) => p.id === person.id)) setUserPersons([...userPersons, person]);
-    }
+    //   const roles: Role[] = [];
+    //   if (isUser) roles.push("user");
+    //   if (isAdmin) roles.push("admin");
+    //   const res = await updateUser({ id: userId!, roles });
+    //   if (res.serverError || res.validationErrors) {
+    //     changeErrorMessages([getActionError(res)]);
+    //   } else {
+    //     resetMessages();
+    //     setUserId(undefined);
+    //     setName("");
+    //     setUsers(users.map((u) => (u.id === userId ? { ...res.data!.user, providerId: u.providerId } : u)));
+    //   }
   };
 
   const onEditUser = (user: typeof authClient.$Infer.Session.user) => {
@@ -92,19 +65,7 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
 
     if (!user.role) throw new Error("Error: user role is empty");
     setIsUser(getHasRole("user", user.role));
-    setIsMod(getHasRole("mod", user.role));
-    setIsVideoBasedResultReviewer(getHasRole("videoBasedResultReviewer", user.role));
     setIsAdmin(getHasRole("admin", user.role));
-
-    const person = user.personId ? userPersons.find((p) => p.id === user.personId) : undefined;
-
-    if (person) {
-      setPersons([person]);
-      setPersonNames([person.name]);
-    } else {
-      setPersons([null]);
-      setPersonNames([""]);
-    }
   };
 
   return (
@@ -125,26 +86,8 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
               <FormTextInput title="Email" value={email} setValue={setEmail} disabled />
             </div>
           </div>
-          <FormPersonInputs
-            title="Competitor"
-            persons={persons}
-            setPersons={setPersons}
-            personNames={personNames}
-            setPersonNames={setPersonNames}
-            regions={regions}
-            disabled={isUpdating}
-            addNewPersonMode="default"
-            display="grid"
-          />
-          <h5 className="mt-3 mb-3">Roles</h5>
+          <h5 className="my-3">Roles</h5>
           <FormCheckbox title={rolesObject.user} selected={isUser} setSelected={setIsUser} disabled={isUpdating} />
-          <FormCheckbox title={rolesObject.mod} selected={isMod} setSelected={setIsMod} disabled={isUpdating} />
-          <FormCheckbox
-            title={rolesObject.videoBasedResultReviewer}
-            selected={isVideoBasedResultReviewer}
-            setSelected={setIsVideoBasedResultReviewer}
-            disabled={isUpdating}
-          />
           <FormCheckbox title={rolesObject.admin} selected={isAdmin} setSelected={setIsAdmin} disabled={isUpdating} />
         </Form>
       )}
@@ -157,7 +100,6 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
 
         <p className="mb-2">
           Number of users:&nbsp;<b>{filteredUsers.length}</b>
-          {filteredUsers.length === C.maxUsers ? " (reached limit; please contact the development team)" : ""}
         </p>
       </div>
 
@@ -169,14 +111,12 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col">Provider ID</th>
-              <th scope="col">Competitor</th>
               <th scope="col">Roles</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => {
-              const person = userPersons.find((p) => p.id === user.personId);
               const roles = user
                 .role!.split(",")
                 .map((role) => (rolesObject as any)[role])
@@ -195,10 +135,9 @@ function ManageUsersScreen({ users: initUsers, userPersons: initUserPersons, reg
                     </div>
                   </td>
                   <td>{user.providerId}</td>
-                  <td>{person && <Competitor person={person} regions={regions} noFlag />}</td>
                   <td>{roles}</td>
                   <td>
-                    <Button onClick={() => onEditUser(user)} className="btn-xs" title="Edit" ariaLabel="Edit">
+                    <Button onClick={() => onEditUser(user)} disabled className="btn-xs" title="Edit" ariaLabel="Edit">
                       <FontAwesomeIcon icon={faPencil} />
                     </Button>
                   </td>

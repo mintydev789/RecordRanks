@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Time from "~/app/components/Time.tsx";
 import type { EventWrPair, RoundFormat } from "~/helpers/types.ts";
-import { getBestAndAverage, setResultWorldRecords } from "~/helpers/utilityFunctions.ts";
+import { getBestAndAverage, setResultWorldRecords } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
 import type { Attempt, ResultResponse } from "~/server/db/schema/results.ts";

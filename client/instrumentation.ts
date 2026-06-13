@@ -1,27 +1,25 @@
-import type fsType from "node:fs";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
-import { defaultSettings } from "~/helpers/default-settings.ts";
+import { defaultGlobalSettings, getDefaultOrgSettings } from "~/helpers/default-settings.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
-import { testPersons } from "~/helpers/test-data/testPersons.ts";
-import { testPosts } from "~/helpers/test-data/testPosts.ts";
-import { testUsers } from "~/helpers/test-data/testUsers.ts";
-import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utilityFunctions.ts";
+import { testPersons } from "~/helpers/test-data/test-persons.ts";
+import { testPosts } from "~/helpers/test-data/test-posts.ts";
+import { testUsers } from "~/helpers/test-data/test-users.ts";
+import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utility-functions.ts";
 import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition.ts";
-import type { auth as authType } from "~/server/auth.ts";
-import type { db as dbType } from "~/server/db/provider.ts";
 import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
+import { contestsTable } from "~/server/db/schema/contests.ts";
+import { eventsTable } from "~/server/db/schema/events.ts";
+import { personsTable } from "~/server/db/schema/persons.ts";
 import { postsTable } from "~/server/db/schema/posts.ts";
+import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
 import { roundsTable } from "~/server/db/schema/rounds.ts";
 import { settingsTable } from "~/server/db/schema/settings.ts";
 import { C } from "./helpers/constants.ts";
-import { RecordTypeValues } from "./helpers/types.ts";
-import { contestsTable, type InsertContest } from "./server/db/schema/contests.ts";
-import { eventsTable } from "./server/db/schema/events.ts";
-import { type PersonResponse, personsTable } from "./server/db/schema/persons.ts";
-import { recordConfigsTable } from "./server/db/schema/record-configs.ts";
+import type { InsertContest } from "./server/db/schema/contests.ts";
+import type { PersonResponse } from "./server/db/schema/persons.ts";
 import type { SelectResult } from "./server/db/schema/results.ts";
 
 // This is the scrypt password hash for the password "rr" and BETTER_AUTH_SECRET = "secret_thats_long_enough_to_be_accepted_by_better_auth".
@@ -31,45 +29,10 @@ const hashForRr =
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { db }: { db: typeof dbType } = await import("~/server/db/provider.ts");
+    const { db } = await import("~/server/db/provider.ts");
 
-    // Seed init record configs
-    if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
-      console.log("Seeding init record configs...");
-
-      for (let i = 0; i < RecordTypeValues.length; i++) {
-        const recordTypeId = RecordTypeValues[i];
-
-        await db.insert(recordConfigsTable).values([
-          {
-            recordTypeId,
-            category: "competitions",
-            label: recordTypeId,
-            rank: (i + 1) * 10,
-            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-          },
-          {
-            recordTypeId,
-            category: "meetups",
-            label: `M${recordTypeId}`,
-            rank: 100 + (i + 1) * 10,
-            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-          },
-          {
-            recordTypeId,
-            category: "online",
-            label: `O${recordTypeId}`,
-            rank: 200 + (i + 1) * 10,
-            color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
-          },
-        ]);
-      }
-
-      console.log("Finished seeding record configs");
-    }
-
-    // Seed default settings
-    for (const defaultSetting of defaultSettings) {
+    // Seed default global settings
+    for (const defaultSetting of defaultGlobalSettings) {
       const [existingSetting] = await db
         .select({ id: settingsTable.id })
         .from(settingsTable)
@@ -77,44 +40,88 @@ export async function register() {
         .limit(1);
 
       if (!existingSetting) {
-        const [createdSetting] = await db.insert(settingsTable).values(defaultSetting).returning();
+        await db.insert(settingsTable).values(defaultSetting);
+        console.log(`Seeded setting: ${defaultSetting.group}.${defaultSetting.key}`);
+      }
+    }
 
-        console.log(`Seeded setting: ${createdSetting.group}.${createdSetting.key}`);
+    // Seed default organization settings
+    const organizations = await db.query.organizations.findMany({ columns: { id: true, name: true } });
+    for (const { id, name } of organizations) {
+      for (const defaultOrgSetting of getDefaultOrgSettings(id)) {
+        const [existingSetting] = await db
+          .select({ id: settingsTable.id })
+          .from(settingsTable)
+          .where(and(eq(settingsTable.organizationId, id), eq(settingsTable.key, defaultOrgSetting.key)))
+          .limit(1);
+
+        if (!existingSetting) {
+          await db.insert(settingsTable).values(defaultOrgSetting);
+          console.log(`Seeded organization setting for ${name}: ${defaultOrgSetting.group}.${defaultOrgSetting.key}`);
+        }
       }
     }
 
     // Seed test data
     if (process.env.NODE_ENV !== "production") {
-      const { auth }: { auth: typeof authType } = await import("~/server/auth.ts");
+      const { auth } = await import("~/server/auth.ts");
 
       if ((await db.select().from(personsTable)).length === 0) {
         console.log("Seeding test persons...");
         await db.insert(personsTable).values(testPersons);
         console.log("Finished seeding test persons");
       }
-
       if ((await db.select().from(eventsTable)).length === 0) {
         console.log("Seeding test events...");
         await db.insert(eventsTable).values(eventsStub);
         console.log("Finished seeding test events");
       }
-
       if ((await db.select().from(contestsTable)).length === 0) {
         console.log("Seeding test contests...");
         await db.insert(contestsTable).values(contestsStub);
         console.log("Finished seeding test contests");
       }
-
       if ((await db.select().from(roundsTable)).length === 0) {
         console.log("Seeding test rounds...");
         await db.insert(roundsTable).values(roundsStub.map(({ id, ...r }) => r));
         console.log("Finished seeding test rounds");
       }
-
       if ((await db.select().from(postsTable)).length === 0) {
         console.log("Seeding test posts...");
         await db.insert(postsTable).values(testPosts);
         console.log("Finished seeding test posts");
+      }
+
+      if ((await db.select({ id: recordConfigsTable.id }).from(recordConfigsTable).limit(1)).length === 0) {
+        for (let i = 0; i < C.defaultRecordTypeValues.length; i++) {
+          const recordTypeId = C.defaultRecordTypeValues[i];
+          await db.insert(recordConfigsTable).values([
+            {
+              organizationId: "default",
+              recordTypeId,
+              category: "competitions",
+              label: recordTypeId,
+              rank: (i + 1) * 10,
+              color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+            },
+            {
+              organizationId: "default",
+              recordTypeId,
+              category: "meetups",
+              label: `M${recordTypeId}`,
+              rank: 100 + (i + 1) * 10,
+              color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+            },
+            {
+              organizationId: "default",
+              recordTypeId,
+              category: "online",
+              label: `O${recordTypeId}`,
+              rank: 200 + (i + 1) * 10,
+              color: recordTypeId === "WR" ? C.color.danger : recordTypeId === "NR" ? C.color.success : C.color.warning,
+            },
+          ]);
+        }
       }
 
       for (const testUser of testUsers) {
@@ -125,25 +132,17 @@ export async function register() {
           .limit(1);
 
         if (!existingUser) {
-          if (process.env.EMAIL_HOST) {
-            throw new Error(
-              "The EMAIL_HOST environment variable must be empty while seeding the DB to avoid sending lots of verification emails for the users being seeded. Comment it out and then uncomment it again after the DB has been seeded.",
-            );
-          }
-
-          const { role, emailVerified, personId, ...body } = testUser;
+          const { role, emailVerified, ...body } = testUser;
           await auth.api.signUpEmail({ body });
 
-          // Set emailVerified and personId
           const [user] = await db
             .update(usersTable)
-            .set({ emailVerified, personId })
+            .set({ emailVerified })
             .where(eq(usersTable.email, testUser.email))
             .returning();
 
           await db.update(accountsTable).set({ password: hashForRr }).where(eq(accountsTable.userId, user.id));
 
-          // Set role
           if (role) await db.update(usersTable).set({ role }).where(eq(usersTable.id, user.id));
 
           console.log(`Seeded test user: ${testUser.username}`);
@@ -219,8 +218,8 @@ export async function register() {
     // Migrate DB data, if env var is set
     if (process.env.MIGRATE_DB !== "true") return;
 
-    const fs: typeof fsType = await import("node:fs");
-    // const { writeFile }: { writeFile: typeof writeFileType } = await import("node:fs/promises");
+    const fs = await import("node:fs");
+    // const { writeFile } = await import("node:fs/promises");
 
     const _unoffEventIdConverter = {
       "666": "666",
@@ -373,6 +372,7 @@ export async function register() {
           console.error(`EE organizer from organizers dump for ${eeComp.id} is missing: ${missingEeOrganizer.person}`);
 
         const insertContestObject: InsertContest = {
+          organizationId: "default",
           competitionId: eeComp.id,
           state: "approved",
           name: wcaCompData.name,
@@ -427,12 +427,13 @@ export async function register() {
       console.log("Archive migration done");
     }
 
-    // const doSetResultRecords = false
+    // const doSetResultRecords = false;
     // if (doSetResultRecords) {
     //   console.log("Setting result records...");
 
     //   const recordMapper = (result: SelectResult, event: Pick<SelectEvent, "format" | "category">) => {
     //     const region = await db.query.regions.findFirst({ where: { code: result.regionCode }});
+    //     // THE Continents OBJECT WAS REMOVED IN VERSION 0.20
     //     const continent = Continents.find((c) => c.code === result.superRegionCode);
     //     const getRecordLabel = (key: "regionalSingleRecord" | "regionalAverageRecord") =>
     //       result.recordCategory === "competitions"
@@ -454,7 +455,7 @@ export async function register() {
     //       (temp as any).best = getFormattedTime(result.best, { event: event as any });
     //     } else {
     //       (temp as any).regionalAverageRecord = getRecordLabel("regionalAverageRecord");
-    //       (temp as any).average = getFormattedTime(result.average, { event: event as any });
+    //       (temp as any).average = getFormattedTime(result.average, { event: event as any, isAverage: true });
     //     }
 
     //     return temp;

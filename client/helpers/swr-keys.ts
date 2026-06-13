@@ -1,7 +1,8 @@
 export const SwrKey = {
   ContestTypes: "contest-types",
-  UserRequestDetails: "user-request-details",
-  UserRequestInstructions: "user-request-instructions",
+  MemberRequestDetails: "member-request-details",
+  MemberRequestInstructions: "member-request-instructions",
+  PrivacyPolicy: "privacy-policy",
 
   // Permissions
   CanCreateContests: "can-create-contests",

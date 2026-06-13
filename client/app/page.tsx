@@ -1,80 +1,34 @@
-import { desc } from "drizzle-orm";
-import Link from "next/link";
-import { connection } from "next/server";
-import { Suspense } from "react";
-import Markdown from "react-markdown";
-import BlogSection from "~/app/components/contest/BlogSection.tsx";
-import CollectiveCubing from "~/app/components/contest/CollectiveCubing.tsx";
-import ModInstructionsSection from "~/app/components/contest/ModInstructionsSection.tsx";
-import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
-import { db } from "~/server/db/provider.ts";
-import { postsPublicCols, postsTable } from "~/server/db/schema/posts.ts";
-import { getSettingFromDb } from "~/server/server-only-functions.ts";
-import DonateSection from "./components/contest/DonateSection.tsx";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import OrganizationSelect from "~/app/components/OrganizationSelect.tsx";
+import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
+import { auth } from "~/server/auth.ts";
 
 async function HomePage() {
-  await connection();
+  let organizations: (typeof auth.$Infer.Organization)[];
 
-  const description = await getSettingFromDb({ key: "home-page-description", optional: true });
-
-  const latestBlogPostsPromise = db.select(postsPublicCols).from(postsTable).limit(2).orderBy(desc(postsTable.date));
-  const modInstructionsPromise = getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });
-  const modInstructionsDescriptionPromise = getSettingFromDb({
-    key: "moderator-instructions-description",
-    optional: true,
-  });
-  const collectiveCubingEnabledSettingPromise = getSettingFromDb({ key: "collective-cubing-enabled", optional: true });
+  try {
+    const data = await auth.api.listOrganizations({ headers: await headers() });
+    organizations = data;
+  } catch {
+    redirect("/login");
+  }
 
   return (
-    <section className="px-3">
-      <h1 className="mb-4 text-center">{process.env.NEXT_PUBLIC_PROJECT_NAME}</h1>
+    <section className="container mx-auto p-3" style={{ maxWidth: "var(--rr-md-width)" }}>
+      {organizations.length === 0 ? (
+        <p className="fs-5 my-3 text-center">
+          You are not part of any spaces on {process.env.NEXT_PUBLIC_PROJECT_NAME}. You have to be invited to one first.
+        </p>
+      ) : (
+        <>
+          <p className="fs-4 mb-5 text-center">Please select a space</p>
 
-      {IS_CUBING_CONTESTS_INSTANCE && (
-        <div className="alert alert-light mb-4" role="alert">
-          Join the Cubing Contests{" "}
-          <a href={C.discordServerLink} target="_blank" rel="noopener noreferrer">
-            Discord server
-          </a>
-          !
-        </div>
+          <ToastMessages />
+
+          <OrganizationSelect organizations={organizations} />
+        </>
       )}
-
-      {description && <Markdown>{description}</Markdown>}
-
-      <div className="d-flex justify-content-center fs-5 my-4 flex-column flex-md-row gap-3 gap-lg-4 align-items-center">
-        <Link href="/about" prefetch={false} className="rr-homepage-link btn btn-primary">
-          About Us
-        </Link>
-        <Link href="/competitions" prefetch={false} className="rr-homepage-link btn btn-primary">
-          See All Contests
-        </Link>
-        <Link href="/records" prefetch={false} className="rr-homepage-link btn btn-primary">
-          See Current Records
-        </Link>
-        <Link href="/rankings" prefetch={false} className="rr-homepage-link btn btn-primary">
-          See Rankings
-        </Link>
-      </div>
-
-      <DonateSection />
-
-      <Suspense>
-        <BlogSection latestBlogPostsPromise={latestBlogPostsPromise} />
-      </Suspense>
-
-      <Suspense>
-        <ModInstructionsSection
-          modInstructionsPromise={modInstructionsPromise}
-          modInstructionsDescriptionPromise={modInstructionsDescriptionPromise}
-        />
-      </Suspense>
-
-      <h3 className="rr-basic-heading">Contact</h3>
-      <p>For general inquiries, send an email to {process.env.NEXT_PUBLIC_CONTACT_EMAIL}.</p>
-
-      <Suspense>
-        <CollectiveCubing settingValuePromise={collectiveCubingEnabledSettingPromise} />
-      </Suspense>
     </section>
   );
 }

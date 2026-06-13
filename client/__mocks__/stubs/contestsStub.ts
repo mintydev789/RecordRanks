@@ -254,6 +254,7 @@ export const contestsStub: InsertContest[] = [
   },
 ].map((c) => ({
   ...c,
+  organizationId: "default",
   state: "approved",
   shortName: c.name,
   venue: "Venueplace",

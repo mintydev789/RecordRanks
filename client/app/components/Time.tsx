@@ -1,5 +1,5 @@
 import { C } from "~/helpers/constants.ts";
-import { getFormattedTime } from "~/helpers/utilityFunctions.ts";
+import { getFormattedTime } from "~/helpers/utility-functions.ts";
 import type { EventResponse } from "~/server/db/schema/events.ts";
 import type { RecordConfigResponse } from "~/server/db/schema/record-configs.ts";
 import type { ResultResponse } from "~/server/db/schema/results.ts";
@@ -18,7 +18,7 @@ function Time({ result, event, recordConfigs, average }: Props) {
 
   return (
     <div className="d-inline-flex gap-2 align-items-center">
-      {getFormattedTime(average ? result.average : result.best, { event, showMultiPoints: true })}
+      {getFormattedTime(average ? result.average : result.best, { event, showMultiPoints: true, isAverage: average })}
 
       {recordConfig && (
         <span

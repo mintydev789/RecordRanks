@@ -2,7 +2,7 @@
 
 # This script originates from docker/reset.sh in the Supabase repo
 
-if [ "$(pwd | tail -c 5)" == "/bin" ]; then
+if [[ "$(pwd | tail -c 5)" == "/bin" ]]; then
   echo "Please run this script from the repo's root directory"
   exit 1
 fi
@@ -41,7 +41,7 @@ confirm
 echo "===> Stopping and removing all containers..."
 
 if [ -f ".env" ]; then
-  sudo docker compose -f docker-compose.supabase.yml down -v --remove-orphans
+  docker compose -f docker-compose.supabase.yml down -v --remove-orphans
 else
   echo "Skipping 'docker compose down' because there's no env-file."
 fi

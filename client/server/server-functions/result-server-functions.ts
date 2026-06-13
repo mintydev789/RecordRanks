@@ -4,16 +4,8 @@ import { addDays, differenceInDays, format } from "date-fns";
 import { and, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import z from "zod";
 import { C } from "~/helpers/constants.ts";
-import { ContinentRecordType, Continents } from "~/helpers/continents.ts";
 import { getRankedAverageFormat, roundFormats, videoBasedFormats } from "~/helpers/roundFormats.ts";
-import {
-  ContinentalRecordTypes,
-  type EventWrPair,
-  type RecordCategory,
-  RecordCategoryValues,
-  type RecordType,
-  type SuperRegionCode,
-} from "~/helpers/types.ts";
+import { type EventWrPair, type RecordCategory, RecordCategoryValues } from "~/helpers/types.ts";
 import {
   compareAvgs,
   compareSingles,
@@ -21,20 +13,22 @@ import {
   getFormattedTime,
   getHasRole,
   getMakesCutoff,
+  getMemberControlsContest,
+  getResultProceeds,
   getRoundDate,
-  getUserControlsContest,
-} from "~/helpers/utilityFunctions.ts";
-import {
-  AttemptsValidator,
-  ResultValidator,
-  type VideoBasedResultDto,
-  VideoBasedResultValidator,
-} from "~/helpers/validators/Result.ts";
+} from "~/helpers/utility-functions.ts";
+import { AttemptsValidator, ResultValidator, VideoBasedResultValidator } from "~/helpers/validators/Result.ts";
 import { auth } from "~/server/auth.ts";
 import { contestsTable, type SelectContest } from "~/server/db/schema/contests.ts";
-import type { SelectRound } from "~/server/db/schema/rounds.ts";
+import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";
+import {
+  approvePersons,
+  getContestParticipantIds,
+  getRecordConfigs,
+  logMessage,
+} from "~/server/server-only-functions.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
-import type { EventResponse, SelectEvent } from "../db/schema/events.ts";
+import type { SelectEvent } from "../db/schema/events.ts";
 import type { SelectPerson } from "../db/schema/persons.ts";
 import type { RecordConfigResponse } from "../db/schema/record-configs.ts";
 import {
@@ -47,20 +41,12 @@ import {
 } from "../db/schema/results.ts";
 import { sendVideoBasedResultApprovedEmail, sendVideoBasedResultSubmittedEmail } from "../email/mailer.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import {
-  approvePersons,
-  getContestParticipantIds,
-  getRecordConfigs,
-  getSettingFromDb,
-  logMessage,
-  setRankingAndProceedsValues,
-} from "../server-only-functions.ts";
 
 const OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG =
   "The result is more than 30 days old and contains a record, which could affect other records. Please contact the development team.";
 
 export const getWrPairUpToDateSF = actionClient
-  .metadata({ permissions: { videoBasedResults: ["create"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { videoBasedResults: ["create"] } } })
   .inputSchema(
     z.strictObject({
       recordCategory: z.enum(RecordCategoryValues),
@@ -69,406 +55,415 @@ export const getWrPairUpToDateSF = actionClient
       excludeResultId: z.int().optional(),
     }),
   )
-  .action<EventWrPair>(async ({ parsedInput: { recordCategory, eventId, recordsUpTo, excludeResultId } }) => {
-    const event = await db.query.events.findFirst({ where: { eventId } });
-    if (!event) throw new RrActionError(`Event with ID ${eventId} not found`);
+  .action<EventWrPair>(
+    async ({ parsedInput: { recordCategory, eventId, recordsUpTo, excludeResultId }, ctx: { session } }) => {
+      const event = await db.query.events.findFirst({ where: { organizationId: session.organization!.id, eventId } });
+      if (!event) throw new RrActionError(`Event with ID ${eventId} not found`);
 
-    const singleWrResult = await getRecordResult(event, "best", "WR", recordCategory, {
-      recordsUpTo,
-      excludeResultId,
-    });
-    const averageWrResult = await getRecordResult(event, "average", "WR", recordCategory, {
-      recordsUpTo,
-      excludeResultId,
-    });
+      const singleWrResult = await getRecordResult(event, "best", "WR", recordCategory, {
+        recordsUpTo,
+        excludeResultId,
+      });
+      const averageWrResult = await getRecordResult(event, "average", "WR", recordCategory, {
+        recordsUpTo,
+        excludeResultId,
+      });
 
-    return { eventId, best: singleWrResult?.best, average: averageWrResult?.average };
-  });
+      return { eventId, best: singleWrResult?.best, average: averageWrResult?.average };
+    },
+  );
 
 export const createContestResultSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       newResultDto: ResultValidator,
     }),
   )
-  .action<ResultResponse[]>(
-    async ({
-      parsedInput: { newResultDto },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      const { eventId, personIds, competitionId, roundId } = newResultDto;
-      logMessage(
-        "RR0013",
-        `Creating contest result for contest ${competitionId}, event ${eventId}, round ${roundId} and persons ${personIds.join(", ")}: ${JSON.stringify(newResultDto.attempts)}`,
+  .action<ResultResponse[]>(async ({ parsedInput: { newResultDto }, ctx: { session, httpHeaders } }) => {
+    const { eventId, personIds, competitionId, roundId } = newResultDto;
+    const organizationId = session.organization!.id;
+    logMessage(
+      "RR0013",
+      `Creating contest result for contest ${competitionId}, event ${eventId}, round ${roundId} and persons ${personIds.join(", ")}: ${JSON.stringify(newResultDto.attempts)}`,
+    );
+
+    const [
+      { success: canCreateAndUpdateContests },
+      { success: canSubmitOwnOnlineCompResult },
+      contest,
+      event,
+      rounds,
+      roundResults,
+      participants,
+    ] = await Promise.all([
+      auth.api.hasPermission({
+        headers: httpHeaders,
+        body: { permissions: { competitions: ["create", "update"], meetups: ["create", "update"] } },
+      }),
+      auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { onlineComps: ["submit-own-result"] } } }),
+      db.query.contests.findFirst({ where: { organizationId, competitionId } }),
+      db.query.events.findFirst({ where: { organizationId, eventId } }),
+      db.query.rounds.findMany({ where: { organizationId, competitionId, eventId } }),
+      db.query.results.findMany({ where: { organizationId, roundId }, orderBy: { ranking: "asc" } }),
+      db.query.persons.findMany({ where: { organizationId, id: { in: personIds } } }),
+    ]);
+    const round = rounds.find((r) => r.id === roundId);
+
+    if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
+    // This is similar to the logic in the contest controls component
+    const userControlsContest = canCreateAndUpdateContests && getMemberControlsContest(session.member!, contest);
+    const hasAccessToResults = canSubmitOwnOnlineCompResult && contest.type === "online" && session.member!.personId;
+    if (!userControlsContest && !hasAccessToResults)
+      throw new RrActionError("You are unauthorized to submit results for this contest");
+    if (!userControlsContest && hasAccessToResults && !personIds.includes(session.member!.personId as any))
+      throw new RrActionError("You can only submit your own result");
+    if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
+    if (!round) throw new RrActionError(`Round with ID ${newResultDto.roundId} not found`);
+    if (!round.open) throw new RrActionError("The round is not open");
+    // Same check as in createVideoBasedResultSF
+    const notFoundPersonId = personIds.find((pid) => !participants.some((p) => p.id === pid));
+    if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
+    // Same check as in createVideoBasedResultSF
+    if (newResultDto.personIds.length !== event.participants) {
+      throw new RrActionError(
+        `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
+      );
+    }
+    if (roundResults.some((r) => r.personIds.some((pid) => newResultDto.personIds.includes(pid))))
+      throw new RrActionError("The competitor(s) already has a result in this round");
+    // Check that all of the participants have proceeded to this round
+    if (round.roundNumber > 1) {
+      const prevRound = rounds.find((r) => r.roundNumber === round.roundNumber - 1)!;
+      const prevRoundResults = await db.query.results.findMany({ where: { roundId: prevRound.id } });
+      const notProceededCompetitorIndex = newResultDto.personIds.findIndex(
+        (pid) => !prevRoundResults.some((r) => r.proceeds && r.personIds.includes(pid)),
       );
 
-      const [
-        { success: canCreateAndUpdateContests },
-        { success: canSubmitOwnOnlineCompResult },
-        contest,
-        event,
-        rounds,
-        roundResults,
-        participants,
-      ] = await Promise.all([
-        auth.api.userHasPermission({
-          body: { userId: user.id, permissions: { competitions: ["create", "update"], meetups: ["create", "update"] } },
-        }),
-        auth.api.userHasPermission({ body: { userId: user.id, permissions: { onlineComps: ["submit-own-result"] } } }),
-        db.query.contests.findFirst({ where: { competitionId } }),
-        db.query.events.findFirst({ where: { eventId } }),
-        db.query.rounds.findMany({ where: { competitionId, eventId } }),
-        db.query.results.findMany({ where: { roundId }, orderBy: { ranking: "asc" } }),
-        db.query.persons.findMany({ where: { id: { in: personIds } } }),
-      ]);
-      const round = rounds.find((r) => r.id === roundId);
-
-      if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
-      // This is similar to the logic in the contest controls component
-      const userControlsContest = canCreateAndUpdateContests && getUserControlsContest(user, contest);
-      const hasAccessToResults = canSubmitOwnOnlineCompResult && contest.type === "online" && user.personId;
-      if (!userControlsContest && !hasAccessToResults)
-        throw new RrActionError("You are unauthorized to submit results for this contest");
-      if (!userControlsContest && hasAccessToResults && !personIds.includes(user.personId as any))
-        throw new RrActionError("You can only submit your own result");
-      if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
-      if (!round) throw new RrActionError(`Round with ID ${newResultDto.roundId} not found`);
-      if (!round.open) throw new RrActionError("The round is not open");
-      // Same check as in createVideoBasedResultSF
-      const notFoundPersonId = personIds.find((pid) => !participants.some((p) => p.id === pid));
-      if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
-      // Same check as in createVideoBasedResultSF
-      if (newResultDto.personIds.length !== event.participants) {
+      if (notProceededCompetitorIndex >= 0) {
         throw new RrActionError(
-          `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
+          `Competitor${event.participants > 1 ? ` ${notProceededCompetitorIndex + 1}` : ""} has not proceeded to this round`,
         );
       }
-      if (roundResults.some((r) => r.personIds.some((pid) => newResultDto.personIds.includes(pid))))
-        throw new RrActionError("The competitor(s) already has a result in this round");
-      // Check that all of the participants have proceeded to this round
-      if (round.roundNumber > 1) {
-        const prevRound = rounds.find((r) => r.roundNumber === round.roundNumber - 1)!;
-        const prevRoundResults = await db.query.results.findMany({ where: { roundId: prevRound.id } });
-        const notProceededCompetitorIndex = newResultDto.personIds.findIndex(
-          (pid) => !prevRoundResults.some((r) => r.proceeds && r.personIds.includes(pid)),
-        );
+    }
 
-        if (notProceededCompetitorIndex >= 0) {
-          throw new RrActionError(
-            `Competitor${event.participants > 1 ? ` ${notProceededCompetitorIndex + 1}` : ""} has not proceeded to this round`,
-          );
-        }
-      }
+    const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
-      const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
+    newResultDto.attempts = await validateTimeLimitAndCutoff({
+      organizationId,
+      attempts: newResultDto.attempts,
+      personIds: newResultDto.personIds,
+      round,
+      expectedNumberOfAttempts: roundFormat.attempts,
+    });
 
-      newResultDto.attempts = await validateTimeLimitAndCutoff(
-        newResultDto.attempts,
-        newResultDto.personIds,
-        round,
-        roundFormat.attempts,
-      );
+    const recordConfigs = await getRecordConfigs(organizationId, { contestType: contest.type });
+    const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
+    const recordCategory: RecordCategory =
+      contest.type === "online" ? "online" : contest.type === "meetup" ? "meetups" : "competitions";
+    const newResult: InsertResult = {
+      organizationId,
+      eventId,
+      date: getRoundDate(round, contest),
+      personIds,
+      attempts: newResultDto.attempts,
+      best,
+      average,
+      recordCategory,
+      competitionId,
+      roundId,
+      ranking: 1, // gets set to the correct value below
+      createdBy: session.user.id,
+    };
+    const isAdmin = getHasRole("admin", session.member!.role) || getHasRole("owner", session.member!.role);
 
-      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
-      const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
-      const recordCategory: RecordCategory =
-        contest.type === "online" ? "online" : contest.type === "meetup" ? "meetups" : "competitions";
-      const newResult: InsertResult = {
-        eventId,
-        date: getRoundDate(round, contest),
-        personIds,
-        attempts: newResultDto.attempts,
-        best,
-        average,
-        recordCategory,
-        competitionId,
-        roundId,
-        ranking: 1, // gets set to the correct value below
-        createdBy: user.id,
-      };
+    await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
 
-      await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
+    if (
+      !process.env.VITEST &&
+      !isAdmin &&
+      (newResult.regionalSingleRecord || newResult.regionalAverageRecord) &&
+      differenceInDays(new Date(), newResult.date) > 30
+    ) {
+      throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
+    }
 
-      if (
-        !process.env.VITEST &&
-        !getHasRole("admin", user.role) &&
-        (newResult.regionalSingleRecord || newResult.regionalAverageRecord) &&
-        differenceInDays(new Date(), newResult.date) > 30
-      ) {
-        throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
-      }
+    await db.transaction(async (tx) => {
+      const [createdResult] = await tx.insert(table).values(newResult).returning();
 
-      await db.transaction(async (tx) => {
-        const [createdResult] = await tx.insert(table).values(newResult).returning();
+      await setRankingAndProceedsValues(tx, [...roundResults, createdResult], round);
+      if (createdResult.regionalSingleRecord)
+        await cancelFutureRecords(tx, organizationId, createdResult, "best", recordConfigs);
+      if (createdResult.regionalAverageRecord)
+        await cancelFutureRecords(tx, organizationId, createdResult, "average", recordConfigs);
 
-        await setRankingAndProceedsValues(tx, [...roundResults, createdResult], round);
-        if (createdResult.regionalSingleRecord) await cancelFutureRecords(tx, createdResult, "best", recordConfigs);
-        if (createdResult.regionalAverageRecord) await cancelFutureRecords(tx, createdResult, "average", recordConfigs);
+      // Update contest state and participants
+      const updateContestObject: Partial<SelectContest> = {};
+      if (contest.state === "approved") updateContestObject.state = "ongoing";
+      const participantIds = await getContestParticipantIds({ tx, organizationId, competitionId });
+      if (participantIds.length !== contest.participants) updateContestObject.participants = participantIds.length;
+      // Do update, if some value actually changed
+      if (Object.keys(updateContestObject).length > 0)
+        await tx.update(contestsTable).set(updateContestObject).where(eq(contestsTable.id, contest.id));
+    });
 
-        // Update contest state and participants
-        const updateContestObject: Partial<SelectContest> = {};
-        if (contest.state === "approved") updateContestObject.state = "ongoing";
-        const participantIds = await getContestParticipantIds(tx, competitionId);
-        if (participantIds.length !== contest.participants) updateContestObject.participants = participantIds.length;
-        // Do update, if some value actually changed
-        if (Object.keys(updateContestObject).length > 0)
-          await tx.update(contestsTable).set(updateContestObject).where(eq(contestsTable.competitionId, competitionId));
-      });
-
-      return await db.select(resultsPublicCols).from(table).where(eq(table.roundId, roundId)).orderBy(table.ranking);
-    },
-  );
+    return await db.select(resultsPublicCols).from(table).where(eq(table.roundId, roundId)).orderBy(table.ranking);
+  });
 
 export const updateContestResultSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
       newAttempts: AttemptsValidator,
     }),
   )
-  .action<ResultResponse[]>(
-    async ({
-      parsedInput: { id, newAttempts },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      const result = await db.query.results.findFirst({ where: { id, competitionId: { isNotNull: true } } });
-      if (!result) throw new RrActionError(`Result with ID ${id} not found`);
+  .action<ResultResponse[]>(async ({ parsedInput: { id, newAttempts }, ctx: { session } }) => {
+    const organizationId = session.organization!.id;
+    const result = await db.query.results.findFirst({
+      where: { organizationId, id, competitionId: { isNotNull: true } },
+    });
+    if (!result) throw new RrActionError(`Result with ID ${id} not found`);
 
-      logMessage("RR0014", `Updating result with ID ${id} (new attempts: ${JSON.stringify(newAttempts)})`);
+    logMessage("RR0014", `Updating result with ID ${id} (new attempts: ${JSON.stringify(newAttempts)})`);
 
-      const [contest, event, round, roundResults] = await Promise.all([
-        db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
-        db.query.events.findFirst({ where: { eventId: result.eventId } }),
-        db.query.rounds.findFirst({ where: { id: result.roundId! } }),
-        db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
-      ]);
+    const [contest, event, round, roundResults] = await Promise.all([
+      db.query.contests.findFirst({ where: { organizationId, competitionId: result.competitionId! } }),
+      db.query.events.findFirst({ where: { organizationId, eventId: result.eventId } }),
+      db.query.rounds.findFirst({ where: { organizationId, id: result.roundId! } }),
+      db.query.results.findMany({ where: { organizationId, roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
+    ]);
 
-      if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getUserControlsContest(user, contest))
-        throw new RrActionError("You do not have access rights for this contest");
-      if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
-      if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
+    if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
+    if (!getMemberControlsContest(session.member!, contest))
+      throw new RrActionError("You do not have access rights for this contest");
+    if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
+    if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
 
-      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
-      const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
+    const recordConfigs = await getRecordConfigs(organizationId, { contestType: contest.type });
+    const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
 
-      newAttempts = await validateTimeLimitAndCutoff(newAttempts, result.personIds, round, roundFormat.attempts);
+    newAttempts = await validateTimeLimitAndCutoff({
+      organizationId,
+      attempts: newAttempts,
+      personIds: result.personIds,
+      round,
+      expectedNumberOfAttempts: roundFormat.attempts,
+    });
 
-      const { best, average } = getBestAndAverage(newAttempts, event.format, roundFormat.value);
-      const newResult: SelectResult = {
-        ...result,
-        attempts: newAttempts,
-        best,
-        average,
-        regionalSingleRecord: null,
-        regionalAverageRecord: null,
-      };
+    const { best, average } = getBestAndAverage(newAttempts, event.format, roundFormat.value);
+    const newResult: SelectResult = {
+      ...result,
+      attempts: newAttempts,
+      best,
+      average,
+      regionalSingleRecord: null,
+      regionalAverageRecord: null,
+    };
+    const isAdmin = getHasRole("admin", session.member!.role) || getHasRole("owner", session.member!.role);
 
-      await setResultRecords(newResult, event, recordConfigs, { excludeResultId: id });
+    await setResultRecords(newResult, event, recordConfigs, { excludeResultId: id });
 
-      if (
-        !process.env.VITEST &&
-        !getHasRole("admin", user.role) &&
-        (result.regionalSingleRecord ||
-          result.regionalAverageRecord ||
-          newResult.regionalSingleRecord ||
-          newResult.regionalAverageRecord) &&
-        differenceInDays(new Date(), result.date) > 30
-      ) {
-        throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
-      }
+    if (
+      !process.env.VITEST &&
+      !isAdmin &&
+      (result.regionalSingleRecord ||
+        result.regionalAverageRecord ||
+        newResult.regionalSingleRecord ||
+        newResult.regionalAverageRecord) &&
+      differenceInDays(new Date(), result.date) > 30
+    ) {
+      throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
+    }
 
-      await db.transaction(async (tx) => {
-        const [updatedResult] = await tx
-          .update(table)
-          .set({
-            attempts: newResult.attempts,
-            best: newResult.best,
-            average: newResult.average,
-            regionalSingleRecord: newResult.regionalSingleRecord,
-            regionalAverageRecord: newResult.regionalAverageRecord,
-          })
-          .where(eq(table.id, id))
-          .returning();
+    await db.transaction(async (tx) => {
+      const [updatedResult] = await tx
+        .update(table)
+        .set({
+          attempts: newResult.attempts,
+          best: newResult.best,
+          average: newResult.average,
+          regionalSingleRecord: newResult.regionalSingleRecord,
+          regionalAverageRecord: newResult.regionalAverageRecord,
+        })
+        .where(eq(table.id, id))
+        .returning();
 
-        await setRankingAndProceedsValues(
-          tx,
-          roundResults.map((r) => (r.id === id ? updatedResult : r)),
-          round,
-        );
+      await setRankingAndProceedsValues(
+        tx,
+        roundResults.map((r) => (r.id === id ? updatedResult : r)),
+        round,
+      );
 
-        // Cancel future records, if the result got better
-        if (updatedResult.regionalSingleRecord && updatedResult.best < result.best)
-          await cancelFutureRecords(tx, updatedResult, "best", recordConfigs);
-        if (updatedResult.regionalAverageRecord && updatedResult.average < result.average)
-          await cancelFutureRecords(tx, updatedResult, "average", recordConfigs);
+      // Cancel future records, if the result got better
+      if (updatedResult.regionalSingleRecord && updatedResult.best < result.best)
+        await cancelFutureRecords(tx, organizationId, updatedResult, "best", recordConfigs);
+      if (updatedResult.regionalAverageRecord && updatedResult.average < result.average)
+        await cancelFutureRecords(tx, organizationId, updatedResult, "average", recordConfigs);
 
-        // Set records that may have been prevented before, if the result got worse
-        if (result.regionalSingleRecord && updatedResult.best > result.best)
-          await setFutureRecords(tx, result, event, "best", recordConfigs);
-        if (result.regionalAverageRecord && updatedResult.average > result.average)
-          await setFutureRecords(tx, result, event, "average", recordConfigs);
-      });
+      // Set records that may have been prevented before, if the result got worse
+      if (result.regionalSingleRecord && updatedResult.best > result.best)
+        await setFutureRecords(tx, result, event, "best", recordConfigs);
+      if (result.regionalAverageRecord && updatedResult.average > result.average)
+        await setFutureRecords(tx, result, event, "average", recordConfigs);
+    });
 
-      return await db
-        .select(resultsPublicCols)
-        .from(table)
-        .where(eq(table.roundId, result.roundId!))
-        .orderBy(table.ranking);
-    },
-  );
+    return await db
+      .select(resultsPublicCols)
+      .from(table)
+      .where(eq(table.roundId, result.roundId!))
+      .orderBy(table.ranking);
+  });
 
 export const deleteContestResultSF = actionClient
-  .metadata({ permissions: { competitions: ["create"], meetups: ["create"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { competitions: ["create"], meetups: ["create"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
     }),
   )
-  .action<ResultResponse[]>(
-    async ({
-      parsedInput: { id },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      const result = await db.query.results.findFirst({ where: { id, competitionId: { isNotNull: true } } });
-      if (!result) throw new RrActionError(`Result with ID ${id} not found`);
+  .action<ResultResponse[]>(async ({ parsedInput: { id }, ctx: { session } }) => {
+    const organizationId = session.organization!.id;
+    const result = await db.query.results.findFirst({
+      where: { organizationId, id, competitionId: { isNotNull: true } },
+    });
+    if (!result) throw new RrActionError(`Result with ID ${id} not found`);
 
-      if (
-        !process.env.VITEST &&
-        !getHasRole("admin", user.role) &&
-        (result.regionalSingleRecord || result.regionalAverageRecord) &&
-        differenceInDays(new Date(), result.date) > 30
-      ) {
-        throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
-      }
+    const isAdmin = getHasRole("admin", session.member!.role) || getHasRole("owner", session.member!.role);
 
-      logMessage("RR0015", `Deleting contest result: ${JSON.stringify(result)}`);
+    if (
+      !process.env.VITEST &&
+      !isAdmin &&
+      (result.regionalSingleRecord || result.regionalAverageRecord) &&
+      differenceInDays(new Date(), result.date) > 30
+    ) {
+      throw new RrActionError(OLD_RESULT_WITH_RECORD_VALIDATION_ERROR_MSG);
+    }
 
-      const [contest, event, round, roundResults] = await Promise.all([
-        db.query.contests.findFirst({ where: { competitionId: result.competitionId! } }),
-        db.query.events.findFirst({ where: { eventId: result.eventId } }),
-        db.query.rounds.findFirst({ where: { id: result.roundId! } }),
-        db.query.results.findMany({ where: { roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
-      ]);
+    logMessage("RR0015", `Deleting contest result: ${JSON.stringify(result)}`);
 
-      if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
-      if (!getUserControlsContest(user, contest))
-        throw new RrActionError("You do not have access rights for this contest");
-      if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
-      if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
+    const [contest, event, round, roundResults] = await Promise.all([
+      db.query.contests.findFirst({ where: { organizationId, competitionId: result.competitionId! } }),
+      db.query.events.findFirst({ where: { organizationId, eventId: result.eventId } }),
+      db.query.rounds.findFirst({ where: { organizationId, id: result.roundId! } }),
+      db.query.results.findMany({ where: { organizationId, roundId: result.roundId! }, orderBy: { ranking: "asc" } }),
+    ]);
 
-      const recordConfigs = await getRecordConfigs({ contestType: contest.type });
+    if (!contest) throw new RrActionError(`Contest with ID ${result.competitionId} not found`);
+    if (!getMemberControlsContest(session.member!, contest))
+      throw new RrActionError("You do not have access rights for this contest");
+    if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
+    if (!round) throw new RrActionError(`Round with ID ${result.roundId} not found`);
 
-      await db.transaction(async (tx) => {
-        await tx.delete(table).where(eq(table.id, id));
+    const recordConfigs = await getRecordConfigs(organizationId, { contestType: contest.type });
 
-        await setRankingAndProceedsValues(
-          tx,
-          roundResults.filter((r) => r.id !== id),
-          round,
-        );
+    await db.transaction(async (tx) => {
+      await tx.delete(table).where(eq(table.id, id));
 
-        // Set records that may have been prevented by the deleted result
-        if (result.regionalSingleRecord) await setFutureRecords(tx, result, event, "best", recordConfigs);
-        if (result.regionalAverageRecord) await setFutureRecords(tx, result, event, "average", recordConfigs);
+      await setRankingAndProceedsValues(
+        tx,
+        roundResults.filter((r) => r.id !== id),
+        round,
+      );
 
-        const participantIds = await getContestParticipantIds(tx, result.competitionId!);
-        if (participantIds.length !== contest.participants) {
-          await tx
-            .update(contestsTable)
-            .set({ participants: participantIds.length })
-            .where(eq(contestsTable.competitionId, contest.competitionId));
-        }
+      // Set records that may have been prevented by the deleted result
+      if (result.regionalSingleRecord) await setFutureRecords(tx, result, event, "best", recordConfigs);
+      if (result.regionalAverageRecord) await setFutureRecords(tx, result, event, "average", recordConfigs);
+
+      const participantIds = await getContestParticipantIds({
+        tx,
+        organizationId,
+        competitionId: result.competitionId!,
       });
+      if (participantIds.length !== contest.participants) {
+        await tx
+          .update(contestsTable)
+          .set({ participants: participantIds.length })
+          .where(eq(contestsTable.id, contest.id));
+      }
+    });
 
-      return await db
-        .select(resultsPublicCols)
-        .from(table)
-        .where(eq(table.roundId, result.roundId!))
-        .orderBy(table.ranking);
-    },
-  );
+    return await db
+      .select(resultsPublicCols)
+      .from(table)
+      .where(eq(table.roundId, result.roundId!))
+      .orderBy(table.ranking);
+  });
 
 export const createVideoBasedResultSF = actionClient
-  .metadata({ permissions: { videoBasedResults: ["create"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { videoBasedResults: ["create"] } } })
   .inputSchema(
     z.strictObject({
       newResultDto: VideoBasedResultValidator,
     }),
   )
-  .action<ResultResponse>(
-    async ({
-      parsedInput: { newResultDto },
-      ctx: {
-        session: { user },
-      },
-    }) => {
-      logMessage("RR0016", `Creating video-based result: ${JSON.stringify(newResultDto)}`);
+  .action<ResultResponse>(async ({ parsedInput: { newResultDto }, ctx: { session, httpHeaders } }) => {
+    logMessage("RR0016", `Creating video-based result: ${JSON.stringify(newResultDto)}`);
 
-      const { success: canApprove } = await auth.api.userHasPermission({
-        body: { userId: user.id, permissions: { videoBasedResults: ["approve"] } },
-      });
-      await validateVideoBasedResult(newResultDto, { userCanApprove: canApprove });
+    const organizationId = session.organization!.id;
+    const { success: canApprove } = await auth.api.hasPermission({
+      headers: httpHeaders,
+      body: { permissions: { videoBasedResults: ["approve"] } },
+    });
 
-      const [event, participants, recordConfigs, creatorPerson, videoBasedResultsContactEmail] = await Promise.all([
-        db.query.events.findFirst({ where: { eventId: newResultDto.eventId } }),
-        db.query.persons.findMany({ where: { id: { in: newResultDto.personIds } } }),
-        getRecordConfigs({ recordCategory: "online" }),
-        user.personId
-          ? db.query.persons.findFirst({ columns: { name: true }, where: { id: user.personId } })
-          : undefined,
-        getSettingFromDb({ key: "video-based-results-contact-email", optional: true }),
-      ]);
+    if (!canApprove) {
+      if (!newResultDto.videoLink) throw new RrActionError("Please enter a video link");
+      if (newResultDto.attempts.some((a) => a.result === C.maxTime))
+        throw new RrActionError("You are not authorized to set unknown time");
+    }
 
-      if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
-      // Same check as in createContestResultSF
-      const notFoundPersonId = newResultDto.personIds.find((pid) => !participants.some((p) => p.id === pid));
-      if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
-      // Same check as in createContestResultSF
-      if (newResultDto.personIds.length !== event.participants) {
-        throw new RrActionError(
-          `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
-        );
-      }
+    const [event, participants, recordConfigs, creatorPerson] = await Promise.all([
+      db.query.events.findFirst({ where: { organizationId, eventId: newResultDto.eventId } }),
+      db.query.persons.findMany({ where: { organizationId, id: { in: newResultDto.personIds } } }),
+      getRecordConfigs(organizationId, { recordCategory: "online" }),
+      session.member!.personId
+        ? db.query.persons.findFirst({
+            columns: { name: true },
+            where: { organizationId, id: session.member!.personId },
+          })
+        : undefined,
+    ]);
 
-      const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
-      const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
-      const newResult: InsertResult = {
-        ...newResultDto,
-        best,
-        average,
-        recordCategory: "online",
-        createdBy: user.id,
-      };
-
-      await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
-
-      const [createdResult] = await db.insert(table).values(newResult).returning(resultsPublicCols);
-
-      sendVideoBasedResultSubmittedEmail(
-        user.email,
-        videoBasedResultsContactEmail,
-        event,
-        createdResult,
-        user.name,
-        creatorPerson?.name,
+    if (!event) throw new RrActionError(`Event with ID ${newResultDto.eventId} not found`);
+    // Same check as in createContestResultSF
+    const notFoundPersonId = newResultDto.personIds.find((pid) => !participants.some((p) => p.id === pid));
+    if (notFoundPersonId) throw new RrActionError(`Person with ID ${notFoundPersonId} not found`);
+    // Same check as in createContestResultSF
+    if (newResultDto.personIds.length !== event.participants) {
+      throw new RrActionError(
+        `This event must have ${event.participants} participant${event.participants > 1 ? "s" : ""}`,
       );
+    }
 
-      return createdResult;
-    },
-  );
+    const roundFormat = videoBasedFormats.find((rf) => rf.attempts === newResultDto.attempts.length)!;
+    const { best, average } = getBestAndAverage(newResultDto.attempts, event.format, roundFormat.value);
+    const newResult: InsertResult = {
+      ...newResultDto,
+      organizationId,
+      best,
+      average,
+      recordCategory: "online",
+      createdBy: session.user.id,
+    };
+
+    await setResultRecordsAndRegions(newResult, event, recordConfigs, participants);
+
+    const [createdResult] = await db.insert(table).values(newResult).returning(resultsPublicCols);
+
+    sendVideoBasedResultSubmittedEmail(session.user.email, {
+      event,
+      result: createdResult,
+      creatorName: session.user.name,
+      creatorPersonName: creatorPerson?.name,
+      organization: session.organization!,
+    });
+
+    return createdResult;
+  });
 
 export const updateVideoBasedResultSF = actionClient
-  .metadata({ permissions: { videoBasedResults: ["update", "approve"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { videoBasedResults: ["update", "approve"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -481,21 +476,21 @@ export const updateVideoBasedResultSF = actionClient
       approve: z.boolean(),
     }),
   )
-  .action<ResultResponse>(async ({ parsedInput: { id, newResultDto, approve } }) => {
-    const result = await db.query.results.findFirst({ where: { id, competitionId: { isNull: true } } });
+  .action<ResultResponse>(async ({ parsedInput: { id, newResultDto, approve }, ctx: { session } }) => {
+    const organizationId = session.organization!.id;
+    const result = await db.query.results.findFirst({
+      with: { creator: { columns: { email: true } } },
+      where: { organizationId, id, competitionId: { isNull: true } },
+    });
     if (!result) throw new RrActionError(`Result with ID ${id} not found`);
     if (result.approved)
       throw new RrActionError("Editing approved results is currently not supported. Please contact a sysadmin.");
 
     logMessage("RR0017", `Updating video-based result with ID ${id}: ${JSON.stringify(newResultDto)}`);
 
-    await validateVideoBasedResult(newResultDto, {
-      userCanApprove: true, // already checked in the action client permissions
-    });
-
     const [event, recordConfigs] = await Promise.all([
-      db.query.events.findFirst({ where: { eventId: result.eventId } }),
-      getRecordConfigs({ recordCategory: "online" }),
+      db.query.events.findFirst({ where: { organizationId, eventId: result.eventId } }),
+      getRecordConfigs(organizationId, { recordCategory: "online" }),
     ]);
 
     if (!event) throw new RrActionError(`Event with ID ${result.eventId} not found`);
@@ -537,18 +532,18 @@ export const updateVideoBasedResultSF = actionClient
         .returning();
 
       if (approve) {
-        if (updatedResult.regionalSingleRecord) await cancelFutureRecords(tx, updatedResult, "best", recordConfigs);
-        if (updatedResult.regionalAverageRecord) await cancelFutureRecords(tx, updatedResult, "average", recordConfigs);
+        if (updatedResult.regionalSingleRecord)
+          await cancelFutureRecords(tx, organizationId, updatedResult, "best", recordConfigs);
+        if (updatedResult.regionalAverageRecord)
+          await cancelFutureRecords(tx, organizationId, updatedResult, "average", recordConfigs);
 
         const personsToBeApproved = await tx.query.persons.findMany({
-          where: { id: { in: result.personIds }, approved: false },
+          where: { organizationId, id: { in: result.personIds }, approved: false },
         });
-        await approvePersons(tx, personsToBeApproved);
+        await approvePersons(tx, organizationId, personsToBeApproved);
 
-        const creatorUser = result.createdBy
-          ? await tx.query.users.findFirst({ columns: { email: true }, where: { id: result.createdBy } })
-          : undefined;
-        if (creatorUser) sendVideoBasedResultApprovedEmail(creatorUser.email, event);
+        if (result.creator)
+          sendVideoBasedResultApprovedEmail(result.creator.email, { event, organization: session.organization! });
       }
 
       return updatedResult;
@@ -558,9 +553,9 @@ export const updateVideoBasedResultSF = actionClient
   });
 
 async function getRecordResult(
-  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   bestOrAverage: "best" | "average",
-  recordType: RecordType,
+  recordType: string,
   recordCategory: RecordCategory,
   {
     tx,
@@ -571,16 +566,24 @@ async function getRecordResult(
     tx?: DbTransactionType; // this can optionally be run inside of a transaction
     recordsUpTo: Date;
     excludeResultId?: number;
-    regionCode?: string;
+    regionCode?: string; // only set when recordType = "NR"
   },
 ): Promise<SelectResult | undefined> {
   const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
-  const isCrRecordType = ContinentalRecordTypes.includes(recordType as any);
+  const isCrRecordType = !["WR", "NR"].includes(recordType as any);
   const baseConditions = [
+    eq(table.organizationId, event.organizationId),
     eq(table.eventId, event.eventId),
     eq(table.recordCategory, recordCategory),
     gt(table[bestOrAverage], 0),
-    isCrRecordType ? eq(table.superRegionCode, Continents.find((c) => c.recordTypeId === recordType)!.code) : undefined,
+    isCrRecordType
+      ? eq(
+          table.superRegionCode,
+          (await (tx ?? db).query.regions.findFirst({
+            where: { organizationId: event.organizationId, type: "super-region", superRegionRecordType: recordType },
+          }))!.code,
+        )
+      : undefined,
     regionCode ? eq(table.regionCode, regionCode) : undefined,
   ];
 
@@ -603,13 +606,13 @@ async function getRecordResult(
     .limit(1);
 
   // Similar to the code in getRecords()
-  const recordTypes: RecordType[] = ["WR"];
+  const recordTypes = ["WR"];
   if (recordType === "NR") {
     const reg = await (tx ?? db).query.regions.findFirst({
       columns: { superRegionRecordType: true },
-      where: { code: regionCode },
+      where: { organizationId: event.organizationId, code: regionCode, type: { in: ["country", "region"] } },
     });
-    if (!reg?.superRegionRecordType) throw new RrActionError("Super region record type not found");
+    if (!reg?.superRegionRecordType) throw new RrActionError("Region not found");
     recordTypes.push(reg.superRegionRecordType, recordType);
   } else if (isCrRecordType) {
     recordTypes.push(recordType);
@@ -634,12 +637,14 @@ async function getRecordResult(
 
 async function setResultRecordsAndRegions(
   result: InsertResult,
-  event: EventResponse,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   recordConfigs: RecordConfigResponse[], // must be of the same category
   participants: SelectPerson[],
 ) {
-  const regions = await db.query.regions.findMany({ where: { code: { in: participants.map((p) => p.regionCode) } } });
-  if (regions.length === 0) throw new Error("Participants' regions not found");
+  const regions = await db.query.regions.findMany({
+    where: { organizationId: event.organizationId, code: { in: participants.map((p) => p.regionCode) } },
+  });
+  if (regions.length === 0) throw new RrActionError("Participants' regions not found");
 
   const isSameRegionParticipants = new Set(regions.map((r) => r.code)).size === 1;
   const isSameSuperRegionParticipants =
@@ -653,7 +658,7 @@ async function setResultRecordsAndRegions(
 
 async function setResultRecords(
   result: InsertResult,
-  event: EventResponse,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   recordConfigs: RecordConfigResponse[], // must be of the same category
   { excludeResultId }: { excludeResultId?: number } = {},
 ) {
@@ -665,7 +670,7 @@ async function setResultRecords(
 // Updates the specified record field directly in the result object
 async function setResultRecord(
   result: InsertResult,
-  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   bestOrAverage: "best" | "average",
   recordConfigs: RecordConfigResponse[], // must be of the same category
   { excludeResultId }: { excludeResultId?: number } = {},
@@ -692,7 +697,9 @@ async function setResultRecord(
       (result.regionCode && result.regionCode !== wrResult?.regionCode))
   ) {
     // Set CR
-    const crType = ContinentRecordType[result.superRegionCode as SuperRegionCode];
+    const crType = (await db.query.regions.findFirst({
+      where: { organizationId: event.organizationId, type: "super-region", code: result.superRegionCode },
+    }))!.superRegionRecordType!;
     const crResult = await getRecordResult(event, bestOrAverage, crType, category, {
       excludeResultId,
       recordsUpTo: result.date,
@@ -722,7 +729,7 @@ async function setResultRecord(
 }
 
 async function setFutureRecords(
-  tx: DbTransactionType,
+  db: DbTransactionType, // the tx object from a Drizzle transaction
   deletedResult: Pick<
     SelectResult,
     | "eventId"
@@ -734,7 +741,7 @@ async function setFutureRecords(
     | "regionalSingleRecord"
     | "regionalAverageRecord"
   >,
-  event: Pick<SelectEvent, "eventId" | "defaultRoundFormat">,
+  event: Pick<SelectEvent, "organizationId" | "eventId" | "defaultRoundFormat">,
   bestOrAverage: "best" | "average",
   recordConfigs: RecordConfigResponse[],
 ) {
@@ -748,16 +755,17 @@ async function setFutureRecords(
 
   // Set WRs
   if (deletedResult[recordField] === "WR") {
-    const prevWrResult = await getRecordResult(event, bestOrAverage, "WR", category, { tx, recordsUpTo });
+    const prevWrResult = await getRecordResult(event, bestOrAverage, "WR", category, { tx: db, recordsUpTo });
 
-    const newWrIds = await tx
+    const newWrIds = await db
       .execute(sql`
         WITH day_min_times AS (
           SELECT ${table.id}, ${table.date}, ${table[bestOrAverage]},
             MIN(${table[bestOrAverage]}) OVER(PARTITION BY ${table.date}
               ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS day_min_time
           FROM ${table}
-          WHERE ${table[bestOrAverage]} > 0
+          WHERE ${table.organizationId} = ${event.organizationId}
+            AND ${table[bestOrAverage]} > 0
             AND ${table[bestOrAverage]} <= ${prevWrResult ? prevWrResult[bestOrAverage] : C.maxResult}
             AND ${table.eventId} = ${deletedResult.eventId}
             AND ${table.date} >= ${deletedResult.date.toISOString()}
@@ -771,13 +779,13 @@ async function setFutureRecords(
         )
         SELECT ${table.id}
         FROM ${table} RIGHT JOIN results_with_record_times
-        ON ${table.id} = results_with_record_times.id
+          ON ${table.id} = results_with_record_times.id
         WHERE (${table[recordField]} IS NULL OR ${table[recordField]} <> 'WR')
           AND ${table[bestOrAverage]} = results_with_record_times.curr_record`)
       // PGLite returns results with { rows: [] }, but Postgres just returns [], hence the different mapping
       .then((val: any) => (process.env.VITEST ? val.rows : val).map(({ id }: any) => id));
 
-    const newWrResults = await tx
+    const newWrResults = await db
       .update(table)
       .set({ [recordField]: "WR" })
       .where(inArray(table.id, newWrIds))
@@ -791,17 +799,20 @@ async function setFutureRecords(
 
   // Set CRs
   if (deletedResult.superRegionCode && deletedResult[recordField] !== "NR") {
-    const crType = ContinentRecordType[deletedResult.superRegionCode as SuperRegionCode];
-    const prevCrResult = await getRecordResult(event, bestOrAverage, crType, category, { tx, recordsUpTo });
+    const crType = (await db.query.regions.findFirst({
+      where: { organizationId: event.organizationId, type: "super-region", code: deletedResult.superRegionCode },
+    }))!.superRegionRecordType!;
+    const prevCrResult = await getRecordResult(event, bestOrAverage, crType, category, { tx: db, recordsUpTo });
 
-    const newCrIds = await tx
+    const newCrIds = await db
       .execute(sql`
         WITH day_min_times AS (
           SELECT ${table.id}, ${table.date}, ${table[bestOrAverage]},
             MIN(${table[bestOrAverage]}) OVER(PARTITION BY ${table.date}
               ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS day_min_time
           FROM ${table}
-          WHERE ${table[bestOrAverage]} > 0
+          WHERE ${table.organizationId} = ${event.organizationId}
+            AND ${table[bestOrAverage]} > 0
             AND ${table[bestOrAverage]} <= ${prevCrResult ? prevCrResult[bestOrAverage] : C.maxResult}
             AND ${table.eventId} = ${deletedResult.eventId}
             AND ${table.date} >= ${deletedResult.date.toISOString()}
@@ -816,13 +827,13 @@ async function setFutureRecords(
         )
         SELECT ${table.id}
         FROM ${table} RIGHT JOIN results_with_record_times
-        ON ${table.id} = results_with_record_times.id
+          ON ${table.id} = results_with_record_times.id
         WHERE (${table[recordField]} IS NULL OR ${table[recordField]} = 'NR')
           AND ${table[bestOrAverage]} = results_with_record_times.curr_record`)
       // PGLite returns results with { rows: [] }, but Postgres just returns [], hence the different mapping
       .then((val: any) => (process.env.VITEST ? val.rows : val).map(({ id }: any) => id));
 
-    const newCrResults = await tx
+    const newCrResults = await db
       .update(table)
       .set({ [recordField]: crType })
       .where(inArray(table.id, newCrIds))
@@ -837,19 +848,20 @@ async function setFutureRecords(
   // Set NRs
   if (deletedResult.regionCode) {
     const prevNrResult = await getRecordResult(event, bestOrAverage, "NR", category, {
-      tx,
+      tx: db,
       recordsUpTo,
       regionCode: deletedResult.regionCode,
     });
 
-    const newNrIds = await tx
+    const newNrIds = await db
       .execute(sql`
         WITH day_min_times AS (
           SELECT ${table.id}, ${table.date}, ${table[bestOrAverage]},
             MIN(${table[bestOrAverage]}) OVER(PARTITION BY ${table.date}
               ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS day_min_time
           FROM ${table}
-          WHERE ${table[bestOrAverage]} > 0
+          WHERE ${table.organizationId} = ${event.organizationId}
+            AND ${table[bestOrAverage]} > 0
             AND ${table[bestOrAverage]} <= ${prevNrResult ? prevNrResult[bestOrAverage] : C.maxResult}
             AND ${table.eventId} = ${deletedResult.eventId}
             AND ${table.date} >= ${deletedResult.date.toISOString()}
@@ -864,7 +876,7 @@ async function setFutureRecords(
         )
         SELECT ${table.id}
         FROM ${table} RIGHT JOIN results_with_record_times
-        ON ${table.id} = results_with_record_times.id
+          ON ${table.id} = results_with_record_times.id
         WHERE ${table[recordField]} IS NULL
           AND ${table[bestOrAverage]} = results_with_record_times.curr_record`)
       .then((val: any) =>
@@ -872,7 +884,7 @@ async function setFutureRecords(
         (process.env.VITEST ? val.rows : val).map(({ id }: any) => id),
       );
 
-    const newNrResults = await tx
+    const newNrResults = await db
       .update(table)
       .set({ [recordField]: "NR" })
       .where(inArray(table.id, newNrIds))
@@ -889,7 +901,8 @@ async function setFutureRecords(
 }
 
 async function cancelFutureRecords(
-  tx: DbTransactionType,
+  db: DbTransactionType, // the tx object from a Drizzle transaction
+  organizationId: string,
   result: ResultResponse,
   bestOrAverage: "best" | "average",
   recordConfigs: RecordConfigResponse[],
@@ -897,10 +910,15 @@ async function cancelFutureRecords(
   const recordField = bestOrAverage === "best" ? "regionalSingleRecord" : "regionalAverageRecord";
   const type = bestOrAverage === "best" ? "single" : "average";
   const { category } = recordConfigs[0];
-  const crType = result.superRegionCode ? ContinentRecordType[result.superRegionCode as SuperRegionCode] : undefined;
+  const crType = result.superRegionCode
+    ? (await db.query.regions.findFirst({
+        where: { organizationId, type: "super-region", code: result.superRegionCode },
+      }))!.superRegionRecordType!
+    : undefined;
   const crLabel = recordConfigs.find((rc) => rc.recordTypeId === crType)?.label;
   const nrLabel = recordConfigs.find((rc) => rc.recordTypeId === "NR")!.label;
   const baseConditions = [
+    eq(table.organizationId, organizationId),
     eq(table.eventId, result.eventId),
     gte(table.date, result.date),
     gt(table[bestOrAverage], result[bestOrAverage]),
@@ -910,13 +928,13 @@ async function cancelFutureRecords(
   if (result[recordField] === "WR") {
     const wrLabel = recordConfigs.find((rc) => rc.recordTypeId === "WR")!.label;
     const recordTypes = result.regionCode ? ["WR", crType!, "NR"] : result.superRegionCode ? ["WR", crType!] : ["WR"];
-    const cancelledWrCrNrResults = await tx
+    const cancelledWrCrNrResults = await db
       .update(table)
       .set({ [recordField]: null })
       .where(
         and(
           ...baseConditions,
-          inArray(table[recordField], recordTypes as RecordType[]),
+          inArray(table[recordField], recordTypes),
           result.superRegionCode
             ? or(eq(table.superRegionCode, result.superRegionCode), isNull(table.superRegionCode))
             : isNull(table.superRegionCode),
@@ -931,7 +949,7 @@ async function cancelFutureRecords(
       logMessage("RR0026", message);
     }
 
-    const wrCrChangedToNrResults = await tx
+    const wrCrChangedToNrResults = await db
       .update(table)
       .set({ [recordField]: "NR" })
       .where(
@@ -951,14 +969,16 @@ async function cancelFutureRecords(
     }
 
     // Has to be done like this, because we can't dynamically determine the CR type to be set
-    const wrResultsToBeChangedToCr = await tx
+    const wrResultsToBeChangedToCr = await db
       .select()
       .from(table)
       .where(and(...baseConditions, eq(table[recordField], "WR"), isNotNull(table.superRegionCode)));
     for (const r of wrResultsToBeChangedToCr) {
-      const resultCrType = ContinentRecordType[r.superRegionCode as SuperRegionCode];
+      const resultCrType = (await db.query.regions.findFirst({
+        where: { organizationId, type: "super-region", code: r.superRegionCode! },
+      }))!.superRegionRecordType!;
       const resultCrLabel = recordConfigs.find((rc) => rc.recordTypeId === resultCrType)!.label;
-      await tx
+      await db
         .update(table)
         .set({ [recordField]: resultCrType })
         .where(eq(table.id, r.id))
@@ -967,8 +987,8 @@ async function cancelFutureRecords(
       const message = `CHANGED ${r.eventId} ${type} ${wrLabel} to ${resultCrLabel}: ${r[bestOrAverage]} (country code ${r.regionCode})`;
       logMessage("RR0026", message);
     }
-  } else if (ContinentalRecordTypes.includes(result[recordField] as any)) {
-    const cancelledCrNrResults = await tx
+  } else if (result[recordField] !== "NR") {
+    const cancelledCrNrResults = await db
       .update(table)
       .set({ [recordField]: null })
       .where(
@@ -987,7 +1007,7 @@ async function cancelFutureRecords(
       logMessage("RR0026", message);
     }
 
-    const crChangedToNrResults = await tx
+    const crChangedToNrResults = await db
       .update(table)
       .set({ [recordField]: "NR" })
       .where(
@@ -1003,8 +1023,8 @@ async function cancelFutureRecords(
       const message = `CHANGED ${r.eventId} ${type} ${crLabel} to ${nrLabel}: ${r[bestOrAverage]} (country code ${r.regionCode})`;
       logMessage("RR0026", message);
     }
-  } else if (result[recordField] === "NR") {
-    const cancelledNrResults = await tx
+  } else {
+    const cancelledNrResults = await db
       .update(table)
       .set({ [recordField]: null })
       .where(and(...baseConditions, eq(table[recordField], "NR"), eq(table.regionCode, result.regionCode!)))
@@ -1016,12 +1036,19 @@ async function cancelFutureRecords(
   }
 }
 
-async function validateTimeLimitAndCutoff(
-  attempts: Attempt[],
-  personIds: number[],
-  round: SelectRound,
-  expectedNumberOfAttempts: number,
-): Promise<Attempt[]> {
+async function validateTimeLimitAndCutoff({
+  organizationId,
+  attempts,
+  personIds,
+  round,
+  expectedNumberOfAttempts,
+}: {
+  organizationId: string;
+  attempts: Attempt[];
+  personIds: number[];
+  round: SelectRound;
+  expectedNumberOfAttempts: number;
+}): Promise<Attempt[]> {
   let outputAttempts = attempts;
 
   // Time limit validation
@@ -1033,6 +1060,7 @@ async function validateTimeLimitAndCutoff(
       // Add up all attempt times from the new result and results from other rounds included in the cumulative time limit
       const cumulativeRoundsResults = await db.query.results.findMany({
         where: {
+          organizationId,
           roundId: { in: round.timeLimitCumulativeRoundIds },
           RAW: (t) => sql`CARDINALITY(${t.personIds}) = ${personIds.length}`,
           personIds: { arrayContains: personIds },
@@ -1079,14 +1107,36 @@ async function validateTimeLimitAndCutoff(
   return outputAttempts;
 }
 
-async function validateVideoBasedResult(
-  newResultDto: Pick<VideoBasedResultDto, "attempts" | "videoLink">,
-  { userCanApprove }: { userCanApprove: boolean },
+async function setRankingAndProceedsValues(
+  db: DbTransactionType, // the tx object from a Drizzle transaction
+  results: ResultResponse[],
+  round: RoundResponse,
 ) {
-  // Disallow video-based-result-reviewer-only features
-  if (!userCanApprove) {
-    if (newResultDto.videoLink === "") throw new RrActionError("Please enter a video link");
-    if (newResultDto.attempts.some((a) => a.result === C.maxTime))
-      throw new RrActionError("You are not authorized to set unknown time");
+  const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
+  const sortedResults = results.sort(roundFormat.isAverage ? (a, b) => compareAvgs(a, b, true) : compareSingles);
+  let prevResult = sortedResults[0];
+  let ranking = 1;
+
+  for (let i = 0; i < sortedResults.length; i++) {
+    if (i > 0) {
+      // If the previous result was not tied with this one, increase ranking
+      if (
+        (roundFormat.isAverage && compareAvgs(prevResult, sortedResults[i], true) < 0) ||
+        (!roundFormat.isAverage && compareSingles(prevResult, sortedResults[i]) < 0)
+      ) {
+        ranking = i + 1;
+      }
+
+      prevResult = sortedResults[i];
+    }
+
+    // Set proceeds if it's a non-final round and the result proceeds to the next round
+    const proceeds = round.proceedValue
+      ? getResultProceeds({ ...sortedResults[i], ranking }, round, roundFormat, sortedResults)
+      : null;
+
+    // Update the result in the DB, if something changed
+    if (ranking !== sortedResults[i].ranking || proceeds !== sortedResults[i].proceeds)
+      await db.update(table).set({ ranking, proceeds }).where(eq(table.id, sortedResults[i].id));
   }
 }

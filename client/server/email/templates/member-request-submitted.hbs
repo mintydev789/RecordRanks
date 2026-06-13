@@ -1,0 +1,23 @@
+<html>
+  <head>
+    <title>{{projectName}}</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <p>A member request has been submitted and is pending review by the admin team.</p>
+
+    <p>User: {{name}}</p>
+    {{#if requestedPersonId}}
+      <p>Requested person ID: {{requestedPersonId}}</p>
+      <p>Requested person name: {{requestedPersonName}}</p>
+    {{/if}}
+    {{#if requestedRole}}
+      <p>Requested role: {{requestedRole}}</p>
+    {{/if}}
+    {{#if comment}}
+      <p>Comment: {{comment}}</p>
+    {{/if}}
+  </body>
+</html>

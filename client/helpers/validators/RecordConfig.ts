@@ -1,9 +1,9 @@
 import z from "zod";
-import { RecordCategoryValues, RecordTypeValues } from "~/helpers/types.ts";
+import { RecordCategoryValues } from "~/helpers/types.ts";
 import { ColorValidator } from "~/helpers/validators/Validators.ts";
 
 export const RecordConfigValidator = z.strictObject({
-  recordTypeId: z.enum(RecordTypeValues),
+  recordTypeId: z.string().nonempty(),
   category: z.enum(RecordCategoryValues),
   label: z.string().nonempty(),
   active: z.boolean(),

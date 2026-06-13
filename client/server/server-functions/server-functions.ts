@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { nxnMoves } from "~/helpers/types/NxNMove.ts";
+import type { FeaturesInfo, OrganizationDetails } from "~/helpers/types.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import {
@@ -15,21 +16,10 @@ import {
   collectiveSolutionsTable as csTable,
 } from "~/server/db/schema/collective-solutions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
-import { getSettingFromDb, logMessage } from "../server-only-functions.ts";
-
-export const logAffiliateLinkClickSF = actionClient
-  .metadata({})
-  .inputSchema(
-    z.strictObject({
-      message: z.string().nonempty(),
-    }),
-  )
-  .action(async ({ parsedInput: { message } }) => {
-    logMessage("RR0004", message);
-  });
+import { getOrgDetails, getSettingFromDb, logMessage } from "../server-only-functions.ts";
 
 export const logErrorSF = actionClient
-  .metadata({})
+  .metadata({ auth: null })
   .inputSchema(
     z.strictObject({
       errorMessage: z.string().nonempty(),
@@ -39,12 +29,26 @@ export const logErrorSF = actionClient
     logMessage("RR5000", errorMessage, { sendErrorLogEmail: true });
   });
 
-export const getModInstructionsSF = actionClient.metadata({}).action<string | null>(async () => {
-  return await getSettingFromDb({ key: "moderator-instructions-page-content", optional: true });
-});
+export const getOrgDetailsSF = actionClient
+  .metadata({ auth: null })
+  .inputSchema(
+    z.union([
+      z.strictObject({
+        id: z.string().nonempty().optional(),
+        slug: z.never().optional(),
+      }),
+      z.strictObject({
+        id: z.never().optional(),
+        slug: z.string().nonempty().optional(),
+      }),
+    ]),
+  )
+  .action<OrganizationDetails>(async ({ parsedInput: { id, slug }, ctx: { session } }) => {
+    return await getOrgDetails({ session: session?.session, id, slug });
+  });
 
 export const getCurrentCollectiveCubingSolutionSF = actionClient
-  .metadata({})
+  .metadata({ auth: null })
   .action<CurrentCollectiveSolution | null>(async () => {
     // Doing it like this, because authentication is optional for this server function
     const session = await auth.api.getSession({ headers: await headers() });
@@ -67,7 +71,7 @@ export const getCurrentCollectiveCubingSolutionSF = actionClient
   });
 
 export const startNewCollectiveCubingSolutionSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: false } })
   .action<CurrentCollectiveSolution>(async ({ ctx: { session } }) => {
     logMessage("RR0029", "Starting new Collective Cubing solution");
 
@@ -105,7 +109,7 @@ async function getIsSolved(currentState: Alg): Promise<boolean> {
 }
 
 export const makeCollectiveCubingMoveSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: false } })
   .inputSchema(
     z.strictObject({
       move: z.enum(nxnMoves),
@@ -155,3 +159,50 @@ export const makeCollectiveCubingMoveSF = actionClient
       return { ...updatedSolution, currentUserInteractedLast: true };
     },
   );
+
+export const getFeaturesInfoSF = actionClient
+  .metadata({ auth: null })
+  .inputSchema(z.strictObject({ organizationId: z.string().nonempty().optional() }))
+  .action<FeaturesInfo>(async ({ parsedInput: { organizationId }, ctx: { session } }) => {
+    if (
+      organizationId &&
+      session.session.activeOrganizationId &&
+      organizationId !== session.session.activeOrganizationId
+    ) {
+      throw new RrActionError("You are not authorized to access this organization");
+    }
+
+    const [
+      organization,
+      rulesPageContent,
+      modInstructionsPageContent,
+      videoBasedResultsEnabled,
+      publicExportsToKeep,
+      privacyPolicy,
+    ] = await Promise.all([
+      organizationId ? getOrgDetails({ session: session.session, id: organizationId }) : undefined,
+      organizationId ? getSettingFromDb({ key: "rules-page-content", organizationId, optional: true }) : undefined,
+      organizationId
+        ? getSettingFromDb({ key: "moderator-instructions-page-content", organizationId, optional: true })
+        : undefined,
+      organizationId ? getSettingFromDb({ key: "video-based-results-enabled", organizationId }) : undefined,
+      getSettingFromDb({ key: "public-exports-to-keep", organizationId: null }),
+      getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true }),
+    ]);
+
+    return {
+      rulesPageEnabled: Boolean(rulesPageContent),
+      modInstructionsPageEnabled: Boolean(modInstructionsPageContent),
+      videoBasedResultsEnabled: videoBasedResultsEnabled === "true",
+      publicExportsEnabled: !!organization && organization.metadata.plan !== "basic" && Number(publicExportsToKeep) > 0,
+      privacyPolicy: !privacyPolicy
+        ? "disabled"
+        : z.url().safeParse(privacyPolicy).success
+          ? privacyPolicy
+          : "policy-contents",
+    };
+  });
+
+export const getPrivacyPolicySF = actionClient.metadata({ auth: null }).action<string | null>(async () => {
+  return await getSettingFromDb({ key: "privacy-policy", organizationId: null, optional: true });
+});

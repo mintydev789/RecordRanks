@@ -15,7 +15,7 @@ with stats as (
       inner join record_ranks.regions
         on regions.code = contests.region_code
       where event_id = events.event_id
-        and super_region_code = 'EUROPE'
+        and super_region_code = 'XE'
         and (contests.state = 'finished' or contests.state = 'published')
     ) as europe,
     (
@@ -25,7 +25,7 @@ with stats as (
       inner join record_ranks.regions
         on regions.code = contests.region_code
       where event_id = events.event_id
-        and super_region_code = 'ASIA'
+        and super_region_code = 'XA'
         and (contests.state = 'finished' or contests.state = 'published')
     ) as asia,
     (
@@ -35,7 +35,7 @@ with stats as (
       inner join record_ranks.regions
         on regions.code = contests.region_code
       where event_id = events.event_id
-        and super_region_code = 'NORTH_AMERICA'
+        and super_region_code = 'XN'
         and (contests.state = 'finished' or contests.state = 'published')
     ) as north_america,
     (
@@ -45,7 +45,7 @@ with stats as (
       inner join record_ranks.regions
         on regions.code = contests.region_code
       where event_id = events.event_id
-        and super_region_code = 'SOUTH_AMERICA'
+        and super_region_code = 'XS'
         and (contests.state = 'finished' or contests.state = 'published')
     ) as south_america,
     (
@@ -55,7 +55,7 @@ with stats as (
       inner join record_ranks.regions
         on regions.code = contests.region_code
       where event_id = events.event_id
-        and super_region_code = 'AFRICA'
+        and super_region_code = 'XF'
         and (contests.state = 'finished' or contests.state = 'published')
     ) as africa,
     (
@@ -65,7 +65,7 @@ with stats as (
       inner join record_ranks.regions
         on regions.code = contests.region_code
       where event_id = events.event_id
-        and super_region_code = 'OCEANIA'
+        and super_region_code = 'XO'
         and (contests.state = 'finished' or contests.state = 'published')
     ) as oceania,
     (

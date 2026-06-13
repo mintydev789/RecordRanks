@@ -34,7 +34,6 @@ export default defineConfig({
     password: process.env.RR_DB_PASSWORD!,
     database: process.env.POSTGRES_DB!,
   },
-  casing: "snake_case",
   strict: true,
   // verbose: true,
 });

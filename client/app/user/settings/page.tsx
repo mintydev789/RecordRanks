@@ -4,18 +4,22 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { SwrKey } from "~/helpers/swr-keys.ts";
 import { db } from "~/server/db/provider.ts";
 import { personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
-import { regionsPublicCols, regionsTable } from "~/server/db/schema/regions.ts";
-import { authorizeUser, getSettingFromDb, getUserRequestDetails } from "~/server/server-only-functions.ts";
+import {
+  authorizeUser,
+  getMemberRequestDetails,
+  getRegions,
+  getSettingFromDb,
+} from "~/server/server-only-functions.ts";
 import UserSettingsScreen from "./UserSettingsScreen.tsx";
 
 async function UserSettingsPage() {
-  const { user } = await authorizeUser();
+  const { member } = await authorizeUser({ useOrganization: false });
 
   const [[person], regions] = await Promise.all([
-    user.personId
-      ? await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, user.personId)).limit(1)
+    member?.personId
+      ? db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, member.personId)).limit(1)
       : [],
-    db.select(regionsPublicCols).from(regionsTable),
+    member ? getRegions(member.organizationId) : undefined,
   ]);
 
   return (
@@ -27,8 +31,10 @@ async function UserSettingsPage() {
       <SWRConfig
         value={{
           fallback: {
-            [SwrKey.UserRequestDetails]: getUserRequestDetails(user.id),
-            [SwrKey.UserRequestInstructions]: getSettingFromDb({ key: "user-request-instructions" }),
+            [SwrKey.MemberRequestDetails]: member ? getMemberRequestDetails({ member }) : undefined,
+            [SwrKey.MemberRequestInstructions]: member
+              ? getSettingFromDb({ key: "member-request-instructions", organizationId: member.organizationId })
+              : undefined,
           },
         }}
       >

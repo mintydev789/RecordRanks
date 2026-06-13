@@ -16,16 +16,6 @@ const nextConfig: NextConfig = withMDX({
         destination: "/oauth-error",
         permanent: false,
       },
-      {
-        source: "/records",
-        destination: "/records/unofficial",
-        permanent: true,
-      },
-      {
-        source: "/rankings",
-        destination: "/rankings/fto/single",
-        permanent: true,
-      },
     ]);
   },
   // Enables streaming (https://nextjs.org/docs/app/guides/self-hosting#streaming-and-suspense)
@@ -33,12 +23,7 @@ const nextConfig: NextConfig = withMDX({
     return [
       {
         source: "/:path*{/}?",
-        headers: [
-          {
-            key: "X-Accel-Buffering",
-            value: "no",
-          },
-        ],
+        headers: [{ key: "X-Accel-Buffering", value: "no" }],
       },
     ];
   },

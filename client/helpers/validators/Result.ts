@@ -51,7 +51,7 @@ export const VideoBasedResultValidator = z.strictObject({
     .min(1)
     .max(5)
     .refine((val) => val.some((a) => a.result > 0), { error: "You cannot submit only DNF/DNS attempts" }),
-  videoLink: z.url(),
+  videoLink: z.url().nullable(),
   discussionLink: z.url().nullable(),
 });
 

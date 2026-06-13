@@ -5,7 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { isValid } from "date-fns";
 import { enGB } from "date-fns/locale/en-GB";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
-import { getDateOnly } from "~/helpers/utilityFunctions.ts";
+import { getDateOnly } from "~/helpers/utility-functions.ts";
 import FormInputLabel from "./FormInputLabel.tsx";
 
 registerLocale("en-GB", enGB);

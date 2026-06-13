@@ -7,13 +7,9 @@
   </head>
   <body>
     <p>
-      Your roles on <a href="{{baseUrl}}">{{projectName}}</a> have been changed.
+      Your roles in the {{organizationName}} organization on <a href="{{baseUrl}}">{{projectName}}</a> have been changed.
     </p>
 
     <p>Your new roles: {{roles}}.</p>
-
-    {{#if canAccessModDashboard}}
-      <p>You can now access the <a href="{{baseUrl}}/mod">Moderator Dashboard</a> from the navigation bar.</p>
-    {{/if}}
   </body>
 </html>

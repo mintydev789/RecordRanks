@@ -1,56 +1,76 @@
+vi.mock("server-only", () => ({}));
+vi.mock("~/server/logger.ts", () => ({ logger: pino() }));
+vi.mock("~/server/db/provider.ts", () => ({ db: dbMock }));
+vi.mock("~/server/auth.ts", () => ({ auth: authMock }));
+
 import { eq, sql } from "drizzle-orm";
 import pino from "pino";
 import { afterEach, beforeAll, vi } from "vitest";
-import { apply as applyDbSchema, mockDb as db } from "~/__mocks__/dbProvider.ts";
+import { authMock } from "~/__mocks__/auth-mock.ts";
+import { apply as applyDbSchema, dbMock } from "~/__mocks__/db-mock.ts";
+import {
+  contestsTable,
+  eventsTable,
+  membersTable,
+  personsTable,
+  recordConfigsTable,
+  regionsTable,
+  resultsTable,
+  roundsTable,
+  rrSchema,
+} from "~/__mocks__/db-schema.ts";
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
 import { personsStub } from "~/__mocks__/stubs/personsStub.ts";
 import { recordConfigsStub } from "~/__mocks__/stubs/recordConfigsStub.ts";
-import { regionsStub } from "~/__mocks__/stubs/regionsStub.ts";
 import { resultsStub } from "~/__mocks__/stubs/resultsStub.ts";
 import { roundsStub } from "~/__mocks__/stubs/roundsStub.ts";
-import { testUsers } from "~/helpers/test-data/testUsers.ts";
-import { auth } from "~/server/auth.ts";
-import { usersTable } from "~/server/db/schema/auth-schema.ts";
-import { contestsTable } from "~/server/db/schema/contests.ts";
-import { eventsTable } from "~/server/db/schema/events.ts";
-import { personsTable } from "~/server/db/schema/persons.ts";
-import { recordConfigsTable } from "~/server/db/schema/record-configs.ts";
-import { regionsTable } from "~/server/db/schema/regions.ts";
-import { resultsTable } from "~/server/db/schema/results.ts";
-import { roundsTable } from "~/server/db/schema/rounds.ts";
-import { rrSchema } from "~/server/db/schema/schema.ts";
-
-vi.mock("server-only", () => ({}));
-
-vi.mock("~/server/logger.ts", () => ({ logger: pino() }));
-
-vi.mock("~/server/db/provider.ts", () => ({ db }));
+import { getDefaultRegions } from "~/helpers/default-regions.ts";
+import { testUsers } from "~/helpers/test-data/test-users.ts";
+import type { OrganizationMetadata } from "~/helpers/types.ts";
 
 beforeAll(async () => {
   await applyDbSchema();
 
-  await Promise.all([
-    db.insert(recordConfigsTable).values(recordConfigsStub),
-    db.insert(eventsTable).values(eventsStub),
-    db.insert(regionsTable).values(regionsStub),
-  ]);
+  const ctx = await authMock.$context;
+  const authTest = ctx.test;
 
-  // Mostly copied from instrumentation.ts
+  const org = authTest.createOrganization!({
+    id: "default",
+    name: "Test Organization",
+    slug: "default",
+    metadata: JSON.stringify({
+      private: false,
+      contactEmail: "admin@example.com",
+      plan: "custom",
+      showDonationLinks: false,
+    } satisfies OrganizationMetadata),
+  });
+  await authTest.saveOrganization!(org);
+
   for (const testUser of testUsers) {
-    const { role, emailVerified, personId, ...body } = testUser;
-    await auth.api.signUpEmail({ body });
+    const { member: newMember, ...newUser } = testUser;
+    const user = authTest.createUser(newUser);
+    await authTest.saveUser(user);
 
-    // Set emailVerified and personId
-    const [user] = await db
-      .update(usersTable)
-      .set({ emailVerified, personId })
-      .where(eq(usersTable.email, testUser.email))
-      .returning();
-
-    // Set role
-    if (role) await db.update(usersTable).set({ role }).where(eq(usersTable.id, user.id));
+    if (newMember) {
+      const createdMember = await authTest.addMember!({
+        userId: user.id,
+        organizationId: org.id,
+        role: newMember.role,
+      } as any);
+      await dbMock
+        .update(membersTable)
+        .set({ personId: newMember.personId })
+        .where(eq(membersTable.id, createdMember.id as string));
+    }
   }
+
+  await Promise.all([
+    dbMock.insert(recordConfigsTable).values(recordConfigsStub),
+    dbMock.insert(eventsTable).values(eventsStub),
+    dbMock.insert(regionsTable).values(getDefaultRegions("default")),
+  ]);
 });
 
 afterEach(() => {
@@ -60,23 +80,23 @@ afterEach(() => {
 export async function reseedTestData() {
   // This has to be done separately, because the results table has a foreign key reference to the rounds table
   await Promise.all([
-    db.delete(resultsTable),
-    db.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.results_id_seq RESTART WITH 1`)),
+    dbMock.delete(resultsTable),
+    dbMock.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.results_id_seq RESTART WITH 1`)),
   ]);
 
   await Promise.all([
-    db.delete(roundsTable),
-    db.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.rounds_id_seq RESTART WITH 1`)),
-    db.delete(contestsTable),
-    db.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.contests_id_seq RESTART WITH 1`)),
-    db.delete(personsTable),
-    db.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.persons_id_seq RESTART WITH 1`)),
+    dbMock.delete(roundsTable),
+    dbMock.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.rounds_id_seq RESTART WITH 1`)),
+    dbMock.delete(contestsTable),
+    dbMock.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.contests_id_seq RESTART WITH 1`)),
+    dbMock.delete(personsTable),
+    dbMock.execute(sql.raw(`ALTER SEQUENCE ${rrSchema.schemaName}.persons_id_seq RESTART WITH 1`)),
   ]);
 
   await Promise.all([
-    db.insert(personsTable).values(personsStub.map(({ id, ...p }) => p)),
-    db.insert(contestsTable).values(contestsStub),
-    db.insert(roundsTable).values(roundsStub.map(({ id, ...r }) => r)),
-    db.insert(resultsTable).values(resultsStub),
+    dbMock.insert(personsTable).values(personsStub.map(({ id, ...p }) => p)),
+    dbMock.insert(contestsTable).values(contestsStub),
+    dbMock.insert(roundsTable).values(roundsStub.map(({ id, ...r }) => r)),
+    dbMock.insert(resultsTable).values(resultsStub),
   ]);
 }

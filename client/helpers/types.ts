@@ -1,6 +1,6 @@
 import type { authClient } from "~/helpers/authClient.ts";
+import type { FullMemberRequest } from "~/server/db/schema/member-requests.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
-import type { FullUserRequest } from "~/server/db/schema/user-requests.ts";
 
 // WCIF types
 export type {
@@ -21,8 +21,34 @@ export type ListPageMode = "view" | "add" | "edit";
 
 export type InputPerson = PersonResponse | null;
 
-// This has to stay consistent with the creator columns object in dbUtils.ts
-export type Creator = Pick<typeof authClient.$Infer.Session.user, "id" | "name" | "email" | "personId">;
+export type OrganizationMetadata = {
+  private: boolean;
+  contactEmail: string;
+  plan: "basic" | "pro" | "custom";
+  showDonationLinks: boolean;
+};
+
+export type OrganizationDetails = Pick<typeof authClient.$Infer.Organization, "id" | "name" | "slug" | "logo"> & {
+  metadata: OrganizationMetadata;
+};
+
+export type FullSession = typeof authClient.$Infer.Session & {
+  member?: typeof authClient.$Infer.Member;
+  organization?: OrganizationDetails;
+};
+
+export type Creator = {
+  userId: string;
+  name: string;
+  email: string;
+  person: {
+    id: number;
+    name: string;
+    localizedName: string | null;
+    regionCode: string;
+    wcaId: string | null;
+  } | null;
+};
 
 export const EventFormatValues = [
   "time",
@@ -47,18 +73,19 @@ export type EventCategory = (typeof EventCategoryValues)[number];
 export const RecordCategoryValues = ["competitions", "meetups", "online"] as const;
 export type RecordCategory = (typeof RecordCategoryValues)[number];
 
-export const RecordTypeValues = ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"] as const;
-export type RecordType = (typeof RecordTypeValues)[number];
-export const ContinentalRecordTypes = ["ER", "NAR", "SAR", "AsR", "AfR", "OcR"] as const satisfies RecordType[];
-
 export const ContestTypeValues = ["comp", "meetup", "online", "wca-comp"] as const;
 export type ContestType = (typeof ContestTypeValues)[number];
 
 export const ContestStateValues = ["created", "approved", "ongoing", "finished", "published", "removed"] as const;
 export type ContestState = (typeof ContestStateValues)[number];
 
-export const SuperRegionCodeValues = ["AFRICA", "ASIA", "EUROPE", "NORTH_AMERICA", "OCEANIA", "SOUTH_AMERICA"] as const;
-export type SuperRegionCode = (typeof SuperRegionCodeValues)[number];
+export const RegionTypeValues = [
+  "country", // actual country in the World (this is important for determining the time zone used for a contest)
+  "region", // the region of a country (e.g. state, county, prefecture, etc.); can be used as region of representation for a person
+  "super-region", // determines the super region record type (e.g. ER, AsR, etc.); can be used as the region for a contest
+  "meta-region", // doesn't correspond to any type of record; can be used as the region for a contest
+] as const;
+export type RegionType = (typeof RegionTypeValues)[number];
 
 export type EventWrPair = {
   eventId: string;
@@ -71,4 +98,15 @@ export type GetOrCreatePersonObject = {
   isNew: boolean;
 };
 
-export type UserRequestDetails = { userRequest: FullUserRequest | null; ownRequestedPersonId?: number };
+export type MemberRequestDetails = {
+  memberRequest: FullMemberRequest | null;
+  ownRequestedPersonId?: number;
+};
+
+export type FeaturesInfo = {
+  rulesPageEnabled: boolean;
+  modInstructionsPageEnabled: boolean;
+  publicExportsEnabled: boolean;
+  videoBasedResultsEnabled: boolean;
+  privacyPolicy: "disabled" | "policy-contents" | string;
+};

@@ -2,12 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { SWRConfig } from "swr";
 import Footer from "~/app/components/UI/Footer.tsx";
+import Loading from "~/app/components/UI/Loading.tsx";
 import Navbar from "~/app/components/UI/Navbar.tsx";
 import { MainContext, type Theme } from "~/helpers/contexts.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 
 type Props = {
   children: React.ReactNode;
@@ -81,9 +82,11 @@ function Providers({ children }: Props) {
               resetMessages,
             }}
           >
-            <Navbar />
-            <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
-            <Footer />
+            <Suspense fallback={<Loading />}>
+              <Navbar />
+              <main className="container-md d-flex flex-column flex-grow-1 px-0 pt-4 pb-2">{children}</main>
+              <Footer />
+            </Suspense>
           </MainContext.Provider>
         </NuqsAdapter>
       </SWRConfig>

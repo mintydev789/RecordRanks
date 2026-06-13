@@ -1,38 +1,52 @@
 import "server-only";
 import { getColumns } from "drizzle-orm";
-import { integer, text } from "drizzle-orm/pg-core";
+import * as d from "drizzle-orm/pg-core";
 import { tableTimestamps } from "~/server/db/dbUtils.ts";
+import { organizationsTable } from "~/server/db/schema/auth-schema.ts";
 import { rrSchema } from "~/server/db/schema/schema.ts";
 
 // More groups and keys can be added here
 export type SettingGroup = "default" | "page-contents" | "features";
 export type SettingKey =
+  ///// Global settings /////
   // default
   | "error-logs-contact-email"
-  | "video-based-results-contact-email"
+  // page-contents
+  | "privacy-policy"
+  | "public-exports-readme"
+  // features
+  | "public-exports-to-keep"
+  | "collective-cubing-enabled"
 
+  ///// Organization settings /////
+  // default
+  | "video-based-results-contact-email"
   // page-contents
   | "home-page-description"
   | "about-page-content"
   | "rules-page-content"
   | "moderator-instructions-page-content"
   | "moderator-instructions-description"
+  | "video-based-results-rules"
   | "video-based-results-instructions"
-  | "user-request-instructions"
-  | "public-exports-readme"
-
+  | "member-request-instructions"
   // features
   | "contest-types"
-  | "collective-cubing-enabled";
+  | "video-based-results-enabled";
 
-export const settingsTable = rrSchema.table("settings", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  key: text().$type<SettingKey>().notNull().unique(),
-  group: text().$type<SettingGroup>(),
-  value: text().notNull(),
-  description: text(),
-  ...tableTimestamps,
-});
+export const settingsTable = rrSchema.table(
+  "settings",
+  {
+    id: d.integer().primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: d.text().references(() => organizationsTable.id, { onDelete: "cascade" }),
+    key: d.text().$type<SettingKey>().notNull(),
+    group: d.text().$type<SettingGroup>(),
+    value: d.text().notNull(),
+    description: d.text(),
+    ...tableTimestamps,
+  },
+  (table) => [d.unique("unique_settings_key").on(table.organizationId, table.key)],
+);
 
 export type InsertSetting = typeof settingsTable.$inferInsert;
 export type SelectSetting = typeof settingsTable.$inferSelect;

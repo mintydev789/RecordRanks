@@ -124,7 +124,7 @@ function LoginPage() {
       <div className="fs-5 container mx-auto mt-4 px-3" style={{ maxWidth: "var(--rr-md-width)" }}>
         {HAS_CREDENTIAL_AUTH && <Link href="/register">Sign up using email</Link>}
 
-        <div className="d-flex mt-4 gap-3 align-items-center">
+        <div className="d-flex mt-4 flex-wrap gap-3 align-items-center">
           {HAS_WCA_AUTH && (
             <Button
               onClick={signInWithWca}
@@ -132,7 +132,7 @@ function LoginPage() {
               isLoading={isPendingWcaSignIn}
               className="d-block px-4"
             >
-              <div className="d-flex gap-2 align-items-center">
+              <div className="d-flex gap-2 text-nowrap align-items-center">
                 <Image src="/wca_logo.svg" height={30} width={30} alt="WCA" />
                 Sign in with WCA
               </div>

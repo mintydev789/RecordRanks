@@ -8,13 +8,14 @@ import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { authClient } from "~/helpers/authClient.ts";
 import { HAS_CREDENTIAL_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 
 function VerificationLinkExpiredPage() {
   if (!HAS_CREDENTIAL_AUTH) return <p className="text-center">EMAIL + PASSWORD AUTHENTICATION IS NOT SUPPORTED</p>;
 
   const searchParams = useSearchParams();
   const { changeSuccessMessage, changeErrorMessages } = useContext(MainContext);
-  const { data: session } = authClient.useSession();
+  const { user } = useSession();
 
   const [isDisabled, setIsDisabled] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -29,11 +30,11 @@ function VerificationLinkExpiredPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!isDisabled && session?.user.emailVerified) {
+    if (!isDisabled && user?.emailVerified) {
       changeErrorMessages(["Your email is already verified"]);
       setIsDisabled(true);
     }
-  }, [session]);
+  }, [user]);
 
   const resendVerificationLink = () => {
     startTransition(async () => {

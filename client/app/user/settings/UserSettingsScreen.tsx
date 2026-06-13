@@ -9,21 +9,17 @@ import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import Loading from "~/app/components/UI/Loading.tsx";
 import Tabs from "~/app/components/UI/Tabs.tsx";
-import UserRequestTab from "~/app/user/settings/UserRequestTab.tsx";
+import MemberRequestTab from "~/app/user/settings/MemberRequestTab";
 import { authClient } from "~/helpers/authClient.ts";
 import { HAS_WCA_AUTH } from "~/helpers/constants.ts";
 import { MainContext } from "~/helpers/contexts.ts";
+import { useSession } from "~/helpers/hooks.ts";
 import type { NavigationItem } from "~/helpers/types/NavigationItem.ts";
-import { getActionError } from "~/helpers/utilityFunctions.ts";
+import { getActionError } from "~/helpers/utility-functions.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 import type { RegionResponse } from "~/server/db/schema/regions.ts";
-import { rolesObject } from "~/server/permissions.ts";
+import { orgRolesObject } from "~/server/organization-permissions.ts";
 import { linkWcaProfileSF, logUserDeletedSF } from "~/server/server-functions/user-server-functions.ts";
-
-const tabs = [
-  { title: "Account", value: "account" },
-  { title: "User Request", value: "user-request" },
-] as const satisfies NavigationItem[];
 
 // Just a copy of the type of the data property from the return type of authClient.listAccounts()
 type Account = {
@@ -38,13 +34,13 @@ type Account = {
 
 type Props = {
   initPerson: PersonResponse | undefined;
-  regions: RegionResponse[];
+  regions: RegionResponse[] | undefined;
 };
 
 function UserSettingsScreen({ initPerson, regions }: Props) {
   const router = useRouter();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
-  const { data: session, isPending: isPendingSession } = authClient.useSession();
+  const { session, user, member } = useSession();
 
   const [status, setStatus] = useQueryState("status", parseAsStringLiteral(["signup-success", "email-change-success"]));
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["value"]>("account");
@@ -57,42 +53,38 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   const [isInitiatingEmailChange, startEmailChange] = useTransition();
   const [isDeleting, startDeleteAccountTransition] = useTransition();
 
+  const tabs = [
+    { title: "Account", value: "account" },
+    { title: "Member Request", value: "member-request", disabled: !member },
+  ] as const satisfies NavigationItem[];
   const showLinkWcaProfileButton =
     HAS_WCA_AUTH &&
     !["disabled", "linked"].includes(wcaProfileLinkStatus) &&
     accounts!.some((a) => a.providerId === "wca");
-  const roles = session
-    ? session.user
+  const roles = session?.activeOrganizationId
+    ? member!
         .role!.split(",")
-        .map((role) => (rolesObject as any)[role])
+        .map((role) => (orgRolesObject as any)[role])
         .join(", ")
     : "";
-  const isPending = isPendingSession || wcaProfileLinkStatus === "pending" || isInitiatingEmailChange || isDeleting;
+  const isPending = !session || wcaProfileLinkStatus === "pending" || isInitiatingEmailChange || isDeleting;
 
   useEffect(() => {
     if (session && !accounts) {
       // Get accounts data
       (async () => {
-        const { data, error } = await authClient.listAccounts();
+        const { data: accs, error } = await authClient.listAccounts();
 
         if (error) {
           changeErrorMessages([error.message || error.statusText]);
         } else {
-          setAccounts(data);
+          setAccounts(accs);
 
           if (status === "email-change-success") changeSuccessMessage("Your email has been changed successfully");
 
           if (HAS_WCA_AUTH) {
-            if (status === "signup-success") {
-              changeSuccessMessage(
-                "Your account has been created successfully! Linking your WCA competitor profile...",
-              );
-
-              setWcaProfileLinkStatus("pending"); // set to pending immediately to start loading spinner
-              setTimeout(() => linkWcaProfile(), 2000);
-            } else if (data.find((a) => a.providerId === "wca")) {
-              setWcaProfileLinkStatus("enabled");
-            }
+            if (status === "signup-success") changeSuccessMessage("Your account has been created successfully!");
+            if (accs.find((a) => a.providerId === "wca")) setWcaProfileLinkStatus("enabled");
           }
 
           setStatus(null);
@@ -106,6 +98,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
   }, [isPending, session]);
 
   const linkWcaProfile = async () => {
+    resetMessages();
     setWcaProfileLinkStatus("pending");
 
     const res = await linkWcaProfileSF();
@@ -115,9 +108,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
       setWcaProfileLinkStatus("enabled");
     } else {
       changeSuccessMessage(
-        session!.user.personId
-          ? "Successfully synced WCA competitor profile"
-          : "Successfully linked WCA competitor profile",
+        member!.personId ? "Successfully synced WCA competitor profile" : "Successfully linked WCA competitor profile",
       );
       setWcaProfileLinkStatus("linked");
       setPerson(res.data);
@@ -126,6 +117,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
 
   const initiateEmailChange = () => {
     startEmailChange(async () => {
+      resetMessages();
       const { error } = await authClient.changeEmail({
         newEmail,
         callbackURL: "/user/settings?status=email-change-success",
@@ -145,7 +137,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
     if (confirm("Are you CERTAIN you would like to delete your account? This action is permanent!")) {
       resetMessages();
       startDeleteAccountTransition(async () => {
-        logUserDeletedSF({ id: session!.user.id });
+        logUserDeletedSF({ id: user!.id });
         const { error } = await authClient.deleteUser();
 
         if (error) {
@@ -158,7 +150,7 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
     }
   };
 
-  if (!session || !accounts) return <Loading />;
+  if (!user || !accounts) return <Loading />;
 
   return (
     <>
@@ -166,39 +158,41 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
 
       {activeTab === "account" && (
         <>
-          {session.user.name !== session.user.username && (
+          {user.name !== user.username && (
             <p className="mb-2">
-              Name: <b>{session.user.name}</b>
+              Name: <b>{user.name}</b>
             </p>
           )}
-          {session.user.image && (
+          {user.image && (
             <img
-              src={session.user.image}
-              alt={session.user.name}
+              src={user.image}
+              alt={`${user.name} avatar`}
               style={{ maxWidth: "min(90%, 400px)", marginTop: "0.8rem", marginBottom: "2rem" }}
             />
           )}
-          {session.user.username && (
+          {user.username && (
             <p className="mb-3">
-              Username: <b>{session.user.username}</b>
+              Username: <b>{user.username}</b>
             </p>
           )}
           <p className="mb-2">
-            Email address: <b>{session.user.email}</b>
+            Email address: <b>{user.email}</b>
           </p>
-          <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
-            <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
-            <Button onClick={() => initiateEmailChange()} isLoading={isInitiatingEmailChange} disabled={isPending}>
-              Change email
-            </Button>
-          </div>
-          {session.user.role && (
+          {!accounts?.some((a) => a.providerId === "wca") && (
+            <div className="d-flex my-3 flex-wrap gap-3 align-items-end">
+              <FormTextInput title="New email" value={newEmail} setValue={setNewEmail} disabled={isPending} />
+              <Button onClick={() => initiateEmailChange()} isLoading={isInitiatingEmailChange} disabled={isPending}>
+                Change email
+              </Button>
+            </div>
+          )}
+          {roles && (
             <p className="mt-3">
               Your role: <strong>{roles}</strong>.
             </p>
           )}
 
-          {person ? (
+          {person && regions ? (
             <div className="d-flex flex-wrap gap-2">
               <span>Your competitor profile:</span>
               <div className="d-flex gap-2">
@@ -209,9 +203,9 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
               </div>
             </div>
           ) : (
-            <p>There is no competitor profile tied to your account.</p>
+            <p className="mt-4">There is no competitor profile tied to your member profile.</p>
           )}
-          {showLinkWcaProfileButton && (
+          {showLinkWcaProfileButton && member && (
             <Button
               onClick={() => linkWcaProfile()}
               isLoading={wcaProfileLinkStatus === "pending"}
@@ -225,17 +219,17 @@ function UserSettingsScreen({ initPerson, regions }: Props) {
             </Button>
           )}
 
-          <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-4">
+          <Button onClick={deleteUser} isLoading={isDeleting} disabled={isPending} className="btn-danger btn-sm mt-5">
             Delete Account
           </Button>
           <p className="mt-2" style={{ fontSize: "0.85rem" }}>
-            This deletes all of your account data, but does not affect your competitor data, even if your competitor
-            profile is tied to your account.
+            This deletes all of your account data, but does not affect your competitor profile data.
           </p>
         </>
       )}
 
-      {activeTab === "user-request" && <UserRequestTab regions={regions} />}
+      {/* If this tab is active, that means the user has an active org and regions are defined */}
+      {activeTab === "member-request" && <MemberRequestTab regions={regions!} />}
     </>
   );
 }

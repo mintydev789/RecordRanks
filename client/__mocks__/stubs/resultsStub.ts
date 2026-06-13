@@ -1,9 +1,9 @@
 import { contestsStub } from "~/__mocks__/stubs/contestsStub.ts";
 import { eventsStub } from "~/__mocks__/stubs/eventsStub.ts";
-import { regionsStub } from "~/__mocks__/stubs/regionsStub.ts";
+import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { roundFormats } from "~/helpers/roundFormats.ts";
 import { RecordCategoryValues } from "~/helpers/types.ts";
-import { getBestAndAverage } from "~/helpers/utilityFunctions.ts";
+import { getBestAndAverage } from "~/helpers/utility-functions.ts";
 import type { Attempt, InsertResult } from "~/server/db/schema/results.ts";
 import type { InsertRound } from "~/server/db/schema/rounds.ts";
 import {
@@ -51,6 +51,7 @@ import {
   testMeetupMar2028_333bf_2_person_relay_r1,
 } from "./roundsStub.ts";
 
+const regions = getDefaultRegions("default");
 const years = [2024, 2027, 2029];
 const resultsPerYear = 50;
 
@@ -80,11 +81,12 @@ function generateRandom444bfResults(): InsertResult[] {
       else average = attempts[numAttempts === 3 ? 1 : 2].result; // average is the middle attempt result
 
       results.push({
+        organizationId: "default",
         eventId: "444bf",
         date,
         personIds: [personId],
         regionCode,
-        superRegionCode: regionsStub.find((c) => c.code === regionCode)!.superRegionCode,
+        superRegionCode: regions.find((c) => c.code === regionCode)!.superRegionCode,
         attempts,
         best,
         average,
@@ -100,7 +102,10 @@ function generateRandom444bfResults(): InsertResult[] {
   return results;
 }
 
-type MockInsertResult = Omit<InsertResult, "best" | "average" | "recordCategory" | "competitionId" | "roundId">;
+type MockInsertResult = Omit<
+  InsertResult,
+  "organizationId" | "best" | "average" | "recordCategory" | "competitionId" | "roundId"
+>;
 
 function getVideoBasedResult(result: MockInsertResult): InsertResult {
   const event = eventsStub.find((e) => e.eventId === result.eventId)!;
@@ -109,6 +114,7 @@ function getVideoBasedResult(result: MockInsertResult): InsertResult {
 
   return {
     ...result,
+    organizationId: "default",
     best,
     average,
     recordCategory: "online",
@@ -118,7 +124,7 @@ function getVideoBasedResult(result: MockInsertResult): InsertResult {
 
 function getContestResult(
   round: InsertRound & { id: number },
-  result: Omit<MockInsertResult, "eventId" | "date">,
+  result: Omit<MockInsertResult, "organizationId" | "eventId" | "date">,
 ): InsertResult {
   const contest = contestsStub.find((c) => c.competitionId === round.competitionId)!;
   const event = eventsStub.find((e) => e.eventId === round.eventId)!;
@@ -126,6 +132,7 @@ function getContestResult(
 
   return {
     ...result,
+    organizationId: "default",
     eventId: round.eventId,
     date: contest.startDate,
     best,
@@ -144,7 +151,7 @@ export const resultsStub: InsertResult[] = [
     // id: 1,
     personIds: [usPersonJohnDoe.id, usPersonJayScott.id],
     regionCode: "US",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 9000 }, { result: 9100 }, { result: 9200 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -153,7 +160,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testMeetupFeb2023_333bf_2_person_relay_r1, {
     // id: 2,
     personIds: [gbPersonJamesStone.id, dePersonHansBauer.id],
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 8700 }, { result: 8800 }, { result: 8900 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -162,7 +169,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testMeetupFeb2023_333bf_2_person_relay_r1, {
     // id: 3,
     personIds: [gbPersonSamMarsh.id, dePersonJakobBach.id],
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 9100 }, { result: 9200 }, { result: 9300 }],
     ranking: 2,
   }),
@@ -176,7 +183,7 @@ export const resultsStub: InsertResult[] = [
     // id: 5,
     personIds: [dePersonStefanSteinmeier.id, dePersonJakobBach.id],
     regionCode: "DE",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 8900 }, { result: 9000 }, { result: 9100 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -196,7 +203,7 @@ export const resultsStub: InsertResult[] = [
     // id: 7,
     personIds: [krPersonDongJunHyon.id, krPersonSooMinNam.id],
     regionCode: "KR",
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 8000 }, { result: 8100 }, { result: 8200 }],
     regionalSingleRecord: "AsR",
     regionalAverageRecord: "AsR",
@@ -206,7 +213,7 @@ export const resultsStub: InsertResult[] = [
     // id: 8,
     personIds: [gbPersonJamesStone.id, gbPersonTomDillon.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 8200 }, { result: 8300 }, { result: 8400 }],
     regionalSingleRecord: "ER",
     regionalAverageRecord: "ER",
@@ -221,7 +228,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testMeetupFeb2026_333bf_2_person_relay_r1, {
     // id: 10,
     personIds: [jpPersonSatoshiNakamura.id, krPersonDongJunHyon.id],
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 7000 }, { result: 7100 }, { result: 7200 }],
     regionalSingleRecord: "AsR",
     regionalAverageRecord: "AsR",
@@ -231,7 +238,7 @@ export const resultsStub: InsertResult[] = [
     // id: 11,
     personIds: [gbPersonJamesStone.id, gbPersonSamMarsh.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 8600 }, { result: 8700 }, { result: 8800 }],
     ranking: 3,
   }),
@@ -239,7 +246,7 @@ export const resultsStub: InsertResult[] = [
     // id: 12,
     personIds: [caPersonMattBaker.id, caPersonJoshCalhoun.id],
     regionCode: "CA",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 5500 }, { result: 5600 }, { result: 5700 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -249,7 +256,7 @@ export const resultsStub: InsertResult[] = [
     // id: 13,
     personIds: [dePersonHansBauer.id, dePersonJakobBach.id],
     regionCode: "DE",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 8300 }, { result: 8400 }, { result: 8500 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -259,7 +266,7 @@ export const resultsStub: InsertResult[] = [
     // id: 14,
     personIds: [caPersonBobStarmer.id, caPersonBrianStevenson.id],
     regionCode: "CA",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 9200 }, { result: 9300 }, { result: 9400 }],
     ranking: 3,
   }),
@@ -269,7 +276,7 @@ export const resultsStub: InsertResult[] = [
     // id: 15,
     personIds: [usPersonJayScott.id, usPersonJohnDoe.id],
     regionCode: "US",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 6600 }, { result: 6700 }, { result: 6800 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -279,7 +286,7 @@ export const resultsStub: InsertResult[] = [
     // id: 16,
     personIds: [krPersonDongJunHyon.id, krPersonSooMinNam.id],
     regionCode: "KR",
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 7700 }, { result: 7800 }, { result: 7900 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -289,14 +296,14 @@ export const resultsStub: InsertResult[] = [
     // id: 17,
     personIds: [dePersonHansBauer.id, dePersonJakobBach.id],
     regionCode: "DE",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 8400 }, { result: 8500 }, { result: 8600 }],
     ranking: 3,
   }),
   getContestResult(testMeetupFeb2028_333bf_2_person_relay_r1, {
     // id: 18,
     personIds: [krPersonDongJunHyon.id, jpPersonNaokoYoshida.id],
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 7100 }, { result: 7200 }, { result: 7300 }],
     ranking: 1,
   }),
@@ -304,7 +311,7 @@ export const resultsStub: InsertResult[] = [
     // id: 19,
     personIds: [gbPersonJamesStone.id, gbPersonTomDillon.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 8500 }, { result: 8600 }, { result: 8700 }],
     ranking: 2,
   }),
@@ -312,7 +319,7 @@ export const resultsStub: InsertResult[] = [
     // id: 20,
     personIds: [gbPersonJamesStone.id, gbPersonSamMarsh.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6000 }, { result: 6100 }, { result: 6200 }],
     regionalSingleRecord: "ER",
     regionalAverageRecord: "ER",
@@ -322,7 +329,7 @@ export const resultsStub: InsertResult[] = [
     // id: 21,
     personIds: [caPersonBrianStevenson.id, caPersonBobStarmer.id],
     regionCode: "CA",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 6400 }, { result: 6500 }, { result: 6600 }],
     ranking: 2,
   }),
@@ -337,7 +344,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testMeetupApr2028_333bf_2_person_relay_r1, {
     // id: 23,
     personIds: [gbPersonJamesStone.id, dePersonStefanSteinmeier.id],
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6100 }, { result: 6200 }, { result: 6300 }, { result: 6400 }, { result: 6500 }],
     ranking: 2,
   }),
@@ -346,7 +353,7 @@ export const resultsStub: InsertResult[] = [
     // id: 24,
     personIds: [gbPersonTomDillon.id, gbPersonSamMarsh.id],
     regionCode: "KR",
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 7800 }, { result: 7900 }, { result: 8000 }, { result: 8100 }, { result: 8200 }],
     ranking: 3,
   }),
@@ -362,7 +369,7 @@ export const resultsStub: InsertResult[] = [
   }),
   getContestResult(testCompFeb2023_333_oh_bld_team_relay_r1, {
     personIds: [gbPersonSamMarsh.id, dePersonHansBauer.id, dePersonJakobBach.id],
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6500 }, { result: 6600 }, { result: 6700 }],
     regionalSingleRecord: "ER",
     regionalAverageRecord: "ER",
@@ -371,7 +378,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testCompMar2023_333_oh_bld_team_relay_r1, {
     personIds: [gbPersonSamMarsh.id, gbPersonTomDillon.id, gbPersonJamesStone.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6800 }, { result: 6900 }, { result: 7000 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -381,7 +388,7 @@ export const resultsStub: InsertResult[] = [
   // 2028 results
   getContestResult(testCompJan2028_333_oh_bld_team_relay_r1, {
     personIds: [dePersonStefanSteinmeier.id, gbPersonTomDillon.id, gbPersonJamesStone.id],
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6400 }, { result: 6500 }, { result: 6600 }],
     regionalSingleRecord: "ER",
     regionalAverageRecord: "ER",
@@ -391,7 +398,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testCompJan2028_333_oh_bld_team_relay_r1, {
     personIds: [gbPersonSamMarsh.id, gbPersonTomDillon.id, gbPersonJamesStone.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6700 }, { result: 6800 }, { result: 6900 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -408,7 +415,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testCompFeb2028_333_oh_bld_team_relay_r1, {
     personIds: [gbPersonSamMarsh.id, gbPersonTomDillon.id, gbPersonJamesStone.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6300 }, { result: 6400 }, { result: 6500 }],
     regionalSingleRecord: "ER",
     regionalAverageRecord: "ER",
@@ -416,7 +423,7 @@ export const resultsStub: InsertResult[] = [
   }),
   getContestResult(testCompMar2028_333_oh_bld_team_relay_r1, {
     personIds: [gbPersonJamesStone.id, dePersonHansBauer.id, gbPersonTomDillon.id],
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 5800 }, { result: 5900 }, { result: 6000 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -425,7 +432,7 @@ export const resultsStub: InsertResult[] = [
   getContestResult(testCompApr2028_333_oh_bld_team_relay_r1, {
     personIds: [gbPersonJamesStone.id, gbPersonSamMarsh.id, gbPersonTomDillon.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 5700 }, { result: 5800 }, { result: 5900 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -441,7 +448,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2022, 0, 1), // January 1st
     personIds: [zaPersonKayaKhumalo.id],
     regionCode: "ZA",
-    superRegionCode: "AFRICA",
+    superRegionCode: "XF",
     attempts: [{ result: 9500 }, { result: 9600 }, { result: 9700 }, { result: 9800 }, { result: 9900 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -452,7 +459,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2023, 0, 1), // January 1st
     personIds: [usPersonJohnDoe.id],
     regionCode: "US",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 9000 }, { result: 9100 }, { result: 9200 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -462,7 +469,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2023, 1, 1), // February 1st
     personIds: [caPersonJoshCalhoun.id],
     regionCode: "CA",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 8500 }, { result: 8600 }, { result: 8700 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -472,7 +479,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2023, 2, 1), // March 1st
     personIds: [gbPersonTomDillon.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6500 }, { result: 6600 }, { result: 6700 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -482,7 +489,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2023, 3, 1), // April 1st
     personIds: [krPersonDongJunHyon.id],
     regionCode: "KR",
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 8000 }, { result: 8100 }, { result: 8200 }],
     regionalSingleRecord: "AsR",
     regionalAverageRecord: "AsR",
@@ -492,7 +499,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2023, 4, 1), // May 1st
     personIds: [jpPersonNaokoYoshida.id],
     regionCode: "JP",
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 7000 }, { result: 7100 }, { result: 7200 }],
     regionalSingleRecord: "AsR",
     regionalAverageRecord: "AsR",
@@ -502,7 +509,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2023, 5, 1), // June 1st
     personIds: [dePersonHansBauer.id],
     regionCode: "DE",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 7500 }, { result: 7600 }, { result: 7700 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -514,7 +521,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2028, 0, 1), // January 1st
     personIds: [usPersonJohnDoe.id],
     regionCode: "US",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 8900 }, { result: 9000 }, { result: 9100 }],
     regionalSingleRecord: "NR",
     regionalAverageRecord: "NR",
@@ -524,7 +531,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2028, 1, 1), // February 1st
     personIds: [caPersonJoshCalhoun.id],
     regionCode: "CA",
-    superRegionCode: "NORTH_AMERICA",
+    superRegionCode: "XN",
     attempts: [{ result: 8400 }, { result: 8500 }, { result: 8600 }],
     regionalSingleRecord: "NAR",
     regionalAverageRecord: "NAR",
@@ -534,7 +541,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2028, 2, 1), // March 1st
     personIds: [krPersonDongJunHyon.id],
     regionCode: "KR",
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 6900 }, { result: 7000 }, { result: 7100 }],
     regionalSingleRecord: "AsR",
     regionalAverageRecord: "AsR",
@@ -544,7 +551,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2028, 3, 1), // April 1st
     personIds: [dePersonJakobBach.id],
     regionCode: "DE",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 6400 }, { result: 6500 }, { result: 6600 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -554,7 +561,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2028, 4, 1), // May 1st
     personIds: [jpPersonNaokoYoshida.id],
     regionCode: "JP",
-    superRegionCode: "ASIA",
+    superRegionCode: "XA",
     attempts: [{ result: 6000 }, { result: 6100 }, { result: 6200 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -564,7 +571,7 @@ export const resultsStub: InsertResult[] = [
     date: new Date(2028, 5, 1), // June 1st
     personIds: [gbPersonSamMarsh.id],
     regionCode: "GB",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 5500 }, { result: 5600 }, { result: 5700 }],
     regionalSingleRecord: "WR",
     regionalAverageRecord: "WR",
@@ -573,11 +580,12 @@ export const resultsStub: InsertResult[] = [
   // Other results
   {
     // Real result from Cubing Contests
+    organizationId: "default",
     eventId: "333",
     date: new Date(2026, 5, 30), // June 30th, 2026 (the date is different)
     personIds: [9], // Oliver Fritz
     regionCode: "DE",
-    superRegionCode: "EUROPE",
+    superRegionCode: "XE",
     attempts: [{ result: 876 }, { result: 989 }, { result: 812 }, { result: 711 }, { result: 686 }],
     best: 686,
     average: 800,

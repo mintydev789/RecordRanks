@@ -2,47 +2,70 @@
 
 import { faBars, faBook, faCalendarDays, faRankingStar, faStar, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { authClient } from "~/helpers/authClient.ts";
 import { C } from "~/helpers/constants.ts";
+import { MainContext } from "~/helpers/contexts.ts";
+import { useFeaturesInfo, useSession } from "~/helpers/hooks.ts";
 import { SwrKey } from "~/helpers/swr-keys.ts";
-import { clientGetUserHasPermission, getHasRole } from "~/helpers/utilityFunctions.ts";
-import { getModInstructionsSF } from "~/server/server-functions/server-functions.ts";
+import { clientGetHasPermission, getHasRole, slugPath } from "~/helpers/utility-functions.ts";
 
 function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { session, user, member, organization } = useSession();
   const { mutate } = useSWRConfig();
+  const { rulesPageEnabled, modInstructionsPageEnabled, videoBasedResultsEnabled, publicExportsEnabled } =
+    useFeaturesInfo();
+  const { changeErrorMessages, resetMessages } = useContext(MainContext);
 
-  const { data: moderatorInstructions } = useSWR(["mod-instructions"], () => getModInstructionsSF());
+  const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
+    clientGetHasPermission({ modDashboard: ["view"] }),
+  );
+  const { data: canApproveVideoBasedResults } = useSWR(
+    session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
+    () => clientGetHasPermission({ videoBasedResults: ["approve"] }),
+  );
   const [expanded, setExpanded] = useState(false);
   const [resultsExpanded, setResultsExpanded] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [userExpanded, setUserExpanded] = useState(false);
-  const { data: canAccessModDashboard } = useSWR(session ? [SwrKey.CanAccessModDashboard, session] : null, () =>
-    clientGetUserHasPermission({ modDashboard: ["view"] }),
-  );
-  const { data: canApproveVideoBasedResults } = useSWR(
-    session ? [SwrKey.CanApproveVideoBasedResults, session] : null,
-    () => clientGetUserHasPermission({ videoBasedResults: ["approve"] }),
-  );
+
+  const isAdmin = getHasRole("admin", member?.role) || getHasRole("owner", member?.role);
 
   const logOut = async () => {
+    resetMessages();
+    collapseAll();
+    await authClient.signOut();
+
     // Clear the SWR cache
     mutate(
       () => true, // update all keys
       undefined, // set cache data to undefined
       { revalidate: false },
     );
+    router.push("/login");
+  };
 
+  const exitOrganization = async () => {
+    resetMessages();
     collapseAll();
-    await authClient.signOut();
-    router.push("/");
+    const { error } = await authClient.organization.setActive({ organizationId: null });
+
+    if (error) {
+      changeErrorMessages([error.message ?? error.statusText]);
+    } else {
+      // Clear the SWR cache
+      mutate(
+        () => true, // update all keys
+        undefined, // set cache data to undefined
+        { revalidate: false },
+      );
+      router.push("/");
+    }
   };
 
   const toggleDropdown = (dropdown: "results" | "more" | "user", newValue: boolean) => {
@@ -67,11 +90,13 @@ function Navbar() {
     setUserExpanded(false);
   };
 
+  if (!organization) return;
+
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary">
       <div className="container-md position-relative">
-        <Link href="/" prefetch={false} className="navbar-brand">
-          <Image src="/favicon.png" height={45} width={45} alt="Home" />
+        <Link href={slugPath(organization.slug, "") || "/"} prefetch={false} className="navbar-brand">
+          {organization.logo ? <img src={organization.logo} height={45} width={45} alt="Home" /> : "Home"}
         </Link>
         <button
           type="button"
@@ -86,10 +111,10 @@ function Navbar() {
           <ul className="navbar-nav fs-5 mx-2 mt-3 mt-lg-0 gap-lg-2 align-items-lg-end align-items-start">
             <li className="nav-item">
               <Link
-                href="/competitions"
+                href={slugPath(organization.slug, "/competitions")}
                 onClick={collapseAll}
                 prefetch={false}
-                className={`nav-link ${pathname === "/competitions" ? "active" : ""}`}
+                className={`nav-link ${pathname === slugPath(organization.slug, "/competitions") ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faCalendarDays} size="xs" className="me-2" />
                 Contests
@@ -103,7 +128,7 @@ function Navbar() {
               <button
                 type="button"
                 onClick={() => toggleDropdown("results", !resultsExpanded)}
-                className={`nav-link dropdown-toggle ${/^\/(rankings|records|export)/.test(pathname) ? "active" : ""}`}
+                className={`nav-link dropdown-toggle ${new RegExp(`^${slugPath(organization.slug, "")}/(rankings/|records/|export)`).test(pathname) ? "active" : ""}`}
               >
                 <FontAwesomeIcon icon={faRankingStar} size="xs" className="me-2" />
                 Results
@@ -111,31 +136,31 @@ function Navbar() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${resultsExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    href="/records"
+                    href={slugPath(organization.slug, "/records")}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/records\//.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${new RegExp(`^${slugPath(organization.slug, "/records")}/`).test(pathname) ? "active" : ""}`}
                   >
                     Records
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/rankings"
+                    href={slugPath(organization.slug, "/rankings")}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/rankings\//.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${new RegExp(`^${slugPath(organization.slug, "/rankings")}/`).test(pathname) ? "active" : ""}`}
                   >
                     Rankings
                   </Link>
                 </li>
-                {process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP && process.env.NEXT_PUBLIC_EXPORTS_TO_KEEP !== "0" && (
+                {publicExportsEnabled && (
                   <li>
                     <Link
-                      href="/export"
+                      href={slugPath(organization.slug, "/export")}
                       onClick={collapseAll}
                       prefetch={false}
-                      className={`nav-link ${pathname === "/export" ? "active" : ""}`}
+                      className={`nav-link ${pathname === slugPath(organization.slug, "/export") ? "active" : ""}`}
                     >
                       Exports
                     </Link>
@@ -143,17 +168,19 @@ function Navbar() {
                 )}
               </ul>
             </li>
-            <li className="nav-item">
-              <Link
-                href="/rules"
-                onClick={collapseAll}
-                prefetch={false}
-                className={`nav-link ${pathname === "/rules" ? "active" : ""}`}
-              >
-                <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
-                Rules
-              </Link>
-            </li>
+            {rulesPageEnabled && (
+              <li className="nav-item">
+                <Link
+                  href={slugPath(organization.slug, "/rules")}
+                  onClick={collapseAll}
+                  prefetch={false}
+                  className={`nav-link ${pathname === slugPath(organization.slug, "/rules") ? "active" : ""}`}
+                >
+                  <FontAwesomeIcon icon={faBook} size="xs" className="me-2" />
+                  Rules
+                </Link>
+              </li>
+            )}
             <li
               onMouseEnter={() => toggleDropdown("more", true)}
               onMouseLeave={() => toggleDropdown("more", false)}
@@ -170,31 +197,31 @@ function Navbar() {
               <ul className={`dropdown-menu px-3 px-lg-2 py-0 ${moreExpanded ? "show" : ""}`}>
                 <li>
                   <Link
-                    href="/about"
+                    href={slugPath(organization.slug, "/about")}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${pathname === "/about" ? "active" : ""}`}
+                    className={`nav-link ${pathname === slugPath(organization.slug, "/about") ? "active" : ""}`}
                   >
                     About
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/posts"
+                    href={slugPath(organization.slug, "/posts")}
                     onClick={collapseAll}
                     prefetch={false}
-                    className={`nav-link ${/^\/posts/.test(pathname) ? "active" : ""}`}
+                    className={`nav-link ${new RegExp(`^${slugPath(organization.slug, "/posts")}`).test(pathname) ? "active" : ""}`}
                   >
                     Blog
                   </Link>
                 </li>
-                {moderatorInstructions && (
+                {modInstructionsPageEnabled && (
                   <li>
                     <Link
-                      href="/moderator-instructions"
+                      href={slugPath(organization.slug, "/moderator-instructions")}
                       onClick={collapseAll}
                       prefetch={false}
-                      className={`nav-link ${pathname === "/moderator-instructions" ? "active" : ""}`}
+                      className={`nav-link ${pathname === slugPath(organization.slug, "/moderator-instructions") ? "active" : ""}`}
                     >
                       Moderator instructions
                     </Link>
@@ -204,7 +231,7 @@ function Navbar() {
                   <a
                     href={C.rrDonationLink}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noreferrer"
                     onClick={collapseAll}
                     className="nav-link"
                   >
@@ -213,7 +240,8 @@ function Navbar() {
                 </li>
               </ul>
             </li>
-            {!session ? (
+            {!member ? (
+              // TO-DO: THIS NEEDS TO BE REMOVED NOW! BUT WAIT, WHAT ABOUT WHITE-LABEL? (i.e. CC)
               <li className="nav-item">
                 <Link href="/login" prefetch={false} onClick={collapseAll} className="nav-link">
                   <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
@@ -233,43 +261,47 @@ function Navbar() {
                   style={{ maxWidth: "15rem" }}
                 >
                   <FontAwesomeIcon icon={faUser} size="xs" className="me-2" />
-                  {session.user.name}
+                  {user!.name}
                 </button>
                 <ul className={`dropdown-menu end-0 px-3 px-lg-2 py-0 ${userExpanded ? "show" : ""}`}>
                   {canAccessModDashboard && (
                     <li>
                       <Link
-                        href={`/mod${getHasRole("admin", session.user.role) ? "?state=pending" : ""}`}
+                        href={slugPath(organization.slug, `/mod${isAdmin ? "?state=pending" : ""}`)}
                         prefetch={false}
                         onClick={collapseAll}
-                        className={`nav-link ${pathname === "/mod" ? "active" : ""}`}
+                        className={`nav-link ${pathname === slugPath(organization.slug, "/mod") ? "active" : ""}`}
                       >
                         Mod dashboard
                       </Link>
                     </li>
                   )}
-                  {canApproveVideoBasedResults && (
-                    <li>
-                      <Link
-                        href="/video-based-results"
-                        prefetch={false}
-                        onClick={collapseAll}
-                        className={`nav-link ${pathname === "/video-based-results" ? "active" : ""}`}
-                      >
-                        Video-based results
-                      </Link>
-                    </li>
+                  {videoBasedResultsEnabled && (
+                    <>
+                      {canApproveVideoBasedResults && (
+                        <li>
+                          <Link
+                            href={slugPath(organization.slug, "/video-based-results")}
+                            prefetch={false}
+                            onClick={collapseAll}
+                            className={`nav-link ${pathname === slugPath(organization.slug, "/video-based-results") ? "active" : ""}`}
+                          >
+                            Video-based results
+                          </Link>
+                        </li>
+                      )}
+                      <li>
+                        <Link
+                          href={slugPath(organization.slug, "/video-based-results/submit")}
+                          prefetch={false}
+                          onClick={collapseAll}
+                          className={`nav-link ${pathname === slugPath(organization.slug, "/video-based-results/submit") ? "active" : ""}`}
+                        >
+                          Submit results
+                        </Link>
+                      </li>
+                    </>
                   )}
-                  <li>
-                    <Link
-                      href="/video-based-results/submit"
-                      prefetch={false}
-                      onClick={collapseAll}
-                      className={`nav-link ${pathname === "/video-based-results/submit" ? "active" : ""}`}
-                    >
-                      Submit results
-                    </Link>
-                  </li>
                   <li>
                     <Link
                       href="/user/settings"
@@ -280,6 +312,13 @@ function Navbar() {
                       Settings
                     </Link>
                   </li>
+                  {process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED === "true" && (
+                    <li>
+                      <button type="button" onClick={exitOrganization} className="nav-link">
+                        Exit space
+                      </button>
+                    </li>
+                  )}
                   <li>
                     <button type="button" onClick={logOut} className="nav-link">
                       Log out

@@ -4,9 +4,9 @@ import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { C } from "~/helpers/constants.ts";
 import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
-import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utilityFunctions.ts";
+import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utility-functions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
-import { NonMetaRegionCodeValidator, WcaIdValidator } from "~/helpers/validators/Validators.ts";
+import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
 import { db } from "~/server/db/provider.ts";
 import {
@@ -15,52 +15,63 @@ import {
   type SelectPerson,
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
-import { actionClient, RrActionError } from "../safeAction.ts";
-import { getOrCreatePersonByWcaId, getPersonExactMatchWcaId, logMessage } from "../server-only-functions.ts";
+import { actionClient, RrActionError } from "~/server/safeAction.ts";
+import { getOrCreatePersonByWcaId, getPersonExactMatchWcaId, logMessage } from "~/server/server-only-functions.ts";
 
 export const getPersonByIdSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       id: z.int().min(1),
     }),
   )
-  .action<PersonResponse>(async ({ parsedInput: { id } }) => {
-    const [person] = await db.select(personsPublicCols).from(table).where(eq(table.id, id));
+  .action<PersonResponse>(async ({ parsedInput: { id }, ctx: { session } }) => {
+    const [person] = await db
+      .select(personsPublicCols)
+      .from(table)
+      .where(and(eq(table.organizationId, session.organization!.id), eq(table.id, id)));
+
     if (!person) throw new RrActionError(`Person with ID ${id} not found`);
+
     return person;
   });
 
 export const getPersonsByNameSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       name: z.string().max(60),
     }),
   )
-  .action<PersonResponse[]>(async ({ parsedInput: { name } }) => {
+  .action<PersonResponse[]>(async ({ parsedInput: { name }, ctx: { session } }) => {
     const simplifiedParts = getSimplifiedString(name)
       .split(" ")
       .map((part) => `%${part}%`);
     const nameQuery = and(...simplifiedParts.map((part) => sql`UNACCENT(${table.name}) ILIKE ${part}`));
     const locNameQuery = and(...simplifiedParts.map((part) => ilike(table.localizedName, part)));
 
-    return await db.select(personsPublicCols).from(table).where(or(nameQuery, locNameQuery)).limit(C.maxPersonMatches);
+    return await db
+      .select(personsPublicCols)
+      .from(table)
+      .where(and(eq(table.organizationId, session.organization!.id), or(nameQuery, locNameQuery)))
+      .limit(C.maxPersonMatches);
   });
 
 export const getOrCreatePersonSF = actionClient
-  .metadata({ permissions: { persons: ["create"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { persons: ["create"] } } })
   .inputSchema(
     z.strictObject({
       name: z.string(),
-      regionCode: NonMetaRegionCodeValidator,
+      regionCode: z.string().nonempty(),
     }),
   )
-  .action<GetOrCreatePersonObject>(async ({ parsedInput: { name, regionCode } }) => {
+  .action<GetOrCreatePersonObject>(async ({ parsedInput: { name, regionCode }, ctx: { session } }) => {
     const persons = await db
       .select(personsPublicCols)
       .from(table)
-      .where(and(eq(table.name, name), eq(table.regionCode, regionCode)));
+      .where(
+        and(eq(table.organizationId, session.organization!.id), eq(table.name, name), eq(table.regionCode, regionCode)),
+      );
 
     if (persons.length > 1)
       throw new RrActionError(`Multiple people were found with the name ${name} and country ${regionCode}`);
@@ -76,19 +87,22 @@ export const getOrCreatePersonSF = actionClient
   });
 
 export const getOrCreatePersonByWcaIdSF = actionClient
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       wcaId: WcaIdValidator,
     }),
   )
   .action<GetOrCreatePersonObject>(async ({ parsedInput: { wcaId }, ctx: { session } }) => {
-    return await getOrCreatePersonByWcaId(wcaId, { creatorUserId: session.user.id });
+    return await getOrCreatePersonByWcaId(wcaId, {
+      creatorUserId: session.user.id,
+      organizationId: session.organization!.id,
+    });
   });
 
 export const createPersonSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       newPersonDto: PersonValidator,
@@ -96,30 +110,25 @@ export const createPersonSF = actionClient
     }),
   )
   .action<PersonResponse | SelectPerson>(
-    async ({
-      parsedInput: { newPersonDto, ignoreDuplicate },
-      ctx: {
-        session: { user },
-      },
-    }) => {
+    async ({ parsedInput: { newPersonDto, ignoreDuplicate }, ctx: { session, httpHeaders } }) => {
       newPersonDto.name = newPersonDto.name.trim();
       if (newPersonDto.localizedName) newPersonDto.localizedName = newPersonDto.localizedName.trim();
       const { name, wcaId } = newPersonDto;
       logMessage("RR0019", `Creating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
       const [{ success: canCreate }, { success: canApprove }] = await Promise.all([
-        auth.api.userHasPermission({ body: { userId: user.id, permissions: { persons: ["create"] } } }),
-        auth.api.userHasPermission({ body: { userId: user.id, permissions: { persons: ["approve"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["create"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
       ]);
 
       // Regular users are only allowed to create one person without a WCA ID (when requesting a competitor profile)
       if (!canCreate) {
-        if (user.personId) {
+        if (session.member!.personId) {
           throw new RrActionError("You already have a competitor profile tied to your account");
         } else {
           const existingProfile = await db.query.persons.findFirst({
             columns: { id: true },
-            where: { createdBy: user.id, wcaId: { isNull: true } },
+            where: { organizationId: session.organization!.id, createdBy: session.user.id, wcaId: { isNull: true } },
           });
           if (existingProfile) {
             throw new RrActionError(
@@ -129,9 +138,11 @@ export const createPersonSF = actionClient
         }
       }
 
-      await validatePerson(newPersonDto, { ignoreDuplicate, canApprove });
+      await validatePerson(session.organization!.id, newPersonDto, { ignoreDuplicate, canApprove });
 
-      const query = db.insert(table).values({ ...newPersonDto, createdBy: user.id });
+      const query = db
+        .insert(table)
+        .values({ ...newPersonDto, organizationId: session.organization!.id, createdBy: session.user.id });
       const [createdPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
       return createdPerson;
     },
@@ -139,7 +150,7 @@ export const createPersonSF = actionClient
 
 export const updatePersonSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
@@ -148,20 +159,20 @@ export const updatePersonSF = actionClient
     }),
   )
   .action<PersonResponse | SelectPerson>(
-    async ({ parsedInput: { id, newPersonDto, ignoreDuplicate }, ctx: { session } }) => {
+    async ({ parsedInput: { id, newPersonDto, ignoreDuplicate }, ctx: { session, httpHeaders } }) => {
       const { name, wcaId } = newPersonDto;
       logMessage("RR0020", `Updating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
 
       const [{ success: canUpdate }, { success: canApprove }] = await Promise.all([
-        auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["update"] } } }),
-        auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["update"] } } }),
+        auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
       ]);
 
-      const person = await db.query.persons.findFirst({ where: { id } });
+      const person = await db.query.persons.findFirst({ where: { organizationId: session.organization!.id, id } });
       if (!person) throw new RrActionError("Person with the provided ID not found");
-      const canUpdateOwnWcaPerson = id === session.user.personId && person.wcaId && newPersonDto.wcaId;
+      const canUpdateOwnWcaPerson = id === session.member!.personId && person.wcaId && newPersonDto.wcaId;
       const canUpdateOwnCreatedPerson = canUpdate && person.createdBy === session.user.id && !person.approved;
-      // This logic is consistent with getUserRequestDetails() and deletePersonSF()
+      // This logic is consistent with getMemberRequestDetails() and deletePersonSF()
       const canUpdateOwnRequestedPerson =
         person.createdBy === session.user.id && !person.approved && !person.wcaId && !newPersonDto.wcaId;
       if (!canApprove && !canUpdateOwnWcaPerson && !canUpdateOwnCreatedPerson && !canUpdateOwnRequestedPerson)
@@ -184,7 +195,7 @@ export const updatePersonSF = actionClient
         );
       }
 
-      await validatePerson(personDto, { excludeId: id, ignoreDuplicate, canApprove });
+      await validatePerson(session.organization!.id, personDto, { excludeId: id, ignoreDuplicate, canApprove });
 
       const query = db.update(table).set(personDto).where(eq(table.id, id));
       const [updatedPerson] = await (canApprove ? query.returning() : query.returning(personsPublicCols));
@@ -194,21 +205,21 @@ export const updatePersonSF = actionClient
 
 export const deletePersonSF = actionClient
   // Permissions checked below
-  .metadata({ permissions: null })
+  .metadata({ auth: { useOrganization: true } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
     }),
   )
-  .action(async ({ parsedInput: { id }, ctx: { session } }) => {
+  .action(async ({ parsedInput: { id }, ctx: { session, httpHeaders } }) => {
     logMessage("RR0021", `Deleting person with ID ${id}`);
 
     const [{ success: canDelete }, { success: canApprove }] = await Promise.all([
-      auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["delete"] } } }),
-      auth.api.userHasPermission({ body: { userId: session.user.id, permissions: { persons: ["approve"] } } }),
+      auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["delete"] } } }),
+      auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["approve"] } } }),
     ]);
 
-    const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
+    const person = await db.query.persons.findFirst({ where: { organizationId: session.organization!.id, id } });
     if (!person) throw new RrActionError("Person with the provided ID not found");
     const canDeleteAnyPerson = canDelete && canApprove;
     const canDeleteOwnCreatedPerson = canDelete && person.createdBy === session.user.id && !person.approved;
@@ -217,63 +228,44 @@ export const deletePersonSF = actionClient
     if (!canDeleteAnyPerson && !canDeleteOwnCreatedPerson && !canDeleteOwnRequestedPerson)
       throw new RrActionError("You are unauthorized to delete this person");
 
-    const user = await db.query.users.findFirst({ where: { personId: person.id } });
-    if (user) {
-      throw new RrActionError(
-        `You may not delete a person tied to a user. This person is tied to the user ${user.name}.`,
-      );
-    }
-
-    const result = await db.query.results.findFirst({ where: { personIds: { arrayContains: [person.id] } } });
-    if (result) {
-      throw new RrActionError(
-        `You may not delete a person who has a result. This person has a result in ${result.eventId}${result.competitionId ? ` at ${result.competitionId}` : " (video-based result)"}.`,
-      );
-    }
-
-    const organizedContest = await db.query.contests.findFirst({ where: { organizerIds: { arrayContains: [id] } } });
-    if (organizedContest) {
-      throw new RrActionError(
-        `You may not delete a person who has organized a contest. This person was an organizer at ${organizedContest.competitionId}.`,
-      );
+    const res = await getPersonIsTiedToSomething(id);
+    if (res) {
+      switch (res.tiedTo) {
+        case "result":
+          throw new RrActionError(`You may not delete a person that has a result. ${res.details}`);
+        case "organizedContest":
+          throw new RrActionError(`You may not delete a person that has organized a contest. ${res.details}`);
+        case "member":
+          throw new RrActionError(`You may not delete a person tied to a member profile. ${res.details}`);
+        case "memberRequest":
+          throw new RrActionError(
+            `You may not delete a person that was requested as a competitor profile. ${res.details}`,
+          );
+        default:
+          throw new Error(`Unknown object type: ${res.tiedTo}`);
+      }
     }
 
     await db.delete(table).where(eq(table.id, id));
   });
 
 export const approvePersonSF = actionClient
-  .metadata({ permissions: { persons: ["approve"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { persons: ["approve"] } } })
   .inputSchema(
     z.strictObject({
       id: z.int(),
       ignoredWcaMatches: z.array(z.string()).default([]),
     }),
   )
-  .action<SelectPerson>(async ({ parsedInput: { id, ignoredWcaMatches } }) => {
-    const [person] = await db.select().from(table).where(eq(table.id, id)).limit(1);
+  .action<SelectPerson>(async ({ parsedInput: { id, ignoredWcaMatches }, ctx: { session } }) => {
+    const person = await db.query.persons.findFirst({ where: { organizationId: session.organization!.id, id } });
     if (!person) throw new RrActionError("Person not found");
     if (person.approved) throw new RrActionError(`${person.name} has already been approved`);
 
-    const result = await db.query.results.findFirst({
-      columns: { id: true },
-      where: { personIds: { arrayContains: [id] } },
-    });
-    if (!result) {
-      const organizedContest = await db.query.contests.findFirst({
-        columns: { id: true },
-        where: { organizerIds: { arrayContains: [id] } },
-      });
-      if (!organizedContest) {
-        const userRequest = await db.query.userRequests.findFirst({
-          columns: { id: true },
-          where: { requestedPersonId: id },
-        });
-        if (!userRequest) {
-          throw new RrActionError(
-            `${person.name} has no results, hasn't organized any contests and hasn't been requested as a competitor profile by a user. They could have been added by accident.`,
-          );
-        }
-      }
+    if ((await getPersonIsTiedToSomething(id)) === null) {
+      throw new RrActionError(
+        `${person.name} has no results, hasn't organized any contests and isn't tied to a member profile. They could have been added by accident, so they can be safely deleted.`,
+      );
     }
 
     if (!person.wcaId) {
@@ -293,6 +285,7 @@ export const approvePersonSF = actionClient
   });
 
 async function validatePerson(
+  organizationId: string,
   newPersonDto: PersonDto,
   {
     ignoreDuplicate,
@@ -306,14 +299,11 @@ async function validatePerson(
 ) {
   const excludeCondition = excludeId ? ne(table.id, excludeId) : undefined;
 
-  const region = await db.query.regions.findFirst({ where: { code: newPersonDto.regionCode } });
-  if (!region) throw new RrActionError(`Invalid region code: ${newPersonDto.regionCode}`);
-
   if (newPersonDto.wcaId) {
     const [sameWcaIdPerson] = await db
       .select()
       .from(table)
-      .where(and(eq(table.wcaId, newPersonDto.wcaId), excludeCondition))
+      .where(and(eq(table.organizationId, organizationId), eq(table.wcaId, newPersonDto.wcaId), excludeCondition))
       .limit(1);
 
     if (sameWcaIdPerson) throw new RrActionError("A person with the same WCA ID already exists in the CC database");
@@ -321,7 +311,14 @@ async function validatePerson(
     const [duplicatePerson] = await db
       .select()
       .from(table)
-      .where(and(eq(table.name, newPersonDto.name), eq(table.regionCode, newPersonDto.regionCode), excludeCondition))
+      .where(
+        and(
+          eq(table.organizationId, organizationId),
+          eq(table.name, newPersonDto.name),
+          eq(table.regionCode, newPersonDto.regionCode),
+          excludeCondition,
+        ),
+      )
       .limit(1);
 
     if (duplicatePerson) {
@@ -335,4 +332,44 @@ async function validatePerson(
       );
     }
   }
+}
+
+async function getPersonIsTiedToSomething(personId: number): Promise<{
+  tiedTo: "result" | "organizedContest" | "member" | "memberRequest";
+  details: string;
+} | null> {
+  const result = await db.query.results.findFirst({ where: { personIds: { arrayContains: [personId] } } });
+  if (result) {
+    return {
+      tiedTo: "result",
+      details: `This person has a result in ${result.eventId}${result.competitionId ? ` at ${result.competitionId}` : " (video-based result)"}.`,
+    };
+  }
+
+  const organizedContest = await db.query.contests.findFirst({
+    columns: { competitionId: true },
+    where: { organizerIds: { arrayContains: [personId] } },
+  });
+  if (organizedContest)
+    return { tiedTo: "organizedContest", details: `This person is an organizer at ${organizedContest.competitionId}.` };
+
+  const member = await db.query.members.findFirst({
+    with: { user: { columns: { name: true } } },
+    where: { personId },
+  });
+  if (member) return { tiedTo: "member", details: `This person is tied to the member ${member.user.name}.` };
+
+  const memberRequest = await db.query.memberRequests.findFirst({
+    with: { user: { columns: { name: true } } },
+    columns: { id: true },
+    where: { requestedPersonId: personId },
+  });
+  if (memberRequest) {
+    return {
+      tiedTo: "memberRequest",
+      details: `This person was requested by member ${memberRequest.user.name}.`,
+    };
+  }
+
+  return null;
 }

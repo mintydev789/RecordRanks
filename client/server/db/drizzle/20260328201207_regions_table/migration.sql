@@ -11,7 +11,7 @@ CREATE TABLE "record_ranks"."regions" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
--- CUSTOM ADDITION FOR RECORDRANKS!
+-- CUSTOM ADDITION FOR RECORDRANKS! This was replaced in the multi-tenancy migration update
 INSERT INTO "record_ranks"."regions" ("name", "short_name", "code", "super_region_code", "super_region_record_type") VALUES
   ('Afghanistan', NULL, 'AF', 'ASIA', 'AsR'),
   ('Albania', NULL, 'AL', 'EUROPE', 'ER'),
@@ -212,6 +212,7 @@ INSERT INTO "record_ranks"."regions" ("name", "short_name", "code", "super_regio
   ('Yemen', NULL, 'YE', 'ASIA', 'AsR'),
   ('Zambia', NULL, 'ZM', 'AFRICA', 'AfR'),
   ('Zimbabwe', NULL, 'ZW', 'AFRICA', 'AfR');
+--> statement-breakpoint
 ALTER TABLE "record_ranks"."contests" ALTER COLUMN "region_code" SET DATA TYPE varchar(2) USING "region_code"::varchar(2);--> statement-breakpoint
 ALTER TABLE "record_ranks"."persons" ALTER COLUMN "region_code" SET DATA TYPE varchar(2) USING "region_code"::varchar(2);--> statement-breakpoint
 ALTER TABLE "record_ranks"."results" ALTER COLUMN "region_code" SET DATA TYPE varchar(2) USING "region_code"::varchar(2);--> statement-breakpoint

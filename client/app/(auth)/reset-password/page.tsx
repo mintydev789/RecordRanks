@@ -56,7 +56,7 @@ function ResetPasswordPage() {
 
   return (
     <section>
-      <h2 className="mb-4 text-center">Reset Password</h2>
+      <h2 className="mx-3 mb-4 text-center">Reset Password</h2>
 
       <Form onSubmit={handleSubmit} disableControls={isDisabled} isLoading={isPending}>
         <FormTextInput

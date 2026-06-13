@@ -1,9 +1,10 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { EventValidator } from "~/helpers/validators/Event.ts";
 import { db } from "~/server/db/provider.ts";
+import { collectiveSolutionsTable } from "~/server/db/schema/collective-solutions.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";
 import type { SelectEvent } from "~/server/db/schema/events.ts";
 import { eventsTable as table } from "~/server/db/schema/events.ts";
@@ -12,29 +13,34 @@ import { logMessage } from "~/server/server-only-functions.ts";
 import { actionClient, RrActionError } from "../safeAction.ts";
 
 export const createEventSF = actionClient
-  .metadata({ permissions: { events: ["create"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { events: ["create"] } } })
   .inputSchema(
     z.strictObject({
       newEventDto: EventValidator,
     }),
   )
-  .action<SelectEvent>(async ({ parsedInput: { newEventDto } }) => {
+  .action<SelectEvent>(async ({ parsedInput: { newEventDto }, ctx: { session } }) => {
     logMessage("RR0002", `Creating new event with ID ${newEventDto.eventId}`);
-
-    const [sameIdEvent] = await db.select().from(table).where(eq(table.eventId, newEventDto.eventId)).limit(1);
-    if (sameIdEvent) throw new RrActionError(`Event with ID ${newEventDto.eventId} already exists`);
 
     const [sameNameEvent] = await db
       .select()
       .from(table)
-      .where(eq(sql`LOWER(${table.name})`, newEventDto.name.toLowerCase()))
+      .where(
+        and(
+          eq(table.organizationId, session.organization!.id),
+          eq(sql`LOWER(${table.name})`, newEventDto.name.toLowerCase()),
+        ),
+      )
       .limit(1);
     if (sameNameEvent) throw new RrActionError(`Event with name ${newEventDto.name} already exists`);
 
-    const [createdEvent] = await db.insert(table).values(newEventDto).returning();
+    const [createdEvent] = await db
+      .insert(table)
+      .values({ ...newEventDto, organizationId: session.organization!.id })
+      .returning();
 
     sendEmail(
-      process.env.NEXT_PUBLIC_CONTACT_EMAIL!,
+      session.organization!.metadata.contactEmail,
       "Important: Event created",
       `A new event has been created:\n\n${JSON.stringify(createdEvent, null, 2)}`,
     );
@@ -43,35 +49,50 @@ export const createEventSF = actionClient
   });
 
 export const updateEventSF = actionClient
-  .metadata({ permissions: { events: ["update"] } })
+  .metadata({ auth: { useOrganization: true, orgPermissions: { events: ["update"] } } })
   .inputSchema(
     z.strictObject({
       originalEventId: z.string(),
       newEventDto: EventValidator,
     }),
   )
-  .action<SelectEvent>(async ({ parsedInput: { originalEventId, newEventDto } }) => {
+  .action<SelectEvent>(async ({ parsedInput: { originalEventId, newEventDto }, ctx: { session } }) => {
     const isNewId = newEventDto.eventId !== originalEventId;
     logMessage(
       "RR0003",
       `Updating event with ID ${newEventDto.eventId}${isNewId ? ` (new event ID: ${newEventDto.eventId})` : ""}`,
     );
 
-    const [event] = await db.select().from(table).where(eq(table.eventId, originalEventId)).limit(1);
+    const [event] = await db
+      .select()
+      .from(table)
+      .where(and(eq(table.organizationId, session.organization!.id), eq(table.eventId, originalEventId)))
+      .limit(1);
     if (!event) throw new RrActionError(`Event with ID ${originalEventId} not found`);
 
     const [updatedEvent] = await db.transaction(async (tx) => {
       if (isNewId) {
+        if (session.organization!.id === "default") {
+          await tx
+            .update(collectiveSolutionsTable)
+            .set({ eventId: newEventDto.eventId })
+            .where(eq(collectiveSolutionsTable.eventId, originalEventId));
+        }
+
         const roundsWithEvent = await tx.query.rounds.findMany({
           columns: { competitionId: true },
-          where: { eventId: originalEventId },
+          where: { organizationId: session.organization!.id, eventId: originalEventId },
         });
         const competitionIds = new Set<string>(roundsWithEvent.map((r) => r.competitionId));
 
         if (competitionIds.size > 0) {
           const contestsWithEventInTheSchedule = await tx.query.contests.findMany({
             columns: { id: true, schedule: true },
-            where: { schedule: { isNotNull: true }, competitionId: { in: Array.from(competitionIds) } },
+            where: {
+              organizationId: session.organization!.id,
+              schedule: { isNotNull: true },
+              competitionId: { in: Array.from(competitionIds) },
+            },
           });
 
           const activityCodeRegex = new RegExp(`^${originalEventId}(-r[1-9][0-9]?(-g[1-9][0-9]?(-a[1-9][0-9]?)?)?)?$`);
@@ -110,7 +131,7 @@ export const updateEventSF = actionClient
           rule: newEventDto.rule,
           importantInfo: newEventDto.importantInfo,
         })
-        .where(eq(table.eventId, originalEventId))
+        .where(eq(table.id, event.id))
         .returning();
     });
 

@@ -1,27 +1,60 @@
 import "server-only";
-import { betterAuth } from "better-auth";
+import { betterAuth, type SocialProviders } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { admin as adminPlugin, genericOAuth, username } from "better-auth/plugins";
+import {
+  admin as adminPlugin,
+  type GenericOAuthConfig,
+  genericOAuth,
+  organization,
+  username,
+} from "better-auth/plugins";
 import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { getDefaultRegions } from "~/helpers/default-regions.ts";
+import { getDefaultOrgSettings } from "~/helpers/default-settings.ts";
+import { getHasRole } from "~/helpers/utility-functions.ts";
 import { db } from "~/server/db/provider.ts";
 import {
   accountsTable as accounts,
+  invitationsTable as invitations,
+  membersTable as members,
+  organizationsTable as organizations,
   sessionsTable as sessions,
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
+import { regionsTable } from "~/server/db/schema/regions.ts";
+import { settingsTable } from "~/server/db/schema/settings.ts";
 import {
   sendAccountDeletedEmail,
+  sendOrganizationInvitationEmail,
   sendPasswordChangedEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
 } from "~/server/email/mailer.ts";
-import { ac, admin, mod, user, videoBasedResultReviewer } from "~/server/permissions.ts";
+import {
+  admin as orgAdminRole,
+  organizationAc,
+  member as orgMemberRole,
+  mod as orgModRole,
+  owner as orgOwnerRole,
+  videoBasedResultReviewer as orgVideoBasedResultReviewerRole,
+} from "~/server/organization-permissions.ts";
+import { ac, admin, user } from "~/server/permissions.ts";
 import { logMessage } from "~/server/server-only-functions.ts";
 
-if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
-if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");
+if (process.env.NEXT_PHASE !== "phase-production-build") {
+  if (!process.env.BETTER_AUTH_URL) console.error("BETTER_AUTH_URL environment variable not set!");
+  if (!process.env.BETTER_AUTH_SECRET) console.error("BETTER_AUTH_SECRET environment variable not set!");
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.BETTER_AUTH_SECRET === "secret_thats_long_enough_to_be_accepted_by_better_auth"
+  ) {
+    throw new Error("BETTER_AUTH_SECRET cannot be set to the default value in production!");
+  }
+}
+
+// MAKE SURE TO UPDATE THE AUTH MOCK ACCORDINGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -31,23 +64,74 @@ export const auth = betterAuth({
       sessions,
       accounts,
       verifications,
+      organizations,
+      members,
+      invitations,
     },
     usePlural: true,
   }),
   plugins: [
-    nextCookies(),
     username({
       maxUsernameLength: 40,
       usernameValidator: (username) => /^[0-9a-zA-Z-_.]*$/.test(username),
     }),
     adminPlugin({
+      // authClient has to match this
       ac,
-      roles: { admin, mod, videoBasedResultReviewer, user },
+      roles: { admin, user },
+    }),
+    organization({
+      allowUserToCreateOrganization: (user) => getHasRole("admin", user.role), // this refers to the role in the admin plugin
+      // authClient has to match this
+      ac: organizationAc,
+      roles: {
+        owner: orgOwnerRole,
+        admin: orgAdminRole,
+        mod: orgModRole,
+        videoBasedResultReviewer: orgVideoBasedResultReviewerRole,
+        member: orgMemberRole,
+      },
+      cancelPendingInvitationsOnReInvite: true,
+      membershipLimit: 100_000, // TO-DO: THIS IS TEMPORARY!!!
+      requireEmailVerificationOnInvitation: true,
+      sendInvitationEmail: async (data) => {
+        if (process.env.EMAIL_HOST)
+          logMessage("RR0039", `Sending invitation to ${data.organization.name} to email ${data.email}`);
+
+        sendOrganizationInvitationEmail(data.email, {
+          organizationName: data.organization.name,
+          organizationSlug: data.organization.slug,
+          invitedByUsername: data.inviter.user.name,
+          invitedByEmail: data.inviter.user.email,
+          inviteLink: `${process.env.NEXT_PUBLIC_BASE_URL}/accept-invitation/${data.id}`,
+        });
+      },
+      schema: {
+        member: {
+          additionalFields: {
+            personId: {
+              type: "number",
+              required: false,
+              unique: true,
+              input: false,
+            },
+          },
+        },
+      },
+      organizationHooks: {
+        afterCreateOrganization: async ({ organization }) => {
+          await db.transaction(async (tx) => {
+            await tx.insert(regionsTable).values(getDefaultRegions(organization.id));
+
+            await tx.insert(settingsTable).values(getDefaultOrgSettings(organization.id));
+          });
+        },
+      },
     }),
     genericOAuth({
       config: [
         HAS_WCA_AUTH
-          ? {
+          ? ({
               providerId: "wca",
               clientId: process.env.WCA_OAUTH_CLIENT_ID!,
               clientSecret: process.env.WCA_OAUTH_SECRET,
@@ -55,10 +139,12 @@ export const auth = betterAuth({
               // issuer: "https://www.worldcubeassociation.org",
               // requireIssuerValidation: true, // the WCA doesn't support this
               scopes: ["public", "openid", "email", "profile"],
-            }
+              mapProfileToUser: async (profile) => ({ ...profile, emailVerified: true }),
+            } satisfies GenericOAuthConfig)
           : undefined,
       ].filter((provider) => provider !== undefined),
     }),
+    nextCookies(),
   ],
   socialProviders: {
     google: HAS_GOOGLE_AUTH
@@ -68,7 +154,7 @@ export const auth = betterAuth({
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         }
       : undefined,
-  },
+  } satisfies SocialProviders,
   emailAndPassword: {
     enabled: HAS_CREDENTIAL_AUTH,
     autoSignIn: false,
@@ -90,6 +176,10 @@ export const auth = betterAuth({
 
       sendVerificationEmail(user.email, url);
     },
+    afterEmailVerification: async (user) => {
+      if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true")
+        await auth.api.addMember({ body: { userId: user.id, role: ["member"], organizationId: "default" } });
+    },
   },
   user: {
     additionalFields: {
@@ -97,12 +187,6 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         unique: true,
-      },
-      personId: {
-        type: "number",
-        required: false,
-        unique: true,
-        input: false,
       },
     },
     changeEmail: {
@@ -120,6 +204,27 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: false,
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          if (user.emailVerified && process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true") {
+            auth.api.addMember({ body: { userId: user.id, role: ["member"], organizationId: "default" } });
+          }
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session) => {
+          if (process.env.NEXT_PUBLIC_MULTITENANCY_ENABLED !== "true") {
+            return { data: { ...session, activeOrganizationId: "default" } };
+          }
+          return { data: session };
+        },
+      },
     },
   },
 });
