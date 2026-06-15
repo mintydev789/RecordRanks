@@ -56,6 +56,7 @@ type Props = {
   persons: PersonResponse[];
   recordConfigs: RecordConfigResponse[];
   regions: RegionResponse[];
+  memberPerson: PersonResponse | undefined;
 };
 
 function DataEntryScreen({
@@ -67,6 +68,7 @@ function DataEntryScreen({
   persons: initPersons,
   recordConfigs,
   regions,
+  memberPerson,
 }: Props) {
   const pathname = usePathname();
   const { session } = useSession();
@@ -89,8 +91,12 @@ function DataEntryScreen({
   const roundFormat = roundFormats.find((rf) => rf.value === round.format)!;
   const currEvent = events.find((e) => e.eventId === eventId)!;
 
-  const [selectedPersons, setSelectedPersons] = useState<InputPerson[]>(new Array(currEvent.participants).fill(null));
-  const [personNames, setPersonNames] = useState(new Array(currEvent.participants).fill(""));
+  const [selectedPersons, setSelectedPersons] = useState<InputPerson[]>(
+    new Array(currEvent.participants)
+      .fill(null)
+      .map((val, index) => (memberPerson && index === 0 ? memberPerson : val)),
+  );
+  const [personNames, setPersonNames] = useState(selectedPersons.map((p) => p?.name ?? ""));
   const [attempts, setAttempts] = useState<Attempt[]>(new Array(roundFormat.attempts).fill({ result: 0 }));
   const [persons, setPersons] = useState<PersonResponse[]>(initPersons);
   const [loadingId, setLoadingId] = useState("");
@@ -115,11 +121,6 @@ function DataEntryScreen({
   useEffect(() => {
     updateEventWrPair();
   }, []);
-
-  // Focus the first competitor input whenever the round is changed
-  useEffect(() => {
-    document.getElementById("Competitor_1")?.focus();
-  }, [round]);
 
   // Focus the first attempt input on result edit
   useEffect(() => {

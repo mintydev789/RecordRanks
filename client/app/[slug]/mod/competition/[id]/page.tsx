@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
 import DataEntryScreen from "~/app/[slug]/mod/competition/[id]/DataEntryScreen.tsx";
 import LoadingError from "~/app/components/UI/LoadingError.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
 import { getMemberControlsContest } from "~/helpers/utility-functions.ts";
+import { db } from "~/server/db/provider.ts";
+import { type PersonResponse, personsPublicCols, personsTable } from "~/server/db/schema/persons.ts";
 import { authorizeUser, getContest, getOrgDetails } from "~/server/server-only-functions.ts";
 
 type Props = {
@@ -19,18 +22,23 @@ async function DataEntryPage({ params, searchParams }: Props) {
 
   const { contest, events, rounds, results, persons, recordConfigs, regions } = contestData;
   const eventIdOrFirst = eventId ?? events[0].eventId;
+  let memberPerson: PersonResponse | undefined;
 
   if (contest.type === "online") {
     const { member } = await authorizeUser({
       useOrganization: true,
       orgPermissions: { onlineComps: ["submit-own-result"] },
     });
-    if (!member!.personId)
+    if (!member!.personId) {
       return (
         <LoadingError reason="You must have a competitor profile linked to your member profile to submit results" />
       );
+    }
     if (!["approved", "ongoing"].includes(contest.state))
       return <LoadingError reason="You are unauthorized to submit results for this contest" />;
+    memberPerson = (
+      await db.select(personsPublicCols).from(personsTable).where(eq(personsTable.id, member!.personId))
+    ).at(0);
   } else {
     const { member } = await authorizeUser({
       useOrganization: true,
@@ -54,6 +62,7 @@ async function DataEntryPage({ params, searchParams }: Props) {
         persons={persons}
         recordConfigs={recordConfigs}
         regions={regions}
+        memberPerson={memberPerson}
       />
     </section>
   );

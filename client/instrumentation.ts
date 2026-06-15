@@ -9,7 +9,7 @@ import { testPosts } from "~/helpers/test-data/test-posts.ts";
 import { testUsers } from "~/helpers/test-data/test-users.ts";
 import { compareAvgs, compareSingles, getNameAndLocalizedName } from "~/helpers/utility-functions.ts";
 import { WcaCompetitionValidator } from "~/helpers/validators/wca/WcaCompetition.ts";
-import { accountsTable, usersTable } from "~/server/db/schema/auth-schema.ts";
+import { accountsTable, membersTable, usersTable } from "~/server/db/schema/auth-schema.ts";
 import { contestsTable } from "~/server/db/schema/contests.ts";
 import { eventsTable } from "~/server/db/schema/events.ts";
 import { personsTable } from "~/server/db/schema/persons.ts";
@@ -132,7 +132,7 @@ export async function register() {
           .limit(1);
 
         if (!existingUser) {
-          const { role, emailVerified, ...body } = testUser;
+          const { role, emailVerified, member, ...body } = testUser;
           await auth.api.signUpEmail({ body });
 
           const [user] = await db
@@ -144,6 +144,21 @@ export async function register() {
           await db.update(accountsTable).set({ password: hashForRr }).where(eq(accountsTable.userId, user.id));
 
           if (role) await db.update(usersTable).set({ role }).where(eq(usersTable.id, user.id));
+          if (member) {
+            await auth.api.addMember({
+              body: {
+                userId: user.id,
+                role: member.role.split(",") as any,
+                organizationId: "default",
+              },
+            });
+            if (member.personId) {
+              await db
+                .update(membersTable)
+                .set({ personId: member.personId })
+                .where(and(eq(membersTable.organizationId, "default"), eq(membersTable.userId, user.id)));
+            }
+          }
 
           console.log(`Seeded test user: ${testUser.username}`);
         }
