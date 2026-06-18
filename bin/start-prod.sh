@@ -21,11 +21,6 @@ if [ "$1" != "--restart" ] && [ "$1" != "-r" ]; then
 else
   # Restart
   
-  if [ -n "$(command -v apt)" ]; then
-    sudo apt update &&
-    sudo apt dist-upgrade
-  fi
-
   if [ "$2" != "--no-backup" ]; then
     ./bin/create-full-backup.sh
 
@@ -35,10 +30,17 @@ else
     fi
   fi
 
-  docker stop rr-nextjs &&
-  docker exec -w /etc/caddy rr-caddy caddy reload &&
+  docker stop rr-nextjs
 
-  ./bin/apply-db-migrations.sh &&
+  if [ "$DISABLE_CADDY_DOCKER_SERVICE" != "true" ]; then
+    docker exec -w /etc/caddy rr-caddy caddy reload || exit 3
+  fi
 
-  docker compose -f docker-compose.rr.yml up -d
+  ./bin/apply-db-migrations.sh || exit 4
+
+  if [ "$DISABLE_CADDY_DOCKER_SERVICE" == "true" ]; then
+    docker compose -f docker-compose.rr.yml up nextjs -d
+  else
+    docker compose -f docker-compose.rr.yml up -d
+  fi
 fi

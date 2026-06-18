@@ -22,5 +22,5 @@ if [[ "$1" != "--cleanup" && "$1" != "-c" ]]; then
 
   ./bin/apply-db-migrations.sh &&
 
-  docker compose -f docker-compose.rr.yml up
+  docker compose -f docker-compose.rr.yml up nextjs
 fi
