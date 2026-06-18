@@ -45,7 +45,7 @@ function DebugScreen() {
         slug: z
           .string()
           .min(3)
-          .max(15)
+          .max(24)
           .regex(/^[a-z0-9]+$/),
         contactEmail: z.email(),
         logo: z.string().nullable(),

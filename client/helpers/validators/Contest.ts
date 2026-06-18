@@ -115,12 +115,16 @@ export const ContestValidator = z
     name: z
       .string()
       .min(10)
-      .regex(/.* [0-9]{4}$/, { error: "The contest name must have the year at the end, separated by a space" }),
+      .refine((val) => !IS_CUBING_CONTESTS_INSTANCE || /.* [0-9]{4}$/.test(val), {
+        error: "The contest name must have the year at the end, separated by a space",
+      }),
     shortName: z
       .string()
       .min(8)
       .max(C.maxContestShortName)
-      .regex(/.* [0-9]{4}$/, { error: "The short name must have the year at the end, separated by a space" }),
+      .refine((val) => !IS_CUBING_CONTESTS_INSTANCE || /.* [0-9]{4}$/.test(val), {
+        error: "The short name must have the year at the end, separated by a space",
+      }),
     type: z.enum(ContestTypeValues),
     city: z.string().nonempty(),
     regionCode: RegionCodeValidator,
