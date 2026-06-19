@@ -20,7 +20,7 @@ function Time({ result, event, recordConfigs, average }: Props) {
     <div className="d-inline-flex gap-2 align-items-center">
       {getFormattedTime(average ? result.average : result.best, { event, showMultiPoints: true, isAverage: average })}
 
-      {recordConfig && (
+      {recordConfig?.active && (
         <span
           className={`badge ${recordConfig.color === C.color.warning ? "text-black" : ""}`}
           style={{ fontSize: "0.7rem", backgroundColor: recordConfig.color }}

@@ -10,6 +10,7 @@ import FormCheckbox from "~/app/components/form/FormCheckbox.tsx";
 import FormNumberInput from "~/app/components/form/FormNumberInput.tsx";
 import FormSelect from "~/app/components/form/FormSelect.tsx";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
+import ActiveInactiveIcon from "~/app/components/UI/ActiveInactiveIcon.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ColorSquare from "~/app/components/UI/ColorSquare.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
@@ -220,13 +221,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
               />
             </div>
             <div className="col-md-6 mb-3">
-              <FormCheckbox
-                title="Active"
-                selected={active}
-                setSelected={setActive}
-                // disabled={isPending}
-                disabled
-              />
+              <FormCheckbox title="Active" selected={active} setSelected={setActive} disabled={isPending} />
             </div>
           </div>
         </Form>
@@ -247,7 +242,7 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
               <th scope="col">Label</th>
               <th scope="col">Rank</th>
               <th scope="col">Color</th>
-              {/*<th scope="col">Active</th>*/}
+              <th scope="col">Active</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -262,9 +257,9 @@ function ConfigureRecordsScreen({ recordConfigs: initRecordConfigs, regions }: P
                 <td>
                   <ColorSquare color={recordConfig.color} small />
                 </td>
-                {/*<td>
+                <td>
                   <ActiveInactiveIcon isActive={recordConfig.active} />
-                </td>*/}
+                </td>
                 <td>
                   <div className="d-flex gap-2">
                     <Button
