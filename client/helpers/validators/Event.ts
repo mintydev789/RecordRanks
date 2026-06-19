@@ -6,7 +6,9 @@ export const EventValidator = z.strictObject({
     .string()
     .min(3)
     .max(32)
-    .regex(/^[a-z0-9_]*$/),
+    .regex(/^[a-z0-9_]*$/, {
+      error: "The event ID can only contain lowercase alphanumeric characters and underscores (_)",
+    }),
   name: z.string().min(3),
   category: z.string().nonempty(),
   rank: z.int().min(1),
