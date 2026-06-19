@@ -1,11 +1,14 @@
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import { authorizeUser, getEvents } from "~/server/server-only-functions.ts";
+import { authorizeUser, getEvents, getSettingFromDb } from "~/server/server-only-functions.ts";
 import ConfigureEventsScreen from "./ConfigureEventsScreen.tsx";
 
 async function ConfigureEventsPage() {
   const { organization } = await authorizeUser({ useOrganization: true, orgPermissions: { events: ["create"] } });
 
-  const events = await getEvents({ organizationId: organization!.id, columns: "all", includeHiddenAndRemoved: true });
+  const [events, videoBasedResultsEnabled] = await Promise.all([
+    getEvents({ organizationId: organization!.id, columns: "all", includeHiddenAndRemoved: true }),
+    getSettingFromDb({ key: "video-based-results-enabled", organizationId: organization!.id }),
+  ]);
 
   return (
     <section>
@@ -13,7 +16,7 @@ async function ConfigureEventsPage() {
 
       <ToastMessages className="mx-2" />
 
-      <ConfigureEventsScreen events={events} />
+      <ConfigureEventsScreen events={events} videoBasedResultsEnabled={videoBasedResultsEnabled === "true"} />
     </section>
   );
 }

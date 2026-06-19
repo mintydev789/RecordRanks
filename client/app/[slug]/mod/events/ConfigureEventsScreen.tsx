@@ -26,9 +26,10 @@ import { createEventSF, updateEventSF } from "~/server/server-functions/event-se
 
 type Props = {
   events: SelectEvent[];
+  videoBasedResultsEnabled: boolean;
 };
 
-function ConfigureEventsScreen({ events: initEvents }: Props) {
+function ConfigureEventsScreen({ events: initEvents, videoBasedResultsEnabled }: Props) {
   const { slug }: { slug: string } = useParams();
   const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
@@ -230,12 +231,14 @@ function ConfigureEventsScreen({ events: initEvents }: Props) {
             className="mb-3"
           />
           <h5 className="mb-3">Options</h5>
-          <FormCheckbox
-            title="Allow video-based results"
-            selected={submissionsAllowed}
-            setSelected={setSubmissionsAllowed}
-            disabled={isPending}
-          />
+          {videoBasedResultsEnabled && (
+            <FormCheckbox
+              title="Allow video-based results"
+              selected={submissionsAllowed}
+              setSelected={setSubmissionsAllowed}
+              disabled={isPending}
+            />
+          )}
           <FormCheckbox
             title="Has memorization time input"
             selected={hasMemo}
