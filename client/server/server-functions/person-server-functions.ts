@@ -4,7 +4,7 @@ import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { C } from "~/helpers/constants.ts";
 import type { GetOrCreatePersonObject } from "~/helpers/types.ts";
-import { fetchWcaPerson, getSimplifiedString } from "~/helpers/utility-functions.ts";
+import { fetchWcaPerson, getNameAndLocalizedName, getSimplifiedString } from "~/helpers/utility-functions.ts";
 import { type PersonDto, PersonValidator } from "~/helpers/validators/Person.ts";
 import { WcaIdValidator } from "~/helpers/validators/Validators.ts";
 import { auth } from "~/server/auth.ts";
@@ -61,25 +61,31 @@ export const getOrCreatePersonSF = actionClient
   .metadata({ auth: { useOrganization: true, orgPermissions: { persons: ["create"] } } })
   .inputSchema(
     z.strictObject({
-      name: z.string(),
+      name: z.string().nonempty(),
       regionCode: z.string().nonempty(),
     }),
   )
-  .action<GetOrCreatePersonObject>(async ({ parsedInput: { name, regionCode }, ctx: { session } }) => {
+  .action<GetOrCreatePersonObject>(async ({ parsedInput: { name: n, regionCode }, ctx: { session } }) => {
+    const { name, localizedName } = getNameAndLocalizedName(n);
     const persons = await db
       .select(personsPublicCols)
       .from(table)
       .where(
-        and(eq(table.organizationId, session.organization!.id), eq(table.name, name), eq(table.regionCode, regionCode)),
+        and(
+          eq(table.organizationId, session.organization!.id),
+          eq(table.name, name),
+          localizedName ? eq(table.localizedName, localizedName) : undefined,
+          eq(table.regionCode, regionCode),
+        ),
       );
 
     if (persons.length > 1)
-      throw new RrActionError(`Multiple people were found with the name ${name} and country ${regionCode}`);
+      throw new RrActionError(`Multiple people were found with the name ${n} and country ${regionCode}`);
 
     if (persons.length === 1) return { person: persons[0], isNew: false };
 
     const res = await createPersonSF({
-      newPersonDto: { name, localizedName: null, regionCode, wcaId: null },
+      newPersonDto: { name, localizedName: localizedName ?? null, regionCode, wcaId: null },
     });
     if (!res.data) throw new Error(res.serverError?.message || C.unknownErrorMsg);
 

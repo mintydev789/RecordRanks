@@ -461,8 +461,8 @@ export function getResultProceeds(
 export const getAlwaysShowDecimals = (event: Pick<EventResponse, "category" | "format">): boolean =>
   event.category === "extreme-bld" && event.format !== "multi";
 
-export function getNameAndLocalizedName(wcaName: string): { name: string; localizedName: string | undefined } {
-  const [name, localizedName] = wcaName.replace(/\)$/, "").split(" (");
+export function getNameAndLocalizedName(nameString: string): { name: string; localizedName: string | undefined } {
+  const [name, localizedName] = nameString.trim().replace(/\)$/, "").split(" (");
   return { name, localizedName };
 }
 
