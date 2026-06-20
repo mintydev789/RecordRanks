@@ -56,7 +56,7 @@ services:
       ANALYTICS_SCRIPT_CONTENT: ${ANALYTICS_SCRIPT_CONTENT}
 
       # Variables for the DB connection string
-      RR_DB_HOST: supabase-pooler
+      RR_DB_HOST: ${RR_DB_HOST}
       RR_DB_SCHEMA: ${RR_DB_SCHEMA}
       RR_DB_USERNAME: ${RR_DB_USERNAME}
       RR_DB_PASSWORD: ${RR_DB_PASSWORD}

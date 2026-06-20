@@ -21,11 +21,10 @@ if (
 }
 
 export default defineConfig({
+  dialect: "postgresql",
   out: "./server/db/drizzle",
   schema: "./server/db/schema",
-  schemaFilter: [process.env.RR_DB_SCHEMA],
   migrations: { schema: process.env.RR_DB_SCHEMA },
-  dialect: "postgresql",
   // This uses a direct DB connection instead of the Supabase connection pooler
   dbCredentials: {
     host: "localhost",
