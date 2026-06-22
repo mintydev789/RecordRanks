@@ -232,16 +232,7 @@ export async function getContest({
 
   const eventIdOrFirst = eventId ?? events[0].eventId;
 
-  const results = await db
-    .select(resultsPublicCols)
-    .from(resultsTable)
-    .where(
-      and(
-        eq(resultsTable.organizationId, organizationId),
-        eq(resultsTable.competitionId, competitionId),
-        eq(resultsTable.eventId, eventIdOrFirst),
-      ),
-    );
+  const results = await getContestEventResults({ organizationId, competitionId, eventId: eventIdOrFirst });
 
   const personIds = Array.from(
     new Set(results.map((r) => r.personIds).reduce((prev, curr) => [...(prev as []), ...curr], [])),
@@ -257,6 +248,27 @@ export async function getContest({
     recordConfigs,
     regions,
   };
+}
+
+export async function getContestEventResults({
+  organizationId,
+  competitionId,
+  eventId,
+}: {
+  organizationId: string;
+  competitionId: string;
+  eventId: string;
+}) {
+  return await db
+    .select(resultsPublicCols)
+    .from(resultsTable)
+    .where(
+      and(
+        eq(resultsTable.organizationId, organizationId),
+        eq(resultsTable.competitionId, competitionId),
+        eq(resultsTable.eventId, eventId),
+      ),
+    );
 }
 
 export async function getContestParticipantIds({

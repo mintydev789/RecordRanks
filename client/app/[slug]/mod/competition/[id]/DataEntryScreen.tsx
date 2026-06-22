@@ -63,7 +63,7 @@ function DataEntryScreen({
   contest,
   eventId,
   events,
-  rounds,
+  rounds: initRounds,
   results: initResults,
   persons: initPersons,
   recordConfigs,
@@ -85,6 +85,7 @@ function DataEntryScreen({
   );
   const [resultUnderEdit, setResultUnderEdit] = useState<ResultResponse | null>(null);
   const [eventWrPair, setEventWrPair] = useState<EventWrPair | undefined>();
+  const [rounds, setRounds] = useState(initRounds);
   const [round, setRound] = useState<RoundResponse>(rounds[0]); // display round 1 by default
   const [results, setResults] = useState<ResultResponse[]>(initResults);
 
@@ -172,6 +173,7 @@ function DataEntryScreen({
 
   const updateRound = (newRound: RoundResponse) => {
     setRound(newRound);
+    setRounds(rounds.map((r) => (r.id === newRound.id ? newRound : r)));
     resetSelectedPersonsAndAttempts(newRound.format);
   };
 
@@ -383,7 +385,7 @@ function DataEntryScreen({
           {contest.shortName} &ndash; {shortenEventName(currEvent.name)}
         </h3>
 
-        {round.open || results.some((r) => r.roundId === round.id) ? (
+        {round.open || sortedResults.some((r) => r.roundId === round.id) ? (
           <RoundResultsTable
             event={currEvent}
             round={round}

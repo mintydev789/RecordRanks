@@ -232,7 +232,6 @@ export const approveContestSF = actionClient
 
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "created") throw new RrActionError("Contest has already been approved");
-    if (!contest.creator) throw new RrActionError("Contest creator's user profile not found");
 
     await db.transaction(async (tx) => {
       await tx.update(table).set({ state: "approved" }).where(eq(table.id, contest.id));
@@ -241,7 +240,8 @@ export const approveContestSF = actionClient
       await tx.update(personsTable).set({ approved: true }).where(inArray(personsTable.id, contest.organizerIds));
     });
 
-    sendContestApprovedEmail(contest.creator.email, { contest, organization: session.organization! });
+    if (contest.creator)
+      sendContestApprovedEmail(contest.creator.email, { contest, organization: session.organization! });
   });
 
 export const finishContestSF = actionClient
