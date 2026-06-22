@@ -327,7 +327,7 @@ function ResultsSubmissionForm({
         />
         {isVideoBasedResultReviewer && (
           <FormCheckbox
-            title={C.videoNoLongerAvailableMsg}
+            title={C.message.videoNoLongerAvailable}
             selected={videoUnavailable}
             setSelected={setVideoUnavailable}
           />

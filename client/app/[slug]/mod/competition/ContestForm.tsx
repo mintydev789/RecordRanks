@@ -378,7 +378,7 @@ function ContestForm({
         .then(async (res) => {
           const notFoundMsg = `Competition with ID ${competitionId} not found. Please report this to the admin team.`;
           if (res.status === 404) throw new Error(notFoundMsg);
-          if (!res.ok) throw new Error(C.unknownErrorMsg);
+          if (!res.ok) throw new Error(C.message.unknownError);
           const data = await res.json();
           return WcaCompetitionValidator.parse(data);
         })

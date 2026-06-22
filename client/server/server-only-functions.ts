@@ -1,4 +1,5 @@
 import "server-only";
+import { addMonths } from "date-fns";
 import { and, desc, eq, getColumns, inArray, ne, or, sql } from "drizzle-orm";
 import { camelCase } from "lodash";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
@@ -683,18 +684,49 @@ export async function getPersonExactMatchWcaId(
   }
 }
 
+export async function validateMaxMonthlyContests(organization: OrganizationDetails) {
+  const contestsCreatedLastMonth = (
+    await db.query.contests.findMany({
+      columns: { id: true },
+      where: {
+        organizationId: organization.id,
+        state: { ne: "removed" },
+        createdAt: { gt: addMonths(new Date(), -1) },
+      },
+    })
+  ).length;
+  if (
+    (organization.metadata.plan === "basic" && contestsCreatedLastMonth >= C.plan.basic.maxMonthlyContests) ||
+    (organization.metadata.plan === "pro" && contestsCreatedLastMonth >= C.plan.pro.maxMonthlyContests)
+  ) {
+    throw new RrActionError("This space has reached its monthly competitions limit");
+  }
+}
+
+export async function validateMaxTotalCompetitors(organization: OrganizationDetails) {
+  const totalPersons = (
+    await db.query.persons.findMany({ columns: { id: true }, where: { organizationId: organization.id } })
+  ).length;
+  if (
+    (organization.metadata.plan === "basic" && totalPersons >= C.plan.basic.maxCompetitors) ||
+    (organization.metadata.plan === "pro" && totalPersons >= C.plan.pro.maxCompetitors)
+  ) {
+    throw new RrActionError(C.message.maxMonthlyContestsReached);
+  }
+}
+
 export async function getOrCreatePersonByWcaId(
   wcaId: string,
   {
     creatorUserId,
     createdExternally = false,
-    organizationId,
-  }: { creatorUserId: string; createdExternally?: boolean; organizationId: string },
+    organization,
+  }: { creatorUserId: string; createdExternally?: boolean; organization: OrganizationDetails },
 ): Promise<GetOrCreatePersonObject> {
   const [person] = await db
     .select(personsPublicCols)
     .from(personsTable)
-    .where(and(eq(personsTable.organizationId, organizationId), eq(personsTable.wcaId, wcaId)))
+    .where(and(eq(personsTable.organizationId, organization.id), eq(personsTable.wcaId, wcaId)))
     .limit(1);
   if (person) return { person, isNew: false };
 
@@ -703,9 +735,17 @@ export async function getOrCreatePersonByWcaId(
 
   logMessage("RR0019", `Creating person with name ${wcaPerson.name} and WCA ID ${wcaId} (directly via WCA ID)`);
 
+  await validateMaxTotalCompetitors(organization);
+
   const [createdPerson] = await db
     .insert(personsTable)
-    .values({ ...wcaPerson, organizationId, approved: true, createdBy: creatorUserId, createdExternally })
+    .values({
+      ...wcaPerson,
+      organizationId: organization.id,
+      approved: true,
+      createdBy: creatorUserId,
+      createdExternally,
+    })
     .returning(personsPublicCols);
 
   return { person: createdPerson, isNew: true };

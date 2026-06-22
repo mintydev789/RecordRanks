@@ -36,6 +36,7 @@ import {
   getContestParticipantIds,
   getSettingFromDb,
   logMessage,
+  validateMaxMonthlyContests,
 } from "~/server/server-only-functions.ts";
 import { type DbTransactionType, db } from "../db/provider.ts";
 import {
@@ -155,6 +156,8 @@ export const createContestSF = actionClient
     });
     if (sameShortNameContest)
       throw new RrActionError(`A contest with the short name ${newContestDto.shortName} already exists`);
+
+    await validateMaxMonthlyContests(session.organization!);
 
     const { success: canApprove } = await auth.api.hasPermission({
       headers: httpHeaders,
