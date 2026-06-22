@@ -113,6 +113,7 @@ export async function authorizeUser(
     if (orgPermissions) {
       const { success } = await auth.api.hasPermission({ headers: hdrs, body: { permissions: orgPermissions } });
       if (!success) throw new RrActionError("You are unauthorized to perform this action");
+      if (organization!.metadata.plan === "none") throw new RrActionError("Your organization has been deactivated");
 
       // The user must have an assigned person to be able to do any operation except creating video-based results
       if (

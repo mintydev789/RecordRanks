@@ -24,7 +24,7 @@ export type InputPerson = PersonResponse | null;
 export type OrganizationMetadata = {
   private: boolean;
   contactEmail: string;
-  plan: "basic" | "pro" | "custom";
+  plan: "basic" | "pro" | "custom" | "none";
   showDonationLinks: boolean;
 };
 
