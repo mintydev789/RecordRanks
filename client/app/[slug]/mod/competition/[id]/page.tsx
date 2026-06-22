@@ -68,7 +68,7 @@ async function DataEntryPage({ params, searchParams }: Props) {
         events={events}
         rounds={rounds}
         results={results}
-        persons={persons}
+        persons={memberPerson ? [...persons, memberPerson] : persons}
         recordConfigs={recordConfigs}
         regions={regions}
         memberPerson={memberPerson}
