@@ -11,8 +11,8 @@ export async function GET(req: NextRequest, { params }: RouteContext<"/api/[slug
     console.error("SERVICE_ROLE_KEY environment variable not set!");
     return new Response("Internal Server Error", { status: 500 });
   }
-  if (!process.env.SUPABASE_STORAGE_URL) {
-    console.error("SUPABASE_STORAGE_URL environment variable not set!");
+  if (!process.env.SUPABASE_PUBLIC_URL) {
+    console.error("SUPABASE_PUBLIC_URL environment variable not set!");
     return new Response("Internal Server Error", { status: 500 });
   }
   if (!process.env.PUBLIC_EXPORTS_BUCKET_NAME) {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: RouteContext<"/api/[slug
     return new Response("Basic plan spaces don't have automated public exports", { status: 400 });
   if (metadata.private) return new Response("Private spaces don't have automated public exports", { status: 400 });
 
-  const storageClient = new StorageClient(process.env.SUPABASE_STORAGE_URL, {
+  const storageClient = new StorageClient(`${process.env.SUPABASE_PUBLIC_URL}/storage/v1`, {
     apikey: process.env.SERVICE_ROLE_KEY,
     Authorization: `Bearer ${process.env.SERVICE_ROLE_KEY}`,
   });
