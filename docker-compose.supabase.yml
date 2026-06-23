@@ -234,10 +234,9 @@ services:
     image: supabase/logflare:1.31.2
     networks:
       - supabase
-      - shared
     restart: unless-stopped
-    ports:
-      - 127.0.0.1:4000:4000
+    # ports:
+    #   - 127.0.0.1:4000:4000
     # Uncomment to use Big Query backend for analytics
     # volumes:
     #   - type: bind
@@ -254,7 +253,7 @@ services:
         # Disable this if you are using an external Postgres database
         condition: service_healthy
     environment:
-      LOGFLARE_NODE_HOST: 127.0.0.1
+      LOGFLARE_NODE_HOST: 0.0.0.0
       DB_USERNAME: supabase_admin
       DB_DATABASE: _supabase
       DB_HOSTNAME: ${POSTGRES_HOST}

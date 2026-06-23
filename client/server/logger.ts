@@ -7,18 +7,18 @@ import { defaultPreparePayload } from "pino-logflare";
 // Specifying it in serverExternalPackages isn't enough.
 defaultPreparePayload.name;
 
-if (!process.env.SUPABASE_PUBLIC_URL) console.error("SUPABASE_PUBLIC_URL environment variable not set!");
+if (!process.env.LOGFLARE_API_BASE_URL) console.error("LOGFLARE_API_BASE_URL environment variable not set!");
 if (!process.env.LOGFLARE_PUBLIC_ACCESS_TOKEN)
   console.error("LOGFLARE_PUBLIC_ACCESS_TOKEN environment variable not set!");
 
 const transport = pino.transport({
   target: "pino-logflare",
   options: {
-    apiBaseUrl: process.env.SUPABASE_PUBLIC_URL,
+    apiBaseUrl: process.env.LOGFLARE_API_BASE_URL,
     apiKey: process.env.LOGFLARE_PUBLIC_ACCESS_TOKEN,
     // sourceToken: "your-source-token",
     // either sourceToken or sourceName can be provided. sourceToken takes precedence.
-    sourceName: "deno-relay-logs",
+    sourceName: "deno-relay-logs", // RR doesn't use Supabase Edge Functions; it just relies on the same logs source
 
     // handle errors on the client side
     // onError: { module: "my_utils", method: "handleErrors" },

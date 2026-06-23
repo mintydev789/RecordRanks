@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
     console.error("SERVICE_ROLE_KEY environment variable not set!");
     return new Response("Internal Server Error", { status: 500 });
   }
-  if (!process.env.SUPABASE_PUBLIC_URL) {
-    console.error("SUPABASE_PUBLIC_URL environment variable not set!");
+  if (!process.env.SUPABASE_STORAGE_URL) {
+    console.error("SUPABASE_STORAGE_URL environment variable not set!");
     return new Response("Internal Server Error", { status: 500 });
   }
   if (!process.env.PUBLIC_EXPORTS_BUCKET_NAME) {
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   const token = req.headers.get("Authorization")?.replace("Bearer ", "");
   if (!token || token !== process.env.SERVICE_ROLE_KEY) return new Response("Unauthorized", { status: 401 });
 
-  const storageClient = new StorageClient(`${process.env.SUPABASE_PUBLIC_URL}/storage/v1`, {
+  const storageClient = new StorageClient(process.env.SUPABASE_STORAGE_URL, {
     apikey: process.env.SERVICE_ROLE_KEY,
     Authorization: `Bearer ${process.env.SERVICE_ROLE_KEY}`,
   });
