@@ -8,13 +8,13 @@ consumers:
   - username: DASHBOARD
   - username: anon
     keyauth_credentials:
-      - key: $SUPABASE_ANON_KEY
+      - key: "$SUPABASE_ANON_KEY"
   - username: service_role
     keyauth_credentials:
-      - key: $SUPABASE_SERVICE_KEY
+      - key: "$SUPABASE_SERVICE_KEY"
   - username: logflare
     keyauth_credentials:
-      - key: $LOGFLARE_PUBLIC_ACCESS_TOKEN
+      - key: "$LOGFLARE_PUBLIC_ACCESS_TOKEN"
 
 ###
 ### Access Control List
@@ -30,8 +30,8 @@ acls:
 ###
 basicauth_credentials:
   - consumer: DASHBOARD
-    username: $DASHBOARD_USERNAME
-    password: $DASHBOARD_PASSWORD
+    username: "$DASHBOARD_USERNAME"
+    password: "$DASHBOARD_PASSWORD"
 
 ###
 ### API Routes
