@@ -8,13 +8,13 @@ consumers:
   - username: DASHBOARD
   - username: anon
     keyauth_credentials:
-      - key: "$SUPABASE_ANON_KEY"
+      - key: $SUPABASE_ANON_KEY
   - username: service_role
     keyauth_credentials:
-      - key: "$SUPABASE_SERVICE_KEY"
+      - key: $SUPABASE_SERVICE_KEY
   - username: logflare
     keyauth_credentials:
-      - key: "$LOGFLARE_PUBLIC_ACCESS_TOKEN"
+      - key: $LOGFLARE_PUBLIC_ACCESS_TOKEN
 
 ###
 ### Access Control List
@@ -24,6 +24,8 @@ acls:
     group: anon
   - consumer: service_role
     group: admin
+  - consumer: logflare
+    group: logflare
 
 ###
 ### Dashboard credentials
@@ -107,6 +109,11 @@ services:
       - name: key-auth
         config:
           hide_credentials: false
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - logflare
   # - name: analytics-v1
   #   _comment: 'Analytics: /analytics/v1/* -> http://analytics:4000/*'
   #   url: http://analytics:4000/
