@@ -12,9 +12,6 @@ consumers:
   - username: service_role
     keyauth_credentials:
       - key: $SUPABASE_SERVICE_KEY
-  - username: logflare
-    keyauth_credentials:
-      - key: $LOGFLARE_PUBLIC_ACCESS_TOKEN
 
 ###
 ### Access Control List
@@ -115,21 +112,6 @@ services:
   #     - name: basic-auth
   #       config:
   #         hide_credentials: true
-  - name: analytics-v1-logs
-    _comment: 'Analytics: /analytics/v1/logs* -> http://analytics:4000/logs*'
-    url: http://analytics:4000/logs
-    routes:
-      - name: analytics-v1-logs
-        strip_path: true
-        paths:
-          - /analytics/v1/logs
-    plugins:
-      - name: cors
-      - name: key-auth
-        config:
-          hide_credentials: false
-          key_names:
-            - x-api-key
 
   ## Secure Database routes
   # - name: meta
