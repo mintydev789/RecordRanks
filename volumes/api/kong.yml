@@ -24,8 +24,6 @@ acls:
     group: anon
   - consumer: service_role
     group: admin
-  - consumer: logflare
-    group: logflare
 
 ###
 ### Dashboard credentials
@@ -97,13 +95,13 @@ services:
   ## Not used - Studio and Vector talk directly to analytics via Docker networking.
   ## If external access is needed, add routes with key-auth matching Logflare's x-api-key auth.
   - name: analytics-v1-api
-    _comment: 'Analytics: /analytics/v1/api/endpoints/* -> http://analytics:4000/api/endpoints/*'
+    _comment: 'Analytics: /analytics/v1/api/endpoints* -> http://analytics:4000/api/endpoints*'
     url: http://analytics:4000/api/endpoints
     routes:
       - name: analytics-v1-api
         strip_path: true
         paths:
-          - /analytics/v1/api/endpoints/
+          - /analytics/v1/api/endpoints
     plugins:
       - name: cors
       - name: key-auth
@@ -111,11 +109,6 @@ services:
           hide_credentials: false
           key_names:
             - x-api-key
-      - name: acl
-        config:
-          hide_groups_header: true
-          allow:
-            - logflare
   # - name: analytics-v1
   #   _comment: 'Analytics: /analytics/v1/* -> http://analytics:4000/*'
   #   url: http://analytics:4000/
