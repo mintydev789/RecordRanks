@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SWRConfig, unstable_serialize as serialize } from "swr";
@@ -23,10 +22,13 @@ type Props = {
 async function ModeratorDashboardPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const filters = ModDashboardFiltersValidator.parse(await searchParams);
-  const { organization } = await authorizeUser({ useOrganization: true, orgPermissions: { modDashboard: ["view"] } });
+  const { organization, httpHeaders } = await authorizeUser({
+    useOrganization: true,
+    orgPermissions: { modDashboard: ["view"] },
+  });
 
   const [{ success: isAdminView }, regions, maxMonthlyContestsReached] = await Promise.all([
-    auth.api.hasPermission({ headers: await headers(), body: { permissions: { adminDashboard: ["view"] } } }),
+    auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { adminDashboard: ["view"] } } }),
     getRegions(organization!.id),
     validateMaxMonthlyContests(organization!)
       .then(() => false)

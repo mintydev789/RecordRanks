@@ -8,6 +8,13 @@ export const defaultGlobalSettings: InsertSetting[] = [
     value: "",
     description: "Contact email address to send error logs to",
   },
+  {
+    key: "kofi-goal-progress",
+    group: "default",
+    value: "",
+    description:
+      "The progress towards the next goal on the RecordRanks Ko-fi page, as a percentage. Leave empty to disable. Value: (number).",
+  },
 
   // page-contents
   {

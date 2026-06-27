@@ -11,6 +11,7 @@ export type SettingKey =
   ///// Global settings /////
   // default
   | "error-logs-contact-email"
+  | "kofi-goal-progress"
   // page-contents
   | "privacy-policy"
   | "public-exports-readme"

@@ -41,6 +41,7 @@ async function OrganizationHomePage({ params }: Props) {
     organizationId: null,
     optional: true,
   });
+  const kofiGoalProgressPromise = getSettingFromDb({ key: "kofi-goal-progress", organizationId: null, optional: true });
 
   return (
     <section className="px-3">
@@ -73,7 +74,7 @@ async function OrganizationHomePage({ params }: Props) {
         </Link>
       </div>
 
-      <DonateSection organization={organization} />
+      <DonateSection organization={organization} kofiGoalProgressPromise={kofiGoalProgressPromise} />
 
       <Suspense>
         <BlogSection latestBlogPostsPromise={latestBlogPostsPromise} />
