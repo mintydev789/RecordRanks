@@ -116,8 +116,9 @@ export async function authorizeUser(
       if (!success) throw new RrActionError("You are unauthorized to perform this action");
       if (organization!.metadata.plan === "none") throw new RrActionError("Your organization has been deactivated");
 
-      // The user must have an assigned person to be able to do any operation except creating video-based results
+      // The user must be an owner or have an assigned person to be able to do any operation except creating video-based results
       if (
+        !getHasRole("owner", member.role) &&
         !member.personId &&
         (Object.keys(orgPermissions).some((key) => key !== "videoBasedResults") ||
           orgPermissions.videoBasedResults?.some((perm) => perm !== "create"))
