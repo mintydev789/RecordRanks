@@ -12,35 +12,23 @@ cd "$(dirname "$0")/.."
 source .env
 docker pull "$DOCKER_IMAGE_NAME"
 
-if [ "$1" != "--restart" ] && [ "$1" != "-r" ]; then
-  # First start
-
-  ./bin/apply-db-migrations.sh &&
-
-  docker compose -f docker-compose.rr.yml up -d
-else
-  # Restart
-  
+# Restart
+if [[ "$1" == "--restart" || "$1" == "-r" ]]; then  
   if [ "$2" != "--no-backup" ]; then
-    ./bin/create-full-backup.sh
-
-    if [ $? -gt 0 ]; then
-      echo -e "\n\nBackup failed!"
-      exit 2
-    fi
+    ./bin/create-full-backup.sh || exit 1
   fi
 
   docker stop rr-nextjs
 
   if [ "$DISABLE_CADDY_DOCKER_SERVICE" != "true" ]; then
-    docker exec -w /etc/caddy rr-caddy caddy reload || exit 3
+    docker exec -w /etc/caddy rr-caddy caddy reload || exit 2
   fi
+fi
 
-  ./bin/apply-db-migrations.sh || exit 4
+./bin/apply-db-migrations.sh || exit 3
 
-  if [ "$DISABLE_CADDY_DOCKER_SERVICE" == "true" ]; then
-    docker compose -f docker-compose.rr.yml up nextjs -d
-  else
-    docker compose -f docker-compose.rr.yml up -d
-  fi
+if [ "$DISABLE_CADDY_DOCKER_SERVICE" == "true" ]; then
+  docker compose -f docker-compose.rr.yml up nextjs -d
+else
+  docker compose -f docker-compose.rr.yml up -d
 fi
