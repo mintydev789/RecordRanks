@@ -16,7 +16,12 @@ import {
   personsTable as table,
 } from "~/server/db/schema/persons.ts";
 import { actionClient, RrActionError } from "~/server/safeAction.ts";
-import { getOrCreatePersonByWcaId, getPersonExactMatchWcaId, logMessage } from "~/server/server-only-functions.ts";
+import {
+  getOrCreatePersonByWcaId,
+  getPersonExactMatchWcaId,
+  logMessage,
+  validateMaxTotalCompetitors,
+} from "~/server/server-only-functions.ts";
 
 export const getPersonByIdSF = actionClient
   .metadata({ auth: { useOrganization: true } })
@@ -87,7 +92,7 @@ export const getOrCreatePersonSF = actionClient
     const res = await createPersonSF({
       newPersonDto: { name, localizedName: localizedName ?? null, regionCode, wcaId: null },
     });
-    if (!res.data) throw new Error(res.serverError?.message || C.unknownErrorMsg);
+    if (!res.data) throw new Error(res.serverError?.message || C.message.unknownError);
 
     return { person: res.data, isNew: true };
   });
@@ -102,7 +107,7 @@ export const getOrCreatePersonByWcaIdSF = actionClient
   .action<GetOrCreatePersonObject>(async ({ parsedInput: { wcaId }, ctx: { session } }) => {
     return await getOrCreatePersonByWcaId(wcaId, {
       creatorUserId: session.user.id,
-      organizationId: session.organization!.id,
+      organization: session.organization!,
     });
   });
 
@@ -121,6 +126,8 @@ export const createPersonSF = actionClient
       if (newPersonDto.localizedName) newPersonDto.localizedName = newPersonDto.localizedName.trim();
       const { name, wcaId } = newPersonDto;
       logMessage("RR0019", `Creating person with name ${name} and ${wcaId ? `WCA ID ${wcaId}` : "no WCA ID"}`);
+
+      await validateMaxTotalCompetitors(session.organization!);
 
       const [{ success: canCreate }, { success: canApprove }] = await Promise.all([
         auth.api.hasPermission({ headers: httpHeaders, body: { permissions: { persons: ["create"] } } }),

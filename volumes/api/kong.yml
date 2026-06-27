@@ -88,6 +88,7 @@ services:
     plugins:
       - name: cors
 
+  ## Analytics routes
   ## Not used - Studio and Vector talk directly to analytics via Docker networking.
   ## If external access is needed, add routes with key-auth matching Logflare's x-api-key auth.
   # - name: analytics-v1-api
@@ -132,19 +133,19 @@ services:
   #           - admin
 
   ## Block access to /api/mcp
-  # - name: mcp-blocker
-  #   _comment: 'Block direct access to /api/mcp'
-  #   url: http://studio:3000/api/mcp
-  #   routes:
-  #     - name: mcp-blocker-route
-  #       strip_path: true
-  #       paths:
-  #         - /api/mcp
-  #   plugins:
-  #     - name: request-termination
-  #       config:
-  #         status_code: 403
-  #         message: "Access is forbidden."
+  - name: mcp-blocker
+    _comment: 'Block direct access to /api/mcp'
+    url: http://studio:3000/api/mcp
+    routes:
+      - name: mcp-blocker-route
+        strip_path: true
+        paths:
+          - /api/mcp
+    plugins:
+      - name: request-termination
+        config:
+          status_code: 403
+          message: "Access is forbidden."
 
   ## MCP endpoint - local access
   # - name: mcp

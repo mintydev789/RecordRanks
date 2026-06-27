@@ -10,7 +10,7 @@ import { C, IS_CUBING_CONTESTS_INSTANCE } from "~/helpers/constants.ts";
 import { slugPath } from "~/helpers/utility-functions.ts";
 import { auth } from "~/server/auth.ts";
 import { getModContestsSF } from "~/server/server-functions/contest-server-functions.ts";
-import { authorizeUser, getRegions } from "~/server/server-only-functions.ts";
+import { authorizeUser, getRegions, validateMaxMonthlyContests } from "~/server/server-only-functions.ts";
 import ModDashboardScreen from "./ModDashboardScreen.tsx";
 
 type Props = {
@@ -25,9 +25,12 @@ async function ModeratorDashboardPage({ params, searchParams }: Props) {
   const filters = ModDashboardFiltersValidator.parse(await searchParams);
   const { organization } = await authorizeUser({ useOrganization: true, orgPermissions: { modDashboard: ["view"] } });
 
-  const [{ success: isAdminView }, regions] = await Promise.all([
+  const [{ success: isAdminView }, regions, maxMonthlyContestsReached] = await Promise.all([
     auth.api.hasPermission({ headers: await headers(), body: { permissions: { adminDashboard: ["view"] } } }),
     getRegions(organization!.id),
+    validateMaxMonthlyContests(organization!)
+      .then(() => false)
+      .catch(() => true),
   ]);
 
   return (
@@ -48,10 +51,18 @@ async function ModeratorDashboardPage({ params, searchParams }: Props) {
           </div>
         )}
 
-        <div className="d-flex fs-5 column-gap-2 column-gap-xl-3 row-gap-2 mt-4 mb-3 flex-wrap">
-          <Link href={slugPath(slug, "/mod/competition")} prefetch={false} className="btn btn-success btn-sm btn-lg-md">
-            Create new contest
-          </Link>
+        {maxMonthlyContestsReached && <p className="fw-bold text-danger">{C.message.maxMonthlyContestsReached}</p>}
+
+        <div className="d-flex fs-5 column-gap-2 column-gap-xl-3 row-gap-2 my-3 flex-wrap">
+          {!maxMonthlyContestsReached && (
+            <Link
+              href={slugPath(slug, "/mod/competition")}
+              prefetch={false}
+              className="btn btn-success btn-sm btn-lg-md"
+            >
+              Create new contest
+            </Link>
+          )}
           <Link href={slugPath(slug, "/mod/competitors")} prefetch={false} className="btn btn-warning btn-sm btn-lg-md">
             Manage competitors
           </Link>

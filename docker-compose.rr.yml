@@ -4,8 +4,7 @@ services:
   caddy:
     container_name: rr-caddy
     image: caddy:2.11.2-alpine
-    networks:
-      - shared
+    network_mode: host
     ports:
       - 80:80
       - 443:443
@@ -19,13 +18,12 @@ services:
       KONG_HTTP_PORT: ${KONG_HTTP_PORT}
       PROD_HOSTNAME: ${PROD_HOSTNAME}
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      LOGFLARE_API_BASE_URL: ${LOGFLARE_API_BASE_URL}
     restart: unless-stopped
 
   nextjs:
     container_name: rr-nextjs
     image: ${DOCKER_IMAGE_NAME}
-    networks:
-      - shared
     ports:
       # The Caddyfile assumes the Next JS port used internally in the container is 3000
       - 127.0.0.1:${NEXTJS_PORT}:3000 # port matches the PORT env var in the Dockerfile
@@ -56,7 +54,7 @@ services:
       ANALYTICS_SCRIPT_CONTENT: ${ANALYTICS_SCRIPT_CONTENT}
 
       # Variables for the DB connection string
-      RR_DB_HOST: supabase-pooler
+      RR_DB_HOST: ${RR_DB_HOST}
       RR_DB_SCHEMA: ${RR_DB_SCHEMA}
       RR_DB_USERNAME: ${RR_DB_USERNAME}
       RR_DB_PASSWORD: ${RR_DB_PASSWORD}
@@ -82,10 +80,6 @@ services:
       retries: 3
       start_period: 10s
 
-networks:
-  shared:
-    name: recordranks_shared
-    external: true # configured in the Supabase Docker Compose file
 volumes:
   caddy_data:
   caddy_config:

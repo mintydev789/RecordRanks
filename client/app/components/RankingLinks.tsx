@@ -13,7 +13,7 @@ function RankingLinks({ ranking }: Props) {
           Video
         </a>
       ) : (
-        C.videoNoLongerAvailableMsg
+        C.message.videoNoLongerAvailable
       )}
       {ranking.discussionLink && (
         <a href={ranking.discussionLink} target="_blank" rel="noreferrer">

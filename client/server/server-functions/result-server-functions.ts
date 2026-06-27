@@ -23,6 +23,7 @@ import { contestsTable, type SelectContest } from "~/server/db/schema/contests.t
 import type { RoundResponse, SelectRound } from "~/server/db/schema/rounds.ts";
 import {
   approvePersons,
+  getContestEventResults,
   getContestParticipantIds,
   getRecordConfigs,
   logMessage,
@@ -208,7 +209,7 @@ export const createContestResultSF = actionClient
         await tx.update(contestsTable).set(updateContestObject).where(eq(contestsTable.id, contest.id));
     });
 
-    return await db.select(resultsPublicCols).from(table).where(eq(table.roundId, roundId)).orderBy(table.ranking);
+    return await getContestEventResults({ organizationId, competitionId, eventId });
   });
 
 export const updateContestResultSF = actionClient
@@ -309,11 +310,11 @@ export const updateContestResultSF = actionClient
         await setFutureRecords(tx, result, event, "average", recordConfigs);
     });
 
-    return await db
-      .select(resultsPublicCols)
-      .from(table)
-      .where(eq(table.roundId, result.roundId!))
-      .orderBy(table.ranking);
+    return await getContestEventResults({
+      organizationId,
+      competitionId: result.competitionId!,
+      eventId: result.eventId,
+    });
   });
 
 export const deleteContestResultSF = actionClient
@@ -384,11 +385,11 @@ export const deleteContestResultSF = actionClient
       }
     });
 
-    return await db
-      .select(resultsPublicCols)
-      .from(table)
-      .where(eq(table.roundId, result.roundId!))
-      .orderBy(table.ranking);
+    return await getContestEventResults({
+      organizationId,
+      competitionId: result.competitionId!,
+      eventId: result.eventId,
+    });
   });
 
 export const createVideoBasedResultSF = actionClient

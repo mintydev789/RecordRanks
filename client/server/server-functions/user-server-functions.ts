@@ -145,7 +145,7 @@ export const linkWcaProfileSF = actionClient
       person = (
         await getOrCreatePersonByWcaId(wcaId, {
           creatorUserId: session.user.id,
-          organizationId: session.organization.id,
+          organization: session.organization,
         })
       ).person;
     }

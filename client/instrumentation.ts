@@ -328,7 +328,7 @@ export async function register() {
         const wcaCompData = await fetch(`${C.wcaApiBaseUrl}/competitions/${eeComp.id}`).then(async (res) => {
           const notFoundMsg = `Competition with ID ${eeComp.id} not found`;
           if (res.status === 404) throw new Error(notFoundMsg);
-          if (!res.ok) throw new Error(C.unknownErrorMsg);
+          if (!res.ok) throw new Error(C.message.unknownError);
           const data = await res.json();
           if (!data.competitor_limit) data.competitor_limit = 10;
           return WcaCompetitionValidator.parse(data);

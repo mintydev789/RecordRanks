@@ -18,7 +18,7 @@ const transport = pino.transport({
     apiKey: process.env.LOGFLARE_PUBLIC_ACCESS_TOKEN,
     // sourceToken: "your-source-token",
     // either sourceToken or sourceName can be provided. sourceToken takes precedence.
-    sourceName: "deno-relay-logs",
+    sourceName: "deno-relay-logs", // RR doesn't use Supabase Edge Functions; it just relies on the same logs source
 
     // handle errors on the client side
     // onError: { module: "my_utils", method: "handleErrors" },

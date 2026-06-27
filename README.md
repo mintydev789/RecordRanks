@@ -172,7 +172,7 @@ To enable automatic public exports that run at regular intervals, you have to se
 
 **NOTE**: while this cron job will be visible in Integrations -> Cron, it cannot be edited directly, due to the complex value of the authorization header; only activated and deactivated. To change the cron job, delete it and create it again following step 4.
 
-To test this locally with `test-prod.sh`, use `http://rr-nextjs:<NEXTJS_PORT>` as the `base_url` value in Supabase Vault, temporarily add `shared` network to the `supabase-db` container in `docker-compose.supabase.yml`, change the value of `SUPABASE_PUBLIC_URL` to `http://supabase-kong:<KONG_HTTP_PORT>` in the `.env` file and restart the `supabase-db` container. You can also test it with the normal local dev environment using this command:
+To test this locally, run the local dev environment and then use this command:
 
 ```sh
 # Make sure to replace <NEXTJS_PORT> with your Next JS container port (3000 by default)
@@ -194,16 +194,15 @@ Note: due to limitations with the CSV format, empty string values are represente
 
 There are several custom scripts located in the `bin` directory. These should be executed from the root of the project with `./bin/<script>`.
 
-| Script                      | Description                                                                                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `start-prod.sh`             | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                        |
-| `test-prod.sh`              | Start project locally for testing, similar to the production environment. To clean up running project, add `-c`. |
-| `apply-db-migrations.sh`    | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running.      |
-| `supabase-reset.sh`         | Reset Supabase (remove containers and delete DB data and storage).                                               |
-| `supabase-generate-keys.sh` | Generate Supabase secret keys. This is REQUIRED for production!                                                  |
-| `release-new-version.sh`    | Release new version of RecordRanks (pushes to Codeberg).                                                         |
-| `release-new-image.sh`      | Create Docker image for the Next JS app and publish it.                                                          |
-| `create-full-backup.sh`     | Create encrypted backup of the Supabase database and storage.                                                    |
+| Script                      | Description                                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `start-prod.sh`             | Start RecordRanks in production. If it's already running, add `-r` to restart it instead.                   |
+| `apply-db-migrations.sh`    | Apply DB migrations using Drizzle Kit. Also handles disabling `"server-only"` while Drizzle Kit is running. |
+| `supabase-reset.sh`         | Reset Supabase (remove containers and delete DB data and storage).                                          |
+| `supabase-generate-keys.sh` | Generate Supabase secret keys. This is REQUIRED for production!                                             |
+| `release-new-version.sh`    | Release new version of RecordRanks (pushes to Codeberg).                                                    |
+| `release-new-image.sh`      | Create Docker image for the Next JS app and publish it.                                                     |
+| `create-full-backup.sh`     | Create encrypted backup of the Supabase database and storage.                                               |
 
 There is also a `convert-svg-to-ico.sh` script in the `client` directory to convert an SVG file with the icon to an ICO file. The first argument is the path to the SVG file; the second argument is the path to the output ICO file (defaults to `./app/favicon.ico`). This script runs automatically on Docker image build.
 
@@ -225,9 +224,11 @@ Go to `localhost:3000` to see the website. Go to `localhost:8000` to open Supaba
 
 Global constants are located in `constants.ts`. Keep in mind that some features are only enabled for the Cubing Contests instance (via the `IS_CUBING_CONTESTS_INSTANCE` constant).
 
-Please note that some Supabase features, like analytics and cron only work in a production environment. You can test the production environment using the `test-prod.sh` script (see the Supabase section for more information).
+Please note that some Supabase features, like analytics and cron only work in a production environment. To stop Supabase, use this command:
 
-To stop Supabase, use this command: `docker compose -f docker-compose.supabase.yml down`.
+```sh
+docker compose -f docker-compose.supabase.yml down
+```
 
 ### Mock data
 

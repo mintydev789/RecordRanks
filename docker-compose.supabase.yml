@@ -12,8 +12,6 @@ services:
   studio:
     container_name: supabase-studio
     image: supabase/studio:2026.02.16-sha-26c615c
-    networks:
-      - supabase
     restart: unless-stopped
     healthcheck:
       test:
@@ -65,14 +63,11 @@ services:
       EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
     volumes:
       - ./volumes/snippets:/app/snippets:Z
-      - ./volumes/functions:/app/edge-functions:Z
+      # - ./volumes/functions:/app/edge-functions:Z
 
   kong:
     container_name: supabase-kong
     image: kong:2.8.1
-    networks:
-      - supabase
-      - shared
     restart: unless-stopped
     ports:
       - 127.0.0.1:${KONG_HTTP_PORT}:8000/tcp
@@ -95,6 +90,7 @@ services:
       SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
       DASHBOARD_USERNAME: ${DASHBOARD_USERNAME}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
+      # Custom RR addition
     # https://unix.stackexchange.com/a/294837
     entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
 
@@ -102,8 +98,6 @@ services:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
     image: supabase/realtime:v2.76.5
-    networks:
-      - supabase
     restart: unless-stopped
     depends_on:
       db:
@@ -144,8 +138,6 @@ services:
   storage:
     container_name: supabase-storage
     image: supabase/storage-api:v1.37.8
-    networks:
-      - supabase
     restart: unless-stopped
     depends_on:
       db:
@@ -192,8 +184,6 @@ services:
   imgproxy:
     container_name: supabase-imgproxy
     image: darthsim/imgproxy:v3.30.1
-    networks:
-      - supabase
     restart: unless-stopped
     volumes:
       - ./volumes/storage:/var/lib/storage:z
@@ -211,8 +201,6 @@ services:
   meta:
     container_name: supabase-meta
     image: supabase/postgres-meta:v0.95.2
-    networks:
-      - supabase
     restart: unless-stopped
     depends_on:
       db:
@@ -232,12 +220,9 @@ services:
   analytics:
     container_name: supabase-analytics
     image: supabase/logflare:1.31.2
-    networks:
-      - supabase
-      - shared
     restart: unless-stopped
     ports:
-      - 127.0.0.1:${LOGFLARE_PORT}:4000
+      - 127.0.0.1:4000:4000
     # Uncomment to use Big Query backend for analytics
     # volumes:
     #   - type: bind
@@ -278,8 +263,6 @@ services:
   db:
     container_name: supabase-db
     image: supabase/postgres:17.6.1.096
-    networks:
-      - supabase
     restart: unless-stopped
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
@@ -338,8 +321,6 @@ services:
   vector:
     container_name: supabase-vector
     image: timberio/vector:0.53.0-alpine
-    networks:
-      - supabase
     restart: unless-stopped
     volumes:
       - ./volumes/logs/vector.yml:/etc/vector/vector.yml:ro,z
@@ -359,13 +340,10 @@ services:
   supavisor:
     container_name: supabase-pooler
     image: supabase/supavisor:2.7.4
-    networks:
-      - supabase
-      - shared
     restart: unless-stopped
     ports:
       - 127.0.0.1:${POSTGRES_PORT}:5432
-      - 127.0.0.1:${POOLER_PROXY_PORT_TRANSACTION}:6543
+      - ${POOLER_PROXY_PORT_TRANSACTION}:6543
     volumes:
       - ./volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro,z
     healthcheck:
@@ -403,12 +381,5 @@ services:
         '/app/bin/migrate && /app/bin/supavisor eval "$$(cat /etc/pooler/pooler.exs)" && /app/bin/server',
       ]
 
-networks:
-  supabase:
-    name: recordranks_supabase
-    driver: bridge
-  shared:
-    name: recordranks_shared
-    driver: bridge
 volumes:
   db-config:

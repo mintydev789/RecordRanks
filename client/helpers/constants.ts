@@ -30,12 +30,15 @@ export const C = {
   wcaIdRegex: /[0-9]{4}[A-Z]{4}[0-9]{2}/,
   wcaIdRegexLoose: /[0-9]{4}[a-zA-Z]{4}[0-9]{2}/, // allows lowercase letters too
   navigationKeys: ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"],
-  unknownErrorMsg: "Unknown error",
-  videoNoLongerAvailableMsg: "Video no longer available",
   notSelectedOption: "NOT_SELECTED",
   onlineCompKey: "ONLINE",
   publicExportsFormatVersions: ["v1"],
   defaultRecordTypeValues: ["WR", "ER", "NAR", "SAR", "AsR", "AfR", "OcR", "NR"],
+  message: {
+    unknownError: "Unknown error",
+    videoNoLongerAvailable: "Video no longer available",
+    maxMonthlyContestsReached: "This space has reached its monthly competitions limit",
+  },
   color: {
     rankingHighlight: "#10c010",
     // These are the same as the Bootstrap colors
@@ -43,6 +46,16 @@ export const C = {
     success: "#198754",
     warning: "#ffc107",
     danger: "#dc3545",
+  },
+  plan: {
+    basic: {
+      maxMonthlyContests: 10,
+      maxCompetitors: 1000,
+    },
+    pro: {
+      maxMonthlyContests: 50,
+      maxCompetitors: 25000,
+    },
   },
 } as const;
 
