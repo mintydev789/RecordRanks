@@ -20,10 +20,8 @@
     Content-Security-Policy "default-src 'self' https://*.worldcubeassociation.org/;
                              script-src 'self' https://plausible.io/ 'unsafe-inline' 'unsafe-eval';
                              style-src 'self' 'unsafe-inline';
-                             img-src 'self' {$SUPABASE_PUBLIC_URL} https://storage.ko-fi.com/ data:;
-                             frame-src 'self' https://ko-fi.com/"
+                             img-src 'self' {$SUPABASE_PUBLIC_URL} https://storage.ko-fi.com/ data:"
     X-Frame-Options SAMEORIGIN
-    -X-Powered-By # hide "powered by Next JS"
     via Caddy # hide the Caddy version
   }
 }
@@ -31,7 +29,7 @@
 {$PROD_HOSTNAME} {
   import security
 
-  reverse_proxy http://rr-nextjs:3000
+  reverse_proxy http://localhost:3000
 
   handle_errors 500 502 503 504 {
     rewrite * /down-for-maintenance-page.html
@@ -49,5 +47,11 @@ www.{$PROD_HOSTNAME} {
 {$SUPABASE_PUBLIC_URL} {
   import security
 
-  reverse_proxy http://supabase-kong:{$KONG_HTTP_PORT}
+  reverse_proxy http://localhost:{$KONG_HTTP_PORT}
+}
+
+{$LOGFLARE_API_BASE_URL} {
+  import security
+
+  reverse_proxy http://localhost:4000
 }
