@@ -225,6 +225,7 @@ export const approveContestSF = actionClient
         shortName: true,
         state: true,
         organizerIds: true,
+        adminNotes: true,
         createdBy: true,
       },
       where: { organizationId: session.organization!.id, competitionId },
@@ -232,6 +233,11 @@ export const approveContestSF = actionClient
 
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "created") throw new RrActionError("Contest has already been approved");
+    if (contest.adminNotes) {
+      throw new RrActionError(
+        `Please resolve the issues outlined in the admin notes and clear them before approving:\n\n${contest.adminNotes}`,
+      );
+    }
 
     await db.transaction(async (tx) => {
       await tx.update(table).set({ state: "approved" }).where(eq(table.id, contest.id));
@@ -403,12 +409,18 @@ export const publishContestSF = actionClient
         shortName: true,
         type: true,
         state: true,
+        adminNotes: true,
         createdBy: true,
       },
       where: { organizationId, competitionId },
     });
     if (!contest) throw new RrActionError(`Contest with ID ${competitionId} not found`);
     if (contest.state !== "finished") throw new RrActionError("Contest cannot be published");
+    if (contest.adminNotes) {
+      throw new RrActionError(
+        `Please resolve the issues outlined in the admin notes and clear them before publishing:\n\n${contest.adminNotes}`,
+      );
+    }
 
     const wcaPersons: { name: string; wcaId: string; countryIso2: string }[] = [];
 
@@ -515,8 +527,8 @@ export const updateContestSF = actionClient
     if (!contest) throw new RrActionError(`Contest with ID ${originalCompetitionId} not found`);
     if (!getMemberControlsContest(session.member!, contest))
       throw new RrActionError("You do not have access rights for this contest");
-    if (!["created", "approved", "ongoing"].includes(contest.state))
-      throw new RrActionError("Finished contests cannot be edited");
+    if (!["created", "approved", "ongoing", "finished"].includes(contest.state))
+      throw new RrActionError("Published contests cannot be edited");
 
     await validateAndCleanUpContest(organizationId, newContestDto, rounds, session.member!.personId!, canApprove);
 
@@ -647,6 +659,24 @@ export const openRoundSF = actionClient
     });
 
     return openedRound;
+  });
+
+export const updateAdminNotesSF = actionClient
+  .metadata({ auth: { useOrganization: true, orgPermissions: { competitions: ["approve"], meetups: ["approve"] } } })
+  .inputSchema(
+    z.strictObject({
+      competitionId: z.string().nonempty(),
+      adminNotes: z.string().nonempty().nullable(),
+    }),
+  )
+  .action(async ({ parsedInput: { competitionId, adminNotes }, ctx: { session } }) => {
+    const [contest] = await db
+      .update(table)
+      .set({ adminNotes })
+      .where(and(eq(table.organizationId, session.organization!.id), eq(table.competitionId, competitionId)))
+      .returning();
+
+    if (!contest) throw new RrActionError(`Competition with ID ${competitionId} not found`);
   });
 
 async function validateAndCleanUpContest(

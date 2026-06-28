@@ -10,6 +10,8 @@ Monorepo with:
 - **`bin/`**: scripts
 - **`client/`**: full-stack Next.js web application
 - **`client/server`**: backend files
+- **`client/db`**: DB schema and ORM configuration
+- **`client/db/schema`**: table schema files
 - **`client/server/server-functions`**: React server functions, with one file for each DB entity and a `server-functions.ts` file for random stuff; each server function ends with the suffix `SF` for clarity and uses `next-safe-action`
 - **`client/server/server-only-functions.ts`**: just regular functions (not React server functions) that are only used server-side, due to relying on the DB or other backend tools
 

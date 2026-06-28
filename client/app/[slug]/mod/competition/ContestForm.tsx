@@ -52,6 +52,7 @@ import {
   getTimeZoneFromCoordsSF,
   removeContestSF,
   unfinishContestSF,
+  updateAdminNotesSF,
   updateContestSF,
 } from "~/server/server-functions/contest-server-functions.ts";
 import {
@@ -86,7 +87,7 @@ function ContestForm({
   const router = useRouter();
   const { slug }: { slug: string } = useParams();
   const { member } = useSession();
-  const { changeErrorMessages, resetMessages } = useContext(MainContext);
+  const { changeErrorMessages, changeSuccessMessage, resetMessages } = useContext(MainContext);
 
   const { executeAsync: getPersonById, isPending: isGettingPerson } = useAction(getPersonByIdSF);
   const { executeAsync: getOrCreatePersonByWcaId, isPending: isGettingOrCreatingWcaPerson } =
@@ -97,7 +98,7 @@ function ContestForm({
   const { executeAsync: updateContest, isPending: isUpdating } = useAction(updateContestSF);
   const { executeAsync: unfinishContest, isPending: isUnfinishing } = useAction(unfinishContestSF);
   const { executeAsync: removeContest, isPending: isDeleting } = useAction(removeContestSF);
-  // const { executeAsync: createAccessToken, isPending: isCreatingAccessToken } = useAction(createAccessTokenSF);
+  const { executeAsync: updateAdminNotes, isPending: isUpdatingAdminNotes } = useAction(updateAdminNotesSF);
   const { data: contestTypesData } = useSWRImmutable<string>(SwrKey.ContestTypes);
   const [activeTab, setActiveTab] = useState("details");
   const [detailsImported, setDetailsImported] = useState(mode === "edit" && contest?.type === "wca-comp");
@@ -123,6 +124,7 @@ function ContestForm({
   const [contact, setContact] = useState(contest?.contact ?? "");
   const [description, setDescription] = useState(contest?.description ?? "");
   const [competitorLimit, setCompetitorLimit] = useState<number | undefined>(contest?.competitorLimit ?? undefined);
+  const [adminNotes, setAdminNotes] = useState(contest?.adminNotes ?? "");
 
   // Event stuff
   const [rounds, setRounds] = useState<RoundDto[]>(initRounds);
@@ -175,8 +177,8 @@ function ContestForm({
     isPendingTimeZone ||
     isPendingWcaCompDetails ||
     isGettingOrCreatingWcaPerson ||
-    isGettingOrCreatingPerson;
-  // isCreatingAccessToken
+    isGettingOrCreatingPerson ||
+    isUpdatingAdminNotes;
   const disabled = !type || (type === "wca-comp" && !detailsImported);
   const disabledIfContestApproved: boolean = mode === "edit" && !!contest && contest.state !== "created";
   const disabledIfContestPublished: boolean = mode === "edit" && !!contest && contest.state === "published";
@@ -277,6 +279,14 @@ function ContestForm({
 
     if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
     else router.push(modDashboardUrl);
+  };
+
+  const submitAdminNotes = async () => {
+    resetMessages();
+    const res = await updateAdminNotes({ competitionId: contest!.competitionId, adminNotes: adminNotes || null });
+
+    if (res.serverError || res.validationErrors) changeErrorMessages([getActionError(res)]);
+    else changeSuccessMessage("Admin notes successfully updated");
   };
 
   const fillWithMockData = async (mockContestType: ContestType = "comp") => {
@@ -519,40 +529,41 @@ function ContestForm({
             </div>
           )}
           {mode === "edit" && contest && (
-            <div className="d-flex mt-3 mb-3 flex-wrap gap-3">
-              {contest.type !== "wca-comp" && (
-                <Link
-                  href={slugPath(slug, `/mod/competition?copyId=${contest.competitionId}`)}
-                  prefetch={false}
-                  className="btn btn-primary"
-                >
-                  Clone
-                </Link>
-              )}
-              {isAdmin && (
-                <>
-                  {["finished", "published"].includes(contest.state) && (
-                    <Button
-                      type="button"
-                      onClick={() => onUnfinishContest()}
-                      isLoading={isUnfinishing}
-                      disabled={isPending}
-                      className="btn-warning"
-                    >
-                      Un-finish Contest
-                    </Button>
-                  )}
-                  <Button
-                    onClick={onRemoveContest}
-                    isLoading={isDeleting}
-                    disabled={isPending || contest.participants > 0}
-                    className="btn-danger"
+            <>
+              <div className="d-flex my-3 flex-wrap gap-3">
+                {contest.type !== "wca-comp" && (
+                  <Link
+                    href={slugPath(slug, `/mod/competition?copyId=${contest.competitionId}`)}
+                    prefetch={false}
+                    className="btn btn-primary"
                   >
-                    Remove Contest
-                  </Button>
-                </>
-              )}
-              {/* <div className="d-flex gap-1 align-items-center">
+                    Clone
+                  </Link>
+                )}
+                {isAdmin && (
+                  <>
+                    {["finished", "published"].includes(contest.state) && (
+                      <Button
+                        type="button"
+                        onClick={() => onUnfinishContest()}
+                        isLoading={isUnfinishing}
+                        disabled={isPending}
+                        className="btn-warning"
+                      >
+                        Un-finish Contest
+                      </Button>
+                    )}
+                    <Button
+                      onClick={onRemoveContest}
+                      isLoading={isDeleting}
+                      disabled={isPending || contest.participants > 0}
+                      className="btn-danger"
+                    >
+                      Remove Contest
+                    </Button>
+                  </>
+                )}
+                {/* <div className="d-flex gap-1 align-items-center">
                     <Button id="enable_queue_button" disabled className="btn-secondary">
                       Enable Queue
                     </Button>
@@ -561,7 +572,7 @@ function ContestForm({
                       text="(DISABLED) This can be used for contests where there are not enough solving stations. In such cases random scrambles must be used for every competitor."
                     />
                   </div> */}
-              {/* {type !== "meetup" && (
+                {/* {type !== "meetup" && (
                     <div className="d-flex gap-1 align-items-center">
                       <Button
                         onClick={getAccessToken}
@@ -577,7 +588,22 @@ function ContestForm({
                       />
                     </div>
                   )} */}
-            </div>
+              </div>
+              {isAdmin && (
+                <>
+                  <FormTextArea
+                    title="Admin notes"
+                    value={adminNotes}
+                    setValue={setAdminNotes}
+                    disabled={isUpdatingAdminNotes}
+                    rows={3}
+                  />
+                  <Button onClick={submitAdminNotes} isLoading={isUpdatingAdminNotes} className="mb-5">
+                    Save
+                  </Button>
+                </>
+              )}
+            </>
           )}
           <FormRadio
             title="Type"
