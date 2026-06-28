@@ -64,7 +64,7 @@ To set up a production `.env` file, follow these steps:
 
 ### Icon
 
-To generate an icon, place an `icon.svg` file in the `client` directory (this file is git-ignored). The ICO file will be generated automatically when the Docker image is built and included in the image.
+To generate an icon, place an `icon.svg` file in the `client` directory (this file is git-ignored). The ICO file will be generated automatically when the Docker image is built and included in the image. The icon file can also be called `icon.<PROJECT_ID>.svg` (use the `PROJECT_ID` value from your `.env` file).
 
 ### Down for maintenance page
 
@@ -204,7 +204,7 @@ There are several custom scripts located in the `bin` directory. These should be
 | `release-new-image.sh`      | Create Docker image for the Next JS app and publish it.                                                     |
 | `create-full-backup.sh`     | Create encrypted backup of the Supabase database and storage.                                               |
 
-There is also a `convert-svg-to-ico.sh` script in the `client` directory to convert an SVG file with the icon to an ICO file. The first argument is the path to the SVG file; the second argument is the path to the output ICO file (defaults to `./app/favicon.ico`). This script runs automatically on Docker image build.
+There is also a `convert-svg-to-ico.sh` script in the `client` directory to convert an SVG file with the icon to an ICO file at `client/app/favicon.ico`. This script runs automatically on Docker image build.
 
 ## Development
 

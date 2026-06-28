@@ -39,9 +39,13 @@ WORKDIR /app
 
 RUN apt update && apt install -y inkscape imagemagick
 
-COPY convert-svg-to-ico.sh icon.svg ./
+# Copy icon converting script and icon files (icon.svg is optional, hence the [g] at the end)
+COPY convert-svg-to-ico.sh icon.sv[g] icon.*.svg ./
 
-RUN ./convert-svg-to-ico.sh ./icon.svg ./favicon.ico
+ARG PROJECT_ID
+
+# Convert SVG icon to ICO (the file path ends up as /app/app/favicon.ico)
+RUN mkdir app && ./convert-svg-to-ico.sh "$PROJECT_ID"
 
 # ============================================
 # Stage 2: Build Next.js application in standalone mode
@@ -60,8 +64,8 @@ COPY --from=dependencies /app/node_modules ./node_modules
 # Copy application source code
 COPY . .
 
-# Copy ICO file from ico-generator stage (yes, the path ends up as /app/app/favicon.ico)
-COPY --from=ico-generator /app/favicon.ico ./app/
+# Copy ICO file from ico-generator stage
+COPY --from=ico-generator /app/app/favicon.ico ./app/
 
 ENV NODE_ENV=production
 ARG NEXT_PUBLIC_BASE_URL

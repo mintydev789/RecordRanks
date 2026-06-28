@@ -46,6 +46,7 @@ volumes/storage
 # Other
 down-for-maintenance-page.html
 client/icon.svg
+client/icon.*.svg
 client/app/favicon.ico
 client/app/robots.txt
 

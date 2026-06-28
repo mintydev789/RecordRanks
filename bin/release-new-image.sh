@@ -13,7 +13,8 @@ echo -e "${cyan}Releasing image $image to Dockerhub...${nc}\n"
 docker login
 
 # Build Next JS container
-docker build --build-arg NEXT_PUBLIC_BASE_URL="https://$PROD_HOSTNAME" \
+docker build --build-arg PROJECT_ID="$PROJECT_ID" \
+             --build-arg NEXT_PUBLIC_BASE_URL="https://$PROD_HOSTNAME" \
              --build-arg NEXT_PUBLIC_PROJECT_NAME="$NEXT_PUBLIC_PROJECT_NAME" \
              --build-arg NEXT_PUBLIC_AUTH_PROVIDERS="$NEXT_PUBLIC_AUTH_PROVIDERS" \
              --build-arg NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL="$NEXT_PUBLIC_STORAGE_PUBLIC_BUCKET_BASE_URL" \
