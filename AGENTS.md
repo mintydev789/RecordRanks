@@ -21,7 +21,7 @@ Monorepo with:
 - **Actions**: [next-safe-action](https://next-safe-action.dev/)
 - **Backend tools**: Self-hosted Supabase (Postgres, Storage, Logs, Cron)
 - **ORM**: [Drizzle](https://orm.drizzle.team/)
-- **Package Manager**: [PNPM](https://pnpm.io/)
+- **Package Manager**: [PNPM](https://pnpm.io/) (this repo uses a `package.json5` file instead of `package.json`)
 - **Formatting/Linting**: [Biome](https://biomejs.dev/)
 
 ## Deployment

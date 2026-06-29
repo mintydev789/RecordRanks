@@ -1,6 +1,5 @@
 export const C = {
-  cubingContestsHostname: "cubingcontests.com",
-  recordRanksLink: "https://recordranks.com/",
+  recordRanksLink: "https://recordranks.com",
   sourceCodeLink: "https://github.com/mintydev789/RecordRanks",
   rrDonationLink: "https://ko-fi.com/mintydev",
   discordServerLink: "https://discord.gg/7rRMQA8jnU",
@@ -47,19 +46,10 @@ export const C = {
     warning: "#ffc107",
     danger: "#dc3545",
   },
-  plan: {
-    basic: {
-      maxMonthlyContests: 10,
-      maxCompetitors: 1000,
-    },
-    pro: {
-      maxMonthlyContests: 50,
-      maxCompetitors: 25000,
-    },
-  },
 } as const;
 
-export const IS_CUBING_CONTESTS_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === `https://${C.cubingContestsHostname}`;
+export const IS_RR_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === "https://app.recordranks.com";
+export const IS_CUBING_CONTESTS_INSTANCE = process.env.NEXT_PUBLIC_BASE_URL === "https://cubingcontests.com";
 
 const providers = process.env.NEXT_PUBLIC_AUTH_PROVIDERS!.split(",");
 export const HAS_CREDENTIAL_AUTH = providers.includes("credential");

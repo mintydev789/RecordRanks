@@ -710,7 +710,7 @@ export async function validateMaxMonthlyContests(organization: OrganizationDetai
   ).length;
   if (
     (organization.metadata.plan === "basic" && contestsCreatedLastMonth >= C.plan.basic.maxMonthlyContests) ||
-    (organization.metadata.plan === "pro" && contestsCreatedLastMonth >= C.plan.pro.maxMonthlyContests)
+    (organization.metadata.plan === "premium" && contestsCreatedLastMonth >= C.plan.pro.maxMonthlyContests)
   ) {
     throw new RrActionError("This space has reached its monthly competitions limit");
   }
@@ -722,7 +722,7 @@ export async function validateMaxTotalCompetitors(organization: OrganizationDeta
   ).length;
   if (
     (organization.metadata.plan === "basic" && totalPersons >= C.plan.basic.maxCompetitors) ||
-    (organization.metadata.plan === "pro" && totalPersons >= C.plan.pro.maxCompetitors)
+    (organization.metadata.plan === "premium" && totalPersons >= C.plan.pro.maxCompetitors)
   ) {
     throw new RrActionError(C.message.maxMonthlyContestsReached);
   }

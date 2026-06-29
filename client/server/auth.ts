@@ -1,15 +1,11 @@
 import "server-only";
+import { stripe } from "@better-auth/stripe";
 import { betterAuth, type SocialProviders } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import {
-  admin as adminPlugin,
-  type GenericOAuthConfig,
-  genericOAuth,
-  organization,
-  username,
-} from "better-auth/plugins";
-import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH } from "~/helpers/constants.ts";
+import { admin as adminPlugin, genericOAuth, organization, username } from "better-auth/plugins";
+import Stripe from "stripe";
+import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH, IS_RR_INSTANCE } from "~/helpers/constants.ts";
 import { getDefaultRegions } from "~/helpers/default-regions.ts";
 import { getDefaultOrgSettings } from "~/helpers/default-settings.ts";
 import { getHasRole } from "~/helpers/utility-functions.ts";
@@ -53,6 +49,12 @@ if (process.env.NEXT_PHASE !== "phase-production-build") {
     throw new Error("BETTER_AUTH_SECRET cannot be set to the default value in production!");
   }
 }
+
+const stripeClient = IS_RR_INSTANCE
+  ? new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: "2026-06-24.dahlia",
+    })
+  : undefined;
 
 // MAKE SURE TO UPDATE THE AUTH MOCK ACCORDINGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -128,22 +130,82 @@ export const auth = betterAuth({
         },
       },
     }),
-    genericOAuth({
-      config: [
-        HAS_WCA_AUTH
-          ? ({
-              providerId: "wca",
-              clientId: process.env.WCA_OAUTH_CLIENT_ID!,
-              clientSecret: process.env.WCA_OAUTH_SECRET,
-              discoveryUrl: "https://www.worldcubeassociation.org/.well-known/openid-configuration",
-              // issuer: "https://www.worldcubeassociation.org",
-              // requireIssuerValidation: true, // the WCA doesn't support this
-              scopes: ["public", "openid", "email", "profile"],
-              mapProfileToUser: async (profile) => ({ ...profile, emailVerified: true }),
-            } satisfies GenericOAuthConfig)
-          : undefined,
-      ].filter((provider) => provider !== undefined),
-    }),
+    ...(HAS_WCA_AUTH
+      ? [
+          genericOAuth({
+            config: [
+              {
+                providerId: "wca",
+                clientId: process.env.WCA_OAUTH_CLIENT_ID!,
+                clientSecret: process.env.WCA_OAUTH_SECRET,
+                discoveryUrl: "https://www.worldcubeassociation.org/.well-known/openid-configuration",
+                // issuer: "https://www.worldcubeassociation.org",
+                // requireIssuerValidation: true, // the WCA doesn't support this
+                scopes: ["public", "openid", "email", "profile"],
+                mapProfileToUser: async (profile) => ({ ...profile, emailVerified: true }),
+              },
+            ],
+          }),
+        ]
+      : []),
+    ...(IS_RR_INSTANCE
+      ? [
+          stripe({
+            stripeClient: stripeClient!,
+            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+            requireEmailVerification: true,
+            organization: {
+              enabled: true,
+            },
+            subscription: {
+              enabled: true,
+              plans: [
+                {
+                  name: "Basic",
+                  lookupKey: "rr_basic_monthly",
+                  annualDiscountLookupKey: "rr_basic_annual",
+                  limits: {
+                    monthlyContests: 10,
+                    competitors: 1000,
+                  },
+                  freeTrial: {
+                    days: 30,
+                    // These can be used for email sending
+                    // onTrialStart: async (subscription) => {},
+                    // onTrialEnd: async ({ subscription }, ctx) => {},
+                    // onTrialExpired: async (subscription, ctx) => {},
+                  },
+                },
+                {
+                  name: "Premium",
+                  lookupKey: "rr_premium_monthly",
+                  annualDiscountLookupKey: "rr_premium_annual",
+                  limits: {
+                    monthlyContests: 50,
+                    competitors: 25000,
+                  },
+                  freeTrial: {
+                    days: 30,
+                  },
+                },
+              ],
+              // Check if the user is the owner of the space the subscription is for
+              authorizeReference: async ({ user, referenceId }) => {
+                const member = await db.query.members.findFirst({
+                  where: { organizationId: referenceId, userId: user.id },
+                });
+                return Boolean(member && getHasRole("owner", member.role));
+              },
+              // These can be used for email sending
+              // onSubscriptionComplete: async ({ event, subscription, stripeSubscription, plan }) => {},
+              // onSubscriptionCreated: async ({ event, subscription, stripeSubscription, plan }) => {},
+              // onSubscriptionUpdate: async ({ event, subscription, stripeSubscription }) => {},
+              // onSubscriptionCancel: async ({ event, subscription, stripeSubscription, cancellationDetails }) => {},
+              // onSubscriptionDeleted: async ({ event, subscription, stripeSubscription }) => {},
+            },
+          }),
+        ]
+      : []),
     nextCookies(),
   ],
   socialProviders: {

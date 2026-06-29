@@ -6,7 +6,7 @@ import z from "zod";
 import FormTextInput from "~/app/components/form/FormTextInput.tsx";
 import Button from "~/app/components/UI/Button.tsx";
 import ToastMessages from "~/app/components/UI/ToastMessages.tsx";
-import { authClient } from "~/helpers/authClient.ts";
+import { authClient } from "~/helpers/auth-client.ts";
 import { MainContext } from "~/helpers/contexts.ts";
 import { useSession } from "~/helpers/hooks.ts";
 import type { OrganizationMetadata } from "~/helpers/types.ts";
@@ -49,7 +49,7 @@ function DebugScreen() {
           .regex(/^[a-z0-9]+$/),
         contactEmail: z.email(),
         logo: z.string().nullable(),
-        plan: z.enum(["basic", "pro", "custom"]),
+        plan: z.enum(["basic", "premium", "custom"]),
       })
       .safeParse(Object.fromEntries(formData.entries()));
 
@@ -147,7 +147,7 @@ function DebugScreen() {
           </label>
           <select id="plan_input" name="plan" className="form-select">
             <option value="basic">Basic</option>
-            <option value="pro">Pro</option>
+            <option value="premium">Premium</option>
             <option value="custom">Custom</option>
           </select>
         </fieldset>

@@ -1,4 +1,4 @@
-import type { authClient } from "~/helpers/authClient.ts";
+import type { authClient } from "~/helpers/auth-client.ts";
 import type { FullMemberRequest } from "~/server/db/schema/member-requests.ts";
 import type { PersonResponse } from "~/server/db/schema/persons.ts";
 
@@ -24,7 +24,7 @@ export type InputPerson = PersonResponse | null;
 export type OrganizationMetadata = {
   private: boolean;
   contactEmail: string;
-  plan: "basic" | "pro" | "custom" | "none";
+  plan: "basic" | "premium" | "custom" | "none";
   showDonationLinks: boolean;
 };
 
