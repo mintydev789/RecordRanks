@@ -4,6 +4,7 @@ import { betterAuth, type SocialProviders } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { admin as adminPlugin, genericOAuth, organization, username } from "better-auth/plugins";
+import { sql } from "drizzle-orm";
 import Stripe from "stripe";
 import { HAS_CREDENTIAL_AUTH, HAS_GOOGLE_AUTH, HAS_WCA_AUTH, IS_RR_INSTANCE } from "~/helpers/constants.ts";
 import { getDefaultRegions } from "~/helpers/default-regions.ts";
@@ -15,7 +16,9 @@ import {
   invitationsTable as invitations,
   membersTable as members,
   organizationsTable as organizations,
+  organizationsTable,
   sessionsTable as sessions,
+  subscriptionsTable as subscriptions,
   usersTable as users,
   verificationsTable as verifications,
 } from "~/server/db/schema/auth-schema.ts";
@@ -56,6 +59,23 @@ const stripeClient = IS_RR_INSTANCE
     })
   : undefined;
 
+export const rrBasicLimits = {
+  monthlyContests: 10,
+  competitors: 1000,
+};
+export const rrPremiumLimits = {
+  monthlyContests: 50,
+  competitors: 25000,
+};
+
+async function changeShowDonationLinks(organizationId: string, showDonationLinks: boolean) {
+  await db.execute(
+    sql`UPDATE ${organizationsTable}
+        SET metadata = JSONB_SET(metadata::jsonb, '{showDonationLinks}', ${showDonationLinks ? sql.raw("'true'") : sql.raw("'false'")})
+        WHERE ${organizationsTable.id} = ${organizationId}`,
+  );
+}
+
 // MAKE SURE TO UPDATE THE AUTH MOCK ACCORDINGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 export const auth = betterAuth({
@@ -69,6 +89,7 @@ export const auth = betterAuth({
       organizations,
       members,
       invitations,
+      subscriptions,
     },
     usePlural: true,
   }),
@@ -164,10 +185,7 @@ export const auth = betterAuth({
                   name: "Basic",
                   lookupKey: "rr_basic_monthly",
                   annualDiscountLookupKey: "rr_basic_annual",
-                  limits: {
-                    monthlyContests: 10,
-                    competitors: 1000,
-                  },
+                  limits: rrBasicLimits,
                   freeTrial: {
                     days: 30,
                     // These can be used for email sending
@@ -180,10 +198,7 @@ export const auth = betterAuth({
                   name: "Premium",
                   lookupKey: "rr_premium_monthly",
                   annualDiscountLookupKey: "rr_premium_annual",
-                  limits: {
-                    monthlyContests: 50,
-                    competitors: 25000,
-                  },
+                  limits: rrPremiumLimits,
                   freeTrial: {
                     days: 30,
                   },
@@ -196,12 +211,23 @@ export const auth = betterAuth({
                 });
                 return Boolean(member && getHasRole("owner", member.role));
               },
-              // These can be used for email sending
-              // onSubscriptionComplete: async ({ event, subscription, stripeSubscription, plan }) => {},
-              // onSubscriptionCreated: async ({ event, subscription, stripeSubscription, plan }) => {},
-              // onSubscriptionUpdate: async ({ event, subscription, stripeSubscription }) => {},
-              // onSubscriptionCancel: async ({ event, subscription, stripeSubscription, cancellationDetails }) => {},
-              // onSubscriptionDeleted: async ({ event, subscription, stripeSubscription }) => {},
+              // Stripe CLI command for listening to webhooks:
+              // stripe listen --api-key <API_KEY> --forward-to localhost:3000/api/auth/stripe/webhook
+              onSubscriptionComplete: async ({ subscription }) => {
+                await changeShowDonationLinks(subscription.referenceId, subscription.plan === "basic");
+              },
+              onSubscriptionCreated: async ({ subscription }) => {
+                await changeShowDonationLinks(subscription.referenceId, subscription.plan === "basic");
+              },
+              onSubscriptionUpdate: async ({ subscription }) => {
+                await changeShowDonationLinks(subscription.referenceId, subscription.plan === "basic");
+              },
+              onSubscriptionCancel: async ({ subscription }) => {
+                await changeShowDonationLinks(subscription.referenceId, true);
+              },
+              onSubscriptionDeleted: async ({ subscription }) => {
+                await changeShowDonationLinks(subscription.referenceId, true);
+              },
             },
           }),
         ]

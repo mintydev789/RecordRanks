@@ -15,8 +15,6 @@ export type {
 
 export type ResultRankingType = "single" | "average" | "mean";
 
-export type PageSize = "A4" | "A6";
-
 export type ListPageMode = "view" | "add" | "edit";
 
 export type InputPerson = PersonResponse | null;
@@ -24,12 +22,18 @@ export type InputPerson = PersonResponse | null;
 export type OrganizationMetadata = {
   private: boolean;
   contactEmail: string;
-  plan: "basic" | "premium" | "custom" | "none";
   showDonationLinks: boolean;
 };
 
 export type OrganizationDetails = Pick<typeof authClient.$Infer.Organization, "id" | "name" | "slug" | "logo"> & {
   metadata: OrganizationMetadata;
+  subscription?: {
+    plan: "basic" | "premium";
+    limits: {
+      monthlyContests: number;
+      competitors: number;
+    };
+  };
 };
 
 export type FullSession = typeof authClient.$Infer.Session & {

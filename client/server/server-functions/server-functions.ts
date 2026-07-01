@@ -194,7 +194,8 @@ export const getFeaturesInfoSF = actionClient
       rulesPageEnabled: Boolean(rulesPageContent),
       modInstructionsPageEnabled: Boolean(modInstructionsPageContent),
       videoBasedResultsEnabled: videoBasedResultsEnabled === "true",
-      publicExportsEnabled: !!organization && organization.metadata.plan !== "basic" && Number(publicExportsToKeep) > 0,
+      publicExportsEnabled:
+        !!organization && organization.subscription?.plan !== "basic" && Number(publicExportsToKeep) > 0,
       privacyPolicy: !privacyPolicy
         ? "disabled"
         : z.url().safeParse(privacyPolicy).success

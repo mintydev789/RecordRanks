@@ -44,7 +44,7 @@ export const updateMemberSF = actionClient
         .enum(OrganizationRoles)
         .array()
         .nonempty()
-        .refine((val) => val.includes("member") || val.includes("admin"), { error: "The member role is required" }),
+        .refine((val) => val.includes("member") || val.includes("owner"), { error: "The member role is required" }),
     }),
   )
   .action<{ member: typeof membersTable.$inferSelect; person?: PersonResponse }>(

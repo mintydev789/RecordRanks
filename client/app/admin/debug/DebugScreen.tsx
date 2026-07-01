@@ -49,7 +49,6 @@ function DebugScreen() {
           .regex(/^[a-z0-9]+$/),
         contactEmail: z.email(),
         logo: z.string().nullable(),
-        plan: z.enum(["basic", "premium", "custom"]),
       })
       .safeParse(Object.fromEntries(formData.entries()));
 
@@ -64,8 +63,7 @@ function DebugScreen() {
           metadata: {
             private: false,
             contactEmail: parsed.data.contactEmail,
-            plan: parsed.data.plan,
-            showDonationLinks: parsed.data.plan === "basic",
+            showDonationLinks: true,
           } satisfies OrganizationMetadata,
           keepCurrentActiveOrganization: true,
         });
@@ -139,17 +137,6 @@ function DebugScreen() {
             Logo URL
           </label>
           <input id="logo_input" type="url" name="logo" className="form-control" />
-        </fieldset>
-
-        <fieldset className="mb-3">
-          <label htmlFor="plan_input" className="form-label">
-            Plan
-          </label>
-          <select id="plan_input" name="plan" className="form-select">
-            <option value="basic">Basic</option>
-            <option value="premium">Premium</option>
-            <option value="custom">Custom</option>
-          </select>
         </fieldset>
 
         <button type="submit" disabled={isCreatingOrganization} className="btn btn-primary mt-2">
