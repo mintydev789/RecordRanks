@@ -79,7 +79,7 @@ export const updateMemberSF = actionClient
         throw new RrActionError("Privileged members must have a person tied to their profile");
       }
 
-      const rolesAreDifferent = member.role!.split(",").sort().join(",") !== roles.sort().join(",");
+      const rolesAreDifferent = member.role!.split(",").sort().join(",") !== [...roles].sort().join(",");
       if (rolesAreDifferent) {
         await changeMemberRoles({
           memberId: id,
